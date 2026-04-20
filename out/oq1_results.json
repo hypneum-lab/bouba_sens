@@ -1,0 +1,72 @@
+[
+  {
+    "mode": "SharedCodebookModel",
+    "final_accuracy": 0.98828125,
+    "final_loss": 0.08256526291370392,
+    "steps": 2000,
+    "seed": 0
+  },
+  {
+    "mode": "LocalCodebookModel",
+    "final_accuracy": 0.990234375,
+    "final_loss": 0.016769345849752426,
+    "steps": 2000,
+    "seed": 0
+  },
+  {
+    "mode": "SharedCodebookModel",
+    "final_accuracy": 0.9892578125,
+    "final_loss": 0.06545581668615341,
+    "steps": 2000,
+    "seed": 1
+  },
+  {
+    "mode": "LocalCodebookModel",
+    "final_accuracy": 0.986328125,
+    "final_loss": 0.023406945168972015,
+    "steps": 2000,
+    "seed": 1
+  },
+  {
+    "mode": "SharedCodebookModel",
+    "final_accuracy": 0.98828125,
+    "final_loss": 0.060784000903367996,
+    "steps": 2000,
+    "seed": 2
+  },
+  {
+    "mode": "LocalCodebookModel",
+    "final_accuracy": 0.9873046875,
+    "final_loss": 0.015364358201622963,
+    "steps": 2000,
+    "seed": 2
+  },
+  {
+    "mode": "SharedCodebookModel",
+    "final_accuracy": 0.9931640625,
+    "final_loss": 0.08192088454961777,
+    "steps": 2000,
+    "seed": 3
+  },
+  {
+    "mode": "LocalCodebookModel",
+    "final_accuracy": 0.994140625,
+    "final_loss": 0.02965136431157589,
+    "steps": 2000,
+    "seed": 3
+  },
+  {
+    "mode": "SharedCodebookModel",
+    "final_accuracy": 0.98828125,
+    "final_loss": 0.06579417735338211,
+    "steps": 2000,
+    "seed": 4
+  },
+  {
+    "mode": "LocalCodebookModel",
+    "final_accuracy": 0.9873046875,
+    "final_loss": 0.02573203109204769,
+    "steps": 2000,
+    "seed": 4
+  }
+]

@@ -8,4 +8,4 @@ by ADR-NNNN" at the top.
 
 | # | Title | Status |
 |---|-------|--------|
-| 0001 | Codebook sharing between SensoryWMLs | Proposed (execution pending) |
+| 0001 | Codebook sharing between SensoryWMLs | Accepted |
