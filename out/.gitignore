@@ -1,0 +1,6 @@
+# Ignore all experimental outputs by default...
+*
+# ...but keep the directory README and the OQ1 spike result JSON.
+!.gitignore
+!README.md
+!oq1_results.json
