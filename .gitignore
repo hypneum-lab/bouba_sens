@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.coverage
+.hypothesis/
+
+# uv
+.venv/
+
+# Build artifacts
+build/
+dist/
+*.whl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Run outputs
+runs/
+reports/
+data/
+*.parquet
+*.pt
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db
