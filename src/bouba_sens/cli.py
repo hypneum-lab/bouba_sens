@@ -189,7 +189,16 @@ def lesion(
     )
     report = loop.lesion_phase(spec, steps=steps, batch_size=16, seed=seed)
 
+    # Sprint 5 / Task 5.2 — per-query Me1 vector for the downstream Me6
+    # perf matrix. One accuracy scalar per candidate query modality, all
+    # measured after Phase 2 ended, with the lesion-adapted state frozen.
+    from bouba_sens.sensory import MODALITIES as _MODS
+
+    per_query_me1 = {m: loop.query_accuracy(m, seed=seed + 777) for m in _MODS}
+
     out.mkdir(parents=True, exist_ok=True)
+    with (out / "per_query_me1.json").open("w") as pq_out:
+        json.dump(per_query_me1, pq_out, indent=2)
     with (out / "report.pkl").open("wb") as report_out:
         pickle.dump(report, report_out)
     with (out / "metadata.json").open("w") as meta_out:

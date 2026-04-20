@@ -10,7 +10,7 @@ FIFO buffer + migration snapshots.
 from __future__ import annotations
 
 import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -230,6 +230,39 @@ class AdaptationLoop:
         report.post_lesion_codes = fused_post.flatten(1).mean(dim=-1).detach().clone()
 
         return report
+
+    def query_accuracy(
+        self,
+        query_modality: Modality,
+        *,
+        batch_size: int = 64,
+        seed: int = 987_654,
+    ) -> float:
+        """Accuracy on a clean probe when only `query_modality` carries signal.
+
+        Sprint 5 / Task 5.2 — builds the 5x5 Me6 perf matrix after
+        Phase 2. All four non-query modalities are zeroed out on the
+        sample (in-place style via a fresh dataclass) so the network
+        must produce its prediction from a single modality. Result is
+        a float in [0, 1].
+        """
+        sample = self.world.sample(batch_size=batch_size, seed=seed)
+        masked_tensors: dict[str, Tensor] = {}
+        for m in MODALITIES:
+            tensor = getattr(sample, m)
+            masked_tensors[m] = tensor if m == query_modality else torch.zeros_like(tensor)
+        masked = replace(
+            sample,
+            audio=masked_tensors["audio"],
+            vision=masked_tensors["vision"],
+            tactile=masked_tensors["tactile"],
+            gravity=masked_tensors["gravity"],
+            force=masked_tensors["force"],
+        )
+        with torch.no_grad():
+            _, logits = self._forward(masked)
+            preds = logits.argmax(-1)
+            return float((preds == sample.label).float().mean().item())
 
     # Convenience hook so Checkpoint round-trips in tests.
     def snapshot(self) -> Checkpoint:
