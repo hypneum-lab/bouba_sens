@@ -1,0 +1,28 @@
+name: Full Benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:17 UTC — off-peak, deterministic cadence
+    - cron: "17 3 * * *"
+
+jobs:
+  benchmark:
+    name: 5-seed v0.1 full grid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Skip until Sprint 3
+        run: |
+          echo "Full benchmark harness arrives in Sprint 3."
+          echo "For Sprint 0 we just assert the workflow file is syntactically valid."
