@@ -412,19 +412,23 @@ nerve-wml = { path = "../nerve-wml" }
 | `nerve_core.neuroletter.Neuroletter` | ✓ frozen dataclass — verified (singular, not `NeuroLetters`) | transport metadata only; `src`/`dst`/`timestamp` are NOT carried on the γ/θ signal |
 | `track_w.mlp_wml.MlpWML` | ✓ `nn.Module` subclass — verified | — |
 | `track_p.transducer.Transducer` | ✓ `nn.Module` subclass — verified (generic, not `CrossSubstrateTransducer`) | shape convention `[B] long → [B] long`; `hard: bool`, `tau: float` switch |
-| `track_p.multiplexer.GammaThetaMultiplexer` + `GammaThetaConfig` | 🟡 **PENDING** — draft PR tracking in [nerve-wml#1](https://github.com/hypneum-lab/nerve-wml/issues/1) | see contract below |
+| `track_p.multiplexer.{GammaThetaMultiplexer, GammaThetaConfig, NoiseModel, AWGN, HardwareJitterNoise}` | ✅ **MERGED** — nerve-wml `master@77efb4d` via [PR #2](https://github.com/hypneum-lab/nerve-wml/pull/2) | see contract below |
 
-**Revised γ/θ multiplexer contract** (agreed in nerve-wml#1 design review, 2026-04-20):
+**γ/θ multiplexer contract** (shipped on nerve-wml `master@77efb4d`, all Q1-Q5 arbitrated on [nerve-wml#1](https://github.com/hypneum-lab/nerve-wml/issues/1) comment 2):
 
-- `forward(codes: Tensor[B, K] long, *, theta_phase_offset: float = 0.0) → carrier: Tensor[B, T] float32` with `T = sample_rate_hz // theta_hz`
-- `demodulate(carrier: Tensor[B, T], *, hard: bool = True) → Tensor[B, K] long` (Gumbel-softmax when `hard=False`, matches `Transducer` convention)
-- Constants sourced from `Nerve.GAMMA_HZ / THETA_HZ / ALPHABET_SIZE` — no duplication
-- Config object: `@dataclass(frozen=True) GammaThetaConfig` (6 hyperparams)
-- Gaussian PAC envelope (differentiable, physiologically plausible per Harris & Gong 2026)
-- Role encoding: out-of-band second channel (preserves full 64-code alphabet; deferred to bouba_sens v0.2)
-- No `Neuroletter` round-trip — the multiplexer operates on code tensors, not transport objects
+- `forward(codes: Tensor[B, K] long, *, theta_phase_offset: float = 0.0, noise: NoiseModel | None = None, role: Tensor | None = None) → carrier: Tensor[B, T] float32`. T is bin-aligned to `round(sample_rate_hz / gamma_hz) × symbols_per_theta`, placing γ on rFFT bin 7 exactly (no quantization leakage).
+- `demodulate(carrier: Tensor[B, T], *, hard: bool = True, tau: float = 1.0, theta_phase_offset: float = 0.0)` with dual return shape:
+  - `hard=True` (eval) → `Tensor[B, K] long` (argmax over constellation distances)
+  - `hard=False` (training, Gumbel-softmax on `-dist²` logits) → `Tensor[B, K, alphabet_size] float` — gradient flows back to constellation through the channel (required for `CrossModalNerve.fuse` θ-replay loss path)
+- Constants sourced from `Nerve.GAMMA_HZ / THETA_HZ / ALPHABET_SIZE` — no duplication.
+- Config object: `@dataclass(frozen=True) GammaThetaConfig` (6 hyperparams; note `theta_hz` is nominal — effective θ = γ / k_cap = 5.71 Hz at defaults).
+- Gaussian per-symbol envelope (σ = window_n/4, overlapping packets, differentiable) + smooth θ amplitude modulation (depth 0.45, range ∈ [0.1, 1.0] — never nulls the demod divide). Physiologically grounded per Harris & Gong 2026 nested traveling-wave structure.
+- `NoiseModel` ABC with `AWGN(sigma)` textbook baseline (O'Shea & Hoydis 2017) and `HardwareJitterNoise(substrate)` stub (Loihi-2 / SpiNNaker-2 jitter profiles per Moradi et al. 2025 — instantiable, raises on `apply()` until Sprint 4+).
+- Role encoding: `role` parameter on `forward` — None (1-channel, v0.1 default) or Tensor (2-channel, raises NotImplementedError; out-of-band extension preserves full 64-code alphabet, deferred to bouba_sens v0.2).
+- Constellation: true PSK init (`cos/sin(2πk/64)` + 0.01 randn perturbation) — min pairwise distance ≈ 0.098 vs ~0.01 for plain randn.
+- No `Neuroletter` round-trip — the multiplexer operates on code tensors, not transport objects.
 
-**Sprint 1 blocker tracking**: the γ/θ multiplexer is the only remaining API gap. The 4 verified symbols unblock `SensoryWML`, `CrossModalNerve` structural scaffolding, and protocol-based testing. Mocking the multiplexer behind a local `Protocol` is acceptable in Sprint 1 until the draft PR lands.
+**Sprint 1 unblocked**: `from track_p import GammaThetaMultiplexer, GammaThetaConfig, AWGN`. No mocking required — the real class is on nerve-wml master, `py.typed`-covered, `uv sync` pulls it via `[tool.uv.sources]`.
 
 ### 6.4 Location & GitHub
 
