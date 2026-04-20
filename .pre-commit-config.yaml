@@ -21,6 +21,7 @@ repos:
     rev: v1.20.1
     hooks:
       - id: mypy
+        files: ^src/
         additional_dependencies:
           - torch>=2.5
           - numpy>=2.0
