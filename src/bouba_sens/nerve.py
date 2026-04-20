@@ -13,6 +13,8 @@ vocabulary and keep the import surface tight.
 
 from __future__ import annotations
 
+from typing import cast
+
 import torch
 from torch import Tensor, nn
 
@@ -89,3 +91,43 @@ class AdaptiveCodebook(nn.Module):
             logits = soft_codes.clamp(min=1e-9).log() / tau
             soft_codes = logits.softmax(dim=-1)
         return soft_codes @ self.codebook
+
+
+class CrossModalTransducer(nn.Module):
+    """Directed-edge MLP that translates source-modality hidden states
+    into target-modality hidden states (P3).
+
+    A 2-hidden-layer MLP `(d_hidden -> d_hidden -> d_hidden)` with
+    0/1 gating controlled by the caller at each forward call. When
+    `active=False`, forward returns the input unchanged (identity fallback).
+
+    Activation policy per spec §4.3: `active = (gate[source] < 0.1 AND
+    gate[target] > 0.3)`. The activation decision is external — this
+    class only executes the MLP when instructed.
+
+    `(source, target)` is kept as instance metadata for logging and
+    MigrationReport slicing.
+    """
+
+    def __init__(
+        self,
+        source: Modality,
+        target: Modality,
+        d_hidden: int = 128,
+        *,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__()
+        self.source = source
+        self.target = target
+        global_state = torch.get_rng_state()
+        if seed is not None:
+            torch.manual_seed(seed)
+        self.fc1 = nn.Linear(d_hidden, d_hidden)
+        self.fc2 = nn.Linear(d_hidden, d_hidden)
+        torch.set_rng_state(global_state)
+
+    def forward(self, x: Tensor, *, active: bool = True) -> Tensor:
+        if not active:
+            return x
+        return cast(Tensor, self.fc2(torch.relu(self.fc1(x))))
