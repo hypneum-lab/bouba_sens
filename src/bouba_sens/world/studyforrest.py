@@ -45,10 +45,11 @@ class StudyforrestWorld:
     ) -> None:
         self._seed = seed
         if data_dir is not None:
-            self._audio = torch.load(data_dir / "audio.pt")
-            vision = torch.load(data_dir / "vision.pt")
+            dir_path = Path(data_dir)
+            self._audio = torch.load(dir_path / "audio.pt")
+            vision = torch.load(dir_path / "vision.pt")
             self._vision = vision.reshape(vision.shape[0], *_VISION_SHAPE)
-            self._labels = torch.load(data_dir / "labels.pt").long()
+            self._labels = torch.load(dir_path / "labels.pt").long()
             self._mode = "real"
         else:
             self._audio, self._vision, self._labels = _build_mock_cache(n_mock_samples, seed)
