@@ -144,10 +144,18 @@ class AdaptationLoop:
         from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
 
         scheduler = LesionScheduler(lesion)
+
+        # Capture baseline BEFORE on_lesion so gate_trajectory[0] reflects
+        # the pre-lesion (uniform) state; acceptance tests compare [0] vs [-1]
+        # to detect compensation dynamics.
+        baseline = self.nerve.migration_stats()
+        report = AdaptationReport()
+        report.gate_trajectory.append(baseline.gate_values)
+        report.codebook_entropy_trajectory.append(baseline.codebook_entropy)
+        report.transducer_activation_trajectory.append(baseline.transducer_active_count)
+
         self.nerve.on_lesion(lesion.modality, lesion.schedule(0))
-        report = AdaptationReport(
-            lesion_events=list(self.nerve._lesion_log),
-        )
+        report.lesion_events = list(self.nerve._lesion_log)
 
         replay_buffer: list[WorldSample] = [
             self.world.sample(batch_size=batch_size, seed=seed - 1 - i)
