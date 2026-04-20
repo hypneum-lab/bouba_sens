@@ -16,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fee06cd`).
 - **Task 6.2** — cross-world replication of the full 150-cell
   grid on XOR and Sinusoid worlds. Aggregates written to
-  `reports/v0.2_aggregate_{xor,sinusoid}.json` (30 cells each).
-- ADR-0005 `docs/adr/0005-cross-world-replication.md` — records
+  `reports/v0.3_{xor,sinusoid}_aggregate.json` (30 cells each).
+- ADR-0005 `docs/adr/0005-v03-cross-world-verdicts.md` — records
   the cross-world verdicts and interpretation.
 
 ### Studio replication (Task 6.2)
@@ -30,9 +30,9 @@ same configuration as v0.2 (`STEPS_TRAIN=200`, `STEPS_LESION=100`,
 
 | Invariant | gaussian | xor | sinusoid | 3/3 worlds ? |
 |-----------|---------:|----:|---------:|:---:|
-| B-1 (Me7 > 0.05) | -0.0062 | -0.0063 | **+0.0125** | 3x FAIL, sign flips on sinusoid |
-| B-2 (Me3 delta > 0.10) | 0.0275 | 0.0036 | 0.0021 | 3x FAIL, decays Gaussian > XOR > Sinusoid |
-| B-3 (Me6 max-abs > 0.02) | 0.1484 | 0.1406 | 0.1562 | **3x PASS (first cross-world replicated PASS)** |
+| B-1 (Me7 > 0.05) | -0.0063 | -0.0062 | **+0.0125** | 3x FAIL, sign flips on sinusoid |
+| B-2 (Me3 delta > 0.10) | 0.0275 | 0.0034 | 0.0019 | 3x FAIL, decays Gaussian > XOR > Sinusoid |
+| B-3 (Me6 max-abs > 0.02) | 0.1484 | 0.1406 | 0.1406 | **3x PASS (first cross-world replicated PASS)** |
 
 ### Headline finding
 
