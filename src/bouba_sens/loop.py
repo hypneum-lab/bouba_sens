@@ -1,10 +1,204 @@
-"""AdaptationLoop — owns pretrain/lesion/eval phases and the θ-replay buffer. See spec §3.6."""
+"""AdaptationLoop — owns pretrain/lesion/eval phases and the theta-replay buffer.
+
+Sprint 2 Tasks 2.9-2.10 per spec §3.6. Phase 1 (`pretrain`) wires the
+full forward pass: WorldSimulator sample -> 5 SensoryWMLs -> carriers
+-> CrossModalNerve.fuse -> IntegrationHead -> cross-entropy on label.
+Phase 2 (`lesion_phase`) adds LesionScheduler injection + theta-replay
+FIFO buffer + migration snapshots.
+"""
 
 from __future__ import annotations
 
+import copy
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
+import torch
+from torch import Tensor
+from torch.nn import functional as F  # noqa: N812
+
+from bouba_sens.nerve import CrossModalNerve, MigrationReport
+from bouba_sens.sensory import MODALITIES, Modality, SensoryWML
+
+if TYPE_CHECKING:
+    from track_p.multiplexer import (  # type: ignore[import-not-found]
+        GammaThetaMultiplexer,
+    )
+
+    from bouba_sens.head import IntegrationHead
+    from bouba_sens.lesion import LesionSpec
+    from bouba_sens.world.base import WorldSample, WorldSimulator
+
+
+@dataclass
+class Checkpoint:
+    """Deep-copied module states snapshotted at Phase 1 end."""
+
+    mux_state: dict[str, Tensor]
+    nerve_state: dict[str, Tensor]
+    head_state: dict[str, Tensor]
+    sensory_states: dict[Modality, dict[str, Tensor]]
+
+
+@dataclass
+class AdaptationReport:
+    """Per-step + per-snapshot trajectory produced by `lesion_phase`."""
+
+    loss_curve: list[float] = field(default_factory=list)
+    accuracy_curve: list[float] = field(default_factory=list)
+    gate_trajectory: list[dict[Modality, float]] = field(default_factory=list)
+    codebook_entropy_trajectory: list[float] = field(default_factory=list)
+    transducer_activation_trajectory: list[int] = field(default_factory=list)
+    lesion_events: list[tuple[Modality, float]] = field(default_factory=list)
+
+
+def _deepcopy_state(module: Any) -> dict[str, Tensor]:
+    return {k: v.detach().clone() for k, v in module.state_dict().items()}
+
 
 class AdaptationLoop:
-    """Placeholder for Sprint 0 — implementation in Sprint 2."""
+    """Owns Phase 1 pretrain and Phase 2 lesion_phase training loops.
 
-    def __init__(self) -> None:
-        raise NotImplementedError("Sprint 2 — see docs/superpowers/plans/sprint2")
+    Instantiated with all building blocks as pre-constructed instances
+    (world, mux, 5 SensoryWMLs, nerve, head). An Adam optimiser is built
+    over every parameter once, avoiding the double-count that would occur
+    if `mux.parameters()` appeared inside each SensoryWML or inside
+    `CrossModalNerve` — both use `object.__setattr__` bypasses, so
+    iterating mux + nerve + head + each sensory gives disjoint param sets.
+    """
+
+    def __init__(
+        self,
+        world: WorldSimulator,
+        mux: GammaThetaMultiplexer,
+        sensories: dict[Modality, SensoryWML],
+        nerve: CrossModalNerve,
+        head: IntegrationHead,
+        *,
+        lr: float = 1e-3,
+    ) -> None:
+        self.world = world
+        self.mux = mux
+        self.sensories = sensories
+        self.nerve = nerve
+        self.head = head
+
+        params: list[Tensor] = []
+        params += list(mux.parameters())
+        params += list(nerve.parameters())
+        params += list(head.parameters())
+        for s in sensories.values():
+            params += list(s.parameters())
+        self.opt = torch.optim.Adam(params, lr=lr)
+
+    def _forward(self, sample: WorldSample) -> tuple[Tensor, Tensor]:
+        carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
+        fused = self.nerve.fuse(carriers)
+        logits = self.head(fused)
+        loss = F.cross_entropy(logits, sample.label)
+        return loss, logits
+
+    def pretrain(self, steps: int, *, batch_size: int = 32, seed: int = 0) -> Checkpoint:
+        """Phase 1: intact training on the world. Returns snapshot."""
+        for step in range(steps):
+            sample = self.world.sample(batch_size=batch_size, seed=seed + step)
+            loss, _ = self._forward(sample)
+            self.opt.zero_grad()
+            loss.backward()  # type: ignore[no-untyped-call]
+            self.opt.step()
+        return Checkpoint(
+            mux_state=_deepcopy_state(self.mux),
+            nerve_state=_deepcopy_state(self.nerve),
+            head_state=_deepcopy_state(self.head),
+            sensory_states={m: _deepcopy_state(self.sensories[m]) for m in MODALITIES},
+        )
+
+    def restore(self, ckpt: Checkpoint) -> None:
+        """Restore every module state from a Checkpoint (tests + Phase 2)."""
+        self.mux.load_state_dict(ckpt.mux_state)
+        self.nerve.load_state_dict(ckpt.nerve_state)
+        self.head.load_state_dict(ckpt.head_state)
+        for m in MODALITIES:
+            self.sensories[m].load_state_dict(ckpt.sensory_states[m])
+
+    def lesion_phase(
+        self,
+        lesion: LesionSpec,
+        steps: int,
+        *,
+        batch_size: int = 32,
+        replay_buffer_size: int = 1024,
+        stats_every: int = 10,
+        seed: int = 10_000,
+    ) -> AdaptationReport:
+        """Phase 2: lesion-active training + theta-replay buffer.
+
+        Samples are lesioned via `LesionScheduler.apply` before SensoryWML
+        consumption. `on_lesion` fires once at t=0. Migration stats are
+        captured every `stats_every` steps.
+
+        Replay buffer is a FIFO of raw unlesioned `WorldSample` instances
+        drawn at Phase-2 entry; half of each step's batch is taken from
+        the buffer so the model does not over-fit the lesion distribution.
+        """
+        from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
+
+        scheduler = LesionScheduler(lesion)
+        self.nerve.on_lesion(lesion.modality, lesion.schedule(0))
+        report = AdaptationReport(
+            lesion_events=list(self.nerve._lesion_log),
+        )
+
+        replay_buffer: list[WorldSample] = [
+            self.world.sample(batch_size=batch_size, seed=seed - 1 - i)
+            for i in range(min(replay_buffer_size, 16))
+        ]
+
+        def replay_draw(i: int) -> WorldSample:
+            return replay_buffer[i % len(replay_buffer)]
+
+        for step in range(steps):
+            fresh = self.world.sample(batch_size=batch_size, seed=seed + step)
+            lesioned = scheduler.apply(fresh, step)
+            loss_fresh, logits = self._forward(lesioned)
+
+            # Replay a clean batch with half weight (theta-phase signal).
+            replay_sample = replay_draw(step)
+            loss_replay, _ = self._forward(replay_sample)
+            loss = loss_fresh + 0.5 * loss_replay
+
+            self.opt.zero_grad()
+            loss.backward()  # type: ignore[no-untyped-call]
+            self.opt.step()
+
+            report.loss_curve.append(loss.item())
+            preds = logits.argmax(-1)
+            report.accuracy_curve.append((preds == lesioned.label).float().mean().item())
+
+            if step % stats_every == 0 or step == steps - 1:
+                snap: MigrationReport = self.nerve.migration_stats()
+                report.gate_trajectory.append(snap.gate_values)
+                report.codebook_entropy_trajectory.append(snap.codebook_entropy)
+                report.transducer_activation_trajectory.append(snap.transducer_active_count)
+
+            # FIFO: update buffer with a fresh *clean* sample at the tail,
+            # evict the oldest.
+            if replay_buffer_size > 0:
+                replay_buffer.append(
+                    self.world.sample(batch_size=batch_size, seed=seed - steps - step - 1)
+                )
+                if len(replay_buffer) > replay_buffer_size:
+                    replay_buffer.pop(0)
+
+        return report
+
+    # Convenience hook so Checkpoint round-trips in tests.
+    def snapshot(self) -> Checkpoint:
+        return copy.deepcopy(
+            Checkpoint(
+                mux_state=_deepcopy_state(self.mux),
+                nerve_state=_deepcopy_state(self.nerve),
+                head_state=_deepcopy_state(self.head),
+                sensory_states={m: _deepcopy_state(self.sensories[m]) for m in MODALITIES},
+            )
+        )
