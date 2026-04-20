@@ -1282,6 +1282,182 @@ Expected: `* [new tag] v0.3.1 -> v0.3.1` on remote.
 
 ---
 
+---
+
+## Task 7.5 — World-gap audit (external-validity quantification)
+
+**Objection (new, reviewer-sourced):** B-3 PASSes on 3 synthetic worlds (Gaussian, XOR, Sinusoid) with identical API + 5 factorisable modalities + i.i.d. samples + 4-class labels. These 3 worlds may be 3 samples of the same cluster in world-space; the benchmark's external validity to biological settings is unproven. Quantify the gap.
+
+**Approach:** Compute a fixed battery of **world-complexity metrics** on each world's large-sample draw + compare to what we can compute on a biological-adjacent dataset (Task 7.6 Studyforrest stub). No threshold changes, no verdict rewrite — the audit is purely descriptive and feeds the paper's Limitations section.
+
+**Metrics (per-world, shape (1024, 5-modality-dims)):**
+
+| Metric | What it measures | Implementation |
+|--------|------------------|----------------|
+| `intrinsic_dim_pca` | Effective latent rank | Count PCA components for 95% variance per modality |
+| `mi_pairwise` | Modality redundancy | Mean Kraskov MI over all (i,j) modality pairs |
+| `label_conditional_entropy` | Task difficulty | `H(label | modality)` per modality, averaged |
+| `linear_separability` | Floor task | Logistic-regression accuracy on concatenated modalities |
+| `support_compactness` | Geometric spread | Ratio of PCA-95 variance to total variance |
+| `temporal_autocorr` | Non-i.i.d.-ness | Lag-1 autocorr on label sequence (0 for i.i.d. worlds) |
+
+**Files:**
+- Create: `src/bouba_sens/audit/world_complexity.py` (computes all 6 metrics on `WorldSample` batches)
+- Create: `tests/unit/test_world_complexity.py` (fixture-based acceptance on Gaussian with known values)
+- Create: `scripts/audit_worlds.py` (CLI: `--worlds gaussian,xor,sinusoid` -> JSON table)
+- Artefact: `reports/v0.3_critical_validation/world_complexity_audit.json`
+
+### Step 1: TDD — test for single-metric correctness
+
+- [ ] `tests/unit/test_world_complexity.py` seeds a synthetic `WorldSample` with known rank-k structure per modality; asserts `intrinsic_dim_pca` recovers k within ±1.
+
+### Step 2: Implement the 6 metrics
+
+- [ ] `src/bouba_sens/audit/world_complexity.py`:
+  - `intrinsic_dim_pca(tensor, variance_cutoff=0.95) -> int`
+  - `mi_pairwise(sample, n_neighbours=3) -> float`
+  - `label_conditional_entropy(sample) -> float`  (discretises each modality to 16 bins then computes `H(Y|X)`)
+  - `linear_separability(sample) -> float`  (sklearn `LogisticRegression` 5-fold CV)
+  - `support_compactness(tensor) -> float`
+  - `temporal_autocorr(sample) -> float`
+  - One umbrella `compute_world_profile(sample) -> dict[str, float]` returning all 6.
+
+### Step 3: Audit CLI
+
+- [ ] `scripts/audit_worlds.py`:
+  ```bash
+  uv run python scripts/audit_worlds.py \
+      --worlds gaussian,xor,sinusoid \
+      --batch-size 1024 --seeds 0 1 2 3 4 \
+      --out reports/v0.3_critical_validation/world_complexity_audit.json
+  ```
+  Runs 5 seeds per world for median ± IQR on each metric; writes a JSON with schema:
+  ```json
+  {
+    "gaussian": {"intrinsic_dim_pca": {"median": ..., "iqr": ...}, ...},
+    "xor": {...},
+    "sinusoid": {...},
+    "comparison": {
+      "max_pairwise_distance_metric": "linear_separability",
+      "max_pairwise_distance_value": 0.08,
+      "interpretation": "the 3 synthetic worlds span < 10 % of the complexity range on the metric with the biggest gap"
+    }
+  }
+  ```
+
+### Step 4: Interpretation hook into ADR-0006
+
+- [ ] ADR-0006 Task 7.4 Step 3 already has a placeholder "External-validity gap" section; populate it with the audit's `comparison` block. If the 3 worlds cluster within 10 % on every metric, ADR-0006 must **downgrade** the B-3 headline from "world-agnostic" to "synthetic-cluster-agnostic" in its next-steps section (but **not** retract the verdict itself — the data is what the data is).
+
+### Step 5: Tests + commit
+
+- [ ] Unit tests green + integration smoke on a 256-sample Gaussian draw finishes in < 5 s.
+- [ ] Commit: `feat(audit): Task 7.5 world-complexity audit`.
+
+---
+
+## Task 7.6 — Studyforrest stub (biological-adjacent bridge)
+
+**Objection (deepest, unanswerable without real data):** Task 7.5 quantifies the synthetic-world gap; Task 7.6 starts closing it. The goal is **not** a full biological replication — that's Sprint 9+. It's a **minimal infrastructure stub** that proves the architecture can ingest a real multi-modal dataset without API contortion.
+
+**Dataset:** [Studyforrest](https://www.studyforrest.org/) — fMRI + stereo audio + visual features captured during "Forrest Gump" film viewing, Creative Commons. Uses *real* modality correlations, *real* temporal structure, *real* dataset noise.
+
+**Scope constraint:** We only need **2 of the 5 modalities** from Studyforrest (audio + visual) plus 3 mocked/zeroed (tactile, gravity, force). This is a **not** a scientific replication; it's a **shape-test** that proves the `WorldSimulator` contract accepts a non-synthetic producer.
+
+**Files:**
+- Create: `src/bouba_sens/world/studyforrest.py` (`StudyforrestWorld(WorldSimulator)` wrapper)
+- Create: `scripts/fetch_studyforrest_sample.py` (downloads 1-minute audio + visual features subset, ~50 MB)
+- Create: `tests/unit/test_studyforrest_world.py` (runs on 1 sec of pre-cached mock features; no network)
+- Create: `tests/integration/test_studyforrest_smoke.py` (guarded by `BOUBA_SENS_STUDYFORREST_DATA` env; skipped in CI)
+- Create: `docs/adr/0007-biological-bridge-stub.md` (scope + limitations)
+- Artefact: `data/studyforrest_sample/` (git-LFS or gitignored with MANIFEST.md SHA)
+
+### Step 1: Shape-only unit test (no network)
+
+- [ ] `tests/unit/test_studyforrest_world.py` mocks pre-downloaded 2-D audio spectrogram + 3-D visual CNN features, verifies `StudyforrestWorld.sample(batch_size=8, seed=0)` returns a valid `WorldSample` with:
+  - `audio.shape == (8, T_audio)` (T_audio = spectrogram length in bins)
+  - `vision.shape == (8, D_vision)` (D_vision = CNN feature dimension)
+  - `tactile / gravity / force` zero-tensors with correct shapes from encoder contracts
+  - `label.shape == (8,)` and `label.dtype == torch.long`
+  - Labels derived from timecode-binned annotation (e.g. scene ID → class).
+
+### Step 2: `StudyforrestWorld` implementation
+
+- [ ] `src/bouba_sens/world/studyforrest.py`:
+  ```python
+  class StudyforrestWorld(WorldSimulator):
+      """Minimal bridge to Studyforrest — 2 real modalities + 3 mocked.
+
+      Not a scientific replication; a shape-test that proves the
+      WorldSimulator contract accepts non-synthetic producers.
+      """
+      def __init__(self, data_dir: Path, seed: int = 0) -> None:
+          self._audio_cache = torch.load(data_dir / "audio.pt")  # shape (N, T_audio)
+          self._vision_cache = torch.load(data_dir / "vision.pt")  # shape (N, D_vision)
+          self._labels = torch.load(data_dir / "labels.pt")  # shape (N,)
+          self._rng = torch.Generator().manual_seed(seed)
+          self._n = self._audio_cache.shape[0]
+
+      def sample(self, *, batch_size: int, seed: int) -> WorldSample:
+          g = torch.Generator().manual_seed(seed)
+          idx = torch.randint(0, self._n, (batch_size,), generator=g)
+          audio = self._audio_cache[idx]
+          vision = self._vision_cache[idx]
+          label = self._labels[idx]
+          zero = lambda d: torch.zeros(batch_size, d)
+          return WorldSample(
+              audio=audio, vision=vision,
+              tactile=zero(TACTILE_DIM), gravity=zero(GRAVITY_DIM), force=zero(FORCE_DIM),
+              label=label,
+          )
+  ```
+- [ ] Register `studyforrest` in the CLI `_build_world` dispatch with a required `--studyforrest-data-dir` flag (typer `BadParameter` if unset).
+
+### Step 3: Data-fetching script (optional network)
+
+- [ ] `scripts/fetch_studyforrest_sample.py` downloads the 1-minute subset from the public S3/Zenodo mirror, extracts mel-spectrogram (librosa, 2-sec windows) + per-frame VGG16 features (torchvision), saves the three `.pt` tensors to `data/studyforrest_sample/`. Writes `data/studyforrest_sample/MANIFEST.md` with SHA256s. Idempotent.
+- [ ] Script prints a clear `data_dir` path the user passes to `--studyforrest-data-dir`.
+- [ ] Network-free failure mode: if no internet, the script prints a pointer to a pre-hosted mirror.
+
+### Step 4: Integration smoke (guarded)
+
+- [ ] `tests/integration/test_studyforrest_smoke.py`:
+  ```python
+  import os
+  import pytest
+
+  @pytest.mark.skipif(
+      not os.getenv("BOUBA_SENS_STUDYFORREST_DATA"),
+      reason="set BOUBA_SENS_STUDYFORREST_DATA to data/studyforrest_sample/",
+  )
+  def test_studyforrest_phase2_smoke() -> None:
+      # 1 seed, 1 modality, 1 SNR, 20 steps — proves the full
+      # pretrain -> lesion -> eval pipeline runs on non-synthetic input.
+      ...
+  ```
+
+### Step 5: ADR-0007 + Task 7.4 cross-ref
+
+- [ ] `docs/adr/0007-biological-bridge-stub.md` records: scope (shape-test only), limitations (tactile/gravity/force mocked to zero — no grounded embodiment), what it enables (Sprint 9 can extend StudyforrestWorld to hypothesise tactile/proprioceptive signals from motion annotations).
+- [ ] ADR-0006 Task 7.4 Step 3 "Next steps" section references ADR-0007 as the infrastructure seed for Sprint 9 biological validation.
+
+### Step 6: Tests + commit + README refresh
+
+- [ ] Unit test green without network. Integration test skipped by default.
+- [ ] `README.md` gains a **"Limitations: external validity"** paragraph pointing to ADR-0005 + Task 7.5 audit + ADR-0007 stub: *"Verdicts stand on 3 synthetic worlds within the same cluster; biological extrapolation requires data from actual cross-modal settings — stub API in place (`StudyforrestWorld`), replication deferred to Sprint 9."*
+- [ ] Commit: `feat(world): Task 7.6 Studyforrest bridge stub`.
+
+---
+
+## Exit criteria (Sprint 7 close, revised)
+
+- [ ] Five artefacts in `reports/v0.3_critical_validation/`: null_b3_partitions, me7_bootstrap, mi_estimator_comparison, **world_complexity_audit, studyforrest_manifest** (new).
+- [ ] ADR-0006 + **ADR-0007** (new) committed.
+- [ ] README rewritten with both the validated verdict (Tasks 7.1-7.3) AND the external-validity caveat (Tasks 7.5-7.6).
+- [ ] Tag `v0.3.1` (or `v0.4.0`) pushed.
+
+---
+
 ## Self-review notes (2026-04-20)
 
 - All tasks produce committed artefacts — no orphan scripts.
