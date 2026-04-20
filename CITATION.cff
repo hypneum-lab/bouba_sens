@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use bouba_sens in academic work, please cite it."
+title: "bouba_sens — A Cross-Modal Plasticity Benchmark"
+authors:
+  - family-names: "Saillant"
+    given-names: "Clément"
+    affiliation: "Hypneum Lab"
+    email: "c.saillant@gmail.com"
+version: "0.0.1"
+date-released: "2026-04-20"
+license: MIT
+repository-code: "https://github.com/hypneum-lab/bouba_sens"
+keywords:
+  - cross-modal plasticity
+  - multimodal benchmark
+  - embodied AI
+  - Hypneum Lab
+  - sensory substitution
