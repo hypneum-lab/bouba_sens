@@ -78,13 +78,13 @@ Paper-phare cible: **TMLR** (accept-or-reject-with-full-review, fits benchmark c
          ▼          ▼          ▼             ▼          ▼          ▼
     ┌────────┐ ┌────────┐ ┌────────┐    ┌────────┐ ┌────────┐
     │  AUDIO │ │ VISION │ │TACTILE │    │GRAVITY │ │ FORCE  │
-    │ SensoryWML × 5 (subclass of nerve_wml.MLPWML)              │
+    │ SensoryWML × 5 (subclass of track_w.mlp_wml.MlpWML)        │
     └────┬───┘ └────┬───┘ └────┬───┘    └────┬───┘ └────┬───┘
          │ γ/θ-multiplexed neuroletters (64-code shared alphabet) │
          └──────────┬──────────┬─────────────┬──────────┬──────────┘
                     ▼          ▼             ▼          ▼
                 ┌───────────────────────────────────────────┐
-                │  CrossModalNerve  (extends nerve_wml.Nerve)│
+                │  CrossModalNerve  (extends nerve_core.protocols.Nerve) │
                 │  ├─ PlasticityGate      (P1 — channel α)  │
                 │  ├─ AdaptiveCodebook    (P2 — code shift) │
                 │  └─ CrossModalTransducer (P3 — subst.)    │
@@ -103,7 +103,7 @@ Paper-phare cible: **TMLR** (accept-or-reject-with-full-review, fits benchmark c
 
 ### 2.2 Five design principles
 
-1. **Sensory specialisation at the edges.** Each `SensoryWML` is a sub-class of `nerve_wml.MLPWML` with a modality-typed `input_proj`. Training sees them as 5 distinct substrates; the taxonomy "exteroceptive vs interoceptive" emerges from the task.
+1. **Sensory specialisation at the edges.** Each `SensoryWML` is a sub-class of `track_w.mlp_wml.MlpWML` with a modality-typed `input_proj`. Training sees them as 5 distinct substrates; the taxonomy "exteroceptive vs interoceptive" emerges from the task.
 2. **Shared 64-code alphabet.** Controlled violation of `nerve-wml` invariant **N-5** (local codebook per WML) — documented and scoped to this project. A `CodebookAligner` is *not* used in v0.1; if open question OQ1 resolves toward "local codebooks", an aligner is added in v0.2.
 3. **CrossModalNerve as plastic router.** Three orthogonal mechanisms (P1 gating, P2 codebook, P3 transducers) live inside the nerve — not inside the WMLs — to keep sensory cortices modality-local and compensation global.
 4. **Lesion injected between Simulator and WMLs.** Model code is agnostic to lesion state; `LesionScheduler` intercepts samples before `SensoryWML.step`. Consequence: the exact same model binary is reusable across intact, lesioned, and recovered regimes.
@@ -149,12 +149,12 @@ v0.1 implementations: `GaussianWorld`, `XORWorld`, `SinusoidWorld` — all shari
 ### 3.2 SensoryWML
 
 ```python
-from nerve_wml.wml import MLPWML
+from track_w.mlp_wml import MlpWML
 from typing import Literal
 
 Modality = Literal["audio", "vision", "tactile", "gravity", "force"]
 
-class SensoryWML(MLPWML):
+class SensoryWML(MlpWML):
     modality: Modality
     input_proj: nn.Module   # modality-specific encoder
 
@@ -164,7 +164,7 @@ class SensoryWML(MLPWML):
 ### 3.3 CrossModalNerve
 
 ```python
-from nerve_wml.nerve import Nerve
+from nerve_core.protocols import Nerve
 
 class CrossModalNerve(Nerve):
     gates:       PlasticityGate                               # P1
@@ -396,17 +396,21 @@ bouba_sens/
 
 ### 6.3 Required exposure from `nerve-wml`
 
-For the pypi-pinned dependency path (R1), the following must be importable from `nerve-wml`:
+Verified 2026-04-20 against local clone v0.1.0 at `~/Documents/Projets/nerve-wml`.
+The package exposes 7 top-level modules (`nerve_core`, `track_p`, `track_w`, `bridge`,
+`harness`, `interpret`, `neuromorphic`) — **not** a unified `nerve_wml.*` namespace.
+Install via `uv add "nerve-wml @ file:///Users/electron/Documents/Projets/nerve-wml"`
+(package is not yet on PyPI).
 
 | Symbol | Status | Action if missing |
 |--------|--------|-------------------|
-| `nerve_wml.wml.MLPWML` | subclassable | verify; open issue otherwise |
-| `nerve_wml.nerve.Nerve` | subclassable | idem |
-| `nerve_wml.codes.NeuroLetters` | dataclass | idem |
-| `nerve_wml.mux.GammaThetaMultiplexer` | importable | idem |
-| `nerve_wml.transducer.CrossSubstrateTransducer` | subclassable | idem |
+| `nerve_core.protocols.Nerve` | subclassable — verified | — |
+| `nerve_core.neuroletter.Neuroletter` | frozen dataclass — verified (singular, not `NeuroLetters`) | — |
+| `track_w.mlp_wml.MlpWML` | `nn.Module` subclass — verified | — |
+| `track_p.transducer.Transducer` | `nn.Module` subclass — verified (generic, not `CrossSubstrateTransducer`) | — |
+| **`GammaThetaMultiplexer`** | **ABSENT** — only `PhaseOscillator` in `track_p/oscillators.py` | file nerve-wml issue before Sprint 1; record in `docs/adr/0001-codebook-sharing.md` |
 
-Week-1 action: audit nerve-wml public API; file `nerve-wml#XXX` issues for any missing exposure.
+Week-1 action: open nerve-wml issue `[API] Expose GammaThetaMultiplexer for bouba_sens` and track other gaps that surface during Sprint 1 integration.
 
 ### 6.4 Location & GitHub
 

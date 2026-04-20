@@ -286,7 +286,7 @@ For each of `sensory.py`, `nerve.py`, `lesion.py`, `head.py`, `loop.py`, `report
 
 `src/bouba_sens/sensory.py`:
 ```python
-"""SensoryWML — modality-specific subclass of nerve_wml.MLPWML.
+"""SensoryWML — modality-specific subclass of track_w.mlp_wml.MlpWML.
 
 Placeholder for Sprint 0. Implementation lands in Sprint 1.
 """
@@ -300,7 +300,7 @@ MODALITIES: tuple[Modality, ...] = ("audio", "vision", "tactile", "gravity", "fo
 
 
 class SensoryWML:
-    """Per-modality wrapper around nerve_wml.MLPWML. See spec §3.2."""
+    """Per-modality wrapper around track_w.mlp_wml.MlpWML. See spec §3.2."""
 
     def __init__(self, modality: Modality) -> None:
         raise NotImplementedError("Sprint 1 — see docs/superpowers/plans/sprint1")
@@ -500,7 +500,7 @@ class SinusoidWorld:
 """Metric implementations — each corresponds to an entry in spec §5.2."""
 ```
 
-For each of `performance.py`, `mi_migration.py`, `asymmetry.py`, `congenital.py`, `baselines.py`, create:
+For each of `performance.py`, `mi_migration.py`, `asymmetry.py`, `congenital.py`, `baselines.py`, `replication.py`, create:
 
 `src/bouba_sens/metrics/performance.py`:
 ```python
@@ -523,7 +523,7 @@ class Me2RecoveryAUC:
         raise NotImplementedError("Sprint 3 — see docs/superpowers/plans/sprint3")
 ```
 
-Same one-line-placeholder pattern for `mi_migration.py` (Me3), `asymmetry.py` (Me6), `congenital.py` (Me7), `baselines.py` (Me8).
+Same one-line-placeholder pattern for `mi_migration.py` (Me3), `asymmetry.py` (Me6), `congenital.py` (Me7), `baselines.py` (Me8), `replication.py` (Me9 — seed variance / replication index; referenced by `configs/v0.1_intact.yaml` metrics.enabled).
 
 - [ ] **Step 6: Verify the package imports cleanly**
 
@@ -1017,12 +1017,19 @@ import importlib
 
 import pytest
 
+# Symbol contract verified 2026-04-20 against nerve-wml v0.1.0 local clone at
+# /Users/electron/Documents/Projets/nerve-wml. The package exposes 7 top-level
+# modules (nerve_core, track_p, track_w, bridge, harness, interpret,
+# neuromorphic) — NOT a unified `nerve_wml.*` namespace.
+#
+# API gap: GammaThetaMultiplexer does not yet exist (track_p/oscillators.py
+# only exposes PhaseOscillator). File a nerve-wml issue and record the gap in
+# docs/adr/0001-codebook-sharing.md; re-add to this list once it lands.
 REQUIRED_SYMBOLS = [
-    ("nerve_wml.wml", "MLPWML"),
-    ("nerve_wml.nerve", "Nerve"),
-    ("nerve_wml.codes", "NeuroLetters"),
-    ("nerve_wml.mux", "GammaThetaMultiplexer"),
-    ("nerve_wml.transducer", "CrossSubstrateTransducer"),
+    ("nerve_core.protocols", "Nerve"),
+    ("nerve_core.neuroletter", "Neuroletter"),
+    ("track_w.mlp_wml", "MlpWML"),
+    ("track_p.transducer", "Transducer"),
 ]
 
 
@@ -1043,22 +1050,17 @@ uv run pytest tests/smoke/test_nerve_wml_api.py -v
 ```
 Expected: every parametrised case FAILS with `ModuleNotFoundError: No module named 'nerve_wml'`.
 
-- [ ] **Step 3: Attempt installing `nerve-wml` from local path (Hypneum mono-workspace-style)**
+- [ ] **Step 3: Install `nerve-wml` from local path (Hypneum mono-workspace)**
 
-First check if nerve-wml is a pypi package. Run:
-```bash
-uv pip index versions nerve-wml 2>&1 | head -5
-```
-If *not on pypi*, install from the sibling local clone (spec §6.3 contract):
+nerve-wml is not published on PyPI (local v0.1.0 as of 2026-04-20). Install
+from the sibling local clone — spec §6.3 contract:
 ```bash
 uv add "nerve-wml @ file:///Users/electron/Documents/Projets/nerve-wml"
 ```
-If *on pypi*, run:
-```bash
-uv add "nerve-wml>=1.1.4,<1.2"
-```
 
-Either way, `pyproject.toml` gets the `nerve-wml` line populated and `uv.lock` pins it.
+`pyproject.toml` gets the `nerve-wml` line populated and `uv.lock` pins it.
+Re-check pypi eligibility before Sprint 2 (if Hypneum Lab publishes an 0.2+
+release, switch to a version-pinned constraint).
 
 - [ ] **Step 4: Re-run the test — expect PASS**
 
