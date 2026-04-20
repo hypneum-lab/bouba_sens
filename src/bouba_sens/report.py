@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def render_html(run_dir: str, out_path: str) -> None:
-    """Placeholder for Sprint 0 — implementation in Sprint 3."""
+def render_html(run_glob: str, out_path: str) -> None:
+    """Placeholder — Task 3.9 fills the Jinja2 template."""
 
-    raise NotImplementedError("Sprint 3 — see docs/superpowers/plans/sprint3")
+    raise NotImplementedError("Task 3.9 pending")
