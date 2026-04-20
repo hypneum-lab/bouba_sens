@@ -399,23 +399,37 @@ bouba_sens/
 Verified 2026-04-20 against local clone v0.1.0 at `~/Documents/Projets/nerve-wml`.
 The package exposes 7 top-level modules (`nerve_core`, `track_p`, `track_w`, `bridge`,
 `harness`, `interpret`, `neuromorphic`) — **not** a unified `nerve_wml.*` namespace.
-Install via `uv add "nerve-wml @ file:///Users/electron/Documents/Projets/nerve-wml"`
-(package is not yet on PyPI).
+Installed as a local path source (`[tool.uv.sources]` in `pyproject.toml`):
 
-| Symbol | Status | Action if missing |
-|--------|--------|-------------------|
-| `nerve_core.protocols.Nerve` | subclassable — verified | — |
-| `nerve_core.neuroletter.Neuroletter` | frozen dataclass — verified (singular, not `NeuroLetters`) | — |
-| `track_w.mlp_wml.MlpWML` | `nn.Module` subclass — verified | — |
-| `track_p.transducer.Transducer` | `nn.Module` subclass — verified (generic, not `CrossSubstrateTransducer`) | — |
-| **`GammaThetaMultiplexer`** | **ABSENT** — only `PhaseOscillator` in `track_p/oscillators.py` | file nerve-wml issue before Sprint 1; record in `docs/adr/0001-codebook-sharing.md` |
+```toml
+[tool.uv.sources]
+nerve-wml = { path = "../nerve-wml" }
+```
 
-Week-1 action: open nerve-wml issue `[API] Expose GammaThetaMultiplexer for bouba_sens` and track other gaps that surface during Sprint 1 integration.
+| Symbol | Status | Notes |
+|--------|--------|-------|
+| `nerve_core.protocols.Nerve` | ✓ runtime-checkable Protocol — verified | exposes `GAMMA_HZ`, `THETA_HZ`, `ALPHABET_SIZE` constants |
+| `nerve_core.neuroletter.Neuroletter` | ✓ frozen dataclass — verified (singular, not `NeuroLetters`) | transport metadata only; `src`/`dst`/`timestamp` are NOT carried on the γ/θ signal |
+| `track_w.mlp_wml.MlpWML` | ✓ `nn.Module` subclass — verified | — |
+| `track_p.transducer.Transducer` | ✓ `nn.Module` subclass — verified (generic, not `CrossSubstrateTransducer`) | shape convention `[B] long → [B] long`; `hard: bool`, `tau: float` switch |
+| `track_p.multiplexer.GammaThetaMultiplexer` + `GammaThetaConfig` | 🟡 **PENDING** — draft PR tracking in [nerve-wml#1](https://github.com/hypneum-lab/nerve-wml/issues/1) | see contract below |
+
+**Revised γ/θ multiplexer contract** (agreed in nerve-wml#1 design review, 2026-04-20):
+
+- `forward(codes: Tensor[B, K] long, *, theta_phase_offset: float = 0.0) → carrier: Tensor[B, T] float32` with `T = sample_rate_hz // theta_hz`
+- `demodulate(carrier: Tensor[B, T], *, hard: bool = True) → Tensor[B, K] long` (Gumbel-softmax when `hard=False`, matches `Transducer` convention)
+- Constants sourced from `Nerve.GAMMA_HZ / THETA_HZ / ALPHABET_SIZE` — no duplication
+- Config object: `@dataclass(frozen=True) GammaThetaConfig` (6 hyperparams)
+- Gaussian PAC envelope (differentiable, physiologically plausible per Harris & Gong 2026)
+- Role encoding: out-of-band second channel (preserves full 64-code alphabet; deferred to bouba_sens v0.2)
+- No `Neuroletter` round-trip — the multiplexer operates on code tensors, not transport objects
+
+**Sprint 1 blocker tracking**: the γ/θ multiplexer is the only remaining API gap. The 4 verified symbols unblock `SensoryWML`, `CrossModalNerve` structural scaffolding, and protocol-based testing. Mocking the multiplexer behind a local `Protocol` is acceptable in Sprint 1 until the draft PR lands.
 
 ### 6.4 Location & GitHub
 
 - Local: `~/Documents/Projets/bouba_sens`
-- GitHub: **`hypneum-lab/bouba_sens`** (post-rename); fallback to `genial-lab/bouba_sens` with `gh repo transfer` later.
+- GitHub: **`hypneum-lab/bouba_sens`** — public, `main`, pushed 2026-04-20 (commit `f9c65df`).
 - Visibility: public from first commit.
 - Default branch: `main`.
 - License: MIT.
