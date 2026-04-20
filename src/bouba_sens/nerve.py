@@ -13,12 +13,17 @@ vocabulary and keep the import surface tight.
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import torch
 from torch import Tensor, nn
 
 from bouba_sens.sensory import MODALITIES, Modality
+
+if TYPE_CHECKING:
+    from track_p.multiplexer import (  # type: ignore[import-not-found]
+        GammaThetaMultiplexer,
+    )
 
 
 class PlasticityGate(nn.Module):
@@ -131,3 +136,94 @@ class CrossModalTransducer(nn.Module):
         if not active:
             return x
         return cast(Tensor, self.fc2(torch.relu(self.fc1(x))))
+
+
+class CrossModalNerve(nn.Module):
+    """Plastic router fusing 5-modality carriers into a shared representation.
+
+    Assembles the three plasticity mechanisms per spec §3.3:
+
+    - `gates`: `PlasticityGate` (P1) — channel weights alpha.
+    - `codebook`: `AdaptiveCodebook` (P2) — soft-assignment projection,
+      initialised from `mux.constellation` by default so the fused
+      representation starts aligned with the shared PSK alphabet.
+    - `transducers`: 20 `CrossModalTransducer` instances (5x5 minus 5
+      self-loops), keyed as `"{src}->{dst}"`, activated per spec §4.3
+      when `gate[src] < 0.1 AND gate[dst] > 0.3`.
+
+    The shared multiplexer reference is stored via `object.__setattr__`
+    to avoid nn.Module double-registration (SensoryWML convention).
+
+    `fuse(letters)` takes 5 `(B, T)` carriers from SensoryWML.step and
+    returns a `(B, K, d_hidden)` fused tensor consumed by
+    `IntegrationHead` (Task 2.8).
+    """
+
+    # Class-level annotation so mypy resolves self.mux after the
+    # object.__setattr__ bypass in __init__.
+    mux: GammaThetaMultiplexer
+
+    def __init__(
+        self,
+        mux: GammaThetaMultiplexer,
+        d_hidden: int = 128,
+        *,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__()
+        self.gates = PlasticityGate()
+        self.codebook = AdaptiveCodebook(
+            alphabet_size=mux.cfg.alphabet_size,
+            d_hidden=d_hidden,
+            init_from=mux.constellation.detach(),
+            seed=seed,
+        )
+        self.transducers = nn.ModuleDict(
+            {
+                f"{src}->{dst}": CrossModalTransducer(src, dst, d_hidden, seed=seed)
+                for src in MODALITIES
+                for dst in MODALITIES
+                if src != dst
+            }
+        )
+        object.__setattr__(self, "mux", mux)
+        self._lesion_log: list[tuple[Modality, float]] = []
+
+    def fuse(self, letters: dict[Modality, Tensor]) -> Tensor:
+        """Fuse 5 modality carriers into a shared `(B, K, d_hidden)` tensor.
+
+        Args:
+            letters: 5-entry dict mapping each Modality to its `(B, T)` carrier.
+
+        Returns:
+            fused: `(B, K, d_hidden)` float32. Gradient flows back through
+            the soft demod (Gumbel-softmax per Q2 arbitration) to the mux
+            constellation AND through the codebook AND through the gates
+            AND through every active transducer.
+        """
+        # 1. Soft demod each carrier to (B, K, A) distribution.
+        soft = {m: self.mux.demodulate(letters[m], hard=False, tau=1.0) for m in MODALITIES}
+        # 2. Project each modality via the adaptive codebook -> (B, K, d_hidden).
+        h: dict[Modality, Tensor] = {m: self.codebook(soft[m]) for m in MODALITIES}
+
+        # 3. Per-pair transducer activation per spec §4.3.
+        w = self.gates.weights()  # (5,)
+        gate_vals = [w[i].item() for i, _ in enumerate(MODALITIES)]
+        for src_idx, src in enumerate(MODALITIES):
+            for dst_idx, dst in enumerate(MODALITIES):
+                if src == dst:
+                    continue
+                active = gate_vals[src_idx] < 0.1 and gate_vals[dst_idx] > 0.3
+                transducer = self.transducers[f"{src}->{dst}"]
+                if active:
+                    h[dst] = h[dst] + transducer(h[src], active=True)
+
+        # 4. Gate-weighted sum across modalities.
+        fused = torch.zeros_like(h[MODALITIES[0]])
+        for i, m in enumerate(MODALITIES):
+            fused = fused + w[i] * h[m]
+        return fused
+
+    def on_lesion(self, modality: Modality, snr_db: float) -> None:
+        """Record a lesion event — full impl in Task 2.5."""
+        self._lesion_log.append((modality, snr_db))
