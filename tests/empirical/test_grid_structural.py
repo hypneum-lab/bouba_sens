@@ -1,9 +1,9 @@
-"""Task 4.5 — structural checks on the post-Studio aggregate artifact.
+"""Task 4.5 + 5.3 — structural checks on post-Studio aggregate artifacts.
 
-These tests run ONLY when `reports/v0.1_aggregate.json` exists. Absent
-the file (i.e. before Task 4.7 Studio grid run), the module skips at
-collection. This keeps CI green on fresh clones while still asserting
-the full Sprint 4 grid shape once results are in.
+Prefers `reports/v0.2_aggregate.json` (Sprint 5 / v0.2 run); falls back
+to `reports/v0.1_aggregate.json` for the Sprint 4 snapshot. Sprint 5
+adds `cells_counted >= 1` assertions on B-1/B-2/B-3 which the v0.1
+artifact cannot satisfy by design (see ADR-0003).
 """
 
 from __future__ import annotations
@@ -14,11 +14,19 @@ from pathlib import Path
 
 import pytest
 
-_AGGREGATE_PATH = Path(__file__).resolve().parents[2] / "reports" / "v0.1_aggregate.json"
+_REPORTS = Path(__file__).resolve().parents[2] / "reports"
+_V02_PATH = _REPORTS / "v0.2_aggregate.json"
+_V01_PATH = _REPORTS / "v0.1_aggregate.json"
 
-if not _AGGREGATE_PATH.exists():
+if _V02_PATH.exists():
+    _AGGREGATE_PATH = _V02_PATH
+    _V02_RUN = True
+elif _V01_PATH.exists():
+    _AGGREGATE_PATH = _V01_PATH
+    _V02_RUN = False
+else:
     pytest.skip(
-        f"aggregate missing ({_AGGREGATE_PATH}); run scripts/run_grid.sh + "
+        f"no aggregate at {_V02_PATH} or {_V01_PATH}; run scripts/run_grid.sh + "
         "scripts/aggregate_grid.py first",
         allow_module_level=True,
     )
@@ -56,3 +64,13 @@ def test_grid_thresholds_match_spec() -> None:
     assert thr["b1_me7"] == 0.05
     assert thr["b2_me3_delta"] == 0.10
     assert thr["b3_me6"] == 0.02
+
+
+@pytest.mark.skipif(not _V02_RUN, reason="Sprint 5 coverage assertion (v0.2 only)")
+def test_v02_invariants_have_data() -> None:
+    """Sprint 5 / Task 5.3: every invariant must have at least one cell."""
+    inv = _AGGREGATE["invariants"]
+    for key in ("b1", "b2", "b3"):
+        assert inv[key]["cells_counted"] >= 1, (
+            f"invariant {key} has no cells in v0.2 aggregate — coverage regression from Sprint 5"
+        )
