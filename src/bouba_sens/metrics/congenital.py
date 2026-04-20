@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 
-class Me7CongenitalGap:
-    """Placeholder for Sprint 0 — implementation in Sprint 3."""
+def me7_congenital_gap(perf_t1: float, perf_t2: float) -> float:
+    """Scalar B-1 invariant: `perf_T1 - perf_T2` at SNR_floor.
 
-    def __init__(self) -> None:
-        raise NotImplementedError("Sprint 3 — see docs/superpowers/plans/sprint3")
+    Positive value signals that congenital (T1) adaptation yields higher
+    asymptotic performance than late-acquired (T2) per spec §1.2 B-1.
+    Threshold: > 0.05 over bootstrap 95 % CI.
+    """
+    return perf_t1 - perf_t2
