@@ -13,6 +13,7 @@ vocabulary and keep the import surface tight.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 import torch
@@ -224,6 +225,52 @@ class CrossModalNerve(nn.Module):
             fused = fused + w[i] * h[m]
         return fused
 
-    def on_lesion(self, modality: Modality, snr_db: float) -> None:
-        """Record a lesion event — full impl in Task 2.5."""
+    def on_lesion(self, modality: Modality, snr_db: float, *, bias: float = -1.0) -> None:
+        """Record a lesion event and nudge the affected gate alpha downward.
+
+        The `bias` kwarg (default -1.0) is subtracted from the lesioned
+        modality's alpha, roughly halving its softmax weight. This speeds
+        up the Phase 2 compensation dynamics so the 100-step gate
+        trajectory test (Task 2.11) can detect a clear shift. Set
+        `bias=0.0` to disable the nudge and rely purely on gradient.
+        """
+        idx = MODALITIES.index(modality)
+        with torch.no_grad():
+            self.gates.alpha[idx] += bias
         self._lesion_log.append((modality, snr_db))
+
+    def migration_stats(self) -> MigrationReport:
+        """Snapshot the nerve's current plasticity state."""
+        w = self.gates.weights().detach()
+        gate_vals = {m: float(w[i].item()) for i, m in enumerate(MODALITIES)}
+
+        # Codebook "utilisation entropy" over row-norm softmax. Max = log(A).
+        row_norms = self.codebook.codebook.norm(dim=-1)
+        probs = row_norms.softmax(dim=-1)
+        entropy = float(-(probs * probs.clamp(min=1e-12).log()).sum().item())
+
+        # Count transducers that WOULD fire under current gate values.
+        active = 0
+        for src in MODALITIES:
+            for dst in MODALITIES:
+                if src == dst:
+                    continue
+                if gate_vals[src] < 0.1 and gate_vals[dst] > 0.3:
+                    active += 1
+
+        return MigrationReport(
+            gate_values=gate_vals,
+            codebook_entropy=entropy,
+            transducer_active_count=active,
+            lesion_events=tuple(self._lesion_log),
+        )
+
+
+@dataclass(frozen=True)
+class MigrationReport:
+    """Per-step snapshot of CrossModalNerve plasticity state (Task 2.5)."""
+
+    gate_values: dict[Modality, float]
+    codebook_entropy: float
+    transducer_active_count: int
+    lesion_events: tuple[tuple[Modality, float], ...]
