@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-04-20 (Sprint 3 close — feature-complete v0.1 design)
+
+### Added
+
+- Sprint 3 plan (`docs/superpowers/plans/2026-04-20-bouba-sens-sprint3.md`).
+- Seven v0.1 metrics covering the three B-1/B-2/B-3 invariants:
+  - `me1_accuracy` + `me2_recovery_auc` over `AdaptationReport.accuracy_curve`.
+  - `me3_mi` + `me3_delta` via sklearn Kraskov kNN estimator.
+  - `me6_asymmetry` + `me6_max_abs_off_diag` on the n×n lesion-query
+    perf matrix.
+  - `me7_congenital_gap` scalar on T1 / T2 perfs.
+  - `me8_baselines` + `freeze_nerve_plasticity` +
+    `random_rewire_nerve` for the three §4.4 regimes.
+  - `me9_bootstrap` CI 95 % via `scipy.stats.bootstrap`.
+- `metrics/__init__.py` `Metric` Protocol + `EvalReport` dataclass
+  re-exporting all 11 callables.
+- CLI (spec §5.3): `sim`, `train`, `lesion`, `eval`, `aggregate`
+  via typer with parquet + pickle + JSON round-trips.
+- `render_html` static-table summary per spec §5.4 (5 section
+  headers; interactive plotly deferred to Sprint 4).
+- Integration gate `tests/integration/test_v01_smoke_run.py`:
+  4.78 s single-seed end-to-end on GrosMac, all metrics finite,
+  Me1 > 0.25.
+- `scripts/v01_smoke.sh` CLI wrapper chaining train -> lesion
+  -> eval -> aggregate.
+- ADR-0002 `docs/adr/0002-v01-go-no-go.md` — GO decision.
+
+### Verified
+
+- 115/115 tests pass under `uv run pytest` on GrosMac.
+- `uv run ruff check src tests` clean.
+- `uv run mypy src tests` clean.
+- CLI round-trip: `bouba-sens sim | train | lesion | eval | aggregate`
+  all exit 0.
+
+### Still deferred to Sprint 4
+
+- Full 150-run grid on Studio + Me9 bootstrap IC aggregation.
+- Interactive plotly heatmap for Me6 and recovery curves for Me2.
+- Hydra config-driven experiments (10-config timing × modality grid).
+- `tests/empirical/` asserts on real run results (nightly CI).
+- `full-benchmark.yml` activation.
+
+### Note on versioning
+
+`v0.1.0` is the first non-sprint tag (Sprint-0/1/2 were
+`v0.0.2-sprint1` / `v0.0.3-sprint2`). Marks feature-completeness of
+the v0.1 design — code + metrics + CLI + report. Paper v0.1 draft
+remains a separate Sprint 5 concern.
+
 ## [0.0.3] — 2026-04-20 (Sprint 2 close)
 
 ### Added
