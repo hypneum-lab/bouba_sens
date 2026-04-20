@@ -1,0 +1,35 @@
+# Sprint-0 intact-run config skeleton. Populated in Sprint 1.
+
+defaults:
+  - _self_
+
+world:
+  kind: gaussian       # one of: gaussian, xor, sinusoid (Sprint 1)
+  d_z: 8
+  batch_size: 128
+
+architecture:
+  k_letters: 64        # shared alphabet — see ADR-0001
+  codebook_shared: true  # TBD: revisit after ADR 0001 decision (pending Studio run)
+  hidden: 128
+  n_modalities: 5
+
+lesion:
+  mode: null           # no lesion in intact runs
+
+adaptation:
+  pretrain_steps: 10000
+  lesion_steps: 0
+  optimizer: adam
+  lr: 1.0e-3
+  replay_buffer_size: 1024
+
+metrics:
+  # Me9 = seed variance / replication index (spec §5.2); required for intact
+  # baseline so cross-seed reproducibility is tracked from day one.
+  enabled: [Me1, Me2, Me8, Me9]
+
+run:
+  seed: 0
+  out_dir: runs/
+  precision: float32
