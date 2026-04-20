@@ -33,6 +33,12 @@ def me9_bootstrap(
         value = float(data.mean()) if data.size else 0.0
         return value, value, value
 
+    # BCa returns NaN on degenerate (zero-variance) data; collapse the CI
+    # onto the mean so aggregate JSON stays finite for downstream tests.
+    if np.ptp(data) == 0.0:
+        value = float(data.mean())
+        return value, value, value
+
     rng = np.random.default_rng(seed)
     result = bootstrap(
         (data,),
