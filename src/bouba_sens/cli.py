@@ -130,13 +130,18 @@ def train(
 
 @app.command()
 def lesion(
-    ckpt: Path = typer.Option(..., help="Phase 1 run directory (contains checkpoint.pkl)"),
+    ckpt: Path = typer.Option(None, help="Phase 1 run directory; omit for congenital T1"),
     modality: str = typer.Option("audio", help="Lesioned modality"),
+    timing: str = typer.Option("T2", help="T1 congenital or T2 late-acquired"),
     steps: int = typer.Option(100, help="Phase 2 lesion step count"),
     seed: int = typer.Option(10000, help="Lesion phase seed"),
+    snr_init: float = typer.Option(20.0, help="Initial SNR in dB"),
+    snr_floor: float = typer.Option(-20.0, help="Floor SNR in dB"),
+    k_steps: int = typer.Option(5000, help="SNR ramp length in steps"),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
-    """Phase 2 lesion_phase. Reuses Phase 1 checkpoint."""
+    """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
+    skips pretrain for T1 congenital runs (ckpt=None)."""
     import pickle
 
     from track_p.multiplexer import GammaThetaMultiplexer
@@ -168,30 +173,39 @@ def lesion(
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world, mux, sensories, nerve, head)
 
-    with (ckpt / "checkpoint.pkl").open("rb") as f:
-        loop.restore(pickle.load(f))
+    # T2 late-acquired: restore checkpoint. T1 congenital: skip pretrain.
+    if ckpt is not None and timing.upper() == "T2":
+        with (ckpt / "checkpoint.pkl").open("rb") as ckpt_in:
+            loop.restore(pickle.load(ckpt_in))
+
+    def schedule(step: int) -> float:
+        return m2_snr_schedule(step, snr_init=snr_init, snr_floor=snr_floor, k=k_steps)
 
     spec = LesionSpec(
         modality=modality,  # type: ignore[arg-type]
         mode="M2",
-        timing="T2",
-        schedule=m2_snr_schedule,
+        timing=timing.upper(),  # type: ignore[arg-type]
+        schedule=schedule,
     )
     report = loop.lesion_phase(spec, steps=steps, batch_size=16, seed=seed)
 
     out.mkdir(parents=True, exist_ok=True)
-    with (out / "report.pkl").open("wb") as f:
-        pickle.dump(report, f)
-    with (out / "metadata.json").open("w") as f:
+    with (out / "report.pkl").open("wb") as report_out:
+        pickle.dump(report, report_out)
+    with (out / "metadata.json").open("w") as meta_out:
         json.dump(
             {
                 "phase": "lesion",
                 "steps": steps,
                 "seed": seed,
                 "modality": modality,
+                "timing": timing.upper(),
+                "snr_init": snr_init,
+                "snr_floor": snr_floor,
+                "k_steps": k_steps,
                 "version": __version__,
             },
-            f,
+            meta_out,
             indent=2,
         )
     typer.echo(f"lesion done; wrote {out}/report.pkl")

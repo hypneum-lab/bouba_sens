@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Sprint 4 Task 4.2 — 150-run grid orchestrator.
+# 5 seeds x 5 modalities x 2 timings x 3 SNR = 150 cells.
+# Idempotent: cells with an existing eval_report.json are skipped.
+set -euo pipefail
+
+OUT_ROOT="${OUT_ROOT:-./runs/v01_grid}"
+STEPS_TRAIN="${STEPS_TRAIN:-200}"
+STEPS_LESION="${STEPS_LESION:-100}"
+METRICS="${METRICS:-Me1,Me2,Me7}"
+
+SEEDS=(0 1 2 3 4)
+MODALITIES=(audio vision tactile gravity force)
+TIMINGS=(T1 T2)
+
+# (label floor_db)
+SNR_CELLS=(
+    "floor:-20.0"
+    "minus10:-10.0"
+    "plus10:10.0"
+)
+
+mkdir -p "${OUT_ROOT}"
+total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
+echo "grid: ${total} cells -> ${OUT_ROOT}"
+
+count=0
+skipped=0
+for seed in "${SEEDS[@]}"; do
+    # One Phase 1 checkpoint per seed (reused across T2 cells for that seed).
+    phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
+    if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
+        echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
+        uv run bouba-sens train \
+            --steps "${STEPS_TRAIN}" \
+            --batch-size 16 \
+            --seed "${seed}" \
+            --out "${phase1_dir}"
+    fi
+
+    for modality in "${MODALITIES[@]}"; do
+        for timing in "${TIMINGS[@]}"; do
+            for snr_cell in "${SNR_CELLS[@]}"; do
+                snr_label="${snr_cell%%:*}"
+                snr_floor="${snr_cell#*:}"
+
+                cell_name="seed${seed}_${timing}_${modality}_${snr_label}"
+                cell_dir="${OUT_ROOT}/${cell_name}"
+                eval_json="${cell_dir}/eval_report.json"
+
+                count=$(( count + 1 ))
+
+                if [[ -f "${eval_json}" ]]; then
+                    skipped=$(( skipped + 1 ))
+                    continue
+                fi
+
+                echo "[${count}/${total}] ${cell_name}"
+
+                if [[ "${timing}" == "T1" ]]; then
+                    # Congenital: skip pretrain, no checkpoint.
+                    uv run bouba-sens lesion \
+                        --modality "${modality}" \
+                        --timing T1 \
+                        --steps "${STEPS_LESION}" \
+                        --seed $(( seed * 10000 + count )) \
+                        --snr-floor "${snr_floor}" \
+                        --out "${cell_dir}"
+                else
+                    # Late-acquired: restore phase 1 checkpoint.
+                    uv run bouba-sens lesion \
+                        --ckpt "${phase1_dir}" \
+                        --modality "${modality}" \
+                        --timing T2 \
+                        --steps "${STEPS_LESION}" \
+                        --seed $(( seed * 10000 + count )) \
+                        --snr-floor "${snr_floor}" \
+                        --out "${cell_dir}"
+                fi
+
+                uv run bouba-sens eval \
+                    --run "${cell_dir}" \
+                    --metrics "${METRICS}" \
+                    --out "${eval_json}"
+            done
+        done
+    done
+done
+
+echo "grid done; ${count} cells processed, ${skipped} skipped (already had eval_report.json)"
+echo "next: python scripts/aggregate_grid.py --root ${OUT_ROOT} --out reports/v0.1_aggregate.json"
