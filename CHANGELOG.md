@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-04-20 (Sprint 5 close — real B-1/B-2/B-3 verdicts, B-3 PASS)
+
+### Added
+
+- Sprint 5 plan (`docs/superpowers/plans/2026-04-20-bouba-sens-sprint5.md`).
+- Per-cell `me3_delta`: `AdaptationLoop.lesion_phase` now captures
+  pre-lesion and post-lesion probe codes + labels on the returned
+  `AdaptationReport`; `eval` CLI wires them into `me3_delta` so
+  B-2 is evaluated against real data (Task 5.1).
+- Aggregation-side Me6 and Me7 — `scripts/aggregate_grid.py` builds
+  a 5x5 per-query accuracy matrix per `(seed, timing, SNR)` and
+  feeds it to `me6_asymmetry` + `me6_max_abs_off_diag`; Me7 is
+  now paired via `(seed, modality, SNR)` across T1 and T2 runs
+  (Task 5.2).
+- `AdaptationLoop.query_accuracy(query_modality, ...)` — single-
+  query Me1 probe used by `run_grid.sh` to emit a per-cell
+  `per_query_me1.json` that feeds the aggregator's 5x5 matrix.
+- `tests/unit/test_aggregate_grid.py` + `tests/integration/
+  test_v02_smoke.py` + extended `tests/empirical/
+  test_grid_structural.py` asserting `cells_counted >= 6` on
+  b1 / b2 / b3 (Task 5.3).
+- ADR-0004 `docs/adr/0004-v02-invariant-verdicts.md` — real
+  v0.2 empirical verdicts (see "Studio grid v0.2" below).
+
+### Changed
+
+- `scripts/run_grid.sh` emits `Me1,Me2,Me3` per cell (Me7 and Me6
+  moved to the aggregator — they are aggregation-level metrics).
+- Package `version`, `_version.__version__`, and version-pinned
+  test assertions (`tests/smoke/test_imports.py`,
+  `tests/unit/test_smoke.py`) bumped to `0.2.0`.
+
+### Studio grid v0.2 (Task 5.4)
+
+- 150 / 150 cells processed on Studio (M3 Ultra, commit `242b292`),
+  `STEPS_TRAIN=200 STEPS_LESION=100`, ~17 min wall time.
+- Aggregate : 30 cells, written to `reports/v0.2_aggregate.json`.
+
+### v0.2 empirical verdict (from ADR-0004)
+
+| Invariant | Threshold | Median | Cells | Passes |
+|-----------|-----------|--------|-------|--------|
+| B-1 (Me7 > 0.05) | 0.05 | -0.0063 | 75 | No |
+| B-2 (Me3 delta > 0.10) | 0.10 | 0.0275 | 30 | No |
+| B-3 (Me6 max-abs > 0.02) | 0.02 | 0.1484 | 30 | **Yes** |
+
+**1 / 3 invariants pass with real data.** B-3 (perceptive /
+proprioceptive asymmetry) is confirmed at 7.4x the pre-registered
+threshold. B-1 is directionally falsified (Me7 slightly negative
+on GaussianWorld). B-2 shows a positive but under-threshold effect
+(~3.6x below 0.10). No threshold changes, no metric-math changes —
+only CLI coverage was closed between v0.1 and v0.2, so the v0.2
+verdict is the scientific one.
+
+### Still deferred to Sprint 6+
+
+- XOR-world + Sinusoid-world replication pass (triangulate whether
+  the B-1 reversal is GaussianWorld-specific).
+- Me3 Kraskov estimator calibration review if reviewers flag the
+  3.6x gap as methodologically load-bearing.
+- Paper v0.1 draft (manuscript, figures, TMLR / NeurIPS D&B).
+- Interactive plotly heatmap for Me6 and recovery curves for Me2.
+
 ## [0.1.1] — 2026-04-20 (Sprint 4 close — 150-run Studio grid + ADR-0003)
 
 ### Added
