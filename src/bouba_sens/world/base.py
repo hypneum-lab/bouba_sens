@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 import torch
 
@@ -21,8 +21,14 @@ class WorldSample:
     label: torch.Tensor  # (B,)
 
 
+@runtime_checkable
 class WorldSimulator(Protocol):
-    """Produces a WorldSample batch — implementations in Sprint 1."""
+    """Produces a WorldSample batch — implementations in Sprint 1.
+
+    Decorated with `@runtime_checkable` so consumers can assert
+    `isinstance(obj, WorldSimulator)` for duck-typed validators
+    (e.g. a world registry or CLI dispatcher).
+    """
 
     def sample(self, batch_size: int, seed: int) -> WorldSample: ...
 
