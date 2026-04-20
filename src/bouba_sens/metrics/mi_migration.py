@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 
 import torch
-from sklearn.feature_selection import mutual_info_regression  # type: ignore[import-not-found]
+from sklearn.feature_selection import mutual_info_regression
 
 
 def me3_mi(codes: torch.Tensor, labels: torch.Tensor) -> float:

@@ -12,7 +12,7 @@ is wired end-to-end, with no mocking of the shared multiplexer.
 from __future__ import annotations
 
 import torch
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
 
 from bouba_sens.encoders import (
     AudioEncoder,

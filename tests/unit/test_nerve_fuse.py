@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import torch
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
 
 from bouba_sens.nerve import CrossModalNerve
 from bouba_sens.sensory import MODALITIES

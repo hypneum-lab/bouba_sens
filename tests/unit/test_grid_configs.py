@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 try:
-    from hydra import compose, initialize_config_dir  # type: ignore[import-not-found]
+    from hydra import compose, initialize_config_dir
 except ImportError:  # pragma: no cover
     pytest.skip("hydra not available", allow_module_level=True)
 

@@ -21,9 +21,7 @@ from bouba_sens.nerve import CrossModalNerve, MigrationReport
 from bouba_sens.sensory import MODALITIES, Modality, SensoryWML
 
 if TYPE_CHECKING:
-    from track_p.multiplexer import (  # type: ignore[import-not-found]
-        GammaThetaMultiplexer,
-    )
+    from track_p.multiplexer import GammaThetaMultiplexer
 
     from bouba_sens.head import IntegrationHead
     from bouba_sens.lesion import LesionSpec

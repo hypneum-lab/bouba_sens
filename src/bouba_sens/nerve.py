@@ -22,9 +22,7 @@ from torch import Tensor, nn
 from bouba_sens.sensory import MODALITIES, Modality
 
 if TYPE_CHECKING:
-    from track_p.multiplexer import (  # type: ignore[import-not-found]
-        GammaThetaMultiplexer,
-    )
+    from track_p.multiplexer import GammaThetaMultiplexer
 
 
 class PlasticityGate(nn.Module):

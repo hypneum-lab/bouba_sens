@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 import torch
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
 
 from bouba_sens.nerve import CrossModalNerve, MigrationReport
 from bouba_sens.sensory import MODALITIES

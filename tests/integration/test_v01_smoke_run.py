@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 import torch
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
 
 from bouba_sens.encoders import (
     AudioEncoder,

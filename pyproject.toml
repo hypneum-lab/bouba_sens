@@ -88,7 +88,16 @@ warn_redundant_casts = true
 ignore_missing_imports = false
 
 [[tool.mypy.overrides]]
-module = ["plotly.*", "matplotlib.*", "hydra.*", "jinja2.*", "pyarrow.*"]
+module = [
+    "plotly.*",
+    "matplotlib.*",
+    "hydra.*",
+    "jinja2.*",
+    "pyarrow.*",
+    "track_p.*",
+    "track_w.*",
+    "sklearn.*",
+]
 ignore_missing_imports = true
 
 [tool.pyright]

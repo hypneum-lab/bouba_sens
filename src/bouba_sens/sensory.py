@@ -12,8 +12,8 @@ from __future__ import annotations
 from typing import Literal, cast
 
 from torch import Tensor, nn
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
-from track_w.mlp_wml import MlpWML  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
+from track_w.mlp_wml import MlpWML
 
 Modality = Literal["audio", "vision", "tactile", "gravity", "force"]
 MODALITIES: tuple[Modality, ...] = (

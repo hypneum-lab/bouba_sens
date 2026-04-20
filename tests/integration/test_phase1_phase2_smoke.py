@@ -12,7 +12,7 @@ End-to-end smoke: 100-step Phase 1 (intact pretrain) + 100-step Phase 2
 from __future__ import annotations
 
 import torch
-from track_p.multiplexer import GammaThetaMultiplexer  # type: ignore[import-not-found]
+from track_p.multiplexer import GammaThetaMultiplexer
 
 from bouba_sens.encoders import (
     AudioEncoder,

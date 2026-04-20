@@ -12,10 +12,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
 from bouba_sens._version import __version__
+
+if TYPE_CHECKING:
+    from bouba_sens.world.base import WorldSimulator
 
 app = typer.Typer(
     help="bouba_sens — Cross-modal plasticity benchmark",
@@ -26,6 +30,22 @@ app = typer.Typer(
 @app.callback()
 def _main() -> None:
     """bouba_sens — Cross-modal plasticity benchmark."""
+
+
+def _build_world(name: str, seed: int) -> WorldSimulator:
+    """Dispatch a world simulator by name. Sprint 6 / Task 6.1."""
+    from bouba_sens.world.gaussian import GaussianWorld
+    from bouba_sens.world.sinusoid import SinusoidWorld
+    from bouba_sens.world.xor import XORWorld
+
+    key = name.lower().strip()
+    if key == "gaussian":
+        return GaussianWorld(seed=seed)
+    if key == "xor":
+        return XORWorld(seed=seed)
+    if key == "sinusoid":
+        return SinusoidWorld(seed=seed)
+    raise typer.BadParameter(f"unknown world '{name}'; pick gaussian | xor | sinusoid")
 
 
 @app.command()
@@ -80,14 +100,13 @@ def train(
     steps: int = typer.Option(100, help="Phase 1 pretrain step count"),
     batch_size: int = typer.Option(16, help="Batch size per step"),
     seed: int = typer.Option(0, help="Training seed"),
+    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
-    """Phase 1 pretrain on GaussianWorld, save Checkpoint."""
+    """Phase 1 pretrain on the selected world, save Checkpoint."""
     import pickle
 
-    from track_p.multiplexer import (  # type: ignore[import-not-found]
-        GammaThetaMultiplexer,
-    )
+    from track_p.multiplexer import GammaThetaMultiplexer
 
     from bouba_sens.encoders import (
         AudioEncoder,
@@ -100,9 +119,8 @@ def train(
     from bouba_sens.loop import AdaptationLoop
     from bouba_sens.nerve import CrossModalNerve
     from bouba_sens.sensory import Modality, SensoryWML
-    from bouba_sens.world.gaussian import GaussianWorld
 
-    world = GaussianWorld(seed=seed)
+    world_obj = _build_world(world, seed)
     mux = GammaThetaMultiplexer(seed=seed)
     sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
@@ -113,7 +131,7 @@ def train(
     }
     nerve = CrossModalNerve(mux, seed=seed)
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
     ckpt = loop.pretrain(steps=steps, batch_size=batch_size, seed=seed)
     out.mkdir(parents=True, exist_ok=True)
@@ -138,6 +156,7 @@ def lesion(
     snr_init: float = typer.Option(20.0, help="Initial SNR in dB"),
     snr_floor: float = typer.Option(-20.0, help="Floor SNR in dB"),
     k_steps: int = typer.Option(5000, help="SNR ramp length in steps"),
+    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -158,9 +177,8 @@ def lesion(
     from bouba_sens.loop import AdaptationLoop
     from bouba_sens.nerve import CrossModalNerve
     from bouba_sens.sensory import Modality, SensoryWML
-    from bouba_sens.world.gaussian import GaussianWorld
 
-    world = GaussianWorld(seed=0)
+    world_obj = _build_world(world, seed=0)
     mux = GammaThetaMultiplexer(seed=0)
     sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=1),
@@ -171,7 +189,7 @@ def lesion(
     }
     nerve = CrossModalNerve(mux, seed=0)
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
     # T2 late-acquired: restore checkpoint. T1 congenital: skip pretrain.
     if ckpt is not None and timing.upper() == "T2":
