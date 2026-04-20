@@ -1,0 +1,25 @@
+# Sprint 4 Hydra base — composed with timing + modality + snr overrides.
+# Full 150-run grid: 5 seeds x 5 modalities x 2 timings x 3 SNR.
+
+defaults:
+  - _self_
+  - timing: t2
+  - modality: audio
+  - snr: floor
+
+train:
+  steps: 200          # Phase 1 pretrain step count
+  batch_size: 16
+  lr: 1.0e-3
+
+lesion:
+  steps: 100          # Phase 2 lesion step count
+  batch_size: 16
+
+run:
+  seed: 0
+  out_root: runs/
+  precision: float32
+
+metrics:
+  enabled: [Me1, Me2, Me3, Me6, Me7, Me8, Me9]

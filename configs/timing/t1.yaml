@@ -1,0 +1,5 @@
+# @package _global_
+# T1 congenital: skip Phase 1 pretrain, lesion active from t=0.
+timing:
+  kind: T1
+  skip_pretrain: true

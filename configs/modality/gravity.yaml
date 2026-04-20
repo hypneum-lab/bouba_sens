@@ -1,0 +1,4 @@
+# @package _global_
+# Lesion applied to the gravity modality.
+modality:
+  name: gravity

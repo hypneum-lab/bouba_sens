@@ -1,0 +1,4 @@
+# @package _global_
+# Lesion applied to the force modality.
+modality:
+  name: force

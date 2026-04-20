@@ -1,0 +1,5 @@
+# @package _global_
+# T2 late-acquired: intact Phase 1 pretrain, then Phase 2 lesion.
+timing:
+  kind: T2
+  skip_pretrain: false
