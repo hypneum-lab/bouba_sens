@@ -44,3 +44,48 @@ class PlasticityGate(nn.Module):
     def forward(self, letters: dict[Modality, Tensor]) -> dict[Modality, Tensor]:
         w = self.weights()
         return {m: letters[m] * w[i] for i, m in enumerate(MODALITIES)}
+
+
+class AdaptiveCodebook(nn.Module):
+    """Soft-assignment projection from code distributions to hidden vectors (P2).
+
+    Wraps a learnable `(alphabet_size, d_hidden)` parameter. Forward takes
+    a distribution `[B, K, A]` (already softmaxed — typically from
+    `mux.demodulate(hard=False)`) and matmuls to `[B, K, d_hidden]`.
+
+    The optional `tau` kwarg re-temperatures the input distribution
+    before projection: `tau < 1.0` sharpens (entropy down), `tau > 1.0`
+    smooths. `tau = 1.0` (default) is a no-op. `AdaptationLoop` anneals
+    tau from 1.0 to 0.1 during training per spec §4.3.
+
+    Init can optionally seed the codebook from an existing constellation
+    (e.g. `mux.constellation`, shape `(A, 2)`) by projecting through a
+    random `(2, d_hidden)` map — the angular structure of the PSK
+    alphabet is preserved while leaving the codebook free to adapt.
+    """
+
+    def __init__(
+        self,
+        alphabet_size: int = 64,
+        d_hidden: int = 128,
+        *,
+        init_from: Tensor | None = None,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__()
+        global_state = torch.get_rng_state()
+        if seed is not None:
+            torch.manual_seed(seed)
+        if init_from is not None:
+            proj = torch.randn(init_from.shape[-1], d_hidden) * 0.1
+            init = (init_from @ proj).detach()
+        else:
+            init = torch.randn(alphabet_size, d_hidden) * 0.1
+        torch.set_rng_state(global_state)
+        self.codebook = nn.Parameter(init)
+
+    def forward(self, soft_codes: Tensor, *, tau: float = 1.0) -> Tensor:
+        if tau != 1.0:
+            logits = soft_codes.clamp(min=1e-9).log() / tau
+            soft_codes = logits.softmax(dim=-1)
+        return soft_codes @ self.codebook
