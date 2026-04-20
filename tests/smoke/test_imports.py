@@ -36,7 +36,7 @@ BOUBA_SENS_MODULES = [
 def test_version_exposed() -> None:
     import bouba_sens
 
-    assert bouba_sens.__version__ == "0.0.1"
+    assert bouba_sens.__version__ == "0.0.3"
 
 
 def test_all_modules_import() -> None:

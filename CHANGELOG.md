@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] — 2026-04-20 (Sprint 2 close)
+
+### Added
+
+- Sprint 2 plan (`docs/superpowers/plans/2026-04-20-bouba-sens-sprint2.md`).
+- `PlasticityGate` — channel-wise softmax over 5 modalities (P1, Task 2.1).
+- `AdaptiveCodebook` — Gumbel-softmax-capable projection,
+  `nn.Parameter[A, d_hidden]`, optionally seeded from
+  `mux.constellation` (P2, Task 2.2).
+- `CrossModalTransducer` — directed-edge MLP with 0/1 gating
+  (P3, Task 2.3); 20 instances in `nn.ModuleDict` keyed
+  `"{src}->{dst}"`.
+- `CrossModalNerve` — assembles P1+P2+P3, implements `fuse()`
+  via soft demod (`mux.demodulate(hard=False)`), codebook
+  projection, per-pair transducer activation per spec §4.3,
+  and gate-weighted sum (Task 2.4). Plus `on_lesion()` and
+  `migration_stats() -> MigrationReport` (Task 2.5).
+- `LesionSpec` frozen dataclass + `m2_snr_schedule` per spec
+  §3.4/§4.1 (Task 2.6).
+- `LesionScheduler.apply()` — SNR-scaled additive Gaussian
+  noise on the targeted modality, returns a new frozen
+  `WorldSample` (Task 2.7).
+- `IntegrationHead` — minimal `n_classes` linear classifier
+  over mean-pooled `(B, K, d_hidden)` (Task 2.8).
+- `AdaptationLoop.pretrain()` Phase 1 + `.lesion_phase()`
+  Phase 2 with `AdaptationReport` trajectories and FIFO
+  theta-replay buffer (Tasks 2.9-2.10).
+- Integration acceptance gate `tests/integration/test_phase1_
+  phase2_smoke.py` — 100 + 100 steps, no NaN, accuracy beats
+  chance, audio gate drops ≥10 % from pre-lesion baseline
+  (Task 2.11).
+
+### Verified
+
+- 76/76 tests pass under `uv run pytest` on GrosMac.
+- `uv run ruff check src tests` clean.
+- `uv run mypy src tests` clean.
+- Sprint 2 acceptance gate runs in ~2 s.
+
+### Still deferred to Sprint 3+
+
+- Metric harness Me1/Me2/Me3/Me6/Me7/Me8/Me9.
+- `cli.py` typer/rich interface.
+- Jinja2 HTML report (`report.py`).
+- Empirical tests (`tests/empirical/`).
+- Full configs grid for (timing × modality) variants.
+- Training runs on Studio.
+
+### Note on versioning
+
+Sprint 1 was tagged `v0.0.2-sprint1` but the `_version.py`
+was not bumped from `0.0.1`. Sprint 2 jumps the package
+version to `0.0.3` to honour the git tag semantics going
+forward.
+
 ## [0.0.2] — 2026-04-20 (Sprint 1 close)
 
 ### Added
