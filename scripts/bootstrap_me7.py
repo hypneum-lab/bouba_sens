@@ -1,102 +1,88 @@
-"""Task 7.2 — bootstrap 95 % CI on Me7 median per world.
+"""Bootstrap 95 % CI on Me7 median per world (Sprint 7 Task 7.2).
 
-Usage (standalone):
-    uv run python scripts/bootstrap_me7.py \\
-        reports/v0.2_aggregate_gaussian.json \\
-        reports/v0.2_aggregate_xor.json \\
-        reports/v0.2_aggregate_sinusoid.json
-
-The script loads each aggregate JSON, extracts the 75 raw Me7
-paired-values (congenital - late_acquired), bootstraps ``n_boot``
-resamples, and prints the 95 % CI per world.
+Loads v0.2 per-world aggregates, reconstructs the 75 paired (T1-T2)
+Me7 values, bootstraps the median, compares across worlds.
 """
 
 from __future__ import annotations
 
-import argparse
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
+from typing import Annotated, Any
 
 import numpy as np
-from numpy.typing import NDArray
+import typer
+from scipy.stats import bootstrap
 
 
-class Me7CI(TypedDict):
-    """Bootstrap 95 % CI for a single world's Me7 median."""
-
-    median: float
-    ci_low: float
-    ci_high: float
-
-
-def bootstrap_me7_median_ci(
-    values: NDArray[np.float64],
-    *,
-    n_boot: int = 10_000,
-    seed: int = 0,
-    alpha: float = 0.05,
-) -> Me7CI:
-    """Return bootstrap 95 % CI for the median of *values*.
-
-    Parameters
-    ----------
-    values:
-        1-D array of raw Me7 paired-values (congenital - late_acquired).
-    n_boot:
-        Number of bootstrap resamples.
-    seed:
-        RNG seed for reproducibility.
-    alpha:
-        Two-tailed significance level; default 0.05 yields 95 % CI.
-
-    Returns
-    -------
-    Me7CI
-        Dict with keys ``median``, ``ci_low``, ``ci_high`` (all ``float``).
-    """
+def bootstrap_me7_median_ci(sample: np.ndarray, *, n_boot: int, seed: int) -> dict[str, float]:
     rng = np.random.default_rng(seed)
-    arr = np.asarray(values, dtype=float)
-    n = arr.size
-    boot_medians = np.empty(n_boot, dtype=float)
-    for i in range(n_boot):
-        resample = rng.choice(arr, size=n, replace=True)
-        boot_medians[i] = float(np.median(resample))
-    lo = float(np.percentile(boot_medians, 100 * alpha / 2))
-    hi = float(np.percentile(boot_medians, 100 * (1 - alpha / 2)))
-    return Me7CI(median=float(np.median(arr)), ci_low=lo, ci_high=hi)
+    res = bootstrap(
+        (sample,),
+        np.median,
+        n_resamples=n_boot,
+        confidence_level=0.95,
+        method="percentile",
+        random_state=rng,
+    )
+    return {
+        "median": float(np.median(sample)),
+        "ci_low": float(res.confidence_interval.low),
+        "ci_high": float(res.confidence_interval.high),
+        "n": int(sample.size),
+        "n_boot": n_boot,
+    }
 
 
-def _extract_me7_values(aggregate: dict[str, object]) -> NDArray[np.float64]:
-    """Extract raw Me7 paired-values from an aggregate JSON dict."""
-    cells: list[dict[str, object]] = aggregate.get("cells", [])  # type: ignore[assignment]
-    vals: list[float] = []
-    for cell in cells:
-        me7 = cell.get("me7_congenital_minus_late")
-        if me7 is not None:
-            vals.append(float(me7))  # type: ignore[arg-type]
-    return np.array(vals, dtype=np.float64)
+@dataclass(frozen=True)
+class WorldResult:
+    world: str
+    ci: dict[str, float]
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Bootstrap 95 % CI on Me7 median per world.")
-    parser.add_argument("reports", nargs="+", type=Path, help="Aggregate JSON files.")
-    parser.add_argument("--n-boot", type=int, default=10_000)
-    parser.add_argument("--seed", type=int, default=0)
-    args = parser.parse_args()
-
-    for path in args.reports:
-        aggregate = json.loads(path.read_text())
-        values = _extract_me7_values(aggregate)
-        if values.size == 0:
-            print(f"{path.name}: no me7 values found")
-            continue
-        ci = bootstrap_me7_median_ci(values, n_boot=args.n_boot, seed=args.seed)
-        print(
-            f"{path.stem}: median={ci['median']:.4f} "
-            f"95%CI=[{ci['ci_low']:.4f}, {ci['ci_high']:.4f}]"
+def _load_me7_sample(aggregate_path: Path) -> np.ndarray:
+    data = json.loads(aggregate_path.read_text())
+    raw = data.get("raw_me7_pairs") or data.get("b1_pairs")
+    if raw is None:
+        raise KeyError(
+            f"{aggregate_path} has no raw Me7 pairs; re-run aggregator with --emit-raw-pairs"
         )
+    return np.asarray(raw, dtype=float)
+
+
+def main(
+    gaussian: Annotated[Path, typer.Option()] = Path("reports/v0.2_aggregate.json"),
+    xor: Annotated[Path, typer.Option()] = Path("reports/v0.2_aggregate_xor.json"),
+    sinusoid: Annotated[Path, typer.Option()] = Path("reports/v0.2_aggregate_sinusoid.json"),
+    out: Annotated[Path, typer.Option()] = Path(
+        "reports/v0.3_critical_validation/me7_bootstrap.json"
+    ),
+    n_boot: Annotated[int, typer.Option()] = 10_000,
+    seed: Annotated[int, typer.Option()] = 0,
+) -> None:
+    results: dict[str, Any] = {}
+    for name, path in [("gaussian", gaussian), ("xor", xor), ("sinusoid", sinusoid)]:
+        sample = _load_me7_sample(path)
+        results[name] = bootstrap_me7_median_ci(sample, n_boot=n_boot, seed=seed)
+    # pairwise CI disjointness matrix
+    names = list(results)
+    disjoint: dict[str, dict[str, bool]] = {}
+    for a in names:
+        disjoint[a] = {}
+        for b in names:
+            if a == b:
+                disjoint[a][b] = False
+                continue
+            disjoint[a][b] = (
+                results[a]["ci_high"] < results[b]["ci_low"]
+                or results[b]["ci_high"] < results[a]["ci_low"]
+            )
+    payload = {"per_world": results, "pairwise_disjoint": disjoint, "seed": seed}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    typer.echo(json.dumps(payload, indent=2))
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
