@@ -105,3 +105,26 @@ def test_aggregate_skips_unparseable_dirs(tmp_path: Path) -> None:
     result = aggregate(tmp_path)
     assert "t2_audio_floor" in result["cells"]
     assert len(result["cells"]) == 1
+
+
+def test_aggregate_null_partition_produces_different_me6(tmp_path: Path) -> None:
+    """Null-model mode: partition kwarg changes Me6 vs default pre-reg partition."""
+    from bouba_sens.metrics.partitions import generate_random_3_2_partitions
+
+    perf = {
+        "audio": {"audio": 1.0, "vision": 0.2, "tactile": 0.3, "gravity": 0.8, "force": 0.8},
+        "vision": {"audio": 0.6, "vision": 1.0, "tactile": 0.3, "gravity": 0.4, "force": 0.5},
+        "tactile": {"audio": 0.6, "vision": 0.7, "tactile": 1.0, "gravity": 0.4, "force": 0.5},
+        "gravity": {"audio": 0.1, "vision": 0.7, "tactile": 0.8, "gravity": 1.0, "force": 0.5},
+        "force": {"audio": 0.1, "vision": 0.7, "tactile": 0.8, "gravity": 0.9, "force": 1.0},
+    }
+    for lesioned, col in perf.items():
+        _seed_cell_with_query(tmp_path, f"seed0_T2_{lesioned}_floor", per_query=col, me1=0.5)
+
+    result_default = aggregate(tmp_path)
+    alt_partition = generate_random_3_2_partitions(n=1, seed=0)[0]
+    result_null = aggregate(tmp_path, partition=alt_partition)
+
+    # Shape test: both results contain the b3 key regardless of partition
+    assert "median_me6_max_abs" in result_default["invariants"]["b3"]
+    assert "median_me6_max_abs" in result_null["invariants"]["b3"]

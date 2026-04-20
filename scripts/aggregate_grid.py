@@ -82,8 +82,16 @@ def _bootstrap_metric(values: list[float]) -> dict[str, float]:
 _MODALITIES: tuple[str, ...] = ("audio", "vision", "tactile", "gravity", "force")
 
 
-def aggregate(root: Path) -> dict[str, Any]:
-    """Return `{cells, invariants, thresholds}` ready to JSON-dump."""
+def aggregate(
+    root: Path,
+    *,
+    partition: tuple[frozenset[str], frozenset[str]] | None = None,
+) -> dict[str, Any]:
+    """Return `{cells, invariants, thresholds}` ready to JSON-dump.
+
+    When ``partition`` is provided (null-model mode), Me6 is computed
+    using the partition-aware scorer rather than the pre-reg default.
+    """
     records = list(_iter_cell_records(root))
 
     # Step 1: per-cell bootstrap over seeds (me1, me2, me3_delta).
@@ -105,7 +113,7 @@ def aggregate(root: Path) -> dict[str, Any]:
 
     # Step 2: Me6 per (seed, timing, snr) trio — build 5x5 perf matrix
     # from per_query_me1 files, rows = query modality, cols = lesioned.
-    me6_values = _compute_me6(records)
+    me6_values = _compute_me6(records, partition=partition)
 
     # Step 3: Me7 per (seed, modality, snr) pair — mean(T1) - mean(T2)
     # using the per-cell me1 (post-lesion accuracy on the *shared* input).
@@ -126,6 +134,8 @@ def aggregate(root: Path) -> dict[str, Any]:
 
 def _compute_me6(
     records: list[tuple[dict[str, str], dict[str, Any], dict[str, float] | None]],
+    *,
+    partition: tuple[frozenset[str], frozenset[str]] | None = None,
 ) -> list[float]:
     """Me6 (asymmetry max-off-diagonal) per (seed, timing, snr) trio.
 
@@ -133,10 +143,15 @@ def _compute_me6(
     columns (one column per lesioned-modality cell), then runs
     `me6_asymmetry` + `me6_max_abs_off_diag` on the resulting 5x5
     matrix. Trios with fewer than 5 lesioned-modality cells are skipped.
+
+    When ``partition`` is not None (null-model mode), uses the partition-
+    aware ``me6_max_abs_off_diag_partitioned`` instead of the pre-reg default.
     """
+    import numpy as np
     import torch
 
     from bouba_sens.metrics import me6_asymmetry, me6_max_abs_off_diag
+    from bouba_sens.metrics.asymmetry import me6_max_abs_off_diag_partitioned
 
     buckets: dict[tuple[str, str, str], dict[str, dict[str, float]]] = defaultdict(dict)
     for cell_id, _, per_query in records:
@@ -157,8 +172,17 @@ def _compute_me6(
             for row_i, query in enumerate(_MODALITIES):
                 matrix[row_i, col_j] = float(col.get(query, 0.0))
         else:
-            asym = me6_asymmetry(matrix)
-            out.append(me6_max_abs_off_diag(asym))
+            if partition is not None:
+                out.append(
+                    me6_max_abs_off_diag_partitioned(
+                        np.array(matrix.numpy()),
+                        modalities=_MODALITIES,
+                        partition=partition,
+                    )
+                )
+            else:
+                asym = me6_asymmetry(matrix)
+                out.append(me6_max_abs_off_diag(asym))
     return out
 
 
@@ -240,9 +264,39 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--partition-seed",
+        type=int,
+        default=None,
+        help=(
+            "Null-model mode: random seed used to generate the partition list. "
+            "Requires --partition-index."
+        ),
+    )
+    parser.add_argument(
+        "--partition-index",
+        type=int,
+        default=None,
+        help=(
+            "Null-model mode: index into the list of random 3+2 partitions "
+            "(generated with --partition-seed). Requires --partition-seed."
+        ),
+    )
     args = parser.parse_args()
 
-    result = aggregate(args.root)
+    partition: tuple[frozenset[str], frozenset[str]] | None = None
+    if args.partition_seed is not None or args.partition_index is not None:
+        if args.partition_seed is None or args.partition_index is None:
+            parser.error("--partition-seed and --partition-index must be used together")
+        from bouba_sens.metrics.partitions import generate_random_3_2_partitions
+
+        partitions = generate_random_3_2_partitions(
+            n=args.partition_index + 1, seed=args.partition_seed
+        )
+        partition = partitions[args.partition_index]
+        print(f"null-model partition [{args.partition_index}]: {partition}")
+
+    result = aggregate(args.root, partition=partition)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2))
     print(f"aggregate: {len(result['cells'])} cells -> {args.out}")
