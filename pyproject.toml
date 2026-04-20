@@ -27,7 +27,10 @@ dependencies = [
     "plotly>=5.24",
     "jinja2>=3.1",
     "scikit-learn>=1.5",
-    # "nerve-wml @ file:///Users/electron/Documents/Projets/nerve-wml",  # local mono-workspace install; uncommented in Task 0.7 (v0.1.0, not yet on PyPI)
+    # nerve-wml v0.1.0 is not on PyPI; installed from sibling local clone via
+    # [tool.uv.sources] below. Spec §6.3 contract verified by
+    # tests/smoke/test_nerve_wml_api.py.
+    "nerve-wml",
 ]
 
 [project.optional-dependencies]
@@ -92,3 +95,6 @@ ignore_missing_imports = true
 include = ["src", "tests"]
 pythonVersion = "3.14"
 typeCheckingMode = "strict"
+
+[tool.uv.sources]
+nerve-wml = { path = "../nerve-wml" }
