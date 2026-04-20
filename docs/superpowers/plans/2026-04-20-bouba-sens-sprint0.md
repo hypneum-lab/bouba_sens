@@ -86,13 +86,13 @@ bouba_sens/
 - Create: `.gitignore`
 - Create: `uv.lock` (generated)
 
-- [ ] **Step 1: Write `.python-version`**
+- [x] **Step 1: Write `.python-version`**
 
 ```
 3.14
 ```
 
-- [ ] **Step 2: Write `.gitignore`**
+- [x] **Step 2: Write `.gitignore`**
 
 ```gitignore
 # Python
@@ -133,7 +133,7 @@ wandb/
 Thumbs.db
 ```
 
-- [ ] **Step 3: Write `pyproject.toml`**
+- [x] **Step 3: Write `pyproject.toml`**
 
 ```toml
 [project]
@@ -232,7 +232,7 @@ pythonVersion = "3.14"
 typeCheckingMode = "strict"
 ```
 
-- [ ] **Step 4: Run `uv sync --all-extras` to install and generate `uv.lock`**
+- [x] **Step 4: Run `uv sync --all-extras` to install and generate `uv.lock`**
 
 Run:
 ```bash
@@ -241,7 +241,7 @@ uv sync --all-extras
 ```
 Expected: `Resolved N packages`, `uv.lock` file created, `.venv/` directory created.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml uv.lock .python-version .gitignore
@@ -260,7 +260,7 @@ git commit -m "chore: initialise pyproject.toml with uv + dev dependencies"
 - Create: `src/bouba_sens/world/{__init__.py,base.py,gaussian.py,xor.py,sinusoid.py}`
 - Create: `src/bouba_sens/metrics/{__init__.py,performance.py,mi_migration.py,asymmetry.py,congenital.py,baselines.py}`
 
-- [ ] **Step 1: Create top-level package marker and version**
+- [x] **Step 1: Create top-level package marker and version**
 
 `src/bouba_sens/py.typed` — empty file.
 
@@ -280,7 +280,7 @@ from bouba_sens._version import __version__
 __all__ = ["__version__"]
 ```
 
-- [ ] **Step 2: Create top-level module stubs**
+- [x] **Step 2: Create top-level module stubs**
 
 For each of `sensory.py`, `nerve.py`, `lesion.py`, `head.py`, `loop.py`, `report.py`, create a stub with the signature of the single public symbol — raising `NotImplementedError` so Sprint 1 TDD can hit the stubs.
 
@@ -375,7 +375,7 @@ def render_html(run_dir: str, out_path: str) -> None:
     raise NotImplementedError("Sprint 3 — see docs/superpowers/plans/sprint3")
 ```
 
-- [ ] **Step 3: Create CLI stub that at least prints version**
+- [x] **Step 3: Create CLI stub that at least prints version**
 
 `src/bouba_sens/cli.py`:
 ```python
@@ -404,7 +404,7 @@ if __name__ == "__main__":
     app()
 ```
 
-- [ ] **Step 4: Create world/ sub-package with protocol stub**
+- [x] **Step 4: Create world/ sub-package with protocol stub**
 
 `src/bouba_sens/world/__init__.py`:
 ```python
@@ -493,7 +493,7 @@ class SinusoidWorld:
         raise NotImplementedError("Sprint 1 — see docs/superpowers/plans/sprint1")
 ```
 
-- [ ] **Step 5: Create metrics/ sub-package**
+- [x] **Step 5: Create metrics/ sub-package**
 
 `src/bouba_sens/metrics/__init__.py`:
 ```python
@@ -525,7 +525,7 @@ class Me2RecoveryAUC:
 
 Same one-line-placeholder pattern for `mi_migration.py` (Me3), `asymmetry.py` (Me6), `congenital.py` (Me7), `baselines.py` (Me8), `replication.py` (Me9 — seed variance / replication index; referenced by `configs/v0.1_intact.yaml` metrics.enabled).
 
-- [ ] **Step 6: Verify the package imports cleanly**
+- [x] **Step 6: Verify the package imports cleanly**
 
 Run:
 ```bash
@@ -537,7 +537,7 @@ Expected output (both commands):
 bouba_sens 0.0.1
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/bouba_sens/
@@ -554,7 +554,7 @@ git commit -m "feat: package skeleton with stubs for all Sprint 1-3 modules"
 - Create: `CITATION.cff`
 - Create: `SECURITY.md`
 
-- [ ] **Step 1: Write `LICENSE` (MIT)**
+- [x] **Step 1: Write `LICENSE` (MIT)**
 
 ```
 MIT License
@@ -580,7 +580,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-- [ ] **Step 2: Write `README.md`**
+- [x] **Step 2: Write `README.md`**
 
 ```markdown
 # bouba_sens
@@ -643,7 +643,7 @@ MIT. See `LICENSE`.
 See `CITATION.cff`.
 ```
 
-- [ ] **Step 3: Write `CITATION.cff`**
+- [x] **Step 3: Write `CITATION.cff`**
 
 ```yaml
 cff-version: 1.2.0
@@ -666,7 +666,7 @@ keywords:
   - sensory substitution
 ```
 
-- [ ] **Step 4: Write `SECURITY.md`**
+- [x] **Step 4: Write `SECURITY.md`**
 
 ```markdown
 # Security Policy
@@ -698,7 +698,7 @@ Out of scope: incorrect research claims, missing features, or performance
 issues.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add LICENSE README.md CITATION.cff SECURITY.md
@@ -712,7 +712,7 @@ git commit -m "docs: add LICENSE (MIT), README, CITATION.cff, SECURITY.md"
 **Files:**
 - Create: `.pre-commit-config.yaml`
 
-- [ ] **Step 1: Write `.pre-commit-config.yaml`**
+- [x] **Step 1: Write `.pre-commit-config.yaml`**
 
 ```yaml
 repos:
@@ -745,7 +745,7 @@ repos:
         args: [--config-file=pyproject.toml]
 ```
 
-- [ ] **Step 2: Install and activate pre-commit**
+- [x] **Step 2: Install and activate pre-commit**
 
 Run:
 ```bash
@@ -754,7 +754,7 @@ uv run pre-commit install --hook-type commit-msg
 ```
 Expected: `pre-commit installed at .git/hooks/pre-commit`.
 
-- [ ] **Step 3: Run pre-commit on all existing files**
+- [x] **Step 3: Run pre-commit on all existing files**
 
 Run:
 ```bash
@@ -762,7 +762,7 @@ uv run pre-commit run --all-files
 ```
 Expected: some auto-fixes on previously committed files (trailing whitespace, EOF). Re-run until all hooks pass green.
 
-- [ ] **Step 4: Run ruff and mypy standalone to double-check**
+- [x] **Step 4: Run ruff and mypy standalone to double-check**
 
 Run:
 ```bash
@@ -772,7 +772,7 @@ uv run mypy src
 ```
 Expected: `All checks passed` for ruff, and 0 errors from mypy.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .pre-commit-config.yaml
@@ -795,7 +795,7 @@ git commit -m "chore: pre-commit config (ruff + mypy + hygiene hooks)"
 - Create: `tests/smoke/__init__.py`
 - Create: `tests/unit/test_smoke.py`
 
-- [ ] **Step 1: Create empty `__init__.py` files**
+- [x] **Step 1: Create empty `__init__.py` files**
 
 Create empty files at:
 - `tests/__init__.py`
@@ -805,7 +805,7 @@ Create empty files at:
 - `tests/empirical/__init__.py`
 - `tests/smoke/__init__.py`
 
-- [ ] **Step 2: Write `tests/conftest.py`**
+- [x] **Step 2: Write `tests/conftest.py`**
 
 ```python
 """Shared pytest fixtures and configuration for bouba_sens tests."""
@@ -837,7 +837,7 @@ def small_batch() -> int:
     return 4
 ```
 
-- [ ] **Step 3: Write `tests/unit/test_smoke.py` — verifies package imports + CLI**
+- [x] **Step 3: Write `tests/unit/test_smoke.py` — verifies package imports + CLI**
 
 ```python
 """Sanity tests that prove the Sprint 0 skeleton actually loads."""
@@ -876,7 +876,7 @@ def test_modality_type_constants_are_five() -> None:
     assert len(MODALITIES) == 5
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run:
 ```bash
@@ -884,7 +884,7 @@ uv run pytest tests/unit/test_smoke.py -v
 ```
 Expected output: 4 tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/
@@ -899,7 +899,7 @@ git commit -m "test: scaffold test tree + smoke tests for Sprint 0 skeleton"
 - Create: `.github/workflows/ci.yml`
 - Create: `.github/workflows/full-benchmark.yml`
 
-- [ ] **Step 1: Write `.github/workflows/ci.yml`**
+- [x] **Step 1: Write `.github/workflows/ci.yml`**
 
 ```yaml
 name: CI
@@ -945,7 +945,7 @@ jobs:
         run: uv run pytest tests/unit tests/smoke -v
 ```
 
-- [ ] **Step 2: Write `.github/workflows/full-benchmark.yml` (stub)**
+- [x] **Step 2: Write `.github/workflows/full-benchmark.yml` (stub)**
 
 ```yaml
 name: Full Benchmark
@@ -978,7 +978,7 @@ jobs:
           echo "For Sprint 0 we just assert the workflow file is syntactically valid."
 ```
 
-- [ ] **Step 3: Validate workflow YAML locally (optional but cheap)**
+- [x] **Step 3: Validate workflow YAML locally (optional but cheap)**
 
 Run:
 ```bash
@@ -986,7 +986,7 @@ uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'));
 ```
 Expected: `yaml ok`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .github/workflows/
@@ -1001,7 +1001,7 @@ git commit -m "ci: GitHub Actions workflows (CI + nightly benchmark stub)"
 - Modify: `pyproject.toml` (un-comment nerve-wml dependency)
 - Create: `tests/smoke/test_nerve_wml_api.py`
 
-- [ ] **Step 1: Write the failing import-contract test first**
+- [x] **Step 1: Write the failing import-contract test first**
 
 `tests/smoke/test_nerve_wml_api.py`:
 ```python
@@ -1042,7 +1042,7 @@ def test_nerve_wml_public_symbol_exists(module_name: str, symbol: str) -> None:
     )
 ```
 
-- [ ] **Step 2: Run the test — expect ModuleNotFoundError because nerve-wml is not installed yet**
+- [x] **Step 2: Run the test — expect ModuleNotFoundError because nerve-wml is not installed yet**
 
 Run:
 ```bash
@@ -1050,7 +1050,7 @@ uv run pytest tests/smoke/test_nerve_wml_api.py -v
 ```
 Expected: every parametrised case FAILS with `ModuleNotFoundError: No module named 'nerve_wml'`.
 
-- [ ] **Step 3: Install `nerve-wml` from local path (Hypneum mono-workspace)**
+- [x] **Step 3: Install `nerve-wml` from local path (Hypneum mono-workspace)**
 
 nerve-wml is not published on PyPI (local v0.1.0 as of 2026-04-20). Install
 from the sibling local clone — spec §6.3 contract:
@@ -1062,7 +1062,7 @@ uv add "nerve-wml @ file:///Users/electron/Documents/Projets/nerve-wml"
 Re-check pypi eligibility before Sprint 2 (if Hypneum Lab publishes an 0.2+
 release, switch to a version-pinned constraint).
 
-- [ ] **Step 4: Re-run the test — expect PASS**
+- [x] **Step 4: Re-run the test — expect PASS**
 
 Run:
 ```bash
@@ -1076,7 +1076,7 @@ If a case FAILS (missing symbol), do NOT un-pin or patch locally. Instead:
 2. Record the missing symbol in `docs/adr/0001-codebook-sharing.md` under "nerve-wml API gap observations" (created in Task 0.8).
 3. Continue with Task 0.8 — Sprint 1 will pick this back up.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml uv.lock tests/smoke/test_nerve_wml_api.py
@@ -1094,7 +1094,7 @@ git commit -m "feat: pin nerve-wml dependency + smoke test for required public A
 - Create: `docs/adr/0001-codebook-sharing.md`
 - Create: `docs/adr/README.md`
 
-- [ ] **Step 1: Create ADR directory + index**
+- [x] **Step 1: Create ADR directory + index**
 
 `docs/adr/README.md`:
 ```markdown
@@ -1111,7 +1111,7 @@ by ADR-NNNN" at the top.
 | 0001 | Codebook sharing between SensoryWMLs | Proposed |
 ```
 
-- [ ] **Step 2: Write the spike script**
+- [x] **Step 2: Write the spike script** (filename: `scripts/spikes/oq1_codebook.py`)
 
 `scripts/spikes/oq1_codebook_sharing.py`:
 ```python
@@ -1262,7 +1262,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 3: Run the spike**
+- [ ] **Step 3: Run the spike** — DEFERRED TO STUDIO (M3 Ultra) per compute-routing directive; GrosMac is not permitted to run this.
 
 Run:
 ```bash
@@ -1277,11 +1277,11 @@ LocalCodebookModel        acc = 0.9XXX ± 0.0XXX  (n=5)
 ```
 and a JSON file at `out/oq1_results.json`.
 
-- [ ] **Step 4: Interpret and commit results**
+- [ ] **Step 4: Interpret and commit results** — pending Studio run.
 
 Rule of thumb: if `|shared − local|` ≤ 0.02 (2 % accuracy), shared wins by Occam; if `local > shared + 0.05`, local wins; otherwise re-run with 10 seeds or deeper architecture before deciding.
 
-- [ ] **Step 5: Write ADR 0001**
+- [x] **Step 5: Write ADR 0001** (stub committed; Decision section marked EXECUTION PENDING — filled post-Studio)
 
 `docs/adr/0001-codebook-sharing.md`:
 ```markdown
@@ -1341,11 +1341,11 @@ Re-open this ADR if any of the following holds:
 
 Fill in the empty `<XX.XX>` placeholders in the "Decision" block using the numbers printed in Step 3.
 
-- [ ] **Step 6: Update the ADR index**
+- [ ] **Step 6: Update the ADR index** — pending Studio run; index currently shows "Proposed (execution pending)".
 
 Edit `docs/adr/README.md` to change row `0001` status from `Proposed` to `Accepted` after filling in the decision block.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit** (structural commit done as `feat: Task 0.8 OQ1 spike script + ADR stub`; Studio-results commit still pending)
 
 ```bash
 git add scripts/spikes/oq1_codebook_sharing.py docs/adr/ out/oq1_results.json
@@ -1360,7 +1360,7 @@ git commit -m "spike(oq1): shared vs local codebook decision + ADR 0001"
 - Create: `configs/README.md`
 - Create: `configs/v0.1_intact.yaml`
 
-- [ ] **Step 1: Write `configs/README.md`**
+- [x] **Step 1: Write `configs/README.md`**
 
 ```markdown
 # Configs
@@ -1377,7 +1377,7 @@ Hydra-style YAML configuration files for bouba_sens experiments.
   in Sprint 3.
 ```
 
-- [ ] **Step 2: Write `configs/v0.1_intact.yaml`**
+- [x] **Step 2: Write `configs/v0.1_intact.yaml`**
 
 ```yaml
 # Sprint-0 intact-run config skeleton. Populated in Sprint 1.
@@ -1414,7 +1414,7 @@ run:
   precision: float32
 ```
 
-- [ ] **Step 3: Validate YAML parses**
+- [x] **Step 3: Validate YAML parses**
 
 Run:
 ```bash
@@ -1422,7 +1422,7 @@ uv run python -c "import yaml; yaml.safe_load(open('configs/v0.1_intact.yaml'));
 ```
 Expected: `ok`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add configs/
@@ -1436,7 +1436,7 @@ git commit -m "chore: add configs skeleton + v0.1 intact baseline YAML"
 **Files:**
 - Create: `CHANGELOG.md`
 
-- [ ] **Step 1: Write `CHANGELOG.md`**
+- [x] **Step 1: Write `CHANGELOG.md`**
 
 ```markdown
 # Changelog
@@ -1468,7 +1468,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LICENSE (MIT), README, CITATION.cff, SECURITY.md.
 ```
 
-- [ ] **Step 2: Commit CHANGELOG**
+- [x] **Step 2: Commit CHANGELOG**
 
 ```bash
 git add CHANGELOG.md
@@ -1484,7 +1484,7 @@ git tag -l
 ```
 Expected output: `v0.0.1-sprint0` is listed.
 
-- [ ] **Step 4: Verify full test suite is green**
+- [x] **Step 4: Verify full test suite is green**
 
 Run:
 ```bash
@@ -1494,7 +1494,7 @@ uv run mypy src
 ```
 Expected: all tests PASS, pre-commit PASS, mypy 0 errors. **If anything fails, do not proceed to Sprint 1 — fix the breakage and bump to `v0.0.1-sprint0+1`.**
 
-- [ ] **Step 5: Final sanity check — readable by a cold reader**
+- [x] **Step 5: Final sanity check — readable by a cold reader**
 
 Run:
 ```bash
@@ -1511,12 +1511,12 @@ Expected: tree is clean, README explains the project, CLI surfaces `version` as 
 All of the following MUST be true before the Sprint 1 plan is written:
 
 - [ ] `git tag` lists `v0.0.1-sprint0`.
-- [ ] `uv run pytest tests/` exits 0.
-- [ ] `uv run pre-commit run --all-files` exits 0.
-- [ ] `uv run mypy src` reports 0 errors.
+- [x] `uv run pytest tests/` exits 0.
+- [x] `uv run pre-commit run --all-files` exits 0.
+- [x] `uv run mypy src` reports 0 errors.
 - [ ] `docs/adr/0001-codebook-sharing.md` has a filled-in `## Decision` block.
 - [ ] `out/oq1_results.json` exists and contains ≥ 10 rows (5 seeds × 2 modes).
-- [ ] `tests/smoke/test_nerve_wml_api.py` passes (or all failures are logged as open nerve-wml issues in the ADR).
+- [x] `tests/smoke/test_nerve_wml_api.py` passes (or all failures are logged as open nerve-wml issues in the ADR).
 - [ ] GitHub repo exists at `hypneum-lab/bouba_sens` (or `genial-lab/bouba_sens` fallback with a post-rename transfer plan noted in `CHANGELOG.md`).
 
 When all boxes are checked, invoke `superpowers:writing-plans` again with
