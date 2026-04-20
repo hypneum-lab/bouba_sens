@@ -142,13 +142,12 @@ version = "0.0.1"
 description = "Cross-modal plasticity benchmark — Hypneum Lab"
 readme = "README.md"
 requires-python = ">=3.14"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Clement Saillant", email = "c.saillant@gmail.com" }]
 keywords = ["cross-modal-plasticity", "multimodal-benchmark", "embodied-ai", "hypneum-lab"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Intended Audience :: Science/Research",
@@ -185,7 +184,7 @@ dev = [
 bouba-sens = "bouba_sens.cli:app"
 
 [build-system]
-requires = ["setuptools>=68", "setuptools-scm>=8"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -224,7 +223,7 @@ warn_redundant_casts = true
 ignore_missing_imports = false
 
 [[tool.mypy.overrides]]
-module = ["plotly.*", "matplotlib.*", "hydra.*", "jinja2.*"]
+module = ["plotly.*", "matplotlib.*", "hydra.*", "jinja2.*", "pyarrow.*"]
 ignore_missing_imports = true
 
 [tool.pyright]
