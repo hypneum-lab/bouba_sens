@@ -42,6 +42,16 @@ Three 150-cell grids on Studio (M3 Ultra, ~17 min each) across three structurall
 
 Full ADRs: `docs/adr/0003-v01-empirical-verdicts.md`, `0004-v02-invariant-verdicts.md`, `0005-cross-world-replication.md`.
 
+### Limitations — critical validation pending (Sprint 7)
+
+The three findings above are **preliminary**. None has yet been stress-tested against the obvious reviewer objections :
+
+- **B-3 may be tautological.** The perceptive / proprioceptive grouping (3 + 2) is baked into the protocol. A random-partition control (e.g. {audio, gravity} vs {vision, tactile, force}) must show that arbitrary 3 + 2 partitions do *not* pass the 0.02 threshold. If they do, **B-3 measures size-3-vs-size-2 dynamics, not cognitive asymmetry**. Sprint 7 Task 7.1.
+- **B-1 sign flip may be noise.** Effect sizes (| 0.006 – 0.013 |) are 5–10× below the 0.05 threshold. A bootstrap 95 % CI on Me7 median across seeds must separate the three worlds for the "topology-dependent" claim to survive. Sprint 7 Task 7.2.
+- **B-2 decay may be estimator-specific.** The Kraskov k-NN MI estimator is noisy at high ambient dimension. The Gaussian > XOR > Sinusoid ordering must hold under at least one alternative estimator (binning or MINE). Sprint 7 Task 7.3.
+
+Until Sprint 7 lands, the paper draft flags these findings as *"preliminary empirical, pending critical controls"*. Plan : `docs/superpowers/plans/2026-04-20-bouba-sens-sprint7.md`.
+
 ## Quickstart
 
 ```bash
