@@ -51,3 +51,16 @@ def test_symmetric_matrix_scores_near_zero_under_any_partition() -> None:
     for partition in (None, alt):
         score = me6_max_abs_off_diag_partitioned(sym, modalities=MODALITIES, partition=partition)
         assert abs(score) < 0.05
+
+
+def test_partitioned_is_cross_block_only() -> None:
+    """me6_max_abs_off_diag_partitioned measures cross-block asymmetry only,
+    NOT the full max-|off-diag|. Documentation test."""
+    # Construct asymmetry only within the pre-reg big block (audio↔vision, intra-perceptive):
+    perf = np.full((5, 5), 0.25)
+    perf[0, 1] += 0.9  # audio→vision boosted — inside the 'big' block
+    # Plain me6_max_abs_off_diag(asym_matrix) would see 0.9. Partitioned should see ~0.
+    score = me6_max_abs_off_diag_partitioned(
+        perf, modalities=MODALITIES, partition=PERCEPTIVE_PROPRIOCEPTIVE
+    )
+    assert score < 0.05  # cross-block is untouched ; should be near zero

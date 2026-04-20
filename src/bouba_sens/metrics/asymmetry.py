@@ -37,16 +37,23 @@ def me6_max_abs_off_diag_partitioned(
     modalities: tuple[str, ...],
     partition: tuple[frozenset[str], frozenset[str]] | None = None,
 ) -> float:
-    """Max absolute off-diagonal of the partition-blocked perf matrix.
+    """Cross-block absolute-asymmetry statistic.
 
-    This function measures the largest cross-block entry in a performance
-    matrix (not the antisymmetry matrix). It is used for null-model studies
-    (Task 7.1) where a random 3+2 partition replaces the pre-registered
-    perceptive/proprioceptive split.
+    For a partition (big, small), computes max|A[i,j]| over i ∈ big,
+    j ∈ small and i ∈ small, j ∈ big, where A = perf - perf.T.
+
+    This is **distinct** from ``me6_max_abs_off_diag(asym_matrix)`` which
+    takes the max over ALL off-diagonal entries — use this partitioned
+    version ONLY when comparing partitions; the two statistics will yield
+    different numbers for the pre-registered partition.
 
     When ``partition`` is ``None``, the pre-registered
     ``PERCEPTIVE_PROPRIOCEPTIVE`` partition is used, making this
     function backward-compatible with v0.3 behaviour.
+
+    This function is used for null-model studies (Task 7.1) where a
+    random 3+2 partition replaces the pre-registered
+    perceptive/proprioceptive split.
     """
     if partition is None:
         partition = PERCEPTIVE_PROPRIOCEPTIVE

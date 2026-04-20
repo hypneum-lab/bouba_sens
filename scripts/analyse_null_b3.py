@@ -33,8 +33,18 @@ def main(
         agg = sub / "aggregate.json"
         if not agg.exists():
             continue
-        null_values.append(_load_median_me6(agg))
-    prereg = _load_median_me6(prereg_aggregate)
+        try:
+            null_values.append(_load_median_me6(agg))
+        except (json.JSONDecodeError, KeyError) as e:
+            typer.echo(f"skip {agg}: {e}", err=True)
+    if not null_values:
+        typer.echo(f"ERROR: no aggregate.json found in {null_root}", err=True)
+        raise typer.Exit(code=1)
+    try:
+        prereg = _load_median_me6(prereg_aggregate)
+    except (json.JSONDecodeError, KeyError) as e:
+        typer.echo(f"ERROR: pre-reg aggregate malformed: {e}", err=True)
+        raise typer.Exit(code=1) from e
     null_values_sorted = sorted(null_values)
     rank = sum(1 for v in null_values_sorted if v < prereg)
     percentile = 100.0 * rank / len(null_values_sorted)
