@@ -7,16 +7,27 @@ Me7 values, bootstraps the median, compares across worlds.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, TypedDict
 
 import numpy as np
 import typer
 from scipy.stats import bootstrap
 
 
-def bootstrap_me7_median_ci(sample: np.ndarray, *, n_boot: int, seed: int) -> dict[str, float]:
+class Me7CI(TypedDict):
+    median: float
+    ci_low: float
+    ci_high: float
+    n: int
+    n_boot: int
+
+
+def bootstrap_me7_median_ci(sample: np.ndarray, *, n_boot: int, seed: int) -> Me7CI:
+    if sample.size < 2:
+        raise ValueError(f"sample.size must be >= 2, got {sample.size}")
+    if n_boot < 1:
+        raise ValueError(f"n_boot must be >= 1, got {n_boot}")
     rng = np.random.default_rng(seed)
     res = bootstrap(
         (sample,),
@@ -26,23 +37,23 @@ def bootstrap_me7_median_ci(sample: np.ndarray, *, n_boot: int, seed: int) -> di
         method="percentile",
         random_state=rng,
     )
-    return {
-        "median": float(np.median(sample)),
-        "ci_low": float(res.confidence_interval.low),
-        "ci_high": float(res.confidence_interval.high),
-        "n": int(sample.size),
-        "n_boot": n_boot,
-    }
-
-
-@dataclass(frozen=True)
-class WorldResult:
-    world: str
-    ci: dict[str, float]
+    return Me7CI(
+        median=float(np.median(sample)),
+        ci_low=float(res.confidence_interval.low),
+        ci_high=float(res.confidence_interval.high),
+        n=int(sample.size),
+        n_boot=n_boot,
+    )
 
 
 def _load_me7_sample(aggregate_path: Path) -> np.ndarray:
-    data = json.loads(aggregate_path.read_text())
+    try:
+        text = aggregate_path.read_text()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"{aggregate_path} not found; re-run aggregator to produce it"
+        ) from e
+    data = json.loads(text)
     raw = data.get("raw_me7_pairs") or data.get("b1_pairs")
     if raw is None:
         raise KeyError(
@@ -62,27 +73,40 @@ def main(
     seed: Annotated[int, typer.Option()] = 0,
 ) -> None:
     results: dict[str, Any] = {}
+    load_errors: dict[str, str] = {}
     for name, path in [("gaussian", gaussian), ("xor", xor), ("sinusoid", sinusoid)]:
-        sample = _load_me7_sample(path)
+        try:
+            sample = _load_me7_sample(path)
+        except (FileNotFoundError, KeyError) as e:
+            load_errors[name] = str(e)
+            continue
         results[name] = bootstrap_me7_median_ci(sample, n_boot=n_boot, seed=seed)
     # pairwise CI disjointness matrix
     names = list(results)
-    disjoint: dict[str, dict[str, bool]] = {}
+    disjoint: dict[str, dict[str, bool | None]] = {}
     for a in names:
         disjoint[a] = {}
         for b in names:
             if a == b:
-                disjoint[a][b] = False
+                disjoint[a][a] = None
                 continue
             disjoint[a][b] = (
                 results[a]["ci_high"] < results[b]["ci_low"]
                 or results[b]["ci_high"] < results[a]["ci_low"]
             )
-    payload = {"per_world": results, "pairwise_disjoint": disjoint, "seed": seed}
+    payload = {
+        "per_world": results,
+        "pairwise_disjoint": disjoint,
+        "seed": seed,
+        "load_errors": load_errors,
+    }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2))
-    typer.echo(json.dumps(payload, indent=2))
+    out.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
+
+app = typer.Typer()
+app.command()(main)
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()
