@@ -8,7 +8,7 @@ import bouba_sens
 
 
 def test_package_imports() -> None:
-    assert bouba_sens.__version__ == "0.1.0"
+    assert bouba_sens.__version__ == "0.1.1"
 
 
 def test_cli_version_runs() -> None:
@@ -20,7 +20,7 @@ def test_cli_version_runs() -> None:
         capture_output=True,
         text=True,
     )
-    assert "bouba_sens 0.1.0" in result.stdout
+    assert "bouba_sens 0.1.1" in result.stdout
 
 
 def test_world_sample_dataclass_importable() -> None:

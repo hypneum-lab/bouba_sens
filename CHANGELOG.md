@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-04-20 (Sprint 4 close — 150-run Studio grid + ADR-0003)
+
+### Added
+
+- Sprint 4 plan (`docs/superpowers/plans/2026-04-20-bouba-sens-sprint4.md`).
+- Hydra grid configs (`configs/{grid,timing,modality,snr}/*.yaml`) —
+  flat overrides via `@package _global_` for 5x5x2x3 composition.
+- `scripts/run_grid.sh` — idempotent orchestrator for the 5-seed x
+  5-modality x 2-timing x 3-SNR = 150-cell grid. Reuses a single
+  Phase 1 pretrain per seed across T2 cells; skips pretrain for T1.
+- `scripts/aggregate_grid.py` — bootstraps `me9` across seeds per
+  cell and packs B-1/B-2/B-3 invariant verdicts into
+  `reports/v0.1_aggregate.json`.
+- CLI `lesion` extended with `--timing`, `--snr-init`, `--snr-floor`,
+  `--k-steps`; `ckpt` optional (None -> T1 congenital).
+- `tests/empirical/test_grid_structural.py` — 4 structural tests
+  over the post-Studio aggregate artifact (30-cell shape, finite
+  bootstrap stats, invariant packing, threshold fidelity).
+- `.github/workflows/full-benchmark.yml` — self-hosted Studio
+  runner workflow (`workflow_dispatch` only; cron deferred).
+- ADR-0003 recording v0.1 empirical verdicts (B-1/B-2/B-3 all
+  NO-GO, driven by v0.1 CLI coverage gaps, not engine failure).
+
+### Fixed
+
+- `me9_bootstrap` collapses CI onto the mean when input is
+  degenerate (zero range) — scipy BCa returns NaN otherwise, which
+  broke the empirical-finite structural test.
+
+### Studio grid
+
+- 150/150 cells completed in ~14 min on MacStudio (M3 Ultra).
+- 30 unique cells aggregated with finite (mean, ci_low, ci_high)
+  triples for every metric (post-fix).
+- All three invariants report `passes=false` with honest
+  attribution: me3/me6 absent from `eval_report.json` because the
+  v0.1 CLI emits only `Me1,Me2,Me7`; me7 degenerate because the
+  CLI computes `me1_T1 - me1_T1 = 0`. v0.2 scope set in ADR-0003.
+
 ## [0.1.0] — 2026-04-20 (Sprint 3 close — feature-complete v0.1 design)
 
 ### Added
