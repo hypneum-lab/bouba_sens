@@ -33,9 +33,12 @@ def _main() -> None:
 
 
 def _build_world(name: str, seed: int) -> WorldSimulator:
-    """Dispatch a world simulator by name. Sprint 6 / Task 6.1."""
+    """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
+    import os
+
     from bouba_sens.world.gaussian import GaussianWorld
     from bouba_sens.world.sinusoid import SinusoidWorld
+    from bouba_sens.world.studyforrest import StudyforrestWorld
     from bouba_sens.world.xor import XORWorld
 
     key = name.lower().strip()
@@ -45,7 +48,15 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
         return XORWorld(seed=seed)
     if key == "sinusoid":
         return SinusoidWorld(seed=seed)
-    raise typer.BadParameter(f"unknown world '{name}'; pick gaussian | xor | sinusoid")
+    if key == "studyforrest":
+        # Real-data mode is opt-in via BOUBA_SENS_STUDYFORREST_DATA; the
+        # default path uses the mock stream (see ADR-0007).
+        raw_dir = os.getenv("BOUBA_SENS_STUDYFORREST_DATA")
+        data_dir = Path(raw_dir) if raw_dir else None
+        return StudyforrestWorld(seed=seed, data_dir=data_dir)
+    raise typer.BadParameter(
+        f"unknown world '{name}'; pick gaussian | xor | sinusoid | studyforrest"
+    )
 
 
 @app.command()
