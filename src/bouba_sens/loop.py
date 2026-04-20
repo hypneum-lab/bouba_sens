@@ -51,6 +51,16 @@ class AdaptationReport:
     transducer_activation_trajectory: list[int] = field(default_factory=list)
     lesion_events: list[tuple[Modality, float]] = field(default_factory=list)
 
+    # Sprint 5 / Task 5.1 — probe-batch captures for Me3 delta. Codes
+    # are the mean-pooled fused representation (shape (B,)) taken on
+    # the SAME probe sample pre- vs post-lesion training; labels are
+    # the probe labels (shape (B,)). Both in clean-input / stressed-net
+    # framing: the pre capture happens before on_lesion fires, the post
+    # capture after Phase 2 training completes.
+    probe_labels: Tensor | None = None
+    pre_lesion_codes: Tensor | None = None
+    post_lesion_codes: Tensor | None = None
+
 
 def _deepcopy_state(module: Any) -> dict[str, Tensor]:
     return {k: v.detach().clone() for k, v in module.state_dict().items()}
@@ -154,6 +164,20 @@ class AdaptationLoop:
         report.codebook_entropy_trajectory.append(baseline.codebook_entropy)
         report.transducer_activation_trajectory.append(baseline.transducer_active_count)
 
+        # Task 5.1 — probe-batch capture for Me3 delta. Same probe sample
+        # is fed clean through the intact (pre-lesion) network and again
+        # through the lesion-adapted network after training. Mean-pool the
+        # fused representation to a 1-D scalar per sample so Me3 kNN MI
+        # accepts it as `codes` directly. Seed stepped far from the Phase-2
+        # training seeds to avoid accidental overlap.
+        probe = self.world.sample(batch_size=batch_size, seed=seed - 99_999)
+        with torch.no_grad():
+            carriers_pre = {m: self.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
+            fused_pre = self.nerve.fuse(carriers_pre)
+        report.probe_labels = probe.label.detach().clone()
+        # flatten(1).mean(-1) collapses any (B, *) fused shape to (B,).
+        report.pre_lesion_codes = fused_pre.flatten(1).mean(dim=-1).detach().clone()
+
         self.nerve.on_lesion(lesion.modality, lesion.schedule(0))
         report.lesion_events = list(self.nerve._lesion_log)
 
@@ -197,6 +221,13 @@ class AdaptationLoop:
                 )
                 if len(replay_buffer) > replay_buffer_size:
                     replay_buffer.pop(0)
+
+        # Task 5.1 — post-lesion probe capture. Feed the same clean probe
+        # batch through the lesion-adapted network; mean-pool to (B,) 1-D.
+        with torch.no_grad():
+            carriers_post = {m: self.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
+            fused_post = self.nerve.fuse(carriers_post)
+        report.post_lesion_codes = fused_post.flatten(1).mean(dim=-1).detach().clone()
 
         return report
 

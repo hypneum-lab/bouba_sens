@@ -227,7 +227,7 @@ def eval(
         EvalReport,
         me1_accuracy,
         me2_recovery_auc,
-        me7_congenital_gap,
+        me3_delta,
     )
 
     with (run / "report.pkl").open("rb") as f:
@@ -239,10 +239,23 @@ def eval(
         eval_report.me1 = me1_accuracy(report)
     if "Me2" in selected:
         eval_report.me2 = me2_recovery_auc(report)
-    if "Me7" in selected:
-        # Placeholder — needs both T1 + T2 runs. CLI passes through None
-        # unless the caller wired them.
-        eval_report.me7 = me7_congenital_gap(eval_report.me1 or 0.0, eval_report.me1 or 0.0)
+    # Sprint 5 / Task 5.1: wire real me3_delta from the pre / post probe
+    # codes captured in lesion_phase. Missing fields (older report.pkl
+    # artifacts) fall back to None so the CLI stays backwards compatible
+    # with v0.1 pickles.
+    if (
+        "Me3" in selected
+        and report.pre_lesion_codes is not None
+        and report.post_lesion_codes is not None
+        and report.probe_labels is not None
+    ):
+        eval_report.me3_delta = me3_delta(
+            report.pre_lesion_codes,
+            report.post_lesion_codes,
+            report.probe_labels,
+        )
+    # Note: Me6 and Me7 are aggregation-level metrics (see ADR-0003 + Sprint
+    # 5 plan). They move to scripts/aggregate_grid.py in Task 5.2, not here.
 
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:
