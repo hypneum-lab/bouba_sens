@@ -20,23 +20,49 @@ late blindness (Amedi 2007, Merabet 2010, Heimler 2020).
 
 ## Status
 
-**v0.0.1 — Sprint 0 scaffolding.** No working implementation yet.
-Design: `docs/superpowers/specs/2026-04-20-bouba-sens-design.md`.
-Plan: `docs/superpowers/plans/2026-04-20-bouba-sens-sprint0.md`.
+**v0.3.0 (2026-04-20).** Feature-complete v0.2 design + Sprint 6 Tasks 6.1–6.2 (cross-world replication) merged. 5 ADRs, 152 tests, 66 commits. Sprints 0 → 5 closed ; Sprint 6 open (Tasks 6.3+ = paper draft).
 
-## Quickstart (once Sprint 1 lands)
+Design: `docs/superpowers/specs/2026-04-20-bouba-sens-design.md`.
+
+## Headline findings (v0.3.0)
+
+Three 150-cell grids on Studio (M3 Ultra, ~17 min each) across three structurally different synthetic worlds — GaussianWorld (orthogonally-projected latent), XORWorld (Rademacher parity), SinusoidWorld (circular latent). Same protocol, same fixed thresholds from the OSF pre-registration.
+
+| Invariant | Threshold | gaussian | xor | sinusoid | Verdict |
+|-----------|----------:|---------:|----:|---------:|---------|
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.148** | **0.141** | **0.156** | **3/3 PASS at ~7-8× threshold** |
+| B-1 Me7 congenital gap | 0.05 | -0.006 | -0.006 | **+0.013** | 3/3 FAIL, sign flips on sinusoid |
+| B-2 Me3 MI migration | 0.10 | 0.028 | 0.004 | 0.002 | 3/3 FAIL, decays with world complexity |
+
+**F1 — B-3 is world-agnostic.** The perceptive/proprioceptive asymmetry (audio/vision/tactile vs gravity/force) passes on three structurally divergent synthetic worlds at ~7-8× the pre-registered threshold. First cross-world replicated finding of the Hypneum Lab programme.
+
+**F2 — B-1 directionality is topology-dependent.** On orthogonal-factored worlds (Gaussian, XOR), late-acquired lesions recover at least as well as congenital ones (classic critical-period ordering *reversed*). On circular-latent topology (Sinusoid), the ordering holds. Seeds hypothesis H-B1 for a future OSF amendment.
+
+**F3 — B-2 magnitude decays with world complexity.** MI migration is present but weak (Gaussian 0.028 > XOR 0.004 > Sinusoid 0.002), never reaching threshold. The 0.10 threshold was implicitly calibrated Gaussian-like.
+
+Full ADRs: `docs/adr/0003-v01-empirical-verdicts.md`, `0004-v02-invariant-verdicts.md`, `0005-cross-world-replication.md`.
+
+## Quickstart
 
 ```bash
 uv sync --all-extras
-uv run bouba-sens version
-uv run pytest
+uv run bouba-sens version          # bouba_sens 0.3.0
+uv run pytest                      # 152 items, all green
+# Reproduce one cell
+uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
+    --timing T1 --snr-init 0 --snr-floor -20
+# Full 150-cell grid (≈17 min on M3 Ultra)
+WORLD=gaussian STEPS_TRAIN=200 STEPS_LESION=100 \
+    OUT_ROOT=runs/v02_grid METRICS="Me1,Me2,Me3" bash scripts/run_grid.sh
+uv run python scripts/aggregate_grid.py \
+    --root runs/v02_grid --out reports/v0.2_aggregate.json
 ```
 
 ## Dependencies
 
 - Python 3.14
 - PyTorch ≥ 2.5
-- `nerve-wml >=1.1.4,<1.2` (neuroletters, γ/θ multiplexing — Hypneum Lab)
+- `nerve-wml` v1.2.3+ (neuroletters, γ/θ multiplexing, 3 substrates — Hypneum Lab)
 
 ## Priority references
 
