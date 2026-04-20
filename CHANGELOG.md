@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-20 (Sprint 6 T6.1+T6.2 — cross-world B-3 replicated)
+
+### Added
+
+- **Task 6.1** — `--world {gaussian,xor,sinusoid}` flag on both
+  `bouba-sens lesion` CLI and `scripts/run_grid.sh` (merged in
+  `fee06cd`).
+- **Task 6.2** — cross-world replication of the full 150-cell
+  grid on XOR and Sinusoid worlds. Aggregates written to
+  `reports/v0.2_aggregate_{xor,sinusoid}.json` (30 cells each).
+- ADR-0005 `docs/adr/0005-cross-world-replication.md` — records
+  the cross-world verdicts and interpretation.
+
+### Studio replication (Task 6.2)
+
+Both grids launched concurrently on Studio (M3 Ultra) with the
+same configuration as v0.2 (`STEPS_TRAIN=200`, `STEPS_LESION=100`,
+`METRICS="Me1,Me2,Me3"`), 17 min wall-clock each in parallel.
+
+### Cross-world verdict (from ADR-0005)
+
+| Invariant | gaussian | xor | sinusoid | 3/3 worlds ? |
+|-----------|---------:|----:|---------:|:---:|
+| B-1 (Me7 > 0.05) | -0.0062 | -0.0063 | **+0.0125** | 3x FAIL, sign flips on sinusoid |
+| B-2 (Me3 delta > 0.10) | 0.0275 | 0.0036 | 0.0021 | 3x FAIL, decays Gaussian > XOR > Sinusoid |
+| B-3 (Me6 max-abs > 0.02) | 0.1484 | 0.1406 | 0.1562 | **3x PASS (first cross-world replicated PASS)** |
+
+### Headline finding
+
+**B-3 is now world-agnostic.** The perceptive / proprioceptive
+asymmetry is robust across three structurally different synthetic
+worlds at ~7-8x the pre-registered threshold. B-1 shows a world-
+topology-dependent sign pattern (negative on orthogonal-factored
+worlds, positive on circular-latent) — seeds hypothesis H-B1 for
+a future OSF amendment.
+
+### Changed
+
+- Package `version`, `_version.__version__`, and version-pinned
+  test assertions (`tests/smoke/test_imports.py`,
+  `tests/unit/test_smoke.py`) bumped to `0.3.0`.
+
+### Still deferred to Sprint 6+
+
+- Paper v0.1 draft (manuscript, figures, TMLR / NeurIPS D&B).
+- OSF amendment filing for hypothesis H-B1 (world-topology-
+  dependent critical-period effect).
+- Possible B-2 threshold recalibration keyed on baseline
+  MI(modality; label) — contingent on reviewer feedback.
+- Denser world battery (Torus-world, ManifoldWorld, linguistic
+  micro-world) for Sprint 7.
+
 ## [0.2.0] — 2026-04-20 (Sprint 5 close — real B-1/B-2/B-3 verdicts, B-3 PASS)
 
 ### Added
