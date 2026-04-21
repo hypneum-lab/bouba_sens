@@ -648,6 +648,9 @@ def _load_me7_sample(aggregate_path: Path) -> np.ndarray:
             f"{aggregate_path} has no raw Me7 pairs; re-run aggregator with "
             "--emit-raw-pairs"
         )
+    # ADR-0007 alignment: accept both flat array (legacy) and list of dicts (v0.4+)
+    if raw and isinstance(raw[0], dict):
+        return np.asarray([p["me7"] for p in raw], dtype=float)
     return np.asarray(raw, dtype=float)
 
 
@@ -710,7 +713,7 @@ The current `scripts/aggregate_grid.py` stores only the median. Task 7.2 needs t
 grep -n "b1\|me7" scripts/aggregate_grid.py | head
 ```
 
-- [ ] If `raw_me7_pairs` is not emitted, add a `--emit-raw-pairs` flag that includes the sample array in the output JSON under `raw_me7_pairs`. Keep the default output byte-compatible with v0.2 by default (flag off).
+- [ ] If `raw_me7_pairs` is not emitted, add a `--emit-raw-pairs` flag that includes the sample array in the output JSON under `raw_me7_pairs`. **Format enrichi (ADR-0007 alignment)** : liste de dicts `{"seed_t1": int, "seed_t2": int, "cell_id": str, "modality": str, "snr": float, "me1_t1": float, "me1_t2": float, "me7": float}` plutôt qu'un array flat. Keep the default output byte-compatible with v0.2 by default (flag off).
 
 - [ ] Write a one-line unit test `tests/unit/test_aggregate_raw_pairs.py` that asserts the flag adds the key without changing the default output shape.
 
