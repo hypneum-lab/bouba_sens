@@ -14,6 +14,9 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 import typer
 
 from bouba_sens._version import __version__
@@ -154,6 +157,33 @@ def train(
             f,
             indent=2,
         )
+    # ADR-0007 Phase A — emit paired model.pt + config.yaml alongside the
+    # legacy pickle artefacts. Purely additive; legacy files are untouched.
+    import torch as _torch
+    from omegaconf import OmegaConf  # type: ignore[import-not-found]
+
+    _torch.save(
+        {
+            "mux": ckpt.mux_state,
+            "nerve": ckpt.nerve_state,
+            "head": ckpt.head_state,
+            "sensory": ckpt.sensory_states,
+        },
+        out / "model.pt",
+    )
+    OmegaConf.save(
+        OmegaConf.create(
+            {
+                "phase": "intact",
+                "world": world,
+                "seed": seed,
+                "steps": steps,
+                "batch_size": batch_size,
+                "version": __version__,
+            }
+        ),
+        out / "config.yaml",
+    )
     typer.echo(f"pretrain done; wrote {out}/checkpoint.pkl")
 
 
@@ -246,19 +276,230 @@ def lesion(
             meta_out,
             indent=2,
         )
+    # ADR-0007 Phase A — emit paired model.pt + config.yaml alongside the
+    # legacy artefacts. Post-lesion state is captured via loop.snapshot().
+    import torch as _torch
+    from omegaconf import OmegaConf
+
+    post = loop.snapshot()
+    _torch.save(
+        {
+            "mux": post.mux_state,
+            "nerve": post.nerve_state,
+            "head": post.head_state,
+            "sensory": post.sensory_states,
+        },
+        out / "model.pt",
+    )
+    t1_ref: str = ""
+    if ckpt is not None:
+        try:
+            t1_ref = str(Path(ckpt).resolve().relative_to(out.resolve().parent))
+        except ValueError:
+            t1_ref = str(Path(ckpt))
+    OmegaConf.save(
+        OmegaConf.create(
+            {
+                "phase": "lesion",
+                "modality": modality,
+                "timing": timing.upper(),
+                "snr_init": snr_init,
+                "snr_floor": snr_floor,
+                "k_steps": k_steps,
+                "seed": seed,
+                "steps": steps,
+                "world": world,
+                "t1_ckpt": t1_ref,
+                "version": __version__,
+            }
+        ),
+        out / "config.yaml",
+    )
     typer.echo(f"lesion done; wrote {out}/report.pkl")
+
+
+def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
+    """ADR-0007 Phase B — reconstruct the 6 model components from config.yaml.
+
+    Returns `(mux, sensories, nerve, head, world_obj)`. Mirrors the
+    construction sequence used by `train` / `lesion` so a round-trip
+    (save state_dicts -> load_state_dict) is bit-exact.
+    """
+    from track_p.multiplexer import GammaThetaMultiplexer
+
+    from bouba_sens.encoders import (
+        AudioEncoder,
+        ForceEncoder,
+        GravityEncoder,
+        TactileEncoder,
+        VisionEncoder,
+    )
+    from bouba_sens.head import IntegrationHead
+    from bouba_sens.nerve import CrossModalNerve
+    from bouba_sens.sensory import SensoryWML
+
+    seed = int(cfg["seed"])
+    world_name = str(cfg.get("world", "gaussian"))
+    world_obj = _build_world(world_name, seed)
+    mux = GammaThetaMultiplexer(seed=seed)
+    sensories = {
+        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
+        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2),
+        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=seed + 3),
+        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
+        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
+    }
+    nerve = CrossModalNerve(mux, seed=seed)
+    head = IntegrationHead(n_classes=4)
+    return mux, sensories, nerve, head, world_obj
+
+
+def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:  # type: ignore[no-untyped-def]
+    """ADR-0007 Phase B — canonical Me1 probe pass.
+
+    Wires a fresh `AdaptationLoop` around pre-built components and runs
+    `query_accuracy("audio")` on a deterministic probe batch keyed by
+    `seed + 777` (matches the per-query offset used by the `lesion`
+    command, §Sprint 5 Task 5.2). Returns a float in [0, 1].
+
+    Option 4 invariant: this function must be bit-exact deterministic given
+    `(state_dicts, seed)`, independent of caller global RNG state. The
+    explicit seeding block below forces torch / numpy / random into a known
+    state before AdaptationLoop construction so paired-CLI and eval --run
+    paths converge.
+    """
+    import random as _random
+
+    import numpy as _np
+    import torch as _torch
+
+    from bouba_sens.loop import AdaptationLoop
+
+    _torch.manual_seed(seed + 777)
+    _np.random.seed(seed + 777)
+    _random.seed(seed + 777)
+
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    return loop.query_accuracy("audio", seed=seed + 777)
+
+
+def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
+    """Return (me1, seed, cell_name) for a Sprint 4+ cell directory.
+
+    ADR-0007 Phase B: reads `config.yaml` + `model.pt`, rebuilds the full
+    model, loads state_dicts, and recomputes Me1 via the canonical probe
+    pass. Falls back to the legacy `eval_report.json` path when either
+    Phase B artefact is missing (ad-hoc cells fabricated by fixtures that
+    never called `train` / `lesion`).
+    """
+    model_pt = path / "model.pt"
+    cfg_path = path / "config.yaml"
+    if model_pt.exists() and cfg_path.exists():
+        import torch as _torch
+        from omegaconf import OmegaConf
+
+        cfg = OmegaConf.load(cfg_path)
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)  # type: ignore[no-untyped-call]
+        state = _torch.load(model_pt, weights_only=True)
+        mux.load_state_dict(state["mux"])
+        nerve.load_state_dict(state["nerve"])
+        head.load_state_dict(state["head"])
+        for m, sd in state["sensory"].items():
+            sensories[m].load_state_dict(sd)
+        seed_value = int(cfg["seed"])
+        me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
+        return me1, seed_value, path.name
+
+    # Legacy fallback — pre-Phase-B ad-hoc cells.
+    eval_report = json.loads((path / "eval_report.json").read_text())
+    me1 = float(eval_report["me1"])
+    seed: int | None = None
+    metadata_path = path / "metadata.json"
+    if metadata_path.exists():
+        metadata = json.loads(metadata_path.read_text())
+        raw_seed = metadata.get("seed")
+        if raw_seed is not None:
+            seed = int(raw_seed)
+    return me1, seed, path.name
+
+
+def _emit_paired_run(
+    *,
+    t1_ckpt: Path,
+    t2_ckpt: Path,
+    modality: str | None,
+    snr: float | None,
+    out: Path,
+    me7_fn: Callable[[float, float], float],
+) -> None:
+    """ADR-0007 paired-run emitter."""
+    from datetime import UTC, datetime
+
+    me1_t1, seed_t1, name_t1 = _load_cell(t1_ckpt)
+    me1_t2, seed_t2, _ = _load_cell(t2_ckpt)
+    me7 = me7_fn(me1_t1, me1_t2)
+
+    # Derive a pair descriptor from the T1 cell name (e.g. seed0_T1_vision_plus10
+    # -> seed0_vision_plus10). Fallback to None per ADR-0007 when the T1 name
+    # does not encode a cell id.
+    cell_id: str | None = None
+    if name_t1:
+        cell_id = name_t1.replace("_T1_", "_").replace("_T2_", "_")
+
+    payload = {
+        "pair": {
+            "seed_t1": seed_t1,
+            "seed_t2": seed_t2,
+            "cell_id": cell_id,
+            "modality": modality,
+            "snr": snr,
+        },
+        "me1_t1": me1_t1,
+        "me1_t2": me1_t2,
+        "me7": me7,
+        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
 
 
 @app.command()
 def eval(
-    run: Path = typer.Option(..., help="Phase 2 run directory (contains report.pkl)"),
+    run: Path = typer.Option(None, help="Phase 2 run directory (contains report.pkl)"),
+    t1_ckpt: Path = typer.Option(
+        None, "--t1-ckpt", help="T1 cell directory (ADR-0007 paired-run mode)"
+    ),
+    t2_ckpt: Path = typer.Option(
+        None, "--t2-ckpt", help="T2 cell directory (ADR-0007 paired-run mode)"
+    ),
+    modality: str = typer.Option(
+        None, "--modality", help="Modality tag for the paired-run JSON (optional)"
+    ),
+    snr: float = typer.Option(None, "--snr", help="SNR in dB for the paired-run JSON (optional)"),
     metrics: str = typer.Option(
         "Me1,Me2,Me7",
         help="Comma-separated metric ids",
     ),
     out: Path = typer.Option(Path("eval_report.json"), help="Output JSON path"),
 ) -> None:
-    """Compute metrics over a Phase 2 report.pkl."""
+    """Compute metrics over a Phase 2 report.pkl, or a paired T1/T2 cell pair (ADR-0007).
+
+    ADR-0007 Phase B (Option 4, v0.4.0) — in ``--run`` mode, the emitted
+    ``eval_report.json`` carries BOTH:
+
+      * ``me1`` : ``me1_accuracy(report)`` — mean of the last 10 % of
+        ``report.accuracy_curve`` during Phase 2 adaptation, all 5
+        modalities active. Primary paper observable; fixed by
+        ADR-0004 / ADR-0005. Never changed.
+      * ``me1_probe`` : ``query_accuracy("audio", seed+777)`` on the model
+        rebuilt from ``model.pt`` + ``config.yaml`` — frozen probe pass
+        on the reloaded, post-adaptation state. Reproducibility
+        auxiliary introduced in v0.4.0.
+
+    The two are semantically distinct observables and coexist
+    additively. ``me1_probe`` is ``null`` on legacy (pre-Phase A) runs
+    where ``model.pt`` / ``config.yaml`` are absent.
+    """
     import pickle
 
     from bouba_sens.metrics import (
@@ -266,7 +507,24 @@ def eval(
         me1_accuracy,
         me2_recovery_auc,
         me3_delta,
+        me7_congenital_gap,
     )
+
+    # ADR-0007 paired-run mode — both --t1-ckpt and --t2-ckpt provided.
+    if t1_ckpt is not None and t2_ckpt is not None:
+        _emit_paired_run(
+            t1_ckpt=t1_ckpt,
+            t2_ckpt=t2_ckpt,
+            modality=modality,
+            snr=snr,
+            out=out,
+            me7_fn=me7_congenital_gap,
+        )
+        typer.echo(f"paired eval done; wrote {out}")
+        return
+
+    if run is None:
+        raise typer.BadParameter("--run is required unless --t1-ckpt and --t2-ckpt are provided")
 
     with (run / "report.pkl").open("rb") as f:
         report = pickle.load(f)
@@ -295,11 +553,35 @@ def eval(
     # Note: Me6 and Me7 are aggregation-level metrics (see ADR-0003 + Sprint
     # 5 plan). They move to scripts/aggregate_grid.py in Task 5.2, not here.
 
+    # ADR-0007 Phase B Option 4 — additively emit me1_probe by rebuilding
+    # the model from the Phase A artefacts (model.pt + config.yaml) and
+    # running the canonical probe pass. Legacy ``me1`` above is left
+    # untouched (primary observable, fixed by ADR-0004 / ADR-0005).
+    # Degrades to None when either Phase A artefact is absent (pre-Phase-A
+    # legacy runs).
+    me1_probe: float | None = None
+    model_pt = run / "model.pt"
+    cfg_path = run / "config.yaml"
+    if model_pt.exists() and cfg_path.exists():
+        import torch as _torch
+        from omegaconf import OmegaConf
+
+        cfg = OmegaConf.load(cfg_path)
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)
+        state = _torch.load(model_pt, weights_only=True)
+        mux.load_state_dict(state["mux"])
+        nerve.load_state_dict(state["nerve"])
+        head.load_state_dict(state["head"])
+        for m, sd in state["sensory"].items():
+            sensories[m].load_state_dict(sd)
+        me1_probe = _compute_me1(mux, sensories, nerve, head, world_obj, seed=int(cfg["seed"]))
+
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:
         json.dump(
             {
                 "me1": eval_report.me1,
+                "me1_probe": me1_probe,
                 "me2": eval_report.me2,
                 "me3_delta": eval_report.me3_delta,
                 "me6_max_abs": eval_report.me6_max_abs,
