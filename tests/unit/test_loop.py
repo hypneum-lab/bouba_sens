@@ -110,3 +110,26 @@ def test_lesion_phase_populates_migration_report() -> None:
     assert len(report.lesion_events) == 1
     # on_lesion was called once at t=0.
     assert report.lesion_events[0][0] == "vision"
+
+
+def test_lesion_phase_probe_batch_size_default_is_128() -> None:
+    """ADR-0006 Sprint 8 fix — probe batch decouples from training batch."""
+    loop = _build_loop()
+    spec = LesionSpec(modality="audio", mode="M2", timing="T2", schedule=m2_snr_schedule)
+    # batch_size=4 (small training), probes should still be 128 by default
+    report = loop.lesion_phase(spec, steps=5, batch_size=4, stats_every=5)
+    assert report.pre_lesion_codes is not None
+    assert report.post_lesion_codes is not None
+    assert report.pre_lesion_codes.shape[0] == 128
+    assert report.post_lesion_codes.shape[0] == 128
+    assert report.probe_labels is not None
+    assert report.probe_labels.shape[0] == 128
+
+
+def test_lesion_phase_probe_batch_size_override() -> None:
+    """probe_batch_size parameter overrides the default 128."""
+    loop = _build_loop()
+    spec = LesionSpec(modality="tactile", mode="M2", timing="T2", schedule=m2_snr_schedule)
+    report = loop.lesion_phase(spec, steps=5, batch_size=4, probe_batch_size=64, stats_every=5)
+    assert report.pre_lesion_codes is not None
+    assert report.pre_lesion_codes.shape[0] == 64

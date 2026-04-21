@@ -135,6 +135,7 @@ class AdaptationLoop:
         steps: int,
         *,
         batch_size: int = 32,
+        probe_batch_size: int = 128,
         replay_buffer_size: int = 1024,
         stats_every: int = 10,
         seed: int = 10_000,
@@ -168,7 +169,11 @@ class AdaptationLoop:
         # fused representation to a 1-D scalar per sample so Me3 kNN MI
         # accepts it as `codes` directly. Seed stepped far from the Phase-2
         # training seeds to avoid accidental overlap.
-        probe = self.world.sample(batch_size=batch_size, seed=seed - 99_999)
+        # ADR-0006 Sprint 8 fix — decouple probe batch from training batch.
+        # v0.4.0 used batch_size=16 for probes, too small for Me3 kNN/binning/MINE
+        # to produce non-zero signal. Default is now 128 (Me3 floor lifts above
+        # noise at n>=64 per Kraskov's kNN convergence; 128 for 5-10x headroom).
+        probe = self.world.sample(batch_size=probe_batch_size, seed=seed - 99_999)
         with torch.no_grad():
             carriers_pre = {m: self.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
             fused_pre = self.nerve.fuse(carriers_pre)
