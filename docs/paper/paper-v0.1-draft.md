@@ -253,11 +253,40 @@ interpretation. B-2 reaches its most-negative value at the
 same LOCK_AFTER=100 peak, strengthening the
 "temporal-proximity interference" reading of §5.4.
 
-### 5.6 Open follow-up (declared)
+### 5.6 Compound critical-period (Sprint 11, ADR-0014)
 
-Compound `LOCK_AFTER=100` with `nerve-wml#5` (transducer
-Gumbel-softmax) is declared here as *experiment-in-progress*;
-results will appear in paper v0.2 Sprint 11+.
+A compound experiment combining the Sprint 10 peak lock
+(`LOCK_AFTER=100`) with sigmoid-soft transducer gating
+(`transducer_gating="gumbel"`, `gumbel_tau=1.0`) reduces the
+B-1 peak from +0.0125 to +0.0062 on the 4.5-modal real bridge —
+**a 50 % attenuation, not the expected amplification**.
+
+| Config | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
+|--------|--------:|--------------:|--------:|
+| LOCK=100 + HARD gate (Sprint 10) | +0.0125 | -0.0190 | 0.1094 |
+| LOCK=100 + GUMBEL gate (Sprint 11) | +0.0062 | -0.0177 | 0.1172 |
+
+Contrary to the naïve hypothesis that soft differentiability
+improves gradient flow through the critical-period signal, the
+hard binary `CrossModalTransducer` gate appears to act as a
+**noise-filter**: by rejecting sub-threshold gate margins, it
+preserves the discrete T1/T2 asymmetry. Soft gating dilutes the
+signal across all 20 cross-modal pairs proportionally, reducing
+the effective signal-to-noise on the Me7 axis.
+
+This is an **architectural constraint** on the space of
+mechanisms that could reproduce Amedi 2007 in our setup: at
+least one component of the plasticity router needs a hard phase-
+transition, not a continuous gate. B-3 remains PASS in both
+configurations (0.109 vs 0.117), confirming once more its
+lock-and-gate invariant status.
+
+### 5.7 Open follow-up (declared)
+
+Sprint 12: scan `gumbel_tau ∈ {0.1, 0.3, 0.5, 1.0, 2.0}` at
+the peak to test whether a tighter sigmoid recovers the hard-
+gate behaviour. AdaptiveCodebook freezing as a third compounded
+lock component is a natural next gate.
 
 ---
 
