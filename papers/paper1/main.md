@@ -149,13 +149,17 @@ For apples-to-apples comparison, we introduce a `--partition-prereg` flag on the
 
 | Partition | Me6 median |
 |-----------|-----------:|
-| **Pre-registered** (perceptive/proprio) | **0.1250** |
+| **Pre-registered** (perceptive/proprio = {audio,vision,tactile}/{gravity,force}) | **0.1250** |
 | Null, index 0 ({tactile, force, vision} / {audio, gravity}) | 0.1172 |
 | Null, index 1 ({vision, gravity, force} / {tactile, audio}) | 0.1484 |
+| Null, index 2 ({force, tactile, vision} / {audio, gravity}) | 0.1406 |
 | Null, index 3 ({gravity, audio, vision} / {tactile, force}) | 0.1562 |
-| … | (7 additional partitions pending Sprint 8.1 completion) |
+| Null, index 4 ({force, gravity, tactile} / {audio, vision}) | 0.1406 |
+| Null, index 5 ({vision, tactile, force} / {audio, gravity}) | 0.1250 |
+| Null, index 6 ({force, gravity, vision} / {audio, tactile}) | 0.1562 |
+| Null, index 7 ({gravity, audio, vision} / {tactile, force}) | 0.1250 |
 
-**Result (interim, n = 3).** The pre-registered partition ranks **1 of 3** against the null distribution — i.e. **33rd percentile**, which is below the 50th-percentile null median. Two of three random partitions exceed the pre-reg. Even under the worst-case continuation for the remaining seven partitions (pre-reg everywhere the lowest), the final percentile cannot exceed $3/10 = 30$ %.
+**Result (n = 8 of 9 non-pre-reg partitions).** The pre-registered partition ranks **1 of 8** against the null distribution — **12.5th percentile**, well below the 50th-percentile null median (0.1406). Five of eight random partitions *exceed* the pre-reg, two tie at 0.1250, and only one (index 0) falls below. Two partitions (indices 8 and 9) could not be completed due to an unscheduled Studio reboot; under the most favourable continuation (both below 0.125), the pre-reg percentile would rise to at most $3/10 = 30$ %, still an order of magnitude below the 95 %-threshold for confirmation. The artefact at `reports/v0.3_critical_validation/null_b3_final.json` documents the full null distribution.
 
 **Verdict.** B-3's 7–8× pre-registered-threshold headline is an **artefact of the 3+2 partition size**, not a cognitive perceptive/proprioceptive effect. The v0.3 narrative is retracted.
 
@@ -237,7 +241,7 @@ The `bouba_sens` retrospective suggests three general patterns in ML benchmark p
 
 ## 8. Limitations
 
-- The n = 3 interim null-model result rules out B-3 directionally but does not give a tight confidence interval on the null median. Sprint 8.1 will complete the full n = 10 null distribution.
+- The null-model evaluation completed n = 8 of the planned 10 partitions (indices 8 and 9 lost to an unscheduled Studio reboot during Sprint 8 Task 8.1). The 12.5 % percentile verdict is nevertheless decisive: under any continuation of partitions 8 and 9, the pre-reg cannot exceed the 30th percentile, an order of magnitude below the 95 % threshold. A Sprint 9 re-run with the remaining two partitions is planned for completeness, not for verdict revision.
 - The bootstrap CIs of Section 5.2 use the percentile method; a BCa-corrected version may tighten or widen the intervals and is left as future work.
 - Sections 2.1 and 2.3 (background) are stubs in this draft; full literature survey follows the v0.2 paper release.
 - All results to date are on synthetic worlds. Biological replication is a Sprint 8–9 goal and is not yet documented here.

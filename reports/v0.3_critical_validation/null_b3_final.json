@@ -1,0 +1,18 @@
+{
+  "prereg_me6_median": 0.125,
+  "null_me6_medians": [
+    0.1171875,
+    0.125,
+    0.125,
+    0.140625,
+    0.140625,
+    0.1484375,
+    0.15625,
+    0.15625
+  ],
+  "null_median_of_medians": 0.140625,
+  "prereg_rank": 1,
+  "n_null": 8,
+  "percentile_of_prereg": 12.5,
+  "passes_95pct": false
+}
