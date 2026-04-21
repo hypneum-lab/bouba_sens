@@ -21,6 +21,22 @@ However, the phase-2 dataset structure diverges from the plan's assumptions:
 
 **Net effect:** a clean 5-modal single-subject single-run bridge requires cross-dataset, cross-session, and preprocessing-pipeline work that was out of scope for the Task 9.6 one-shot execution in this session.
 
+### Update — final data availability finding (2026-04-21 end-of-session)
+
+After pivoting from `ses-movie` to `ses-localizer task-movielocalizer` (which DOES have cardresp physio for sub-01 aligned with the same stimulus), one more constraint was found:
+
+5. **`movie_localizer.mkv` has NO audio track.** The public Studyforrest stimuli are visual-only localizers (movie_localizer, retinotopic_mapping, visualarea_localizer). The full Forrest Gump soundtrack that drove the `ses-movie` runs is **not publicly redistributable** due to copyright on the original film. The `studyforrest-data` repository only hosts study-generated streams (annotations, fMRI, physio, eyegaze).
+
+**Consequence for the 5-modal bridge goal:** without a publicly-fetchable audio stimulus, the audio modality cannot be populated from real recorded sound. Three candidate workarounds, each a deliberate scope change:
+
+a. **Skip audio** — build a 4-modal bridge (vision + tactile + gravity + force). Breaks the pre-registered 5-modality contract unless the OSF amendment explicitly lifts it.
+
+b. **Substitute audio** — use any CC-licensed soundtrack (e.g. a public audiobook aligned to scene durations). Scientifically defensible but requires an OSF amendment v0.5.1 declaring the substitution before grid runs.
+
+c. **Procure the original soundtrack locally** — via a personal copy of the film (fair-use for research). Scientific content is unchanged, but the artefact cannot be published to Zenodo alongside the code (copyright bind). Reviewers would re-run with their own local copy.
+
+The honest engineering path is **(b)** for the paper pipeline (reproducible, redistributable, publishable artefact chain) with **(c)** as a cross-validation run for the maintainer only.
+
 ## Expected grid provenance (to be filled in after Task 9.6)
 
 | Item | Expected value | Actual |
