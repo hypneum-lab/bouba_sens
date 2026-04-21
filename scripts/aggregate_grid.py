@@ -233,6 +233,7 @@ def _compute_invariants(
             "median_me7": median_me7,
             "threshold": B1_ME7_THRESHOLD,
             "cells_counted": len(me7_values),
+            "raw_me7_pairs": list(me7_values),
         },
         "b2": {
             "passes": median_me3 > B2_ME3_DELTA_THRESHOLD,

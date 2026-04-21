@@ -55,9 +55,17 @@ def main(
         for cell_report in _iter_cell_reports(root):
             with cell_report.open("rb") as f:
                 payload = pickle.load(f)
-            pre = np.asarray(payload["pre_lesion_codes"], dtype=float)
-            post = np.asarray(payload["post_lesion_codes"], dtype=float)
-            y = np.asarray(payload["pre_lesion_labels"], dtype=int)
+            if hasattr(payload, "pre_lesion_codes"):
+                pre = np.asarray(payload.pre_lesion_codes, dtype=float)
+                post = np.asarray(payload.post_lesion_codes, dtype=float)
+                y = np.asarray(payload.probe_labels, dtype=int)
+            else:
+                pre = np.asarray(payload["pre_lesion_codes"], dtype=float)
+                post = np.asarray(payload["post_lesion_codes"], dtype=float)
+                y = np.asarray(
+                    payload.get("probe_labels", payload.get("pre_lesion_labels")),
+                    dtype=int,
+                )
             for name, fn in ESTIMATORS.items():
                 per_estimator[name].append(float(fn(pre, post, y)))
         per_world[w] = (
