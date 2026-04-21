@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-04-21 (Sprint 8 close — F1 DOWNGRADED, paper v0.1 draft, 3/3 findings now null)
+
+### Added
+
+- **Task 8.2** — `--partition-prereg` flag on `scripts/aggregate_grid.py` (apples-to-apples pre-reg baseline via `me6_max_abs_off_diag_partitioned`).
+- **Task 8.3** — `probe_batch_size` kwarg on `AdaptationLoop.lesion_phase` (default 128) with 2 new unit tests.
+- **Task 8.4** — Paper 1 v0.1 draft `papers/paper1/main.md` (~9 pages, methodology-first retrospective).
+- **Task 8.6** — vendored `mutual_knn` kernel (Huh et al. 2024) at `src/bouba_sens/metrics/alignment.py` with 5 unit tests.
+- **Task 8.9** — Huh 2024 cited in paper §2.2 + reference list.
+- Null-model artefact `reports/v0.3_critical_validation/null_b3_final.json` with the n=8 null distribution.
+
+### Validation outcome — F1 DOWNGRADED (was suspended in v0.4.0)
+
+| Metric | Value |
+|--------|------:|
+| Pre-reg Me6 (partitioned) | 0.1250 |
+| Null median (n=8) | 0.1406 |
+| Pre-reg rank | 1 / 8 |
+| Pre-reg percentile | 12.5 % |
+| Passes 95 % threshold | **No** |
+
+**The perceptive/proprioceptive partition is not distinguishable from random 3+2 partitions.** Five of eight non-pre-reg partitions exceed the pre-reg, two tie at 0.1250, one falls below. Even under the most favourable Sprint 9 continuation (partitions 8 and 9 both < 0.1250, unrecoverable due to Studio reboot at 12:08) the pre-reg percentile cannot exceed 30 %.
+
+### v0.3 findings — final post-Sprint-8 status
+
+| Finding | Sprint 7 | Sprint 8 | Status |
+|---------|----------|----------|--------|
+| F1 B-3 world-agnostic PASS | suspended | **DOWNGRADED** | null-model partition tautology |
+| F2 B-1 topology-dependent sign flip | downgraded | — | bootstrap CIs straddle 0 |
+| F3 B-2 Gaussian > XOR > Sinusoid decay | downgraded | — | Kraskov artefact at n=16 |
+
+**Programme posture.** All three pre-registered findings have now failed critical validation. The paper (Task 8.4) reframes the programme as a methodology-first contribution with three recommendations (probe batch size, bootstrap CIs mandatory, null-model partition controls).
+
+### Deferred (cross-branch reconciliation, Sprint 9)
+
+- **Task 8.7** `--metric {accuracy, mutual_knn}` on `bouba-sens eval` — requires `--t1-ckpt` / `--t2-ckpt` paired-run flags from `feat/b1-plasticity-recovery` branch (ADR-0007). Blocked on merge/cherry-pick.
+- Probe-batch-128 rerun on v0.2 Gaussian grid to re-check Me3 signal under larger sample size.
+- Parts 8 and 9 of null-model (2 missing partitions; verdict unaffected).
+
+### Task 8.8 — audit closed no-op
+
+Grep of the 3 ADRs on `feat/b1-plasticity-recovery` branch (ADR-0007 × 2, 0008, 0009) for `gamma`, `theta`, `γ`, `θ`, `multiplex`, `multiplexer` returns **0 matches**. The parallel track does not claim any empirical γ/θ effect.
+
+### Changed
+
+- `version`, `_version.__version__`, and version-pinned test assertions bumped `0.4.0 → 0.5.0`.
+
 ## [0.4.0] — 2026-04-21 (Sprint 7 close — 2/3 v0.3 findings DOWNGRADED)
 
 ### Added
