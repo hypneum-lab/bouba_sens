@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-21 (Sprint 7 close — 2/3 v0.3 findings DOWNGRADED)
+
+### Added
+
+- Sprint 7 plan, partition generator, bootstrap Me7 CI, 2 alternative
+  MI estimators (binning + MINE), null-b3 grid launcher, analyser.
+- ADR-0006 `docs/adr/0006-critical-validation.md` with full verdicts.
+- Artefact manifest `reports/v0.3_critical_validation/MANIFEST.md`.
+
+### Validation outcomes (ADR-0006)
+
+| v0.3 finding | Task | Post-Sprint-7 status |
+|--------------|------|----------------------|
+| F1 B-3 world-agnostic PASS | 7.1 null-model | **SUSPENDED** (1/10 partitions, statistic mismatch, rerun in Sprint 8) |
+| F2 B-1 topology sign flip | 7.2 bootstrap | **DOWNGRADED** (all 3 CIs straddle 0) |
+| F3 B-2 Gaussian > XOR > Sinusoid decay | 7.3 MI estimators | **DOWNGRADED** (Kraskov-specific artefact at n=16) |
+
+**New headline (methodology track)** : probe batch size matters for
+Me3 ; bootstrap CIs are mandatory for B-1 ; partition-tautology
+controls must precede asymmetry claims. These methodological findings
+supersede the retracted v0.3 narrative.
+
+### Changed
+
+- Version bumped `0.3.0 -> 0.4.0` (minor — narrative reframe, API
+  backward-compatible).
+
+### Deferred to Sprint 8
+
+- Complete remaining 9 null-partitions + add `--partition-prereg`
+  flag for apples-to-apples B-3 comparison.
+- Increase probe batch size from 16 to >= 128.
+- Paper 1 v0.1 draft (methodology-first narrative).
+
 ## [0.3.0] — 2026-04-20 (Sprint 6 T6.1+T6.2 — cross-world B-3 replicated)
 
 ### Added
