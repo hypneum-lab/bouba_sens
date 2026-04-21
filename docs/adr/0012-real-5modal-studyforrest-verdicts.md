@@ -37,26 +37,42 @@ c. **Procure the original soundtrack locally** — via a personal copy of the fi
 
 The honest engineering path is **(b)** for the paper pipeline (reproducible, redistributable, publishable artefact chain) with **(c)** as a cross-validation run for the maintainer only.
 
-## Expected grid provenance (to be filled in after Task 9.6)
+## Resolution (2026-04-21 late afternoon)
 
-| Item | Expected value | Actual |
-|------|----------------|--------|
-| Host | Studio | _fill_ |
-| Worktree | `~/Projets/bouba_sens_b1` | _fill_ |
-| Commit | `<sha of feat/sprint-9-5modal HEAD>` | _fill_ |
-| nerve-wml | `v1.4.0` | _fill_ |
-| Config | `STEPS_TRAIN=200 STEPS_LESION=100 METRICS="Me1,Me2,Me3"` | _fill_ |
-| World | `StudyforrestRealWorld(data_dir=data/studyforrest_5modal_sub01_run1)` | _fill_ |
-| Grids | no-lock + lock=200 | _fill_ |
-| Wall time | ~40 min parallel | _fill_ |
+ADR-0012 was filled in by running Sprint 9.5 on Studio:
 
-## Verdicts (template — fill in from Task 9.6 aggregation output)
+- `scripts/extract_phase2_adapted.py` — 4.5-modal extraction using
+  librosa `libri1` CC-BY-4.0 speech (ADR-0012 path (b) substitute
+  for the film soundtrack), real VGG16 features over
+  `movie_localizer.mkv`, ffmpeg scene-cut tactile proxy, zero
+  gravity (rp absent), REAL cardresp from sub-01 ses-localizer
+  run-1, audio-RMS quantile labels.
+- Two 150-cell grids ran on Studio via `screen` detached:
+  `v05_sf45_nolock` + `v05_sf45_lock` (LOCK_AFTER=200).
+- nerve-wml v1.5.3 `methodology` module (bootstrap_ci_mi +
+  null_model_mi + mi_kraskov_ksg_continuous) gave the first
+  principled CI on B-2.
 
-| Invariant | 5-modal no-lock | 5-modal lock=200 |
-|-----------|-----------------|------------------|
-| B-1 Me7 (threshold > 0.05) | _fill_ | _fill_ |
-| B-2 Me3 delta (threshold > 0.10) | _fill_ | _fill_ |
-| B-3 Me6 max-abs (threshold > 0.02) | _fill_ | _fill_ |
+## Grid provenance (filled in)
+
+| Item | Actual value |
+|------|--------------|
+| Host | Studio (MacStudio, arm64) |
+| Worktree | `~/Projets/bouba_sens_b1` |
+| Commit | `d7a3645` (feat/sprint-9-5modal) |
+| nerve-wml | `v1.5.3` (fix pkg 4739987 on master) |
+| Config | `STEPS_TRAIN=200 STEPS_LESION=100 METRICS="Me1,Me2,Me3"` |
+| World | `StudyforrestRealWorld(data_dir=data/sf_phase2_adapted)` |
+| Grids | `runs/v05_sf45_{nolock,lock}` |
+| Wall time | ~30 min parallel (2-way concurrency) |
+
+## Verdicts
+
+| Invariant | 4.5-modal no-lock | 4.5-modal lock=200 | Note |
+|-----------|------------------:|-------------------:|------|
+| B-1 Me7 (threshold > 0.05) | **0.0000** (balanced) | **+0.0063** | FIRST world-condition with positive sign under lock |
+| B-2 Me3 delta (threshold > 0.10) | **-0.0376** | **-0.0391** | FAIL, CI95% [−0.056, −0.001] via bootstrap_ci |
+| B-3 Me6 max-abs (threshold > 0.02) | **0.1016** (5.1×) | **0.1250** (6.2×) | PASS both conditions |
 
 ### Comparison against prior ADRs
 
@@ -68,20 +84,65 @@ The honest engineering path is **(b)** for the paper pipeline (reproducible, red
 | ECG 2-modal (ADR-0009 / ADR-0011) | −0.0062 | −0.0062 | 0.4453 | 0.4453 |
 | **5-modal real (this ADR)** | _fill_ | _fill_ | _fill_ | _fill_ |
 
-## Decision (pick ONE branch from the OSF amendment v0.5)
+## Decision — Branch B picked (B-3 PASS at 5.1×-6.2×)
 
-The v0.5 OSF amendment (filed before grid runs, see
-`docs/osf/amendment-v0.5-studyforrest-5modal.md`) declared three
-mutually-exclusive decision branches BEFORE compute. Pick exactly one after
-filling the verdicts table:
+The v0.5 OSF amendment declared three mutually-exclusive decision
+branches BEFORE compute:
 
 - [ ] **Branch A — B-3 PASS at ≥ 10×**: "B-3 is an architectural invariant
       across synthetic AND real biological 5-modal input." (strong headline)
-- [ ] **Branch B — B-3 PASS at 1×-10×**: "B-3 persists but is attenuated
-      under biological input complexity." (moderate)
-- [ ] **Branch C — B-3 FAIL**: "B-3 was a synthetic-cluster artefact; the
-      unlocked ECG-2 result was driven by zeroed modalities." (retraction
-      of v0.1 headline)
+- [x] **Branch B — B-3 PASS at 1×-10×**: "B-3 persists but is attenuated
+      under biological input complexity." (moderate) — **PICKED**
+- [ ] **Branch C — B-3 FAIL**: "B-3 was a synthetic-cluster artefact;
+      the unlocked ECG-2 result was driven by zeroed modalities."
+
+B-3 no-lock at 5.1× threshold and lock at 6.2× threshold fall
+squarely in Branch B: PASS but attenuated versus the ECG 2-modal
+22.3× headline (ADR-0009). The attenuation is interpretable
+architecturally — the 4.5 biologically-richer modalities
+(especially real audio mel-spectrogram + real VGG16 vision) give
+the network more axes on which T1/T2 can disagree, which
+**reduces** the off-diagonal asymmetry on the 5x5 perf matrix.
+
+## Bonus finding — B-1 directional lift under lock
+
+| World | B-1 no-lock | B-1 lock=200 |
+|-------|------------:|-------------:|
+| Gaussian | -0.0063 | 0.0000 (neutralised) |
+| XOR | -0.0062 | 0.0000 (neutralised) |
+| Sinusoid | +0.0125 | 0.0000 (destroyed) |
+| real ECG 2-modal | -0.0062 | -0.0062 (no effect) |
+| **4.5-modal (this ADR)** | **0.0000** | **+0.0063** (lift!) |
+
+This is the FIRST world where `constellation_lock_after=200`
+produces a positive me7 gap (in the pre-registered biological
+direction) from a zero no-lock baseline. Magnitude is ~1/8th of
+the 0.05 threshold, so B-1 still FAILs quantitatively, but the
+directional result is qualitatively distinct from all 4 prior
+worlds. Candidate mechanism: with the 3 previously-zeroed
+modalities (tactile / gravity / force) now carrying real signal,
+the lock has a richer substrate on which to express a congenital
+(T1) vs late-acquired (T2) plasticity differential.
+
+## B-2 with methodology robustness
+
+The B-2 Me3 delta is **-0.0376** with a bootstrap 95% CI of
+**[-0.056, -0.001]** (via nerve-wml v1.5.3 `bootstrap_ci_mi` +
+scipy.stats.bootstrap). CI is **entirely negative** (upper bound
+-0.001 < 0) — first world where the under-threshold B-2 is
+robustly distinguishable from zero, just barely. Direction is
+opposite the pre-registered +0.10 hypothesis; interpretation:
+the lock-free T2 network's post-lesion MI is slightly **lower**
+than its pre-lesion MI on this 4.5-modal bridge. This may reflect
+interference rather than migration — the existence of multiple
+real modalities changes the MI landscape in a way the synthetic
+cluster + ECG 2-modal bridges did not expose.
+
+The null-model MI check hit an API mismatch between the
+`nerve-wml.methodology.NullModelResult` dataclass and the
+client script's attribute expectations (`observed_mi` vs
+`.mi_observed` or similar). Tracked as a follow-up fix but
+does not affect the bootstrap-CI verdict above.
 
 ## Honest note on reproducibility
 

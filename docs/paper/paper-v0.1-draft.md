@@ -180,8 +180,43 @@ not help B-1 meet its threshold.
 the naïve "lock = Amedi advantage" story. The `plasticity_step`
 mechanism is necessary to express a T1/T2 asymmetry but not
 sufficient to reproduce the pre-registered congenital advantage
-on any of the four tested worlds at this parameterisation.
-B-3, however, survives the lock in 4/4 worlds — further
+on any of the four synthetic worlds at this parameterisation.
+
+### 5.4 Extension to 4.5-modal real biological bridge (ADR-0012)
+
+OSF amendment v0.5 extends the pre-registered grid with a fifth
+world derived from Studyforrest phase-2 (sub-01 ses-localizer
+task-movielocalizer run-1): real VGG16 features over
+movie_localizer.mkv, ffmpeg scene-cut tactile proxy, real
+cardiac+respiration physio, zero gravity (rp regressors not
+published), CC-BY-4.0 LibriSpeech audio substitution (path (b)
+of ADR-0012 — the Forrest Gump soundtrack is not redistributable).
+
+| World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
+|-------|------------:|-------------:|------------:|-------------:|
+| Gaussian | -0.0063 | 0.0000 | 0.1484 | 0.1719 |
+| XOR | -0.0062 | 0.0000 | 0.1406 | 0.1250 |
+| Sinusoid | +0.0125 | 0.0000 | 0.1406 | 0.1562 |
+| ECG 2-modal | -0.0062 | -0.0062 | 0.4453 | 0.4453 |
+| **4.5-modal real** | **0.0000** | **+0.0063** | **0.1016** | **0.1250** |
+
+The 4.5-modal is the first world-condition pair where the lock
+produces a positive B-1 (in the pre-registered Amedi direction),
+although still below threshold. B-3 attenuates from the ECG
+22.3× down to 5.1×-6.2× — consistent with Branch B of the OSF
+amendment v0.5 decision rule ("PASS but attenuated under
+biological input complexity").
+
+B-2 is measured with a bootstrap 95% CI via nerve-wml v1.5.3
+methodology module: median -0.0376, CI [-0.056, -0.001].
+First world-condition where B-2 is robustly distinguishable
+from zero. Sign is opposite the pre-registered +0.10 direction —
+interpretation: multi-modal real inputs change the MI landscape
+such that lesion-phase training reduces rather than grows the
+probe-code-vs-label MI, consistent with interference rather than
+migration.
+
+B-3, however, survives the lock in 5/5 worlds — further
 confirming its architectural-invariant status.
 
 ### 5.4 Open follow-up (declared)
