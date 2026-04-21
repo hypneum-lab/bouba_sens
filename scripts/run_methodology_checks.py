@@ -113,15 +113,17 @@ def run(aggregate_path: Path, cells_dir: Path) -> dict[str, object]:
         )
         probe_stats = {
             "null_model_pre": {
-                "observed": float(null_pre.observed_mi),
-                "null_mean": float(null_pre.null_mean),
-                "null_std": float(null_pre.null_std),
+                "observed": float(null_pre.mi_observed),
+                "null_mean": float(null_pre.mi_null_mean),
+                "null_std": float(null_pre.mi_null_std),
+                "z_score": float(null_pre.z_score),
                 "p_value": float(null_pre.p_value),
             },
             "null_model_post": {
-                "observed": float(null_post.observed_mi),
-                "null_mean": float(null_post.null_mean),
-                "null_std": float(null_post.null_std),
+                "observed": float(null_post.mi_observed),
+                "null_mean": float(null_post.mi_null_mean),
+                "null_std": float(null_post.mi_null_std),
+                "z_score": float(null_post.z_score),
                 "p_value": float(null_post.p_value),
             },
             "kraskov_pre_vs_labels": float(kraskov),
