@@ -105,3 +105,21 @@ def test_aggregate_skips_unparseable_dirs(tmp_path: Path) -> None:
     result = aggregate(tmp_path)
     assert "t2_audio_floor" in result["cells"]
     assert len(result["cells"]) == 1
+
+
+def test_b2_cells_counted_zero_when_me3_delta_missing(tmp_path: Path) -> None:
+    """Regression guard: eval_report.json without `me3_delta` must yield b2.cells_counted == 0.
+
+    This locks the failure mode for Sprint 7 micro-fix G1 — if a future
+    commit regresses `scripts/run_grid.sh` to emit only Me1/Me2 (dropping
+    Me3), the aggregator produces no Me3 values and B-2 must report
+    cells_counted == 0 rather than silently passing on an empty median.
+    """
+    # Seed 3 cells with me1+me2 but NO me3_delta key.
+    for seed in range(3):
+        _seed_cell(tmp_path, f"seed{seed}_T2_audio_floor", me1=0.60, me2=0.55)
+    result = aggregate(tmp_path)
+    b2 = result["invariants"]["b2"]
+    assert b2["cells_counted"] == 0
+    assert b2["median_me3_delta"] == 0.0
+    assert b2["passes"] is False
