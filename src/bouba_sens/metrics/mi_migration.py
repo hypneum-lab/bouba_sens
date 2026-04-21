@@ -128,12 +128,14 @@ def _mi_mine(codes: np.ndarray, labels: np.ndarray, *, epochs: int, seed: int) -
     from torch import nn
 
     torch.manual_seed(seed)
+    n = len(labels)
+    codes_2d = codes.reshape(n, -1).astype(np.float32)
     n_classes = int(labels.max() + 1)
     labels_onehot = np.eye(n_classes)[labels].astype(np.float32)
-    x = torch.from_numpy(codes.astype(np.float32))
+    x = torch.from_numpy(codes_2d)
     y = torch.from_numpy(labels_onehot)
     critic = nn.Sequential(
-        nn.Linear(codes.shape[1] + n_classes, 64),
+        nn.Linear(codes_2d.shape[1] + n_classes, 64),
         nn.ReLU(),
         nn.Linear(64, 64),
         nn.ReLU(),
