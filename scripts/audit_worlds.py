@@ -38,6 +38,11 @@ _WORLD_FACTORIES = {
 
 
 def _build(name: str, seed: int) -> WorldSimulator:
+    if name.startswith("studyforrest_real5:"):
+        from bouba_sens.world.studyforrest import StudyforrestRealWorld
+
+        path = name.split(":", 1)[1]
+        return StudyforrestRealWorld(seed=seed, data_dir=Path(path))
     return _WORLD_FACTORIES[name](seed=seed)
 
 

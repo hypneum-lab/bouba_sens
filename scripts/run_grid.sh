@@ -9,6 +9,12 @@ STEPS_TRAIN="${STEPS_TRAIN:-200}"
 STEPS_LESION="${STEPS_LESION:-100}"
 METRICS="${METRICS:-Me1,Me2,Me3}"
 WORLD="${WORLD:-gaussian}"
+# nerve-wml#4 critical-period lock. When set (e.g. LOCK_AFTER=STEPS_TRAIN),
+# T2 cells inherit a frozen constellation at Phase 2 entry (mux was trained
+# through Phase 1 and crossed the lock threshold); T1 cells receive a fresh
+# mux that locks mid-Phase-2 OR never locks if the threshold exceeds
+# STEPS_LESION. Empty = legacy v1.3 behaviour (no lock).
+LOCK_AFTER="${LOCK_AFTER:-}"
 
 SEEDS=(0 1 2 3 4)
 MODALITIES=(audio vision tactile gravity force)
@@ -32,12 +38,15 @@ for seed in "${SEEDS[@]}"; do
     phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
     if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
         echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
-        uv run bouba-sens train \
-            --steps "${STEPS_TRAIN}" \
-            --batch-size 16 \
-            --seed "${seed}" \
-            --world "${WORLD}" \
+        train_args=(
+            --steps "${STEPS_TRAIN}"
+            --batch-size 16
+            --seed "${seed}"
+            --world "${WORLD}"
             --out "${phase1_dir}"
+        )
+        [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
+        uv run bouba-sens train "${train_args[@]}"
     fi
 
     for modality in "${MODALITIES[@]}"; do
@@ -59,27 +68,22 @@ for seed in "${SEEDS[@]}"; do
 
                 echo "[${count}/${total}] ${cell_name}"
 
+                lesion_args=(
+                    --modality "${modality}"
+                    --timing "${timing}"
+                    --steps "${STEPS_LESION}"
+                    --seed $(( seed * 10000 + count ))
+                    --snr-floor "${snr_floor}"
+                    --world "${WORLD}"
+                    --out "${cell_dir}"
+                )
+                [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
-                    uv run bouba-sens lesion \
-                        --modality "${modality}" \
-                        --timing T1 \
-                        --steps "${STEPS_LESION}" \
-                        --seed $(( seed * 10000 + count )) \
-                        --snr-floor "${snr_floor}" \
-                        --world "${WORLD}" \
-                        --out "${cell_dir}"
+                    uv run bouba-sens lesion "${lesion_args[@]}"
                 else
                     # Late-acquired: restore phase 1 checkpoint.
-                    uv run bouba-sens lesion \
-                        --ckpt "${phase1_dir}" \
-                        --modality "${modality}" \
-                        --timing T2 \
-                        --steps "${STEPS_LESION}" \
-                        --seed $(( seed * 10000 + count )) \
-                        --snr-floor "${snr_floor}" \
-                        --world "${WORLD}" \
-                        --out "${cell_dir}"
+                    uv run bouba-sens lesion --ckpt "${phase1_dir}" "${lesion_args[@]}"
                 fi
 
                 uv run bouba-sens eval \
