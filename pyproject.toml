@@ -26,6 +26,8 @@ dependencies = [
     "matplotlib>=3.9",
     "plotly>=5.24",
     "jinja2>=3.1",
+    "librosa>=0.10",
+    "torchvision>=0.20",
     "scikit-learn>=1.5",
     # nerve-wml v0.1.0 is not on PyPI; installed from sibling local clone via
     # [tool.uv.sources] below. Spec §6.3 contract verified by
@@ -97,6 +99,9 @@ module = [
     "track_p.*",
     "track_w.*",
     "sklearn.*",
+    "librosa.*",
+    "torchvision.*",
+    "PIL.*",
 ]
 ignore_missing_imports = true
 
