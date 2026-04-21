@@ -134,6 +134,15 @@ def train(
             "activation (nerve-wml#5 compound critical-period)."
         ),
     ),
+    gumbel_tau: float = typer.Option(
+        1.0,
+        help=(
+            "Temperature of the transducer-gating sigmoid when "
+            "transducer_gating='gumbel'. Lower values tighten toward the "
+            "hard binary rule; higher values smooth toward uniform. Ignored "
+            "when transducer_gating='hard'."
+        ),
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -162,7 +171,9 @@ def train(
         "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
     }
-    nerve = CrossModalNerve(mux, seed=seed, transducer_gating=transducer_gating)
+    nerve = CrossModalNerve(
+        mux, seed=seed, transducer_gating=transducer_gating, gumbel_tau=gumbel_tau
+    )
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
@@ -233,6 +244,13 @@ def lesion(
             "activation (nerve-wml#5 compound critical-period, Sprint 11)."
         ),
     ),
+    gumbel_tau: float = typer.Option(
+        1.0,
+        help=(
+            "Temperature of the transducer-gating sigmoid when "
+            "transducer_gating='gumbel'. Sprint 12 scan."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -263,7 +281,7 @@ def lesion(
         "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=4),
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=5),
     }
-    nerve = CrossModalNerve(mux, seed=0, transducer_gating=transducer_gating)
+    nerve = CrossModalNerve(mux, seed=0, transducer_gating=transducer_gating, gumbel_tau=gumbel_tau)
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
