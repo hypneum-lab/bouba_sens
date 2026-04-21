@@ -107,13 +107,22 @@ class AdaptationLoop:
         return loss, logits
 
     def pretrain(self, steps: int, *, batch_size: int = 32, seed: int = 0) -> Checkpoint:
-        """Phase 1: intact training on the world. Returns snapshot."""
+        """Phase 1: intact training on the world. Returns snapshot.
+
+        Calls `mux.step()` once per iteration so any
+        `constellation_lock_after` configured at mux construction
+        can fire during Phase 1 (congenital vs late-acquired
+        critical-period semantics, nerve-wml#4).
+        """
+        mux_step = getattr(self.mux, "step", None)
         for step in range(steps):
             sample = self.world.sample(batch_size=batch_size, seed=seed + step)
             loss, _ = self._forward(sample)
             self.opt.zero_grad()
             loss.backward()  # type: ignore[no-untyped-call]
             self.opt.step()
+            if callable(mux_step):
+                mux_step()
         return Checkpoint(
             mux_state=_deepcopy_state(self.mux),
             nerve_state=_deepcopy_state(self.nerve),
@@ -187,6 +196,7 @@ class AdaptationLoop:
         def replay_draw(i: int) -> WorldSample:
             return replay_buffer[i % len(replay_buffer)]
 
+        mux_step = getattr(self.mux, "step", None)
         for step in range(steps):
             fresh = self.world.sample(batch_size=batch_size, seed=seed + step)
             lesioned = scheduler.apply(fresh, step)
@@ -200,6 +210,8 @@ class AdaptationLoop:
             self.opt.zero_grad()
             loss.backward()  # type: ignore[no-untyped-call]
             self.opt.step()
+            if callable(mux_step):
+                mux_step()
 
             report.loss_curve.append(loss.item())
             preds = logits.argmax(-1)

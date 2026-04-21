@@ -115,6 +115,13 @@ def train(
     batch_size: int = typer.Option(16, help="Batch size per step"),
     seed: int = typer.Option(0, help="Training seed"),
     world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
+    constellation_lock_after: int | None = typer.Option(
+        None,
+        help=(
+            "nerve-wml#4 critical-period lock: mux constellation freezes "
+            "after N training steps. None = legacy v1.3 behaviour."
+        ),
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -135,7 +142,7 @@ def train(
     from bouba_sens.sensory import Modality, SensoryWML
 
     world_obj = _build_world(world, seed)
-    mux = GammaThetaMultiplexer(seed=seed)
+    mux = GammaThetaMultiplexer(seed=seed, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
         "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2),
@@ -198,6 +205,14 @@ def lesion(
     snr_floor: float = typer.Option(-20.0, help="Floor SNR in dB"),
     k_steps: int = typer.Option(5000, help="SNR ramp length in steps"),
     world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
+    constellation_lock_after: int | None = typer.Option(
+        None,
+        help=(
+            "nerve-wml#4 critical-period lock: mux constellation freezes "
+            "after N training steps. T2 inherits the lock from the ckpt; "
+            "T1 passes this kwarg directly. None = legacy v1.3 behaviour."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -220,7 +235,7 @@ def lesion(
     from bouba_sens.sensory import Modality, SensoryWML
 
     world_obj = _build_world(world, seed=0)
-    mux = GammaThetaMultiplexer(seed=0)
+    mux = GammaThetaMultiplexer(seed=0, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=1),
         "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=2),
