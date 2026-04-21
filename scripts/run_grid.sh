@@ -7,7 +7,7 @@ set -euo pipefail
 OUT_ROOT="${OUT_ROOT:-./runs/v01_grid}"
 STEPS_TRAIN="${STEPS_TRAIN:-200}"
 STEPS_LESION="${STEPS_LESION:-100}"
-METRICS="${METRICS:-Me1,Me2,Me7}"
+METRICS="${METRICS:-Me1,Me2,Me3}"
 WORLD="${WORLD:-gaussian}"
 
 SEEDS=(0 1 2 3 4)

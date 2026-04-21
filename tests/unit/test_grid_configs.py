@@ -57,3 +57,27 @@ def test_grid_timing_t2_pretrains() -> None:
 def test_grid_every_modality_config_exists() -> None:
     for m in ("audio", "vision", "tactile", "gravity", "force"):
         assert (_CONFIG_ROOT / "modality" / f"{m}.yaml").exists()
+
+
+def test_run_grid_default_metrics_includes_me3() -> None:
+    """Guard: scripts/run_grid.sh default METRICS must match the Sprint 5+ pipeline.
+
+    The aggregator computes B-2 from `me3_delta` at the per-cell level and
+    Me7 / Me6 at the aggregation level. Missing Me3 in the shell default
+    silently breaks B-2 (cells_counted == 0) unless the caller overrides
+    METRICS. See ADR-0005 / Sprint 7 micro-fix G1.
+    """
+    import re
+
+    script = Path(__file__).resolve().parents[2] / "scripts" / "run_grid.sh"
+    content = script.read_text()
+    match = re.search(r'^METRICS="\$\{METRICS:-([^"]+)\}"', content, re.MULTILINE)
+    assert match is not None, "METRICS default line not found in scripts/run_grid.sh"
+    metrics = [m.strip() for m in match.group(1).split(",")]
+    assert "Me1" in metrics, f"Me1 missing from default METRICS: {metrics!r}"
+    assert "Me2" in metrics, f"Me2 missing from default METRICS: {metrics!r}"
+    assert "Me3" in metrics, f"Me3 missing from default METRICS: {metrics!r}"
+    assert "Me7" not in metrics, (
+        f"Me7 must NOT be in per-cell METRICS default (it is computed at "
+        f"aggregation level); got {metrics!r}"
+    )
