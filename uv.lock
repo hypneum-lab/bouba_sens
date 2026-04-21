@@ -827,10 +827,11 @@ wheels = [
 
 [[package]]
 name = "nerve-wml"
-version = "1.5.2"
+version = "1.5.3"
 source = { directory = "../nerve-wml" }
 dependencies = [
     { name = "numpy" },
+    { name = "scipy" },
     { name = "torch" },
 ]
 
@@ -841,6 +842,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
+    { name = "scipy", specifier = ">=1.17.1" },
     { name = "torch", specifier = ">=2.3" },
     { name = "torchvision", marker = "extra == 'mnist'", specifier = ">=0.17.0" },
 ]
