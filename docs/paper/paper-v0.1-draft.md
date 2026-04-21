@@ -135,18 +135,54 @@ MIT-BIH ECG : B-3 = **0.4453** (22.3×, strongest of any world), B-1 = −0.0062
 
 `constellation_lock_after=200` with `STEPS_TRAIN=200` gives T2 a locked mux at Phase 2 entry (Phase 1 crossed the threshold, checkpoint saved `requires_grad=False`, `load_state_dict` re-applies the lock). T1 starts fresh, never reaches the 200-step mark during its 100-step Phase 2 → stays plastic. This is the first architectural T1/T2 asymmetry in the benchmark.
 
-### 5.2 Verdicts (to be inserted)
+### 5.2 Cross-world lock matrix (ADR-0011)
 
 | World | B-1 no-lock | B-1 lock=200 | Delta |
 |-------|------------:|-------------:|------:|
-| Gaussian (ADR-0010) | −0.0063 | 0.0000 | +0.0063 |
-| XOR | _see Appendix B, current grid_ | _pending_ | |
-| Sinusoid | _idem_ | _pending_ | |
-| real ECG | _idem_ | _pending_ | |
+| Gaussian | −0.0063 (inverted) | **0.0000** | +0.0063 |
+| XOR | −0.0062 (inverted) | **0.0000** | +0.0062 |
+| Sinusoid | **+0.0125** (correct sign) | **0.0000** | **−0.0125** |
+| real ECG | −0.0062 (inverted) | −0.0062 | 0.0000 |
 
-### 5.3 Interpretation
+| World | B-3 no-lock | B-3 lock=200 |
+|-------|------------:|-------------:|
+| Gaussian | 0.1484 (7.4×) | 0.1719 (8.6×) |
+| XOR | 0.1406 (7.0×) | 0.1250 (6.2×) |
+| Sinusoid | 0.1406 (7.0×) | 0.1562 (7.8×) |
+| real ECG | 0.4453 (22.3×) | 0.4453 (22.3×) |
 
-Partial recovery : the lock **neutralises the directional inversion** in 1/1 world so far (Gaussian). Magnitude does not saturate the 0.05 threshold. The B-2 side-effect (flip to −0.0092) is the architecturally-correct behaviour of a critical-period model — frozen constellation cannot re-route information.
+### 5.3 Interpretation — the lock is homogenising, not recovering
+
+Three distinct regimes emerge from the 4 × 2 matrix :
+
+1. **Synthetic inverted worlds (Gaussian, XOR)** : lock flips
+   `me7 = −0.006` to exactly `0.000`. The inversion is gone ;
+   no positive gap appears.
+2. **Synthetic correct-sign world (Sinusoid)** : lock flips
+   `me7 = +0.0125` to exactly `0.000`. **The positive gap that
+   pre-existed is destroyed.** The lock does not selectively
+   favour T1.
+3. **Real ECG** : lock has no measurable effect. The 3 zeroed
+   modalities dominate the architecture's response space ; the
+   lock cannot induce a T1/T2 differential.
+
+Zero of four worlds shows the pre-registered pattern
+(`me7 > 0.05`). The lock acts like a low-pass filter on the
+T1/T2 difference — it pushes every world toward `me7 = 0`
+regardless of initial sign.
+
+The B-2 side-effect on Gaussian (flip to −0.0092) is the
+architecturally-correct behaviour of a critical-period model —
+a frozen constellation cannot re-route information — but does
+not help B-1 meet its threshold.
+
+**Scientific upshot.** The simple single-parameter lock falsifies
+the naïve "lock = Amedi advantage" story. The `plasticity_step`
+mechanism is necessary to express a T1/T2 asymmetry but not
+sufficient to reproduce the pre-registered congenital advantage
+on any of the four tested worlds at this parameterisation.
+B-3, however, survives the lock in 4/4 worlds — further
+confirming its architectural-invariant status.
 
 ### 5.4 Open follow-up (declared)
 
