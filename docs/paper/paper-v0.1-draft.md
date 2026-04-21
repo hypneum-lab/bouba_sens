@@ -371,6 +371,52 @@ nerve-wml#5 prior hypothesis.
 B-3 remains invariant across all 5 new grids (0.109-0.125),
 confirming once more its architectural status.
 
+### 5.9 Per-seed retraction + phase-transition null (Sprint 14, ADR-0017)
+
+Sprint 14 adds per-seed stability tests to every claim the
+paper has made and tries one last compound — a phase-transition
+schedule that flips the transducer gating from HARD during Phase 1
+to GUMBEL tau=0.30 during Phase 2. The results shrink the paper's
+load-bearing story and retract one claim outright.
+
+**14a — B-2 tau=0.30 "migration peak" retracted.** Re-
+aggregating `runs/v05_s12_tau0_3` per seed shows B-2 is
+**exactly 0.000 at every one of 5 seeds**. The grid-median
++0.0180 reported in §5.8 arose from `me9_bootstrap` resampling
+a near-zero delta distribution (kNN-Kraskov quantisation);
+the headline was bootstrap smoothing, not a migration signal.
+B-1 at tau=0.30 is only weakly robust (3/5 seeds at +0.0125,
+2/5 at -0.0063, mean +0.005, none passing the 0.05 threshold).
+
+**14b — codebook entropy is the wrong observable.** Median-
+over-cells codebook entropy is 4.1545 nats for both
+LOCK=100 (peak) and LOCK=100+CBFREEZE (no peak) grids — the
+two are indistinguishable at this resolution. The Sprint 13b
+outcome stands, but its mechanistic story (§5.8) is softened:
+the codebook must stay plastic, yet its role is not captured
+by the entropy scalar. A finer observable (per-entry drift,
+pair-wise L2) is required.
+
+**14c — phase-transition schedule falsified.**
+LOCK=100 + HARD→GUMBEL-tau-0.30 at step 200 gives grid-level
+B-1=+0.0063 (2× worse than pure HARD Sprint 10 peak) and
+B-2=-0.0220 (worse than any pure-mode run). One seed collapses
+to B-1=-0.0375 — below anything observed in prior single-mode
+runs, suggesting the mode switch at the P1/P2 boundary
+introduces destructive interference between the regimes.
+
+**Sprint 10-14 synthesis.** The only configuration that
+produces a positive B-1 peak of practical significance on the
+4.5-modal real bridge remains **LOCK=100 + HARD transducer**
+(+0.0125 grid, 3+/5 seeds positive), from Sprint 10. Every
+compound attempted since has preserved, weakened, or destroyed
+it. B-2 is never robustly positive; B-3 is always positive and
+architecturally invariant regardless of P1/P2 manipulations.
+The paper's central empirical claim narrows to: **a frozen mux
+with hard transducer gating is the minimal configuration that
+qualitatively reproduces Amedi-style T1/T2 asymmetry; all
+additional plasticity controls tested are null or harmful**.
+
 ---
 
 ## 6. Limitations

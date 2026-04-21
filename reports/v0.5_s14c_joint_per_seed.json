@@ -1,0 +1,169 @@
+{
+  "per_seed": {
+    "0": {
+      "b1": {
+        "passes": false,
+        "median_me7": 0.006249999999999978,
+        "threshold": 0.05,
+        "cells_counted": 15
+      },
+      "b2": {
+        "passes": false,
+        "median_me3_delta": -0.0022129250856129626,
+        "threshold": 0.1,
+        "cells_counted": 30
+      },
+      "b3": {
+        "passes": true,
+        "median_me6_max_abs": 0.078125,
+        "threshold": 0.02,
+        "cells_counted": 6
+      }
+    },
+    "1": {
+      "b1": {
+        "passes": false,
+        "median_me7": 0.0,
+        "threshold": 0.05,
+        "cells_counted": 15
+      },
+      "b2": {
+        "passes": false,
+        "median_me3_delta": 0.0,
+        "threshold": 0.1,
+        "cells_counted": 30
+      },
+      "b3": {
+        "passes": true,
+        "median_me6_max_abs": 0.125,
+        "threshold": 0.02,
+        "cells_counted": 6
+      }
+    },
+    "2": {
+      "b1": {
+        "passes": false,
+        "median_me7": 0.012500000000000011,
+        "threshold": 0.05,
+        "cells_counted": 15
+      },
+      "b2": {
+        "passes": false,
+        "median_me3_delta": 0.0,
+        "threshold": 0.1,
+        "cells_counted": 30
+      },
+      "b3": {
+        "passes": true,
+        "median_me6_max_abs": 0.0625,
+        "threshold": 0.02,
+        "cells_counted": 6
+      }
+    },
+    "3": {
+      "b1": {
+        "passes": false,
+        "median_me7": 0.006250000000000033,
+        "threshold": 0.05,
+        "cells_counted": 15
+      },
+      "b2": {
+        "passes": false,
+        "median_me3_delta": -0.018382616553840755,
+        "threshold": 0.1,
+        "cells_counted": 30
+      },
+      "b3": {
+        "passes": true,
+        "median_me6_max_abs": 0.125,
+        "threshold": 0.02,
+        "cells_counted": 6
+      }
+    },
+    "4": {
+      "b1": {
+        "passes": false,
+        "median_me7": -0.037500000000000006,
+        "threshold": 0.05,
+        "cells_counted": 15
+      },
+      "b2": {
+        "passes": false,
+        "median_me3_delta": 0.0,
+        "threshold": 0.1,
+        "cells_counted": 30
+      },
+      "b3": {
+        "passes": true,
+        "median_me6_max_abs": 0.109375,
+        "threshold": 0.02,
+        "cells_counted": 6
+      }
+    }
+  },
+  "aggregate": {
+    "b1": {
+      "b1_values": [
+        0.006249999999999978,
+        0.0,
+        0.012500000000000011,
+        0.006250000000000033,
+        -0.037500000000000006
+      ],
+      "b1_mean": -0.0024999999999999966,
+      "b1_std": 0.02005850816985152,
+      "b1_passes": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "sign_stability": "3/5 positive",
+      "sign_negative": "1/5 negative",
+      "passes_count": "0/5"
+    },
+    "b2": {
+      "b2_values": [
+        -0.0022129250856129626,
+        0.0,
+        0.0,
+        -0.018382616553840755,
+        0.0
+      ],
+      "b2_mean": -0.004119108327890744,
+      "b2_std": 0.008030914669506534,
+      "b2_passes": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "sign_stability": "0/5 positive",
+      "sign_negative": "2/5 negative",
+      "passes_count": "0/5"
+    },
+    "b3": {
+      "b3_values": [
+        0.078125,
+        0.125,
+        0.0625,
+        0.125,
+        0.109375
+      ],
+      "b3_mean": 0.1,
+      "b3_std": 0.028384222069663984,
+      "b3_passes": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "sign_stability": "5/5 positive",
+      "sign_negative": "0/5 negative",
+      "passes_count": "5/5"
+    }
+  }
+}
