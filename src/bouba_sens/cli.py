@@ -52,10 +52,14 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
     if key == "sinusoid":
         return SinusoidWorld(seed=seed)
     if key == "studyforrest":
-        # Real-data mode is opt-in via BOUBA_SENS_STUDYFORREST_DATA; the
-        # default path uses the mock stream (see ADR-0007).
         raw_dir = os.getenv("BOUBA_SENS_STUDYFORREST_DATA")
         data_dir = Path(raw_dir) if raw_dir else None
+        # Prefer the 5-modal real bridge when the cache is present; fall
+        # back to the 2-modal stub (ADR-0007) otherwise for compatibility.
+        if data_dir and (data_dir / "tactile.pt").exists():
+            from bouba_sens.world.studyforrest import StudyforrestRealWorld
+
+            return StudyforrestRealWorld(seed=seed, data_dir=data_dir)
         return StudyforrestWorld(seed=seed, data_dir=data_dir)
     raise typer.BadParameter(
         f"unknown world '{name}'; pick gaussian | xor | sinusoid | studyforrest"

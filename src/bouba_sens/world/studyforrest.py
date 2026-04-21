@@ -90,6 +90,63 @@ class StudyforrestWorld:
         }
 
 
+class StudyforrestRealWorld:
+    """5-modality real biological bridge (Sprint 9 / Task 9.3).
+
+    Reads 6 pre-extracted tensors (output of
+    `scripts/extract_studyforrest_features.py`) and serves temporally
+    contiguous batches. No zeroed modalities: tactile, gravity, force
+    all carry real signal from motion annotations, fMRI head-motion
+    regressors, and ECG+respiration respectively.
+
+    Contract matches `WorldSimulator`: identical `sample()` and
+    `modality_dims()` signatures as `GaussianWorld`, so downstream
+    SensoryWML + encoders + nerve need no change.
+    """
+
+    def __init__(self, *, seed: int = 0, data_dir: Path) -> None:
+        dir_path = Path(data_dir)
+        self._seed = seed
+        self._audio = torch.load(dir_path / "audio.pt")
+        vision = torch.load(dir_path / "vision.pt")
+        self._vision = (
+            vision if vision.ndim == 3 else vision.reshape(vision.shape[0], *_VISION_SHAPE)
+        )
+        self._tactile = torch.load(dir_path / "tactile.pt")
+        self._gravity = torch.load(dir_path / "gravity.pt")
+        self._force = torch.load(dir_path / "force.pt")
+        self._labels = torch.load(dir_path / "labels.pt").long()
+        self._n = self._labels.shape[0]
+        self._mode = "real5"
+
+    @property
+    def mode(self) -> str:
+        return self._mode
+
+    def sample(self, batch_size: int, seed: int) -> WorldSample:
+        gen = torch.Generator().manual_seed(seed)
+        start = int(torch.randint(0, max(1, self._n - batch_size), (1,), generator=gen).item())
+        idx = torch.arange(start, start + batch_size) % self._n
+        return WorldSample(
+            z=torch.zeros(batch_size, 1),
+            audio=self._audio[idx],
+            vision=self._vision[idx],
+            tactile=self._tactile[idx],
+            gravity=self._gravity[idx],
+            force=self._force[idx],
+            label=self._labels[idx],
+        )
+
+    def modality_dims(self) -> dict[str, tuple[int, ...]]:
+        return {
+            "audio": (_AUDIO_DIM,),
+            "vision": _VISION_SHAPE,
+            "tactile": (_TACTILE_DIM,),
+            "gravity": (_GRAVITY_DIM,),
+            "force": (_FORCE_DIM,),
+        }
+
+
 def _build_mock_cache(n: int, seed: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Return (audio, vision, label) tensors with bio-plausible stats.
 
