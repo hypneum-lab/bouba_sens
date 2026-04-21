@@ -150,6 +150,18 @@ def train(
             "Third compound critical-period component."
         ),
     ),
+    transducer_gating_schedule: int | None = typer.Option(
+        None,
+        help=(
+            "Sprint 14 — step count at which transducer_gating silently "
+            "switches to transducer_gating_target. Enables phase-transition "
+            "gating (e.g. HARD during P1, GUMBEL during P2)."
+        ),
+    ),
+    transducer_gating_target: str | None = typer.Option(
+        None,
+        help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -184,6 +196,8 @@ def train(
         transducer_gating=transducer_gating,
         gumbel_tau=gumbel_tau,
         codebook_lock_after=codebook_lock_after,
+        transducer_gating_schedule=transducer_gating_schedule,
+        transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
@@ -270,6 +284,17 @@ def lesion(
             "constellation lock and transducer gating."
         ),
     ),
+    transducer_gating_schedule: int | None = typer.Option(
+        None,
+        help=(
+            "Sprint 14 — step count at which transducer_gating silently "
+            "switches to transducer_gating_target."
+        ),
+    ),
+    transducer_gating_target: str | None = typer.Option(
+        None,
+        help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -306,6 +331,8 @@ def lesion(
         transducer_gating=transducer_gating,
         gumbel_tau=gumbel_tau,
         codebook_lock_after=codebook_lock_after,
+        transducer_gating_schedule=transducer_gating_schedule,
+        transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)

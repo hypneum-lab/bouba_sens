@@ -193,14 +193,22 @@ class CrossModalNerve(nn.Module):
         transducer_gating: str = "hard",
         gumbel_tau: float = 1.0,
         codebook_lock_after: int | None = None,
+        transducer_gating_schedule: int | None = None,
+        transducer_gating_target: str | None = None,
     ) -> None:
         """Sprint 11 `transducer_gating` kwarg + Sprint 13
-        `codebook_lock_after` third compound-critical-period component.
+        `codebook_lock_after` third compound-critical-period component
+        + Sprint 14 `transducer_gating_schedule` phase transition.
         ``codebook_lock_after=None`` (default) preserves v0.5 behaviour;
         when set to an int N, ``AdaptiveCodebook.codebook`` Parameter
         permanently freezes (``requires_grad=False``) once the nerve's
         internal step counter crosses N. Consumers call ``nerve.step()``
         once per training iteration (analogous to ``mux.step()``).
+        When ``transducer_gating_schedule`` is an int N, the gating
+        mode silently switches from ``transducer_gating`` to
+        ``transducer_gating_target`` once the counter crosses N (read
+        inside ``fuse`` so checkpoint restores resume the correct
+        mode — see Sprint 14 ADR).
         """
         super().__init__()
         self.gates = PlasticityGate()
@@ -221,6 +229,10 @@ class CrossModalNerve(nn.Module):
         self.transducer_gating = transducer_gating
         self.gumbel_tau = float(gumbel_tau)
         self._codebook_lock_after = codebook_lock_after
+        self._transducer_gating_schedule = transducer_gating_schedule
+        if transducer_gating_schedule is not None and transducer_gating_target is None:
+            raise ValueError("transducer_gating_schedule requires transducer_gating_target")
+        self._transducer_gating_target = transducer_gating_target
         self.register_buffer("codebook_step", torch.tensor(0, dtype=torch.long))
         object.__setattr__(self, "mux", mux)
         self._lesion_log: list[tuple[Modality, float]] = []
@@ -240,6 +252,21 @@ class CrossModalNerve(nn.Module):
             and int(self.codebook_step) >= self._codebook_lock_after
         ):
             self.codebook.codebook.requires_grad_(False)
+
+    def _active_gating(self) -> str:
+        """Return the gating mode active at the current ``codebook_step``.
+
+        Functional (no state mutation) so a checkpoint restore of
+        ``codebook_step`` transparently resumes the correct mode on
+        the very first forward pass of Phase 2.
+        """
+        if (
+            self._transducer_gating_schedule is not None
+            and self._transducer_gating_target is not None
+            and int(self.codebook_step) >= self._transducer_gating_schedule
+        ):
+            return self._transducer_gating_target
+        return self.transducer_gating
 
     def fuse(self, letters: dict[Modality, Tensor]) -> Tensor:
         """Fuse 5 modality carriers into a shared `(B, K, d_hidden)` tensor.
@@ -261,7 +288,7 @@ class CrossModalNerve(nn.Module):
         # 3. Per-pair transducer activation per spec §4.3.
         w = self.gates.weights()  # (5,)
         gate_vals = [w[i].item() for i, _ in enumerate(MODALITIES)]
-        use_gumbel = self.transducer_gating == "gumbel"
+        use_gumbel = self._active_gating() == "gumbel"
         for src_idx, src in enumerate(MODALITIES):
             for dst_idx, dst in enumerate(MODALITIES):
                 if src == dst:

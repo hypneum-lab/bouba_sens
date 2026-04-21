@@ -24,6 +24,11 @@ TRANSDUCER_GATING="${TRANSDUCER_GATING:-hard}"
 GUMBEL_TAU="${GUMBEL_TAU:-1.0}"
 # Sprint 13 — AdaptiveCodebook freeze after N training steps. Empty = no freeze.
 CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
+# Sprint 14 — transducer gating phase-transition schedule. Empty = no schedule.
+# GATING_SCHEDULE=200 with GATING_TARGET=gumbel + TRANSDUCER_GATING=hard =
+# HARD during Phase 1 (0..200), GUMBEL during Phase 2 (200..300) for T2 cells.
+GATING_SCHEDULE="${GATING_SCHEDULE:-}"
+GATING_TARGET="${GATING_TARGET:-}"
 
 SEEDS=(0 1 2 3 4)
 MODALITIES=(audio vision tactile gravity force)
@@ -58,6 +63,8 @@ for seed in "${SEEDS[@]}"; do
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
         [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
+        [[ -n "${GATING_SCHEDULE}" ]] && train_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
+        [[ -n "${GATING_TARGET}" ]] && train_args+=(--transducer-gating-target "${GATING_TARGET}")
         uv run bouba-sens train "${train_args[@]}"
     fi
 
@@ -93,6 +100,8 @@ for seed in "${SEEDS[@]}"; do
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
                 lesion_args+=(--gumbel-tau "${GUMBEL_TAU}")
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
+                [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
+                [[ -n "${GATING_TARGET}" ]] && lesion_args+=(--transducer-gating-target "${GATING_TARGET}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"
