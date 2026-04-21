@@ -56,7 +56,7 @@ We emphasise the *Popperian* posture. The null results reported here are not a f
 
 ### 2.2 Representation alignment metrics
 
-The MI/H statistic used by the sister project `nerve-wml` [Saillant, 2026] is related to — but distinct from — kernel-alignment metrics such as CKA [Kornblith et al., 2019] and canonical correlation variants like PWCCA [Morcos et al., 2018]. The methodological lessons in this paper apply to any family of alignment metrics that relies on small-sample MI estimators.
+The MI/H statistic used by the sister project `nerve-wml` [Saillant, 2026] is related to — but distinct from — kernel-alignment metrics such as CKA [Kornblith et al., 2019] and canonical correlation variants like PWCCA [Morcos et al., 2018]. A closer cousin is the **mutual *k*-nearest-neighbour** overlap introduced by [Huh et al., 2024] as a compact test of the Platonic Representation Hypothesis: for each sample in a batch of *N*, the score counts how many of the *k* nearest neighbours in embedding A coincide with those in embedding B, averaged over the batch. The score is in [0, 1], with $k/N$ as the chance baseline and 1.0 indicating identical neighbour structure. This paper's `bouba_sens` release ships a vendored `mutual_knn` implementation in `src/bouba_sens/metrics/alignment.py` (bit-identical to `nerve_wml.scripts.platonic_rh_alignment`) and exposes it through the `bouba-sens eval --metric mutual_knn` option for T1/T2 paired comparison — an alternative to the accuracy-based Me1 that directly reports representation alignment rather than task-level competence. The methodological lessons in this paper apply to any family of alignment metrics that relies on small-sample MI or *k*-NN estimators.
 
 ### 2.3 Bootstrap and null-model practice in ML benchmarks
 
@@ -262,6 +262,7 @@ We reported the critical validation of a pre-registered cross-modal plasticity b
 - Girdhar, R. *et al.* (2023). ImageBind: One embedding space to bind them all. *CVPR*.
 - Heimler, B., & Amedi, A. (2020). Revisiting adaptive and maladaptive effects of crossmodal plasticity. *Neuroscience*, 437.
 - Holmes, C. M., & Nemenman, I. (2019). Estimation of mutual information for real-valued data with error bars and controlled bias. *Physical Review E*, 100(2).
+- Huh, M., Cheung, B., Wang, T., & Isola, P. (2024). The Platonic Representation Hypothesis. *ICML*. arXiv:2405.07987.
 - Kornblith, S. *et al.* (2019). Similarity of neural network representations revisited. *ICML*.
 - Kraskov, A. *et al.* (2004). Estimating mutual information. *Physical Review E*, 69(6).
 - Liang, P. P. *et al.* (2022). MultiBench: Multiscale benchmarks for multimodal representation learning. *NeurIPS Datasets and Benchmarks*.
