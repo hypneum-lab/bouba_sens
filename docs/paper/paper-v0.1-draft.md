@@ -313,11 +313,63 @@ Worth a finer scan in paper v0.3.
 B-3 remains lock-gate-tau invariant (0.109-0.125, 5.4×-6.3×
 threshold), confirming once more its architectural status.
 
-### 5.8 Open follow-up (declared)
+### 5.8 Finer tau scan + codebook freeze (Sprint 13, ADR-0016)
 
-Paper v0.3: finer tau scan around 0.3 for the B-2 anomaly.
-Sprint 13: AdaptiveCodebook freeze as a third compound lock
-component.
+**Two orthogonal follow-ups** to the tau=0.3 anomaly (§5.7) and
+the deferred third plasticity component (§6.2 in earlier drafts).
+
+**13a — bimodal positive B-2.** A finer tau grid
+`{0.2, 0.25, 0.35, 0.4}` around the Sprint 12 anomaly reveals
+that the positive B-2 region is **not** a plateau:
+
+| tau | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
+|----:|--------:|--------------:|--------:|
+| 0.20 | +0.0063 | **+0.0116** | 0.125 |
+| 0.25 | +0.0062 | -0.0109 | 0.125 |
+| 0.30 | +0.0063 | **+0.0180** | 0.125 |
+| 0.35 | 0.0000 | -0.0183 | 0.109 |
+| 0.40 | 0.0000 | -0.0036 | 0.125 |
+
+Two positive B-2 peaks at tau=0.20 and tau=0.30 **bracket** a
+negative value at tau=0.25 — a non-monotone phase structure,
+not a Goldilocks zone. B-1 plateaus at ~+0.006 for tau ≤ 0.30
+then collapses to exactly 0.0000 for tau ≥ 0.35: a **critical
+transition** where sigmoid sharpness rigidifies just enough to
+erase T1/T2 history.
+
+Mechanistic reading: the MI-migration channel requires the
+gate to cross the `dst > 0.3` threshold *fast enough* to
+preserve Phase-1 selectivity, yet *slowly enough* to let
+distribution mass leak across related modality pairs during
+Phase 2. The two positive B-2 peaks are distinct
+"trigonometric beats" between these two constraints, not a
+joint monotone improvement direction.
+
+**13b — codebook freeze destroys the B-1 peak.** Adding
+`codebook_lock_after=100` on top of the Sprint 10 hard-gate
+lock configuration wipes B-1 from +0.0125 to **exactly 0.0000**:
+
+| Config | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
+|--------|--------:|--------------:|--------:|
+| LOCK=100, HARD (Sprint 10 peak) | **+0.0125** | -0.0190 | 0.109 |
+| + CODEBOOK_LOCK=100 | **0.0000** | -0.0117 | 0.109 |
+
+The codebook freeze does **not** transfer the noise-filter story
+from the transducer gate. Instead, the three plasticity
+components carry distinct load-bearing roles:
+
+| Component | Freezing effect | Empirical signature |
+|-----------|-----------------|---------------------|
+| mux constellation | preserves T1/T2 asymmetry | +0.0125 B-1 peak (Sprint 10) |
+| transducer gate | filters gate noise | hard > soft (Sprints 11-12) |
+| codebook | degrades T1/T2 asymmetry | destroys peak (Sprint 13) |
+
+The shared 64-entry PSK alphabet must stay **plastic** during
+Phase 2 for the Amedi signal to survive — the opposite of the
+nerve-wml#5 prior hypothesis.
+
+B-3 remains invariant across all 5 new grids (0.109-0.125),
+confirming once more its architectural status.
 
 ---
 
@@ -329,7 +381,16 @@ Three synthetic worlds (Gaussian, XOR, Sinusoid) sit in the same tight cluster o
 
 ### 6.2 Scope of the lock mechanism
 
-`constellation_lock_after` freezes the `[64, 2]` PSK constellation but leaves `CrossModalTransducer` gates and `AdaptiveCodebook` entries plastic. A fuller critical-period model would compound all three ; this is deferred to paper v0.2.
+`constellation_lock_after` freezes the `[64, 2]` PSK
+constellation. Sprints 11-13 (§5.6, §5.8) now map the effect of
+compounding two more plasticity controls — `transducer_gating=hard|gumbel`
+and `codebook_lock_after` — and show that the three components
+are **not** interchangeable: mux lock preserves the B-1 peak,
+hard transducer gate acts as a noise filter (qualitatively
+irreducible to any Gumbel sigmoid), and codebook plasticity is
+**essential** — freezing it destroys the Amedi signal. A
+finer-grained model of individual transducer gates (nerve-wml#5
+per-modality schedules) remains declared follow-up for paper v0.3.
 
 ### 6.3 Me3 Kraskov-estimator limit
 
