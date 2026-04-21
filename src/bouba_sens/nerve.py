@@ -131,7 +131,28 @@ class CrossModalTransducer(nn.Module):
         self.fc2 = nn.Linear(d_hidden, d_hidden)
         torch.set_rng_state(global_state)
 
-    def forward(self, x: Tensor, *, active: bool = True) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        *,
+        active: bool = True,
+        soft_activate: float | None = None,
+    ) -> Tensor:
+        """Apply the MLP with either hard or soft gating.
+
+        Args:
+            active: legacy binary gate (v0.3 behaviour). Ignored when
+                ``soft_activate`` is provided.
+            soft_activate: continuous coefficient in [0, 1]. When set,
+                returns ``soft_activate * mlp(x) + (1 - soft_activate) * x``
+                so the network can interpolate between identity and
+                transformation. Enables nerve-wml#5-style Gumbel gating
+                for compound critical-period experiments (Sprint 11).
+        """
+        if soft_activate is not None:
+            s = float(soft_activate)
+            transformed = self.fc2(torch.relu(self.fc1(x)))
+            return cast(Tensor, s * transformed + (1.0 - s) * x)
         if not active:
             return x
         return cast(Tensor, self.fc2(torch.relu(self.fc1(x))))
@@ -168,7 +189,16 @@ class CrossModalNerve(nn.Module):
         d_hidden: int = 128,
         *,
         seed: int | None = None,
+        transducer_gating: str = "hard",
+        gumbel_tau: float = 1.0,
     ) -> None:
+        """Sprint 11 `transducer_gating` kwarg selects how
+        `CrossModalTransducer` instances are activated in `fuse()`.
+        ``"hard"`` preserves the v0.5 binary rule; ``"gumbel"`` uses
+        a sigmoid-soft activation derived from the PlasticityGate
+        weights so the gradient flows continuously through the gate-
+        to-transducer coupling (compound critical-period).
+        """
         super().__init__()
         self.gates = PlasticityGate()
         self.codebook = AdaptiveCodebook(
@@ -185,6 +215,8 @@ class CrossModalNerve(nn.Module):
                 if src != dst
             }
         )
+        self.transducer_gating = transducer_gating
+        self.gumbel_tau = float(gumbel_tau)
         object.__setattr__(self, "mux", mux)
         self._lesion_log: list[tuple[Modality, float]] = []
 
@@ -208,14 +240,25 @@ class CrossModalNerve(nn.Module):
         # 3. Per-pair transducer activation per spec §4.3.
         w = self.gates.weights()  # (5,)
         gate_vals = [w[i].item() for i, _ in enumerate(MODALITIES)]
+        use_gumbel = self.transducer_gating == "gumbel"
         for src_idx, src in enumerate(MODALITIES):
             for dst_idx, dst in enumerate(MODALITIES):
                 if src == dst:
                     continue
-                active = gate_vals[src_idx] < 0.1 and gate_vals[dst_idx] > 0.3
                 transducer = self.transducers[f"{src}->{dst}"]
-                if active:
-                    h[dst] = h[dst] + transducer(h[src], active=True)
+                if use_gumbel:
+                    # Gumbel-softmax-free soft gate: sigmoid of the (dst - src)
+                    # gate margin, smoothed by gumbel_tau. Continuous
+                    # analogue of the binary v0.5 rule, preserves the
+                    # same selectivity direction (src low -> dst high
+                    # increases activation).
+                    margin = (gate_vals[dst_idx] - 0.3) - (gate_vals[src_idx] - 0.1)
+                    soft_coeff = float(torch.sigmoid(torch.tensor(margin / self.gumbel_tau)).item())
+                    h[dst] = h[dst] + transducer(h[src], soft_activate=soft_coeff)
+                else:
+                    active = gate_vals[src_idx] < 0.1 and gate_vals[dst_idx] > 0.3
+                    if active:
+                        h[dst] = h[dst] + transducer(h[src], active=True)
 
         # 4. Gate-weighted sum across modalities.
         fused = torch.zeros_like(h[MODALITIES[0]])

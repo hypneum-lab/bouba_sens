@@ -126,6 +126,14 @@ def train(
             "after N training steps. None = legacy v1.3 behaviour."
         ),
     ),
+    transducer_gating: str = typer.Option(
+        "hard",
+        help=(
+            "CrossModalTransducer gating mode. 'hard' (default) = legacy "
+            "binary activation per spec §4.3. 'gumbel' = sigmoid-soft "
+            "activation (nerve-wml#5 compound critical-period)."
+        ),
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -154,7 +162,7 @@ def train(
         "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
     }
-    nerve = CrossModalNerve(mux, seed=seed)
+    nerve = CrossModalNerve(mux, seed=seed, transducer_gating=transducer_gating)
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
@@ -217,6 +225,14 @@ def lesion(
             "T1 passes this kwarg directly. None = legacy v1.3 behaviour."
         ),
     ),
+    transducer_gating: str = typer.Option(
+        "hard",
+        help=(
+            "CrossModalTransducer gating mode. 'hard' (default) = legacy "
+            "binary activation per spec §4.3. 'gumbel' = sigmoid-soft "
+            "activation (nerve-wml#5 compound critical-period, Sprint 11)."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -247,7 +263,7 @@ def lesion(
         "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=4),
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=5),
     }
-    nerve = CrossModalNerve(mux, seed=0)
+    nerve = CrossModalNerve(mux, seed=0, transducer_gating=transducer_gating)
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 

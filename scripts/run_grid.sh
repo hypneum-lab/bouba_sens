@@ -15,6 +15,10 @@ WORLD="${WORLD:-gaussian}"
 # mux that locks mid-Phase-2 OR never locks if the threshold exceeds
 # STEPS_LESION. Empty = legacy v1.3 behaviour (no lock).
 LOCK_AFTER="${LOCK_AFTER:-}"
+# Sprint 11 — transducer gating. "hard" (default) = v0.5 binary rule;
+# "gumbel" = sigmoid-soft activation per nerve-wml#5 for compound
+# critical-period experiments.
+TRANSDUCER_GATING="${TRANSDUCER_GATING:-hard}"
 
 SEEDS=(0 1 2 3 4)
 MODALITIES=(audio vision tactile gravity force)
@@ -46,6 +50,7 @@ for seed in "${SEEDS[@]}"; do
             --out "${phase1_dir}"
         )
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
+        train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
         uv run bouba-sens train "${train_args[@]}"
     fi
 
@@ -78,6 +83,7 @@ for seed in "${SEEDS[@]}"; do
                     --out "${cell_dir}"
                 )
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
+                lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"
