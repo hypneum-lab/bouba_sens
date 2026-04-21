@@ -22,6 +22,8 @@ TRANSDUCER_GATING="${TRANSDUCER_GATING:-hard}"
 # Sprint 12 — gumbel sigmoid temperature. Only read when
 # TRANSDUCER_GATING=gumbel. Lower = tighter toward hard; higher = flatter.
 GUMBEL_TAU="${GUMBEL_TAU:-1.0}"
+# Sprint 13 — AdaptiveCodebook freeze after N training steps. Empty = no freeze.
+CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 
 SEEDS=(0 1 2 3 4)
 MODALITIES=(audio vision tactile gravity force)
@@ -55,6 +57,7 @@ for seed in "${SEEDS[@]}"; do
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
+        [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
         uv run bouba-sens train "${train_args[@]}"
     fi
 
@@ -89,6 +92,7 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
                 lesion_args+=(--gumbel-tau "${GUMBEL_TAU}")
+                [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"

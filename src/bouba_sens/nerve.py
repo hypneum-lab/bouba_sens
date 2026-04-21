@@ -179,9 +179,10 @@ class CrossModalNerve(nn.Module):
     `IntegrationHead` (Task 2.8).
     """
 
-    # Class-level annotation so mypy resolves self.mux after the
-    # object.__setattr__ bypass in __init__.
+    # Class-level annotations so mypy resolves self.mux after the
+    # object.__setattr__ bypass AND the register_buffer lifted attrs.
     mux: GammaThetaMultiplexer
+    codebook_step: Tensor
 
     def __init__(
         self,
@@ -191,13 +192,15 @@ class CrossModalNerve(nn.Module):
         seed: int | None = None,
         transducer_gating: str = "hard",
         gumbel_tau: float = 1.0,
+        codebook_lock_after: int | None = None,
     ) -> None:
-        """Sprint 11 `transducer_gating` kwarg selects how
-        `CrossModalTransducer` instances are activated in `fuse()`.
-        ``"hard"`` preserves the v0.5 binary rule; ``"gumbel"`` uses
-        a sigmoid-soft activation derived from the PlasticityGate
-        weights so the gradient flows continuously through the gate-
-        to-transducer coupling (compound critical-period).
+        """Sprint 11 `transducer_gating` kwarg + Sprint 13
+        `codebook_lock_after` third compound-critical-period component.
+        ``codebook_lock_after=None`` (default) preserves v0.5 behaviour;
+        when set to an int N, ``AdaptiveCodebook.codebook`` Parameter
+        permanently freezes (``requires_grad=False``) once the nerve's
+        internal step counter crosses N. Consumers call ``nerve.step()``
+        once per training iteration (analogous to ``mux.step()``).
         """
         super().__init__()
         self.gates = PlasticityGate()
@@ -217,8 +220,26 @@ class CrossModalNerve(nn.Module):
         )
         self.transducer_gating = transducer_gating
         self.gumbel_tau = float(gumbel_tau)
+        self._codebook_lock_after = codebook_lock_after
+        self.register_buffer("codebook_step", torch.tensor(0, dtype=torch.long))
         object.__setattr__(self, "mux", mux)
         self._lesion_log: list[tuple[Modality, float]] = []
+
+    def step(self) -> None:
+        """Advance the nerve-level plasticity clock (Sprint 13).
+
+        Consumers call this once per training iteration. When
+        ``codebook_lock_after`` is configured and the counter crosses
+        that threshold, freezes the ``AdaptiveCodebook`` parameter —
+        an analogue of the nerve-wml #4 constellation lock for the
+        P2 plasticity component.
+        """
+        self.codebook_step += 1
+        if (
+            self._codebook_lock_after is not None
+            and int(self.codebook_step) >= self._codebook_lock_after
+        ):
+            self.codebook.codebook.requires_grad_(False)
 
     def fuse(self, letters: dict[Modality, Tensor]) -> Tensor:
         """Fuse 5 modality carriers into a shared `(B, K, d_hidden)` tensor.

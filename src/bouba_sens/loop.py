@@ -115,6 +115,7 @@ class AdaptationLoop:
         critical-period semantics, nerve-wml#4).
         """
         mux_step = getattr(self.mux, "step", None)
+        nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
             sample = self.world.sample(batch_size=batch_size, seed=seed + step)
             loss, _ = self._forward(sample)
@@ -123,6 +124,8 @@ class AdaptationLoop:
             self.opt.step()
             if callable(mux_step):
                 mux_step()
+            if callable(nerve_step):
+                nerve_step()
         return Checkpoint(
             mux_state=_deepcopy_state(self.mux),
             nerve_state=_deepcopy_state(self.nerve),
@@ -197,6 +200,7 @@ class AdaptationLoop:
             return replay_buffer[i % len(replay_buffer)]
 
         mux_step = getattr(self.mux, "step", None)
+        nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
             fresh = self.world.sample(batch_size=batch_size, seed=seed + step)
             lesioned = scheduler.apply(fresh, step)
@@ -212,6 +216,8 @@ class AdaptationLoop:
             self.opt.step()
             if callable(mux_step):
                 mux_step()
+            if callable(nerve_step):
+                nerve_step()
 
             report.loss_curve.append(loss.item())
             preds = logits.argmax(-1)

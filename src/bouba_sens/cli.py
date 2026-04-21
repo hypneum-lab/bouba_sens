@@ -143,6 +143,13 @@ def train(
             "when transducer_gating='hard'."
         ),
     ),
+    codebook_lock_after: int | None = typer.Option(
+        None,
+        help=(
+            "Sprint 13 — AdaptiveCodebook freeze after N training steps. "
+            "Third compound critical-period component."
+        ),
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -172,7 +179,11 @@ def train(
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
     }
     nerve = CrossModalNerve(
-        mux, seed=seed, transducer_gating=transducer_gating, gumbel_tau=gumbel_tau
+        mux,
+        seed=seed,
+        transducer_gating=transducer_gating,
+        gumbel_tau=gumbel_tau,
+        codebook_lock_after=codebook_lock_after,
     )
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
@@ -251,6 +262,14 @@ def lesion(
             "transducer_gating='gumbel'. Sprint 12 scan."
         ),
     ),
+    codebook_lock_after: int | None = typer.Option(
+        None,
+        help=(
+            "Sprint 13 — AdaptiveCodebook freeze after N training steps. "
+            "Third compound critical-period component alongside "
+            "constellation lock and transducer gating."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -281,7 +300,13 @@ def lesion(
         "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=4),
         "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=5),
     }
-    nerve = CrossModalNerve(mux, seed=0, transducer_gating=transducer_gating, gumbel_tau=gumbel_tau)
+    nerve = CrossModalNerve(
+        mux,
+        seed=0,
+        transducer_gating=transducer_gating,
+        gumbel_tau=gumbel_tau,
+        codebook_lock_after=codebook_lock_after,
+    )
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
