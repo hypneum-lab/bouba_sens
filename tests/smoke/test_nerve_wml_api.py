@@ -10,19 +10,17 @@ import importlib
 
 import pytest
 
-# Symbol contract verified 2026-04-20 against nerve-wml v0.1.0 local clone at
-# /Users/electron/Documents/Projets/nerve-wml. The package exposes 7 top-level
-# modules (nerve_core, track_p, track_w, bridge, harness, interpret,
-# neuromorphic) — NOT a unified `nerve_wml.*` namespace.
-#
-# API gap: GammaThetaMultiplexer does not yet exist (track_p/oscillators.py
-# only exposes PhaseOscillator). Open as nerve-wml issue and record the gap in
-# docs/adr/0001-codebook-sharing.md; re-add to this list once it lands.
+# Symbol contract verified 2026-04-20 against nerve-wml master (PR #2 merged
+# 2026-04-20, HEAD 77efb4d) at /Users/electron/Documents/Projets/nerve-wml.
+# The package exposes 7 top-level modules (nerve_core, track_p, track_w,
+# bridge, harness, interpret, neuromorphic) — NOT a unified `nerve_wml.*`
+# namespace.
 REQUIRED_SYMBOLS = [
     ("nerve_core.protocols", "Nerve"),
     ("nerve_core.neuroletter", "Neuroletter"),
     ("track_w.mlp_wml", "MlpWML"),
     ("track_p.transducer", "Transducer"),
+    ("track_p.multiplexer", "GammaThetaMultiplexer"),
 ]
 
 
