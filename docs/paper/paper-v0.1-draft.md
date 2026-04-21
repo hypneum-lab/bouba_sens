@@ -281,12 +281,43 @@ transition, not a continuous gate. B-3 remains PASS in both
 configurations (0.109 vs 0.117), confirming once more its
 lock-and-gate invariant status.
 
-### 5.7 Open follow-up (declared)
+### 5.7 Gumbel tau scan (Sprint 12, ADR-0015)
 
-Sprint 12: scan `gumbel_tau ∈ {0.1, 0.3, 0.5, 1.0, 2.0}` at
-the peak to test whether a tighter sigmoid recovers the hard-
-gate behaviour. AdaptiveCodebook freezing as a third compounded
-lock component is a natural next gate.
+A 5-point scan of `gumbel_tau ∈ {0.1, 0.3, 0.5, 1.0, 2.0}` at
+the peak `LOCK_AFTER=100` tests whether tighter sigmoid recovers
+the hard-gate behaviour.
+
+| gumbel_tau | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
+|-----------:|--------:|--------------:|--------:|
+| 0.1 | 0.0000 | -0.0268 | 0.109 |
+| **0.3** | +0.0063 | **+0.0180** | 0.125 |
+| 0.5 | 0.0000 | -0.0404 | 0.125 |
+| 1.0 | +0.0062 | -0.0177 | 0.117 |
+| 2.0 | +0.0063 | -0.0052 | 0.117 |
+| **hard (S10)** | **+0.0125** | -0.0190 | 0.109 |
+
+**No Gumbel tau recovers the hard peak.** B-1 plateaus at ~+0.006
+across 1.5 decades and collapses to 0 at the extremes. The hard
+gate is **not a limit** of the Gumbel family — it is a
+qualitatively distinct routing regime. The discrete
+`gate[src] < 0.1 AND gate[dst] > 0.3` threshold produces a
+phase-transition in information routing that no continuous
+sigmoid approximates.
+
+**Anomalous finding — tau=0.3 is the only positive B-2 of the
+4.5-modal chain** (+0.0180, still below 0.10 threshold). Candidate
+mechanism: a "Goldilocks zone" where the gate is selective enough
+to preserve T1/T2 history yet smooth enough to let MI migrate.
+Worth a finer scan in paper v0.3.
+
+B-3 remains lock-gate-tau invariant (0.109-0.125, 5.4×-6.3×
+threshold), confirming once more its architectural status.
+
+### 5.8 Open follow-up (declared)
+
+Paper v0.3: finer tau scan around 0.3 for the B-2 anomaly.
+Sprint 13: AdaptiveCodebook freeze as a third compound lock
+component.
 
 ---
 
