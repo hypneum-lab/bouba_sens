@@ -219,9 +219,45 @@ migration.
 B-3, however, survives the lock in 5/5 worlds — further
 confirming its architectural-invariant status.
 
-### 5.4 Open follow-up (declared)
+### 5.5 Dose-response LOCK_AFTER scan — Amedi peak (ADR-0013)
 
-Dose-response scan `LOCK_AFTER ∈ {100, 200, 400, 800, none}` on a single seed and compound with `nerve-wml#5` (transducer Gumbel-softmax) are declared here as *experiments-in-progress* ; their results will appear in paper v0.2 (Sprint 9+).
+A 5-point scan over `LOCK_AFTER ∈ {50, 100, 200, 400, 800}` on
+the 4.5-modal real biological bridge (5 × 150 cells on Studio)
+reveals a **non-monotone B-1 peak at LOCK_AFTER=100** (50 % of
+STEPS_TRAIN):
+
+| LOCK_AFTER | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
+|-----------:|--------:|--------------:|--------:|
+| 50 | +0.0062 | -0.0044 | 0.109 |
+| **100** | **+0.0125 (peak)** | -0.0190 | 0.109 |
+| 200 | 0.0000 | -0.0069 | 0.102 |
+| 400 | 0.0000 | -0.0063 | 0.109 |
+| 800 | 0.0000 | +0.0009 | 0.094 |
+| ∞ (no-lock) | 0.0000 | -0.0376 | 0.102 |
+
+![Amedi recovery curve](../../reports/v0.5_amedi_curve.png)
+
+The peak magnitude (+0.0125) stays below the pre-registered
+0.05 threshold but exceeds every B-1 value recorded across the
+4 synthetic-cluster worlds. This is the first non-monotone
+dose-response signature in the benchmark: fire the lock too
+early (LOCK_AFTER=50) and T1 has not accumulated enough
+plasticity advantage; fire it too late (>= 200) and the T2 mux
+has already converged, erasing the differential. The shape
+matches the critical-period window predicted by Amedi 2007,
+in a regime the synthetic worlds cannot reach.
+
+B-3 remains lock-invariant across the full scan (4.7×-5.4×
+threshold), confirming the **architectural invariant**
+interpretation. B-2 reaches its most-negative value at the
+same LOCK_AFTER=100 peak, strengthening the
+"temporal-proximity interference" reading of §5.4.
+
+### 5.6 Open follow-up (declared)
+
+Compound `LOCK_AFTER=100` with `nerve-wml#5` (transducer
+Gumbel-softmax) is declared here as *experiment-in-progress*;
+results will appear in paper v0.2 Sprint 11+.
 
 ---
 
