@@ -54,7 +54,11 @@ def _load_me7_sample(aggregate_path: Path) -> np.ndarray:
             f"{aggregate_path} not found; re-run aggregator to produce it"
         ) from e
     data = json.loads(text)
-    raw = data.get("raw_me7_pairs") or data.get("b1_pairs")
+    raw = (
+        data.get("raw_me7_pairs")
+        or data.get("b1_pairs")
+        or data.get("invariants", {}).get("b1", {}).get("raw_me7_pairs")
+    )
     if raw is None:
         raise KeyError(
             f"{aggregate_path} has no raw Me7 pairs; re-run aggregator with --emit-raw-pairs"
