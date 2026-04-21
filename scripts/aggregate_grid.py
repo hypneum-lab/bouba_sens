@@ -283,10 +283,32 @@ def main() -> None:
             "(generated with --partition-seed). Requires --partition-seed."
         ),
     )
+    parser.add_argument(
+        "--partition-prereg",
+        action="store_true",
+        help=(
+            "Apples-to-apples mode: apply the pre-registered perceptive/"
+            "proprioceptive partition via the partition-aware Me6 statistic "
+            "(same code path as --partition-seed/--partition-index). Use to "
+            "compare pre-reg Me6 to null-model Me6 with the same statistic. "
+            "Mutually exclusive with --partition-seed/--partition-index."
+        ),
+    )
     args = parser.parse_args()
 
     partition: tuple[frozenset[str], frozenset[str]] | None = None
-    if args.partition_seed is not None or args.partition_index is not None:
+    if args.partition_prereg and (
+        args.partition_seed is not None or args.partition_index is not None
+    ):
+        parser.error(
+            "--partition-prereg is mutually exclusive with --partition-seed/--partition-index"
+        )
+    if args.partition_prereg:
+        from bouba_sens.metrics.partitions import PERCEPTIVE_PROPRIOCEPTIVE
+
+        partition = PERCEPTIVE_PROPRIOCEPTIVE
+        print(f"pre-reg partition (apples-to-apples null mode): {partition}")
+    elif args.partition_seed is not None or args.partition_index is not None:
         if args.partition_seed is None or args.partition_index is None:
             parser.error("--partition-seed and --partition-index must be used together")
         from bouba_sens.metrics.partitions import generate_random_3_2_partitions

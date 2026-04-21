@@ -83,3 +83,59 @@ def test_only_partition_index_without_seed_errors(tmp_path: Path) -> None:
     assert proc.returncode != 0
     combined = proc.stdout + proc.stderr
     assert "partition" in combined.lower()
+
+
+def test_partition_prereg_mutually_exclusive_with_seed_index(tmp_path: Path) -> None:
+    """--partition-prereg + --partition-seed/--partition-index must error."""
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    out = tmp_path / "aggregate.json"
+    proc = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "scripts/aggregate_grid.py",
+            "--root",
+            str(runs),
+            "--out",
+            str(out),
+            "--partition-prereg",
+            "--partition-seed",
+            "0",
+            "--partition-index",
+            "0",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[2]),
+    )
+    assert proc.returncode != 0
+    combined = proc.stdout + proc.stderr
+    assert "mutually exclusive" in combined.lower() or "partition-prereg" in combined.lower()
+
+
+def test_partition_prereg_alone_accepted(tmp_path: Path) -> None:
+    """--partition-prereg alone passes argparse (empty grid fails downstream)."""
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    out = tmp_path / "aggregate.json"
+    proc = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "scripts/aggregate_grid.py",
+            "--root",
+            str(runs),
+            "--out",
+            str(out),
+            "--partition-prereg",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[2]),
+    )
+    combined = proc.stdout + proc.stderr
+    assert "unrecognized arguments" not in combined.lower()
+    assert "mutually exclusive" not in combined.lower()
