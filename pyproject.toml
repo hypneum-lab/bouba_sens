@@ -98,6 +98,7 @@ module = [
     "pyarrow.*",
     "track_p.*",
     "track_w.*",
+    "nerve_wml.*",
     "sklearn.*",
     "librosa.*",
     "torchvision.*",
