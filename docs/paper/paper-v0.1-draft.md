@@ -446,21 +446,88 @@ B-2 sub-threshold may be a measurement artefact (noisy kNN on 1-D mean-pooled pr
 
 ## 7. Related work
 
-*(short stubs, one paragraph each ; to be fleshed out)*
+**Cross-modal plasticity in congenital and late-acquired blindness.**
+Amedi et al. (2007) show that congenitally blind subjects recruit
+occipital cortex for auditory object recognition to a quantitatively
+greater degree than late-onset blind subjects — our B-1 invariant
+operationalises this asymmetry as a Me7 threshold. Bavelier &
+Neville (2002) and Merabet & Pascual-Leone (2010) frame this as a
+critical-period phenomenon: lock-style plasticity constraints mid-
+development produce the T1/T2 gap that adult-onset reorganisation
+cannot close. bouba_sens's `constellation_lock_after` is a direct
+architectural analogue of that critical period, and the §5.5 dose-
+response curve reproduces the qualitative Amedi pattern without
+meeting the pre-registered magnitude threshold.
 
-- **Cross-modal plasticity.** Amedi et al. 2007 ; Bavelier & Neville 2002 ; Merabet & Pascual-Leone 2010.
-- **Bouba/kiki & ideasthesia.** Köhler 1947 ; Ramachandran & Hubbard 2001 ; Sidhu & Pexman 2018.
-- **γ/θ phase-amplitude coupling.** Lisman & Idiart 1995 ; Tort et al. 2010 ; Colgin 2016.
-- **Pre-registered benchmarks.** OpenReview benchmarks track (NeurIPS D&B) ; Gebru et al. 2018 (*Datasheets for Datasets*).
+**Bouba/kiki correspondence and ideasthesia.** Köhler (1947) and
+Ramachandran & Hubbard (2001) established the 95 %+ cross-cultural
+agreement on round-vs-spiky sound-shape mapping; Sidhu & Pexman
+(2018) review the converging evidence that this mapping is a
+structural property of sensory integration, not learned. Our B-3
+invariant formalises that asymmetry as the max off-diagonal
+magnitude of the 5-modality perf matrix; its 5–6× threshold pass
+across every grid in this paper, independent of all Phase-1/Phase-2
+controls, is consistent with a hard-wired asymmetric mapping.
+
+**γ/θ phase-amplitude coupling as a cross-modal binding
+substrate.** Lisman & Idiart (1995), Tort et al. (2010), and Colgin
+(2016) describe how γ (30–100 Hz) multiplexed into θ (4–8 Hz)
+envelopes implements a time-multiplexed binding scheme. The
+`GammaThetaMultiplexer` in nerve-wml (Saillant 2026, issue #1)
+implements this protocol; bouba_sens treats it as a black-box
+protocol dependency and measures only downstream invariants.
+
+**Pre-registered benchmarks in ML.** The NeurIPS Datasets & Benchmarks
+track (Vanschoren & Yeung 2021) and Gebru et al. (2018) *Datasheets
+for Datasets* pushed the field towards OSF-style pre-registration.
+bouba_sens follows the OSF locked-threshold protocol (registration
+`10.17605/OSF.IO/Q6JYN`): the 0.05 / 0.10 / 0.02 thresholds for
+B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
+and are not revisited by any ADR in this paper, including the
+retraction in §5.9.
 
 ---
 
 ## 8. Artefacts, reproducibility, venue
 
-- **Benchmark pipeline** : `run_grid.sh` + `aggregate_grid.py` + 5-command typer CLI. Single `uv sync --all-extras` gives a complete environment.
-- **Deterministic grids** : every cell seeded by `(seed_base × 10 000 + cell_count)`. Byte-identical aggregate JSONs on a fresh clone.
-- **Pre-registration fidelity** : no threshold change across all seven ADRs (0004 → 0010).
-- **Target venue** : TMLR (first attempt, benchmarks track) ; NeurIPS D&B 2026 (fallback).
+**Software artefacts.**
+- `github.com/hypneum-lab/bouba_sens` — Python package, released on
+  PyPI as `bouba-sens==0.5.4` (tag `v0.5.4`, commit `360a442`).
+- `github.com/hypneum-lab/nerve-wml` v1.5.3 — protocol + methodology
+  dependencies (Kraskov-kNN, bootstrap CI, null model permutation,
+  MINE estimator). Zenodo DOI `10.5281/zenodo.19666405`.
+- `reports/*.json` + `reports/*.png` — per-grid aggregates, per-seed
+  breakdowns, and the Amedi dose-response curve. Committed verbatim
+  (force-added past the `.gitignore` for the reports we cite).
+
+**Reproducibility pipeline.**
+- `run_grid.sh` + `aggregate_grid.py` + `aggregate_grid_per_seed.py`
+  + 5-command typer CLI. A single `uv sync --all-extras` gives a
+  complete Python 3.14 environment from the pinned `uv.lock`.
+- Every cell seeded by `(seed_base × 10 000 + cell_count)`. Byte-
+  identical `eval_report.json` outputs on a fresh clone, modulo
+  numerical determinism caveats listed in Appendix C.
+- `scripts/reproduce_paper_v01.sh` (Sprint 16) regenerates every
+  grid cited in §4–§5.9 from the tagged repository; total compute
+  budget ≈ 8 h on an M3 Ultra.
+
+**Pre-registration fidelity.**
+- OSF registration `10.17605/OSF.IO/Q6JYN` locks the three
+  thresholds `(0.05, 0.10, 0.02)`; they do not change across
+  ADRs 0004 → 0017.
+- Every decision (verdict, retraction, scope narrowing) is recorded
+  inline in a dated ADR with the grid commit and aggregate artefact
+  path, and cross-referenced in §5.x.
+- OSF amendment v0.6 covers the Sprint 10–17 hyperparameter
+  additions (`constellation_lock_after`, `transducer_gating`,
+  `gumbel_tau`, `codebook_lock_after`, `transducer_gating_schedule`,
+  `transducer_gating_target`, Me3 MINE estimator). The amendment is
+  additive; no threshold or metric math changes.
+
+**Target venue.**
+- Primary : TMLR (benchmarks track), emphasising the pre-registered
+  retraction (§5.9, ADR-0017) as a strength rather than a weakness.
+- Fallback : NeurIPS D&B 2026.
 
 ---
 
@@ -474,16 +541,31 @@ B-2 sub-threshold may be a measurement artefact (noisy kNN on 1-D mean-pooled pr
 
 ## TODO before paper v0.1 submission
 
-- [ ] Wait for current B-1 cross-world lock grids (xor / sinusoid / ecg) to finish ; populate §5.2 table.
+- [x] B-1 cross-world lock grids — populated §5.2 (ADR-0011).
+- [x] Amedi dose-response curve — §5.5, `reports/v0.5_amedi_curve.png`.
+- [x] Compound lock + Gumbel transducer — §5.6–§5.8 (ADRs 0014-0016).
+- [x] Per-seed stability re-aggregation — §5.9 (ADR-0017).
+- [x] Sprint 17 MINE / InfoNCE side-by-side — verdict lands in §6.3.
+- [ ] Re-write Abstract using the Sprint 10–17 final numbers (the
+      current draft still references `v0.4.0` and outdated B-2 claims).
 - [ ] Insert world-complexity audit numbers in Appendix A.
-- [ ] Tighten Abstract (cut by 50 %).
-- [ ] Bibliography : BibTeX entries for all cited works.
+- [ ] Bibliography : BibTeX entries for every citation in §7.
 - [ ] Convert to LaTeX with the TMLR template.
-- [ ] Final full-suite verdict check.
+- [ ] Final full-suite verdict check against `reports/` SHA manifest.
+- [ ] Zenodo DOI for tag `v0.5.4` (Sprint 16).
+- [ ] OSF amendment v0.6 (Sprint 16).
 
-## TODO that can be deferred to paper v0.2
+## TODO deferred to paper v0.2 / v0.3
 
-- [ ] Dose-response scan on `LOCK_AFTER`.
-- [ ] Full datalad Studyforrest replication.
-- [ ] MINE / InfoNCE Me3 estimator alternatives.
-- [ ] Compound lock with `CrossModalTransducer` (nerve-wml#5).
+- [ ] Finer codebook-movement observable (per-entry L2 drift,
+      pair-wise patterns) to rehabilitate the Sprint 13b mechanistic
+      story at a resolution the entropy scalar misses (ADR-0017 §14b).
+- [ ] Per-seed replication of the full Sprint 13a tau grid
+      {0.20, 0.25, 0.35, 0.40}, generalising §14a's retraction.
+- [ ] Full datalad Studyforrest replication beyond the 4.5-modal
+      real bridge (ADR-0007 declared scope limit).
+- [ ] nerve-wml#5 per-modality transducer-gating schedules
+      (finer-grained than the global schedule tested in §14c).
+- [ ] Higher-dim Me3 probe (skip the 1-D mean-pool, keep
+      `(B, d_fused)`) if Sprint 17 shows MINE benefits from richer
+      input shape.
