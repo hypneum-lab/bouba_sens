@@ -1,27 +1,62 @@
 # bouba_sens: A Pre-Registered Benchmark for Cross-Modal Plasticity under Critical-Period Constraints
 
 **Authors.** Clément Saillant (Hypneum Lab).
-**Version.** Paper v0.1 draft — skeleton
-**Date.** 2026-04-21
+**Version.** Paper v0.1 — submit-ready draft
+**Date.** 2026-04-22
 **Companion artefacts.**
-- Repository : `github.com/hypneum-lab/bouba_sens` (tag `v0.4.0`)
-- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.4.0`, DOI `10.5281/zenodo.19666405`)
-- Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19)
-- ADRs : `docs/adr/0004..0010` in the repo record every verdict inline with its grid commit.
+- Repository : `github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`)
+- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19666405`)
+- Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19, amendment v0.6 2026-04-22)
+- ADRs : `docs/adr/0004..0017` record every verdict, retraction, and scope change inline with its grid commit.
 
 ---
 
-## Abstract *(to be refined)*
+## Abstract
 
-We introduce `bouba_sens`, a pre-registered benchmark measuring three invariants (B-1 congenital-blindness gap, B-2 informational migration, B-3 perceptive/proprioceptive asymmetry) across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock, real MIT-BIH ECG) and two architectural conditions (no-lock vs `constellation_lock_after=200`).
+We introduce `bouba_sens`, a pre-registered benchmark measuring
+three invariants of cross-modal plasticity — B-1 (congenital-
+blindness T1/T2 gap, Amedi 2007), B-2 (informational migration
+under lesion, Me3 delta), and B-3 (perceptive/proprioceptive
+structural asymmetry, bouba/kiki) — across five synthetic worlds
+(Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and a
+4.5-modal real biological bridge (Studyforrest Phase-2: real
+movie vision + scene-cut tactile + cardiac-respiratory force +
+zero-ed gravity + CC-licensed audio substitute). Thresholds
+(0.05 / 0.10 / 0.02) are frozen by OSF registration
+`10.17605/OSF.IO/Q6JYN` before the evaluation campaign.
 
-Across 750 grid cells under the fixed pre-registered thresholds (0.05 / 0.10 / 0.02, no p-hacking vector), we find :
+Across 9 grids (150 cells each, 5 seeds × 5 modalities × 2
+timings × 3 SNRs) and 18 ADRs, we report:
 
-1. **B-3 is a robust architectural invariant**, passing every world at 7×–22× the threshold and *amplifying* as inputs move from synthetic-factorised to biologically-plausible.
-2. **B-1 is world-topology-dependent and lock-sensitive.** Unconstrained, T2 dominates T1 in 4/5 worlds (directional falsification of the pre-registered Amedi 2007 hypothesis). Adding a critical-period plasticity lock produces **directional recovery** (median Me7 from −0.0063 to 0.0000 on Gaussian) without magnitude recovery at the 0.05 threshold.
-3. **B-2 is estimator-limited.** Positive in 4/5 unlocked worlds but under-threshold; the lock converts it to slightly negative, which is the architecturally-correct behaviour of a critical-period model.
+1. **B-3 passes architecturally.** Median max off-diag = 0.109–
+   0.125 (5.5×–6.3× threshold), 5/5 seeds, invariant across
+   every hyperparameter and compound tested — consistent with a
+   hard-wired asymmetric modality mapping.
+2. **B-1 is qualitatively reproduced in exactly one
+   configuration.** `constellation_lock_after=100` with a
+   hard-binary transducer gate yields median Me7 = +0.0125
+   (25 % of threshold), seed-stable at 3+/5 seeds. Every
+   compound attempted since (soft Gumbel gating, finer tau
+   scans, codebook freeze, phase-transition schedule) preserved,
+   weakened, or destroyed this peak — never amplified it.
+3. **B-2 does not exceed threshold under any configuration.**
+   Two estimators (kNN-Kraskov, MINE Donsker-Varadhan)
+   agree within 0.1 bit on the Sprint 10 peak grid (mean ±std =
+   +0.033 ±0.047 bits, Kraskov ; 0.000 ±0.000, MINE). Seed 1
+   reaches 0.097 under Kraskov (97 % of threshold) but MINE
+   gives 0; no single seed crosses threshold under either
+   estimator. The earlier "bimodal positive B-2" claim (ADR-0016)
+   is **retracted** after per-seed re-aggregation (ADR-0017).
 
-The benchmark's pipeline and mechanism are released alongside the paper as a reusable instrument for stress-testing other cross-modal architectures.
+The paper's central empirical claim is narrow and falsifiable:
+**a frozen mux with hard transducer gating is the minimal
+configuration that qualitatively reproduces Amedi T1/T2
+asymmetry ; all additional plasticity controls we tested are
+null or harmful**. bouba_sens is released at
+`github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`, PyPI
+`bouba-sens==0.5.4`) as a reusable instrument for stress-
+testing other cross-modal architectures under OSF-compliant
+pre-registration.
 
 ---
 
@@ -438,9 +473,60 @@ irreducible to any Gumbel sigmoid), and codebook plasticity is
 finer-grained model of individual transducer gates (nerve-wml#5
 per-modality schedules) remains declared follow-up for paper v0.3.
 
-### 6.3 Me3 Kraskov-estimator limit
+### 6.3 Me3 estimator : Kraskov vs MINE (Sprint 17)
 
-B-2 sub-threshold may be a measurement artefact (noisy kNN on 1-D mean-pooled probes) rather than a falsification of the migration hypothesis. nerve-wml#7 (`MlpWML.from_spectrogram`) and MINE/InfoNCE estimators are a natural follow-up.
+The §6.3 limitation announced in earlier drafts — that B-2 sub-
+threshold may be a Kraskov artefact rather than a null — is
+resolved by Sprint 17 with a side-by-side MINE
+(Donsker-Varadhan) replication on the Sprint 10 peak grid
+(`runs/v05_dr_lock100`, LOCK=100 + HARD, the only B-1-positive
+configuration). Cross-cell pooling (N=480 per seed, 30 cells
+each) brings both estimators above their convergence minima.
+
+| seed | N | Me3Δ Kraskov (bits) | Me3Δ MINE (bits) | abs diff |
+|-----:|--:|--------------------:|-----------------:|---------:|
+| 0 | 480 | +0.019 | 0.000 | 0.019 |
+| 1 | 480 | **+0.097** | 0.000 | 0.097 |
+| 2 | 480 | +0.067 | 0.000 | 0.067 |
+| 3 | 480 | 0.000 | 0.000 | 0.000 |
+| 4 | 480 | -0.019 | 0.000 | 0.019 |
+| **mean ± std** | | **+0.033 ± 0.047** | **0.000 ± 0.000** | 0.041 |
+
+Neither estimator crosses the pre-registered B-2 threshold of
+0.10 bits on any seed (seed 1 reaches 0.097 under Kraskov — 97 %
+of the threshold — but MINE gives 0 on the same data). The
+Kraskov mean (+0.033 bits) is within one standard deviation of
+zero across seeds, with signs split 3/5 positive, 1/5 zero,
+1/5 negative. MINE returns 0 on every seed, but this is the
+Donsker-Varadhan clipped lower bound, **not** a refutation of
+weak signal: MINE is only informative for MI magnitudes large
+compared to its sample-size-dependent floor, and at N=480 with
+d=1 that floor is near 0.1 bit.
+
+Honest reading: the two estimators **agree within ~0.1 bit**
+that B-2 does not exceed the 0.10 threshold at this grid, and
+Kraskov's per-seed variance is commensurate with its per-seed
+mean. The benchmark cannot distinguish "weak but real B-2
+signal below threshold" from "null B-2 plus estimator noise"
+with 5 seeds and a 1-D mean-pooled probe.
+
+**Two secondary consequences.**
+
+First, the Sprint 14a framing "B-2 = exactly 0.000 at every
+seed" was partly a small-sample (N=16 per cell) artefact of the
+kNN-Kraskov quantisation; pooling to N=480 yields noise around
+zero rather than exact zeros. The retraction of the §5.8
+bimodal-peak claim **still stands** — no single seed reaches
+threshold in any configuration — but the "exact zero"
+phrasing is replaced by "mean +0.033 bits, std 0.047, none
+threshold-crossing".
+
+Second, the remaining unresolved ambiguity concerns probe
+shape, not estimator: the current Me3_delta collapses the
+`(B, K, d_hidden)` fused representation to `(B,)` via
+`flatten(1).mean(-1)`. A richer probe (full `(B, d_fused)`
+without mean-pooling) would let MINE exploit high-dim
+structure and is declared follow-up for paper v0.2 (Sprint 18).
 
 ---
 
@@ -545,9 +631,8 @@ retraction in §5.9.
 - [x] Amedi dose-response curve — §5.5, `reports/v0.5_amedi_curve.png`.
 - [x] Compound lock + Gumbel transducer — §5.6–§5.8 (ADRs 0014-0016).
 - [x] Per-seed stability re-aggregation — §5.9 (ADR-0017).
-- [x] Sprint 17 MINE / InfoNCE side-by-side — verdict lands in §6.3.
-- [ ] Re-write Abstract using the Sprint 10–17 final numbers (the
-      current draft still references `v0.4.0` and outdated B-2 claims).
+- [x] Sprint 17 MINE / InfoNCE side-by-side — verdict in §6.3.
+- [x] Re-write Abstract using the Sprint 10–17 final numbers.
 - [ ] Insert world-complexity audit numbers in Appendix A.
 - [ ] Bibliography : BibTeX entries for every citation in §7.
 - [ ] Convert to LaTeX with the TMLR template.
