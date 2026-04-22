@@ -610,10 +610,12 @@ retraction in §5.9.
   `transducer_gating_target`, Me3 MINE estimator). The amendment is
   additive; no threshold or metric math changes.
 
-**Target venue.**
-- Primary : TMLR (benchmarks track), emphasising the pre-registered
-  retraction (§5.9, ADR-0017) as a strength rather than a weakness.
-- Fallback : NeurIPS D&B 2026.
+**Release.**
+This paper is released as an arXiv preprint with a companion
+Zenodo DOI on the tagged code release. The pre-registered
+retraction (§5.9, ADR-0017) is presented openly rather than
+hidden : honest null and partial results are a feature of the
+pre-registration protocol, not a weakness to be papered over.
 
 ---
 

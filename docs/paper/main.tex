@@ -1,0 +1,872 @@
+% bouba_sens Paper v0.1 — TMLR submission
+%
+% To compile, first clone the TMLR style file alongside this main.tex :
+%   git clone https://github.com/JmlrOrg/tmlr-style-file
+%   cp tmlr-style-file/tmlr.sty .
+%   cp tmlr-style-file/tmlr.bst .
+%   cp tmlr-style-file/fancyhdr.sty .
+%
+% Then :
+%   latexmk -pdf main.tex
+% or :
+%   pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+
+\documentclass{article}
+\usepackage[accepted]{tmlr}   % TMLR style --- change to {tmlr} while under review
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{url}
+
+\title{bouba\_sens: A Pre-Registered Benchmark for Cross-Modal
+       Plasticity under Critical-Period Constraints}
+
+\author{%
+  \name Cl{\'e}ment Saillant
+  \email clement@saillant.cc \\
+  \addr Hypneum Lab \\
+  Grandris, France
+}
+
+\editor{To be assigned}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce \texttt{bouba\_sens}, a pre-registered benchmark
+measuring three invariants of cross-modal plasticity --- B-1
+(congenital-blindness T1/T2 gap, \citealp{amedi2007}), B-2
+(informational migration under lesion, Me3 delta), and B-3
+(perceptive/proprioceptive structural asymmetry, bouba/kiki) ---
+across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
+real MIT-BIH ECG) and a 4.5-modal real biological bridge
+(Studyforrest Phase-2: real movie vision + scene-cut tactile +
+cardiac-respiratory force + zero-ed gravity + CC-licensed audio
+substitute). Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
+registration \texttt{10.17605/OSF.IO/Q6JYN} before the evaluation
+campaign. Across 9 grids (150 cells each, 5 seeds $\times$ 5
+modalities $\times$ 2 timings $\times$ 3 SNRs) and 18 ADRs, we
+report: (i) B-3 passes architecturally (median max off-diagonal
+$= 0.109$--$0.125$, $5.5$--$6.3\times$ threshold, 5/5 seeds,
+invariant across every hyperparameter and compound tested);
+(ii) B-1 is qualitatively reproduced in exactly one configuration
+(hard-binary transducer gate with
+\texttt{constellation\_lock\_after=100}, median Me7 $=+0.0125$,
+25\,\% of threshold, 3+/5 seeds); (iii) B-2 does not exceed
+threshold under any configuration, and Kraskov vs.\ MINE disagree
+on the peak seed ($0.097$ vs.\ $0.000$), leading us to
+\emph{retract} the earlier ``bimodal positive B-2'' claim
+(ADR-0016 $\to$ ADR-0017). The paper's central empirical claim
+is narrow and falsifiable: \textbf{a frozen mux with hard
+transducer gating is the minimal configuration that qualitatively
+reproduces Amedi T1/T2 asymmetry; all additional plasticity
+controls we tested are null or harmful}. \texttt{bouba\_sens} is
+released at \url{https://github.com/hypneum-lab/bouba_sens}
+(tag \texttt{v0.5.4}, PyPI \texttt{bouba-sens==0.5.4}) as a
+reusable instrument for stress-testing other cross-modal
+architectures under OSF-compliant pre-registration.
+\end{abstract}
+
+% ==================================================================
+
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Motivation}
+
+Two independent lines of evidence suggest that cross-modal
+asymmetry is a \emph{structural} property of cognitive
+architectures. \citet{amedi2007} report that, in congenital
+blindness, occipital cortex is re-tasked to audition with
+\emph{greater} plasticity than in late-acquired blindness ---
+a quantitative T1/T2 gap that critical-period theories
+\citep{bavelier2002cross, merabet2010neural} attribute to a
+lock-style plasticity constraint mid-development. The bouba/kiki
+effect \citep{kohler1947gestalt, ramachandran2001synaesthesia}
+independently reports $\geq 95\,\%$ cross-cultural agreement on a
+round-vs-spiky sound-shape mapping, evidence of a hard-wired
+\emph{asymmetric} modality mapping \citep{sidhu2018five}. To the
+best of our knowledge, no pre-registered computational benchmark
+currently tests whether a given cross-modal architecture
+reproduces both properties simultaneously.
+
+\subsection{Contribution}
+\label{sec:contribution}
+
+\texttt{bouba\_sens} encodes these two intuitions as three
+pre-registered quantitative invariants (Table~\ref{tab:invariants})
+and runs them against a frozen 9-grid evaluation campaign
+(150 cells each, 5 seeds $\times$ 5 modalities $\times$ 2
+timings $\times$ 3 SNRs). All three thresholds are frozen by the
+OSF pre-registration \texttt{10.17605/OSF.IO/Q6JYN} and are not
+revisited in this paper.
+
+\begin{table}[t]
+  \centering
+  \caption{The three invariants and their pre-registered thresholds.}
+  \label{tab:invariants}
+  \begin{tabular}{lllr}
+    \toprule
+    Invariant & Measurement & Threshold & Biological analogue \\
+    \midrule
+    B-1 & \texttt{me7 = me1(T1) - me1(T2)} & $>0.05$ & Amedi congenital advantage \\
+    B-2 & \texttt{me3\_delta = MI\_post - MI\_pre} & $>0.10$ & Informational migration \\
+    B-3 & max off-diag of $5\times5$ perf asymmetry & $>0.02$ & Bouba/kiki structural asymmetry \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Structure}
+
+Section~\ref{sec:architecture} defines the five
+\texttt{WorldSimulator} implementations and the architecture that
+consumes them. Section~\ref{sec:invariants} details the three
+invariants. Section~\ref{sec:results} reports the main grid
+verdicts. Section~\ref{sec:mechanism} records the
+\texttt{constellation\_lock\_after} mechanism and its empirical
+recovery pattern, including the Sprint-17 retraction.
+Section~\ref{sec:limitations} discusses limitations.
+Section~\ref{sec:related} positions the work vs.\ prior literature.
+
+% ==================================================================
+
+\section{Architecture and datasets}
+\label{sec:architecture}
+
+\subsection{The Nerve protocol (nerve-wml)}
+
+bouba\_sens is built on top of the Nerve
+Protocol~\citep{saillant2026nervewml} and inherits its primitives:
+\texttt{Nerve}, \texttt{Neuroletter}, \texttt{MlpWML}, and
+\texttt{Transducer}. The cross-modal carrier is a
+\texttt{GammaThetaMultiplexer} implementing $\gamma/\theta$
+phase-amplitude coupling \citep{lisman1995storage,
+tort2010measuring, colgin2016rhythms} with a $[64, 2]$ PSK
+constellation trained end-to-end. As of protocol version
+\texttt{v1.4.0}, an optional
+\texttt{plasticity\_schedule : Callable[[int], float]} and a
+\texttt{constellation\_lock\_after : int \textbar{} None} parameter
+gate the constellation gradient over training.
+Section~\ref{sec:mechanism} uses both.
+
+\subsection{bouba\_sens architecture}
+
+Five \texttt{SensoryWML} instances (one per modality) share the
+same mux via an \texttt{object.\_\_setattr\_\_} bypass that
+prevents \texttt{nn.Module} double-registration while preserving
+gradient flow. Lesions are applied through
+\texttt{CrossModalNerve.on\_lesion}; Phase 2 training runs with a
+$\theta$-replay FIFO buffer (see \texttt{src/bouba\_sens/loop.py}).
+
+\subsection{The five worlds}
+\label{sec:worlds}
+
+\begin{table}[t]
+  \centering
+  \caption{The five \texttt{WorldSimulator} implementations.}
+  \label{tab:worlds}
+  \begin{tabular}{lllll}
+    \toprule
+    World & Latent structure & Temporal & Source \\
+    \midrule
+    Gaussian & Orthogonal PSK projection of 32-d $\mathcal{N}(0, I)$ & No & Synthetic \\
+    XOR & Non-linearly-separable 4-class & No & Synthetic \\
+    Sinusoid & Circular manifold & No & Synthetic \\
+    Studyforrest mock & AR(1) scene-latent surrogate & \textbf{Yes} & Synthetic, bio-plausible stats \\
+    MIT-BIH ECG & 1-s-window spectrograms of real ECG & \textbf{Yes} & \citet{moody2001physionet}, CC0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{The six-metric world-complexity audit}
+\label{sec:audit}
+
+Before running the benchmark, we quantify how far apart the
+worlds actually are using
+\texttt{src/bouba\_sens/audit/world\_complexity.py} (6 metrics:
+intrinsic PCA dim, support compactness, pairwise MI, label-
+conditional entropy, linear separability, temporal
+autocorrelation). \textbf{Key finding} (ADR-0007, Sprint 7
+Task 7.5): the three synthetic worlds cluster on modality
+geometry (intrinsic PCA dim $\sim 30$, relative gap $< 3\,\%$)
+but diverge on task difficulty
+(\texttt{linear\_separability} $0.50$ for XOR vs.\ $0.89$ for
+Gaussian and Sinusoid). The real ECG signal sits structurally
+outside the cluster (intrinsic PCA dim 6/28, temporal
+autocorrelation $0.97$ vs.\ $\sim 0$ synthetic). Full per-metric
+numbers are in Appendix~\ref{app:world}. This audit forms the
+\emph{honest external-validity caveat} of our evidence.
+
+% ==================================================================
+
+\section{Invariants}
+\label{sec:invariants}
+
+\subsection{B-1 (Me7) --- congenital gap}
+
+Per-cell Me1 post-lesion accuracy, paired by
+$(\mathrm{seed}, \mathrm{modality}, \mathrm{SNR})$ across T1
+(congenital: no Phase 1) and T2 (late-acquired: restore Phase 1
+checkpoint). The median across 75 pairs per grid is the invariant
+statistic:
+\begin{equation}
+\mathrm{me7} \;=\; \mathrm{median}_{(\mathrm{seed}, m, \mathrm{SNR})}
+ \bigl[\, \mathrm{me1}_{\mathrm{T1}} - \mathrm{me1}_{\mathrm{T2}} \,\bigr].
+\end{equation}
+
+\subsection{B-2 (Me3 delta) --- MI migration}
+
+A probe batch is captured before \texttt{on\_lesion} and after
+Phase 2 training. Codes are the mean-pooled fused representation;
+\texttt{me3\_delta} is the label-MI difference across the two
+snapshots, estimated by the sklearn Kraskov
+kNN~\citep{kraskov2004estimating}:
+\begin{equation}
+\mathrm{me3\_delta} \;=\; \widehat{I}(\mathrm{codes}_{\mathrm{post}}; y)
+  - \widehat{I}(\mathrm{codes}_{\mathrm{pre}}; y).
+\end{equation}
+Section~\ref{sec:limitations-estimator} compares Kraskov against a
+MINE~\citep{belghazi2018mine} Donsker-Varadhan replication.
+
+\subsection{B-3 (Me6) --- structural asymmetry}
+
+\texttt{AdaptationLoop.query\_accuracy(modality)} zero-masks all
+but one modality and reports Me1. Stacking the five per-query
+vectors across one $(\mathrm{seed}, \mathrm{timing}, \mathrm{SNR})$
+trio yields a $5 \times 5$ matrix $P$;
+\texttt{me6\_max\_abs\_off\_diag} is the invariant statistic:
+\begin{equation}
+\mathrm{me6} \;=\; \max_{i \neq j} \bigl| (P - P^{\top})_{i,j} \bigr|.
+\end{equation}
+
+% ==================================================================
+
+\section{Main results: unlocked grids}
+\label{sec:results}
+
+\subsection{Within-synthetic-cluster (ADR-0005)}
+\label{sec:within-cluster}
+
+\begin{table}[ht]
+  \centering
+  \caption{Within-synthetic-cluster verdicts (no lock).}
+  \label{tab:within-cluster}
+  \begin{tabular}{lrrr}
+    \toprule
+    Invariant & Gaussian & XOR & Sinusoid \\
+    \midrule
+    B-1 Me7 & $-0.0063$ & $-0.0062$ & $+0.0125$ \\
+    B-2 Me3 delta & $+0.0275$ & $+0.0034$ & $+0.0019$ \\
+    B-3 Me6 & $0.1484$ & $0.1406$ & $0.1406$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Verdict}: B-3 PASS 3/3 ($\sim 7\times$ threshold);
+B-1 directionally falsified (3/3 FAIL, 1 world has the correct
+sign); B-2 under-threshold 3/3.
+
+\subsection{Out-of-cluster mock (ADR-0008)}
+
+Studyforrest AR(1) mock: B-3 $= \mathbf{0.3125}$ ($15.6\times$,
+$+2\times$ amplification), B-1 $= 0.0000$, B-2 $= -0.0288$
+(artefact of zero-ed tactile, gravity, and force channels).
+
+\subsection{Real biological signal (ADR-0009)}
+
+MIT-BIH ECG~\citep{moody2001physionet}: B-3 $= \mathbf{0.4453}$
+($22.3\times$, strongest of any world), B-1 $= -0.0062$,
+B-2 $= +0.0111$.
+
+\subsection{The B-3 monotone-growth property}
+\label{sec:b3-monotone}
+
+\textbf{Key claim, load-bearing.} B-3 grows monotonically with
+input complexity: $7\times$ (synthetic cluster) $\to$ $15.6\times$
+(AR(1) mock) $\to$ $22.3\times$ (real ECG). The
+perceptive/proprioceptive asymmetry is \emph{not} a
+synthetic-cluster accident; it intensifies when the inputs carry
+richer structure.
+
+% ==================================================================
+
+\section{Mechanism: plasticity lock recovers B-1 directionally}
+\label{sec:mechanism}
+
+\subsection{Design}
+
+\texttt{constellation\_lock\_after=200} with
+\texttt{STEPS\_TRAIN=200} gives T2 a locked mux at Phase 2 entry
+(Phase 1 crossed the threshold, checkpoint saved with
+\texttt{requires\_grad=False},
+\texttt{load\_state\_dict} re-applies the lock). T1 starts fresh
+and never reaches the 200-step mark during its 100-step Phase 2,
+staying plastic. This is the first architectural T1/T2 asymmetry
+in the benchmark.
+
+\subsection{Cross-world lock matrix (ADR-0011)}
+\label{sec:lock-matrix}
+
+\begin{table}[ht]
+  \centering
+  \caption{B-1 across four worlds, no-lock vs.\ \texttt{lock=200}.}
+  \label{tab:lock-b1}
+  \begin{tabular}{lrrr}
+    \toprule
+    World & B-1 no-lock & B-1 lock=200 & $\Delta$ \\
+    \midrule
+    Gaussian & $-0.0063$ (inverted) & $\mathbf{0.0000}$ & $+0.0063$ \\
+    XOR      & $-0.0062$ (inverted) & $\mathbf{0.0000}$ & $+0.0062$ \\
+    Sinusoid & $\mathbf{+0.0125}$ (correct sign) & $\mathbf{0.0000}$ & $\mathbf{-0.0125}$ \\
+    real ECG & $-0.0062$ (inverted) & $-0.0062$ & $0.0000$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \caption{B-3 across four worlds, no-lock vs.\ \texttt{lock=200}.}
+  \label{tab:lock-b3}
+  \begin{tabular}{lrr}
+    \toprule
+    World & B-3 no-lock & B-3 lock=200 \\
+    \midrule
+    Gaussian & $0.1484$ ($7.4\times$) & $0.1719$ ($8.6\times$) \\
+    XOR      & $0.1406$ ($7.0\times$) & $0.1250$ ($6.2\times$) \\
+    Sinusoid & $0.1406$ ($7.0\times$) & $0.1562$ ($7.8\times$) \\
+    real ECG & $0.4453$ ($22.3\times$) & $0.4453$ ($22.3\times$) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Interpretation --- the lock is homogenising, not recovering}
+
+Three regimes emerge from the $4 \times 2$ matrix
+(Table~\ref{tab:lock-b1}):
+\begin{enumerate}
+  \item \textbf{Synthetic inverted worlds (Gaussian, XOR):} lock
+        flips $\mathrm{me7} = -0.006$ to exactly $0.000$. The
+        inversion is gone; no positive gap appears.
+  \item \textbf{Synthetic correct-sign world (Sinusoid):} lock
+        flips $\mathrm{me7} = +0.0125$ to exactly $0.000$.
+        \emph{The positive gap that pre-existed is destroyed.}
+        The lock does not selectively favour T1.
+  \item \textbf{Real ECG:} lock has no measurable effect. The
+        three zero-ed modalities dominate the architecture's
+        response space; the lock cannot induce a T1/T2 differential.
+\end{enumerate}
+
+Zero of four worlds shows the pre-registered pattern
+($\mathrm{me7} > 0.05$). The lock acts like a low-pass filter on
+the T1/T2 difference --- it pushes every world toward
+$\mathrm{me7} = 0$ regardless of initial sign. The B-2 side-effect
+on Gaussian (flip to $-0.0092$) is the architecturally correct
+behaviour of a critical-period model --- a frozen constellation
+cannot re-route information --- but does not help B-1 meet its
+threshold.
+
+\textbf{Scientific upshot.} The simple single-parameter lock
+falsifies the naive ``lock $=$ Amedi advantage'' story. The
+\texttt{plasticity\_step} mechanism is \emph{necessary} to express
+a T1/T2 asymmetry but not \emph{sufficient} to reproduce the
+pre-registered congenital advantage on any of the four synthetic
+worlds at this parameterisation.
+
+\subsection{Extension to 4.5-modal real biological bridge (ADR-0012)}
+\label{sec:bridge}
+
+OSF amendment v0.5 extends the pre-registered grid with a fifth
+world derived from Studyforrest Phase-2
+\citep{hanke2016studyforrest} (sub-01, ses-localizer,
+task-movielocalizer run-1): real VGG16 features over
+\texttt{movie\_localizer.mkv}, ffmpeg scene-cut tactile proxy,
+real cardiac + respiration physio, zero gravity (rp regressors
+not published), and CC-BY-4.0 LibriSpeech audio substitution
+(path (b) of ADR-0012 --- the Forrest Gump soundtrack is not
+redistributable).
+
+\begin{table}[ht]
+  \centering
+  \caption{Five-world matrix including the 4.5-modal real bridge.}
+  \label{tab:five-world}
+  \begin{tabular}{lrrrr}
+    \toprule
+    World & B-1 no-lock & B-1 lock=200 & B-3 no-lock & B-3 lock=200 \\
+    \midrule
+    Gaussian & $-0.0063$ & $0.0000$ & $0.1484$ & $0.1719$ \\
+    XOR      & $-0.0062$ & $0.0000$ & $0.1406$ & $0.1250$ \\
+    Sinusoid & $+0.0125$ & $0.0000$ & $0.1406$ & $0.1562$ \\
+    ECG 2-modal & $-0.0062$ & $-0.0062$ & $0.4453$ & $0.4453$ \\
+    \textbf{4.5-modal real} & $\mathbf{0.0000}$ & $\mathbf{+0.0063}$ & $\mathbf{0.1016}$ & $\mathbf{0.1250}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 4.5-modal real bridge is the first world-condition pair where
+the lock produces a positive B-1 (in the pre-registered Amedi
+direction), though still below threshold. B-3 attenuates from the
+ECG $22.3\times$ down to $5.1$--$6.2\times$ --- consistent with
+Branch B of the OSF amendment v0.5 decision rule (``PASS but
+attenuated under biological input complexity''). B-2 is measured
+with a bootstrap 95\,\% CI via the nerve-wml v1.5.3 methodology
+module: median $-0.0376$, CI $[-0.056, -0.001]$. This is the first
+world-condition pair where B-2 is robustly distinguishable from
+zero, with sign opposite the pre-registered $+0.10$ direction ---
+interpretation: multi-modal real inputs change the MI landscape
+such that lesion-phase training reduces rather than grows the
+probe-code-vs-label MI, consistent with interference rather than
+migration. B-3, however, survives the lock in 5/5 worlds ---
+further confirming its architectural-invariant status.
+
+\subsection{Dose-response \texttt{LOCK\_AFTER} scan --- Amedi peak (ADR-0013)}
+\label{sec:dose-response}
+
+A 5-point scan over
+$\mathtt{LOCK\_AFTER} \in \{50, 100, 200, 400, 800\}$ on the
+4.5-modal real biological bridge ($5 \times 150$ cells on Studio)
+reveals a non-monotone B-1 peak at $\mathtt{LOCK\_AFTER} = 100$
+(50\,\% of \texttt{STEPS\_TRAIN}).
+
+\begin{table}[ht]
+  \centering
+  \caption{Dose-response scan on the 4.5-modal real bridge.}
+  \label{tab:dose-response}
+  \begin{tabular}{rrrr}
+    \toprule
+    \texttt{LOCK\_AFTER} & B-1 Me7 & B-2 Me3\_delta & B-3 Me6 \\
+    \midrule
+    50                 & $+0.0062$ & $-0.0044$ & $0.109$ \\
+    \textbf{100}       & $\mathbf{+0.0125}$ (peak) & $-0.0190$ & $0.109$ \\
+    200                & $0.0000$  & $-0.0069$ & $0.102$ \\
+    400                & $0.0000$  & $-0.0063$ & $0.109$ \\
+    800                & $0.0000$  & $+0.0009$ & $0.094$ \\
+    $\infty$ (no-lock) & $0.0000$  & $-0.0376$ & $0.102$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.75\linewidth]{../../reports/v0.5_amedi_curve.png}
+  \caption{Amedi recovery curve on the 4.5-modal real bridge.
+    B-1 peaks at $\mathtt{LOCK\_AFTER}=100$ (+0.0125, 25\,\% of
+    threshold), collapses to zero for $\geq 200$. B-3 remains
+    lock-invariant.}
+  \label{fig:amedi-curve}
+\end{figure}
+
+The peak magnitude ($+0.0125$) stays below the pre-registered
+$0.05$ threshold but exceeds every B-1 value recorded across the
+4 synthetic-cluster worlds. This is the first non-monotone
+dose-response signature in the benchmark: fire the lock too early
+($\mathtt{LOCK\_AFTER}=50$) and T1 has not accumulated enough
+plasticity advantage; fire it too late ($\geq 200$) and the T2
+mux has already converged, erasing the differential. The shape
+matches the critical-period window predicted by
+\citet{amedi2007}, in a regime the synthetic worlds cannot reach.
+B-3 remains lock-invariant across the full scan
+($4.7$--$5.4\times$ threshold), confirming the
+\emph{architectural-invariant} interpretation. B-2 reaches its
+most-negative value at the same $\mathtt{LOCK\_AFTER}=100$ peak,
+strengthening the ``temporal-proximity interference'' reading of
+Section~\ref{sec:bridge}.
+
+\subsection{Compound critical-period (Sprint 11, ADR-0014)}
+
+A compound experiment combining the Sprint 10 peak lock
+($\mathtt{LOCK\_AFTER}=100$) with sigmoid-soft transducer gating
+(\texttt{transducer\_gating="gumbel"},
+\texttt{gumbel\_tau=1.0}) reduces the B-1 peak from $+0.0125$ to
+$+0.0062$ on the 4.5-modal real bridge --- \emph{a 50\,\%
+attenuation, not the expected amplification}.
+
+\begin{table}[ht]
+  \centering
+  \caption{Compound critical-period: hard gate vs.\ Gumbel gate.}
+  \label{tab:compound}
+  \begin{tabular}{lrrr}
+    \toprule
+    Config & B-1 Me7 & B-2 Me3\_delta & B-3 Me6 \\
+    \midrule
+    LOCK=100 + HARD gate (Sprint 10) & $+0.0125$ & $-0.0190$ & $0.1094$ \\
+    LOCK=100 + GUMBEL gate (Sprint 11) & $+0.0062$ & $-0.0177$ & $0.1172$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Contrary to the naive hypothesis that soft differentiability
+improves gradient flow through the critical-period signal, the
+hard-binary \texttt{CrossModalTransducer} gate appears to act as a
+\emph{noise filter}: by rejecting sub-threshold gate margins, it
+preserves the discrete T1/T2 asymmetry. Soft gating dilutes the
+signal across all 20 cross-modal pairs proportionally, reducing
+the effective signal-to-noise on the Me7 axis. This is an
+\emph{architectural constraint} on the space of mechanisms that
+could reproduce \citet{amedi2007} in our setup: at least one
+component of the plasticity router needs a hard phase transition,
+not a continuous gate.
+
+\subsection{Gumbel tau scan (Sprint 12, ADR-0015)}
+
+A 5-point scan of $\mathtt{gumbel\_tau} \in \{0.1, 0.3, 0.5, 1.0, 2.0\}$
+at the peak $\mathtt{LOCK\_AFTER}=100$ tests whether tighter
+sigmoid recovers the hard-gate behaviour.
+
+\begin{table}[ht]
+  \centering
+  \caption{Gumbel tau scan at the peak lock.}
+  \label{tab:gumbel-tau}
+  \begin{tabular}{rrrr}
+    \toprule
+    \texttt{gumbel\_tau} & B-1 Me7 & B-2 Me3\_delta & B-3 Me6 \\
+    \midrule
+    0.1 & $0.0000$ & $-0.0268$ & $0.109$ \\
+    \textbf{0.3} & $+0.0063$ & $\mathbf{+0.0180}$ & $0.125$ \\
+    0.5 & $0.0000$ & $-0.0404$ & $0.125$ \\
+    1.0 & $+0.0062$ & $-0.0177$ & $0.117$ \\
+    2.0 & $+0.0063$ & $-0.0052$ & $0.117$ \\
+    \textbf{hard (S10)} & $\mathbf{+0.0125}$ & $-0.0190$ & $0.109$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{No Gumbel tau recovers the hard peak.} B-1 plateaus at
+$\sim +0.006$ across 1.5 decades and collapses to $0$ at the
+extremes. The hard gate is \emph{not a limit} of the Gumbel family
+--- it is a qualitatively distinct routing regime. The discrete
+$\mathtt{gate[\mathrm{src}]} < 0.1 \wedge \mathtt{gate[\mathrm{dst}]} > 0.3$
+threshold produces a phase-transition in information routing that
+no continuous sigmoid approximates. An apparent positive
+B-2 at $\mathtt{tau}=0.3$ ($+0.0180$) motivated the follow-up in
+Sprint 13 (Section~\ref{sec:sprint13}) and its retraction in
+Section~\ref{sec:sprint14}.
+
+\subsection{Finer tau scan + codebook freeze (Sprint 13, ADR-0016)}
+\label{sec:sprint13}
+
+A finer tau grid $\{0.20, 0.25, 0.35, 0.40\}$ around the Sprint 12
+anomaly (Table~\ref{tab:finer-tau}) and an orthogonal codebook-
+freeze experiment (Table~\ref{tab:codebook-freeze}) motivate the
+mechanistic reading that three plasticity components carry
+distinct load-bearing roles.
+
+\begin{table}[ht]
+  \centering
+  \caption{Finer tau scan at $\mathtt{LOCK\_AFTER}=100$.}
+  \label{tab:finer-tau}
+  \begin{tabular}{rrrr}
+    \toprule
+    \texttt{tau} & B-1 Me7 & B-2 Me3\_delta & B-3 Me6 \\
+    \midrule
+    0.20 & $+0.0063$ & $\mathbf{+0.0116}$ & $0.125$ \\
+    0.25 & $+0.0062$ & $-0.0109$ & $0.125$ \\
+    0.30 & $+0.0063$ & $\mathbf{+0.0180}$ & $0.125$ \\
+    0.35 & $0.0000$  & $-0.0183$ & $0.109$ \\
+    0.40 & $0.0000$  & $-0.0036$ & $0.125$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \caption{Codebook-freeze destroys the B-1 peak.}
+  \label{tab:codebook-freeze}
+  \begin{tabular}{lrrr}
+    \toprule
+    Config & B-1 Me7 & B-2 Me3\_delta & B-3 Me6 \\
+    \midrule
+    LOCK=100, HARD (Sprint 10 peak) & $\mathbf{+0.0125}$ & $-0.0190$ & $0.109$ \\
+    + CODEBOOK\_LOCK=100 & $\mathbf{0.0000}$ & $-0.0117$ & $0.109$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The shared 64-entry PSK alphabet must stay \emph{plastic} during
+Phase 2 for the Amedi signal to survive --- the opposite of the
+nerve-wml\#5 prior hypothesis. The load-bearing roles are:
+mux constellation preserves the T1/T2 asymmetry (Sprint 10 peak),
+the transducer gate filters gate noise (hard $>$ soft,
+Sprints 11--12), and the codebook must stay plastic (freezing it
+destroys the peak, Sprint 13b).
+
+\subsection{Per-seed retraction and phase-transition null (Sprint 14, ADR-0017)}
+\label{sec:sprint14}
+
+Sprint 14 adds per-seed stability tests to every claim the paper
+has made and tries one last compound --- a phase-transition
+schedule that flips the transducer gating from HARD during Phase 1
+to GUMBEL $\mathtt{tau}=0.30$ during Phase 2. The results shrink
+the paper's load-bearing story and \emph{retract one claim outright}.
+
+\textbf{14a --- B-2 $\mathtt{tau}=0.30$ ``migration peak''
+retracted.} Re-aggregating \texttt{runs/v05\_s12\_tau0\_3} per seed
+shows B-2 is \emph{exactly $0.000$ at every one of 5 seeds}.
+The grid-median $+0.0180$ reported in
+Section~\ref{sec:sprint13} arose from
+\texttt{me9\_bootstrap} resampling a near-zero delta distribution
+(kNN-Kraskov quantisation); the headline was bootstrap smoothing,
+not a migration signal. B-1 at $\mathtt{tau}=0.30$ is only weakly
+robust (3/5 seeds at $+0.0125$, 2/5 at $-0.0063$, mean $+0.005$,
+none passing the $0.05$ threshold).
+
+\textbf{14b --- codebook entropy is the wrong observable.}
+Median-over-cells codebook entropy is $4.1545$ nats for both
+LOCK=100 (peak) and LOCK=100+CBFREEZE (no peak) grids --- the two
+are indistinguishable at this resolution. The Sprint 13b outcome
+stands, but its mechanistic story is softened: the codebook must
+stay plastic, yet its role is not captured by the entropy scalar.
+A finer observable (per-entry drift, pair-wise $L_2$) is declared
+follow-up for paper v0.2.
+
+\textbf{14c --- phase-transition schedule falsified.}
+LOCK=100 + HARD$\to$GUMBEL-$\mathtt{tau}$-$0.30$ at step 200 gives
+grid-level B-1$\,=\,+0.0063$ ($2\times$ worse than pure HARD
+Sprint 10 peak) and B-2$\,=\,-0.0220$ (worse than any pure-mode
+run). One seed collapses to B-1$\,=\,-0.0375$ --- below anything
+observed in prior single-mode runs, suggesting the mode switch at
+the P1/P2 boundary introduces destructive interference between
+the regimes.
+
+\textbf{Sprint 10--14 synthesis.} The only configuration that
+produces a positive B-1 peak of practical significance on the
+4.5-modal real bridge remains \textbf{LOCK=100 + HARD transducer}
+($+0.0125$ grid, 3+/5 seeds positive), from Sprint 10. Every
+compound attempted since has preserved, weakened, or destroyed it.
+B-2 is never robustly positive; B-3 is always positive and
+architecturally invariant regardless of P1/P2 manipulations.
+\emph{The paper's central empirical claim narrows to: a frozen
+mux with hard transducer gating is the minimal configuration that
+qualitatively reproduces Amedi-style T1/T2 asymmetry; all
+additional plasticity controls tested are null or harmful.}
+
+% ==================================================================
+
+\section{Limitations}
+\label{sec:limitations}
+
+\subsection{External validity}
+
+Three synthetic worlds (Gaussian, XOR, Sinusoid) sit in the same
+tight cluster of the world-complexity audit (relative gap
+$< 10\,\%$ on most metrics). The Studyforrest mock and MIT-BIH ECG
+bridges extend the support of our evidence outside that cluster,
+but neither is a full biological dataset. Full Studyforrest
+(Forrest Gump audio description and motion annotations) requires
+\texttt{datalad} and \texttt{git-annex} infrastructure that is
+out of scope for v0.1 and is declared explicitly in ADR-0007.
+
+\subsection{Scope of the lock mechanism}
+
+\texttt{constellation\_lock\_after} freezes the $[64, 2]$ PSK
+constellation. Sprints 11--13
+(Sections~\ref{sec:sprint13}) map the effect of compounding two
+more plasticity controls --- \texttt{transducer\_gating} $\in
+\{\mathrm{hard}, \mathrm{gumbel}\}$ and
+\texttt{codebook\_lock\_after} --- and show that the three
+components are \emph{not} interchangeable: mux lock preserves the
+B-1 peak, hard transducer gate acts as a noise filter
+(qualitatively irreducible to any Gumbel sigmoid), and codebook
+plasticity is \emph{essential} --- freezing it destroys the Amedi
+signal. A finer-grained model of individual transducer gates
+(nerve-wml\#5 per-modality schedules) remains declared follow-up
+for paper v0.3.
+
+\subsection{Me3 estimator: Kraskov vs.\ MINE (Sprint 17)}
+\label{sec:limitations-estimator}
+
+The limitation announced in earlier drafts --- that B-2
+sub-threshold may be a Kraskov artefact rather than a null --- is
+resolved by Sprint 17 with a side-by-side
+MINE~\citep{belghazi2018mine} Donsker-Varadhan replication on the
+Sprint 10 peak grid (\texttt{runs/v05\_dr\_lock100}, LOCK=100 +
+HARD, the only B-1-positive configuration). Cross-cell pooling
+($N = 480$ per seed, 30 cells each) brings both estimators above
+their convergence minima.
+
+\begin{table}[ht]
+  \centering
+  \caption{Kraskov vs.\ MINE on the Sprint 10 peak grid.}
+  \label{tab:kraskov-mine}
+  \begin{tabular}{rrrrr}
+    \toprule
+    seed & $N$ & Me3$\Delta$ Kraskov (bits) & Me3$\Delta$ MINE (bits) & abs diff \\
+    \midrule
+    0 & 480 & $+0.019$ & $0.000$ & $0.019$ \\
+    1 & 480 & $\mathbf{+0.097}$ & $0.000$ & $0.097$ \\
+    2 & 480 & $+0.067$ & $0.000$ & $0.067$ \\
+    3 & 480 & $0.000$  & $0.000$ & $0.000$ \\
+    4 & 480 & $-0.019$ & $0.000$ & $0.019$ \\
+    \midrule
+    \textbf{mean $\pm$ std} & & $\mathbf{+0.033 \pm 0.047}$ & $\mathbf{0.000 \pm 0.000}$ & $0.041$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Neither estimator crosses the pre-registered B-2 threshold of
+$0.10$ bits on any seed (seed 1 reaches $0.097$ under Kraskov ---
+$97\,\%$ of the threshold --- but MINE gives $0$ on the same
+data). The Kraskov mean ($+0.033$ bits) is within one standard
+deviation of zero across seeds. MINE returns $0$ on every seed,
+but this is the Donsker-Varadhan clipped lower bound, \emph{not} a
+refutation of weak signal: MINE is only informative for MI
+magnitudes large compared to its sample-size-dependent floor, and
+at $N = 480$ with $d = 1$ that floor is near $0.1$ bit.
+
+\textbf{Honest reading.} The two estimators \emph{agree within
+$\sim 0.1$ bit} that B-2 does not exceed the $0.10$ threshold at
+this grid, and Kraskov's per-seed variance is commensurate with
+its per-seed mean. The benchmark cannot distinguish
+``weak but real B-2 signal below threshold'' from ``null B-2 plus
+estimator noise'' with 5 seeds and a 1-D mean-pooled probe. A
+higher-dimensional probe (full $(B, d_{\mathrm{fused}})$ without
+mean-pooling) is declared follow-up for paper v0.2 (Sprint 18).
+
+% ==================================================================
+
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Cross-modal plasticity in congenital and late-acquired blindness.}
+\citet{amedi2007} show that congenitally blind subjects recruit
+occipital cortex for auditory object recognition to a
+quantitatively greater degree than late-onset blind subjects ---
+our B-1 invariant operationalises this asymmetry as a Me7
+threshold. \citet{bavelier2002cross} and
+\citet{merabet2010neural} frame this as a critical-period
+phenomenon: lock-style plasticity constraints mid-development
+produce the T1/T2 gap that adult-onset reorganisation cannot
+close. bouba\_sens's \texttt{constellation\_lock\_after} is a
+direct architectural analogue of that critical period, and the
+Section~\ref{sec:dose-response} dose-response curve reproduces the
+qualitative Amedi pattern without meeting the pre-registered
+magnitude threshold.
+
+\paragraph{Bouba/kiki correspondence and ideasthesia.}
+\citet{kohler1947gestalt} and
+\citet{ramachandran2001synaesthesia} established the $\geq 95\,\%$
+cross-cultural agreement on round-vs-spiky sound-shape mapping;
+\citet{sidhu2018five} review the converging evidence that this
+mapping is a structural property of sensory integration, not
+learned. Our B-3 invariant formalises that asymmetry as the max
+off-diagonal magnitude of the 5-modality perf matrix; its
+$5$--$6\times$ threshold pass across every grid in this paper,
+independent of all Phase-1/Phase-2 controls, is consistent with a
+hard-wired asymmetric mapping.
+
+\paragraph{$\gamma/\theta$ phase-amplitude coupling as a cross-modal binding substrate.}
+\citet{lisman1995storage}, \citet{tort2010measuring}, and
+\citet{colgin2016rhythms} describe how $\gamma$ (30--100\,Hz)
+multiplexed into $\theta$ (4--8\,Hz) envelopes implements a
+time-multiplexed binding scheme. The
+\texttt{GammaThetaMultiplexer} in
+nerve-wml~\citep{saillant2026nervewml} implements this protocol;
+bouba\_sens treats it as a black-box protocol dependency and
+measures only downstream invariants.
+
+\paragraph{Pre-registered benchmarks in ML.}
+The NeurIPS Datasets \& Benchmarks track~\citep{vanschoren2021neurips}
+and \citet{gebru2021datasheets} pushed the field towards
+OSF-style pre-registration. bouba\_sens follows the OSF
+locked-threshold protocol (registration
+\texttt{10.17605/OSF.IO/Q6JYN}): the $0.05 / 0.10 / 0.02$
+thresholds for B-1 / B-2 / B-3 are frozen before the 9-grid
+evaluation campaign and are not revisited by any ADR in this
+paper, including the retraction in Section~\ref{sec:sprint14}.
+
+% ==================================================================
+
+\section{Artefacts, reproducibility, venue}
+\label{sec:artefacts}
+
+\paragraph{Software artefacts.}
+\texttt{github.com/hypneum-lab/bouba\_sens} --- Python package,
+released on PyPI as \texttt{bouba-sens==0.5.4} (tag
+\texttt{v0.5.4}, commit \texttt{360a442}).
+\texttt{github.com/hypneum-lab/nerve-wml} v1.5.3~\citep{saillant2026nervewml}
+--- protocol and methodology dependencies (Kraskov-kNN, bootstrap
+CI, null-model permutation, MINE estimator). Zenodo DOI
+\texttt{10.5281/zenodo.19666405}.
+\texttt{reports/*.json} and \texttt{reports/*.png} --- per-grid
+aggregates, per-seed breakdowns, and the Amedi dose-response
+curve, committed verbatim (force-added past the
+\texttt{.gitignore} for the reports we cite).
+
+\paragraph{Reproducibility pipeline.}
+\texttt{run\_grid.sh} + \texttt{aggregate\_grid.py} +
+\texttt{aggregate\_grid\_per\_seed.py} + 5-command typer CLI. A
+single \texttt{uv sync --all-extras} gives a complete Python 3.14
+environment from the pinned \texttt{uv.lock}. Every cell seeded by
+$(\mathrm{seed\_base} \times 10\,000 + \mathrm{cell\_count})$.
+Byte-identical \texttt{eval\_report.json} outputs on a fresh
+clone, modulo numerical determinism caveats listed in
+Appendix~\ref{app:sha}.
+\texttt{scripts/reproduce\_paper\_v01.sh} (Sprint 16) regenerates
+every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
+from the tagged repository; total compute budget
+$\approx 8$\,h on an M3 Ultra.
+
+\paragraph{Pre-registration fidelity.}
+OSF registration \texttt{10.17605/OSF.IO/Q6JYN} locks the three
+thresholds $(0.05, 0.10, 0.02)$; they do not change across
+ADRs 0004 through 0017. Every decision (verdict, retraction, scope
+narrowing) is recorded inline in a dated ADR with the grid commit
+and aggregate artefact path, cross-referenced in
+Section~\ref{sec:mechanism}. OSF amendment v0.6 covers the
+Sprint 10--17 hyperparameter additions
+(\texttt{constellation\_lock\_after}, \texttt{transducer\_gating},
+\texttt{gumbel\_tau}, \texttt{codebook\_lock\_after},
+\texttt{transducer\_gating\_schedule},
+\texttt{transducer\_gating\_target}, Me3 MINE estimator). The
+amendment is \emph{additive}; no threshold or metric math changes.
+
+\paragraph{Release.}
+This paper is released as an arXiv preprint with a companion
+Zenodo DOI on the tagged code release. The pre-registered
+retraction (Section~\ref{sec:sprint14}, ADR-0017) is presented
+openly rather than hidden: we consider honest null and partial
+results a feature of the pre-registration protocol, not a
+weakness to be papered over.
+
+% ==================================================================
+
+\appendix
+
+\section{World-complexity audit (verbatim numbers)}
+\label{app:world}
+
+See \texttt{docs/paper/appendix\_A\_world\_complexity.md} for the
+full per-metric, per-modality tables (condensed 3-world
+aggregate, per-modality intrinsic PCA dim, per-modality support
+compactness, scalar world-level metrics, and IQR-based
+seed-variance commentary). The audit JSON is versioned at
+\texttt{reports/v0.3\_critical\_validation/world\_complexity\_audit.json}
+and reproduces from \texttt{v0.4.0} with a fixed seed.
+
+\section{Cross-world lock matrix}
+\label{app:lock-matrix}
+
+The full $5 \times 2$ lock matrix with per-seed breakdown is
+tabulated in Table~\ref{tab:five-world} (grid median) and in
+\texttt{reports/v0.5\_dr\_lock*/per\_seed\_aggregate.json} (seed
+level). The 4.5-modal real biological bridge row is the
+load-bearing one and is reproduced in
+Section~\ref{sec:dose-response} with full dose-response context.
+
+\section{SHA256 manifest for cited reports}
+\label{app:sha}
+
+See \texttt{reports/v0.3\_critical\_validation/MANIFEST.md} for
+the SHA256 of every \texttt{reports/*.json} referenced in
+Sections~\ref{sec:results}--\ref{sec:sprint14}. A refreshed
+manifest covering v0.5, v0.6, v0.7 grids is scheduled for
+commit before submission (see calendar S2, 2026-05-08).
+
+% ==================================================================
+
+\bibliographystyle{tmlr}
+\bibliography{refs}
+
+\end{document}
