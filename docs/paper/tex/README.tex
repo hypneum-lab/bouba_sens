@@ -1,0 +1,278 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{\textbf{#1}}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\section{bouba\_sens}\label{bouba_sens}
+
+\begin{quote}
+A benchmark for cross-modal plasticity in artificial neural systems.
+Hypneum Lab --- 2026.
+\end{quote}
+
+\texttt{bouba\_sens} studies how a 5-modality agent (audio, vision,
+tactile, gravity, force) reorganises itself when one sensory channel is
+lost or degraded --- inspired by the cross-modal cortical recruitment
+observed in congenital and late blindness (Amedi 2007, Merabet 2010,
+Heimler 2020).
+
+\subsection{Three testable invariants}\label{three-testable-invariants}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{B-1 --- Congenital gap:} lesion pre-training yields better
+  adaptation than lesion post-convergence.
+\item
+  \textbf{B-2 --- MI migration:} mutual information between
+  surviving-modality neuroletters and the target label rises
+  post-lesion.
+\item
+  \textbf{B-3 --- Perceptive/proprioceptive asymmetry:} losing
+  vision/audio/tactile produces a quantitatively different plastic
+  response than losing gravity/force.
+\end{itemize}
+
+\subsection{Status}\label{status}
+
+\textbf{v0.5.5 (2026-04-23) --- Paper v0.1 submit-ready.} Sprints 0--17
+closed, 14 ADRs (0004--0017), 185+ tests. 9 grids (150 cells each) on
+the 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
+
+\begin{itemize}
+\tightlist
+\item
+  Paper draft : \texttt{docs/paper/paper-v0.1-draft.md}
+\item
+  OSF registration : \texttt{10.17605/OSF.IO/Q6JYN}, amendment v0.6
+\item
+  Target venue : TMLR benchmarks track (primary), NeurIPS D\&B
+  (fallback)
+\end{itemize}
+
+\subsection{Headline findings (v0.5.5)}\label{headline-findings-v055}
+
+Thresholds locked by OSF before the campaign : B-1 ≥ 0.05, B-2 ≥ 0.10,
+B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lrrll@{}}
+\toprule\noalign{}
+Invariant & Threshold & Best grid-median & Seed-stability & Verdict \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{B-3} Me6 perceptive/proprio asymmetry & 0.02 &
+\textbf{0.109--0.125} (5.5--6.3×) & 5/5 pass & \textbf{PASS} every
+configuration, architectural invariant \\
+B-1 Me7 congenital gap & 0.05 & \textbf{+0.0125} (25 \% of thr) & 3+/5
+positive & \textbf{Qualitative} --- only \texttt{LOCK=100\ +\ HARD} on
+the real bridge (§5.5 Amedi dose-response) \\
+B-2 Me3 MI migration & 0.10 & mean +0.033 ±0.047 bits & 0/5 cross
+threshold & \textbf{Null} --- two independent estimators (Kraskov +
+MINE) agree within 0.1 bit \\
+\end{longtable}
+}
+
+\textbf{F1 --- B-3 is an architectural invariant.} The perceptive /
+proprioceptive asymmetry passes at 5--6× threshold across every grid,
+every world, every seed, and is insensitive to every plasticity control
+tested (LOCK\_AFTER, transducer gating mode, Gumbel tau, codebook
+freeze, HARD → GUMBEL phase transition).
+
+\textbf{F2 --- B-1 is qualitatively reproduced in exactly one
+configuration.} On the 4.5-modal real biological bridge,
+\texttt{constellation\_lock\_after=100} with a hard-binary transducer
+gate produces a seed-stable +0.0125 Me7 (Sprint 10 peak, ADR-0013).
+Every compound attempted since has preserved, weakened, or destroyed
+this peak --- \emph{never} amplified it. The paper\textquotesingle s
+central empirical claim is this narrow : a frozen mux with hard
+transducer gating is the \emph{minimal} configuration that qualitatively
+reproduces the Amedi T1/T2 asymmetry.
+
+\textbf{F3 --- B-2 is below threshold, estimator-resolved.} The earlier
+"bimodal positive B-2 at tau=0.30" claim (ADR-0016) was retracted after
+per-seed re-aggregation (ADR-0017 §14a). Sprint 17 replicates the §6.3
+Kraskov limit with MINE (Donsker-Varadhan) on the Sprint 10 peak grid :
+both estimators agree within 0.1 bit that B-2 does not exceed threshold
+on any seed. The remaining ambiguity concerns probe shape (1-D mean-pool
+vs full \texttt{(B,\ d\_fused)}), not estimator choice --- declared
+follow-up for paper v0.2.
+
+Full trail : \texttt{docs/adr/0004} through \texttt{0017}. Every
+verdict, retraction, and scope change is recorded inline with its grid
+commit.
+
+\subsection{Quickstart}\label{quickstart}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uv}\NormalTok{ sync }\AttributeTok{{-}{-}all{-}extras}
+\ExtensionTok{uv}\NormalTok{ run bouba{-}sens version          }\CommentTok{\# bouba\_sens 0.5.5}
+\ExtensionTok{uv}\NormalTok{ run pytest                      }\CommentTok{\# 185+ items, all green}
+\CommentTok{\# Single cell}
+\ExtensionTok{uv}\NormalTok{ run bouba{-}sens lesion }\AttributeTok{{-}{-}world}\NormalTok{ gaussian }\AttributeTok{{-}{-}seed}\NormalTok{ 0 }\AttributeTok{{-}{-}modality}\NormalTok{ audio }\DataTypeTok{\textbackslash{}}
+    \AttributeTok{{-}{-}timing}\NormalTok{ T1 }\AttributeTok{{-}{-}snr{-}init}\NormalTok{ 0 }\AttributeTok{{-}{-}snr{-}floor} \AttributeTok{{-}20}
+\CommentTok{\# Single grid (≈20 min on M3 Ultra, 5{-}way seed concurrency)}
+\VariableTok{WORLD}\OperatorTok{=}\NormalTok{studyforrest }\VariableTok{LOCK\_AFTER}\OperatorTok{=}\NormalTok{100 }\VariableTok{STEPS\_TRAIN}\OperatorTok{=}\NormalTok{200 }\VariableTok{STEPS\_LESION}\OperatorTok{=}\NormalTok{100 }\DataTypeTok{\textbackslash{}}
+    \VariableTok{OUT\_ROOT}\OperatorTok{=}\NormalTok{runs/sprint10\_peak }\VariableTok{METRICS}\OperatorTok{=}\StringTok{"Me1,Me2,Me3"} \DataTypeTok{\textbackslash{}}
+    \FunctionTok{bash}\NormalTok{ scripts/run\_grid.sh}
+\CommentTok{\# One{-}command reproduction of every grid cited in the paper (\textasciitilde{}8 h)}
+\FunctionTok{bash}\NormalTok{ scripts/reproduce\_paper\_v01.sh}
+\CommentTok{\# Verify released artefacts byte{-}for{-}byte}
+\ExtensionTok{uv}\NormalTok{ run python scripts/sha256\_manifest.py}
+\FunctionTok{diff} \OperatorTok{\textless{}(}\ExtensionTok{jq} \AttributeTok{{-}S}\NormalTok{ . reports/MANIFEST.json}\OperatorTok{)} \OperatorTok{\textless{}(}\ExtensionTok{jq} \AttributeTok{{-}S}\NormalTok{ . reports/MANIFEST.json.released}\OperatorTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Dependencies}\label{dependencies}
+
+\begin{itemize}
+\tightlist
+\item
+  Python 3.14
+\item
+  PyTorch ≥ 2.5
+\item
+  \texttt{nerve-wml} v1.5.3+ (protocol + methodology: Kraskov, MINE,
+  bootstrap CI, null model permutation --- Hypneum Lab, DOI
+  \texttt{10.5281/zenodo.19666405})
+\end{itemize}
+
+\subsection{Priority references}\label{priority-references}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Amedi et al. 2007 --- Shape conveyed by visual-to-auditory sensory
+  substitution activates LOC (Nat Neurosci).
+\item
+  Heimler \& Amedi 2020 --- Revisiting adaptive and maladaptive effects
+  of crossmodal plasticity (Neuroscience).
+\item
+  Röder et al. 2021 --- Sensitive periods for functional specialization
+  (PNAS).
+\item
+  Alper \& Averbuch-Elor 2023 --- Kiki or Bouba? Sound symbolism in VLMs
+  (NeurIPS).
+\item
+  Girdhar et al. 2023 --- ImageBind: One Embedding Space (CVPR).
+\item
+  Ma et al. 2022 --- Are Multimodal Transformers Robust to Missing
+  Modality? (CVPR).
+\item
+  Liang et al. 2022 --- MultiBench (NeurIPS D\&B).
+\item
+  Keller \& Mrsic-Flogel 2018 --- Predictive Processing: A Canonical
+  Cortical Computation (Neuron).
+\end{enumerate}
+
+\subsection{License}\label{license}
+
+MIT. See \texttt{LICENSE}.
+
+\subsection{Citation}\label{citation}
+
+See \texttt{CITATION.cff}.
+
+\end{document}

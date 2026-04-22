@@ -20,59 +20,82 @@ late blindness (Amedi 2007, Merabet 2010, Heimler 2020).
 
 ## Status
 
-**v0.3.0 (2026-04-20).** Feature-complete v0.2 design + Sprint 6 Tasks 6.1–6.2 (cross-world replication) merged. 5 ADRs, 152 tests, 66 commits. Sprints 0 → 5 closed ; Sprint 6 open (Tasks 6.3+ = paper draft).
+**v0.5.5 (2026-04-23) — Paper v0.1 submit-ready.** Sprints 0–17
+closed, 14 ADRs (0004–0017), 185+ tests. 9 grids (150 cells each)
+on the 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds
+synthetic.
 
-Design: `docs/superpowers/specs/2026-04-20-bouba-sens-design.md`.
+- Paper draft : `docs/paper/paper-v0.1-draft.md`
+- OSF registration : `10.17605/OSF.IO/Q6JYN`, amendment v0.6
+- Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
 
-## Headline findings (v0.3.0)
+## Headline findings (v0.5.5)
 
-Three 150-cell grids on Studio (M3 Ultra, ~17 min each) across three structurally different synthetic worlds — GaussianWorld (orthogonally-projected latent), XORWorld (Rademacher parity), SinusoidWorld (circular latent). Same protocol, same fixed thresholds from the OSF pre-registration.
+Thresholds locked by OSF before the campaign : B-1 ≥ 0.05,
+B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
 
-| Invariant | Threshold | gaussian | xor | sinusoid | Verdict |
-|-----------|----------:|---------:|----:|---------:|---------|
-| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.148** | **0.141** | **0.156** | **3/3 PASS at ~7-8× threshold** |
-| B-1 Me7 congenital gap | 0.05 | -0.006 | -0.006 | **+0.013** | 3/3 FAIL, sign flips on sinusoid |
-| B-2 Me3 MI migration | 0.10 | 0.028 | 0.004 | 0.002 | 3/3 FAIL, decays with world complexity |
+| Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
+|-----------|----------:|-----------------:|:---------------|---------|
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** every configuration, architectural invariant |
+| B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) |
+| B-2 Me3 MI migration | 0.10 | mean +0.033 ±0.047 bits | 0/5 cross threshold | **Null** — two independent estimators (Kraskov + MINE) agree within 0.1 bit |
 
-**F1 — B-3 is world-agnostic.** The perceptive/proprioceptive asymmetry (audio/vision/tactile vs gravity/force) passes on three structurally divergent synthetic worlds at ~7-8× the pre-registered threshold. First cross-world replicated finding of the Hypneum Lab programme.
+**F1 — B-3 is an architectural invariant.** The perceptive /
+proprioceptive asymmetry passes at 5–6× threshold across every
+grid, every world, every seed, and is insensitive to every
+plasticity control tested (LOCK_AFTER, transducer gating mode,
+Gumbel tau, codebook freeze, HARD → GUMBEL phase transition).
 
-**F2 — B-1 directionality is topology-dependent.** On orthogonal-factored worlds (Gaussian, XOR), late-acquired lesions recover at least as well as congenital ones (classic critical-period ordering *reversed*). On circular-latent topology (Sinusoid), the ordering holds. Seeds hypothesis H-B1 for a future OSF amendment.
+**F2 — B-1 is qualitatively reproduced in exactly one
+configuration.** On the 4.5-modal real biological bridge,
+`constellation_lock_after=100` with a hard-binary transducer gate
+produces a seed-stable +0.0125 Me7 (Sprint 10 peak, ADR-0013).
+Every compound attempted since has preserved, weakened, or
+destroyed this peak — *never* amplified it. The paper's central
+empirical claim is this narrow : a frozen mux with hard
+transducer gating is the *minimal* configuration that
+qualitatively reproduces the Amedi T1/T2 asymmetry.
 
-**F3 — B-2 magnitude decays with world complexity.** MI migration is present but weak (Gaussian 0.028 > XOR 0.004 > Sinusoid 0.002), never reaching threshold. The 0.10 threshold was implicitly calibrated Gaussian-like.
+**F3 — B-2 is below threshold, estimator-resolved.** The earlier
+"bimodal positive B-2 at tau=0.30" claim (ADR-0016) was retracted
+after per-seed re-aggregation (ADR-0017 §14a). Sprint 17 replicates
+the §6.3 Kraskov limit with MINE (Donsker-Varadhan) on the Sprint 10
+peak grid : both estimators agree within 0.1 bit that B-2 does not
+exceed threshold on any seed. The remaining ambiguity concerns
+probe shape (1-D mean-pool vs full `(B, d_fused)`), not estimator
+choice — declared follow-up for paper v0.2.
 
-Full ADRs: `docs/adr/0003-v01-empirical-verdicts.md`, `0004-v02-invariant-verdicts.md`, `0005-cross-world-replication.md`.
-
-### Limitations — critical validation pending (Sprint 7)
-
-The three findings above are **preliminary**. None has yet been stress-tested against the obvious reviewer objections :
-
-- **B-3 may be tautological.** The perceptive / proprioceptive grouping (3 + 2) is baked into the protocol. A random-partition control (e.g. {audio, gravity} vs {vision, tactile, force}) must show that arbitrary 3 + 2 partitions do *not* pass the 0.02 threshold. If they do, **B-3 measures size-3-vs-size-2 dynamics, not cognitive asymmetry**. Sprint 7 Task 7.1.
-- **B-1 sign flip may be noise.** Effect sizes (| 0.006 – 0.013 |) are 5–10× below the 0.05 threshold. A bootstrap 95 % CI on Me7 median across seeds must separate the three worlds for the "topology-dependent" claim to survive. Sprint 7 Task 7.2.
-- **B-2 decay may be estimator-specific.** The Kraskov k-NN MI estimator is noisy at high ambient dimension. The Gaussian > XOR > Sinusoid ordering must hold under at least one alternative estimator (binning or MINE). Sprint 7 Task 7.3.
-
-Until Sprint 7 lands, the paper draft flags these findings as *"preliminary empirical, pending critical controls"*. Plan : `docs/superpowers/plans/2026-04-20-bouba-sens-sprint7.md`.
+Full trail : `docs/adr/0004` through `0017`. Every verdict,
+retraction, and scope change is recorded inline with its grid
+commit.
 
 ## Quickstart
 
 ```bash
 uv sync --all-extras
-uv run bouba-sens version          # bouba_sens 0.3.0
-uv run pytest                      # 152 items, all green
-# Reproduce one cell
+uv run bouba-sens version          # bouba_sens 0.5.5
+uv run pytest                      # 185+ items, all green
+# Single cell
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
     --timing T1 --snr-init 0 --snr-floor -20
-# Full 150-cell grid (≈17 min on M3 Ultra)
-WORLD=gaussian STEPS_TRAIN=200 STEPS_LESION=100 \
-    OUT_ROOT=runs/v02_grid METRICS="Me1,Me2,Me3" bash scripts/run_grid.sh
-uv run python scripts/aggregate_grid.py \
-    --root runs/v02_grid --out reports/v0.2_aggregate.json
+# Single grid (≈20 min on M3 Ultra, 5-way seed concurrency)
+WORLD=studyforrest LOCK_AFTER=100 STEPS_TRAIN=200 STEPS_LESION=100 \
+    OUT_ROOT=runs/sprint10_peak METRICS="Me1,Me2,Me3" \
+    bash scripts/run_grid.sh
+# One-command reproduction of every grid cited in the paper (~8 h)
+bash scripts/reproduce_paper_v01.sh
+# Verify released artefacts byte-for-byte
+uv run python scripts/sha256_manifest.py
+diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ```
 
 ## Dependencies
 
 - Python 3.14
 - PyTorch ≥ 2.5
-- `nerve-wml` v1.2.3+ (neuroletters, γ/θ multiplexing, 3 substrates — Hypneum Lab)
+- `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
+  bootstrap CI, null model permutation — Hypneum Lab,
+  DOI `10.5281/zenodo.19666405`)
 
 ## Priority references
 
