@@ -1,0 +1,50 @@
+{
+  "title": "bouba_sens: A Pre-Registered Cross-Modal Plasticity Benchmark",
+  "description": "<p>A pre-registered benchmark measuring three invariants of cross-modal plasticity (B-1 congenital-blindness T1/T2 gap, B-2 informational migration, B-3 perceptive/proprioceptive structural asymmetry) across five synthetic worlds and a 4.5-modal real Studyforrest Phase-2 bridge. Thresholds locked by OSF registration 10.17605/OSF.IO/Q6JYN before the evaluation campaign. Companion to the TMLR submission v0.1.</p><p>Central empirical claim (narrow and falsifiable): a frozen PSK mux with hard-binary transducer gating is the minimal architectural configuration that qualitatively reproduces the Amedi 2007 T1/T2 asymmetry on the real biological bridge; every compound tested (soft Gumbel gating, finer tau scans, codebook freeze, phase-transition schedule) was null or harmful.</p>",
+  "creators": [
+    {
+      "name": "Saillant, Cl\u00e9ment",
+      "affiliation": "Hypneum Lab",
+      "orcid": ""
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "keywords": [
+    "cross-modal plasticity",
+    "pre-registered benchmark",
+    "multimodal learning",
+    "embodied AI",
+    "critical period",
+    "Amedi 2007",
+    "bouba-kiki",
+    "sensory substitution",
+    "Python",
+    "PyTorch"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.17605/OSF.IO/Q6JYN",
+      "relation": "isDocumentedBy",
+      "resource_type": "other",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.5281/zenodo.19666405",
+      "relation": "isDerivedFrom",
+      "resource_type": "software",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/hypneum-lab/bouba_sens",
+      "relation": "isSupplementTo",
+      "resource_type": "software",
+      "scheme": "url"
+    }
+  ],
+  "communities": [
+    {"identifier": "hypneum-lab"}
+  ],
+  "notes": "Built on nerve-wml v1.5.3 (DOI 10.5281/zenodo.19666405). Reproducible via `bash scripts/reproduce_paper_v01.sh`; byte-identity verification via `scripts/sha256_manifest.py` against `reports/MANIFEST.json`."
+}

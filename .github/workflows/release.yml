@@ -1,0 +1,111 @@
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+# Trusted publishing: configure on PyPI under
+# https://pypi.org/manage/account/publishing/ with:
+#   Owner           hypneum-lab
+#   Repository      bouba_sens
+#   Workflow name   release.yml
+#   Environment     pypi
+# No token is needed on this side.
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Build distributions
+        run: |
+          uv build
+          ls -la dist/
+
+      - name: Verify tag matches pyproject version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PROJ=$(grep -E '^version = ' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$TAG" != "$PROJ" ]; then
+            echo "::error::tag v$TAG does not match pyproject version $PROJ"
+            exit 1
+          fi
+
+      - name: Upload dist artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/bouba-sens
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish via Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          print-hash: true
+
+  github-release:
+    name: Create GitHub Release
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Generate release notes from CHANGELOG or ADRs
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          {
+            echo "## \`bouba_sens\` ${TAG}"
+            echo
+            echo "See \`docs/adr/\` for the full trail of ADRs 0004-0017."
+            echo "Paper draft: \`docs/paper/main.tex\` + \`docs/paper/paper-v0.1-draft.md\`."
+            echo
+            echo "### Reproducibility"
+            echo "- \`bash scripts/reproduce_paper_v01.sh\` regenerates every grid cited in the paper."
+            echo "- \`uv run python scripts/sha256_manifest.py\` verifies byte-identity against \`reports/MANIFEST.json\`."
+            echo
+            echo "### Pre-registration"
+            echo "OSF \`10.17605/OSF.IO/Q6JYN\`, amendment v0.6 (\`docs/osf/amendment-v0.6-sprint10-17.md\`)."
+          } > release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: dist/*
+          fail_on_unmatched_files: true

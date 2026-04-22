@@ -1,18 +1,37 @@
 cff-version: 1.2.0
 message: "If you use bouba_sens in academic work, please cite it."
-title: "bouba_sens — A Cross-Modal Plasticity Benchmark"
+title: "bouba_sens — A Pre-Registered Cross-Modal Plasticity Benchmark"
 authors:
   - family-names: "Saillant"
     given-names: "Clément"
     affiliation: "Hypneum Lab"
     email: "c.saillant@gmail.com"
-version: "0.0.1"
-date-released: "2026-04-20"
+version: "0.5.8"
+date-released: "2026-04-23"
 license: MIT
 repository-code: "https://github.com/hypneum-lab/bouba_sens"
+url: "https://github.com/hypneum-lab/bouba_sens"
+identifiers:
+  - type: other
+    value: "OSF:10.17605/OSF.IO/Q6JYN"
+    description: "OSF pre-registration, locked 2026-04-19, amendment v0.6 2026-04-23"
 keywords:
   - cross-modal plasticity
-  - multimodal benchmark
+  - pre-registered benchmark
+  - multimodal learning
   - embodied AI
+  - critical period
+  - Amedi 2007
+  - bouba-kiki
   - Hypneum Lab
   - sensory substitution
+preferred-citation:
+  type: article
+  title: "bouba_sens: A Pre-Registered Benchmark for Cross-Modal Plasticity under Critical-Period Constraints"
+  authors:
+    - family-names: "Saillant"
+      given-names: "Clément"
+      affiliation: "Hypneum Lab"
+  year: 2026
+  journal: "Transactions on Machine Learning Research"
+  status: "submitted"
