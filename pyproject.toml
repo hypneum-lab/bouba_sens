@@ -103,6 +103,7 @@ module = [
     "librosa.*",
     "torchvision.*",
     "PIL.*",
+    "omegaconf.*",
 ]
 ignore_missing_imports = true
 

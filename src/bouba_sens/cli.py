@@ -215,7 +215,7 @@ def train(
     # ADR-0007 Phase A — emit paired model.pt + config.yaml alongside the
     # legacy pickle artefacts. Purely additive; legacy files are untouched.
     import torch as _torch
-    from omegaconf import OmegaConf  # type: ignore[import-not-found]
+    from omegaconf import OmegaConf
 
     _torch.save(
         {
@@ -511,7 +511,7 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         head.load_state_dict(state["head"])
         for m, sd in state["sensory"].items():
             sensories[m].load_state_dict(sd)
-        seed_value = int(cfg["seed"])
+        seed_value = int(OmegaConf.select(cfg, "seed"))
         me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
         return me1, seed_value, path.name
 
