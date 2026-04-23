@@ -572,6 +572,29 @@ B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
 and are not revisited by any ADR in this paper, including the
 retraction in §5.9.
 
+**Biophysical vs protocol-level nerve simulators.** Readers
+searching for "nerve" in the Python ecosystem will encounter
+simulators at very different levels of abstraction. PyPNS (Lubba
+et al. 2019) simulates peripheral nerves at compartmental-axon
+resolution on top of NEURON (Hines & Carnevale 2001), computing
+extracellular potentials from a resistive quasi-static
+approximation of Maxwell's equations — Hodgkin-Huxley membrane
+dynamics plus FEM-derived tissue conductivities, two orders of
+magnitude below the abstraction layer of our work. Classical
+"nerve net" formalisms descending from McNaughton & Papert
+(*Counter-Free Automata*, 1971) sit at the opposite extreme:
+discrete-time automata with threshold neurons, delay-weighted
+axons, and inhibitory/excitatory edges, with no biophysics at
+all. nerve-wml and, by extension, bouba_sens occupy the middle
+ground — a differentiable, information-theoretic *protocol* for
+cross-modal binding (γ/θ phase-amplitude multiplexing of
+PSK-encoded neuroletters), neither constrained to millisecond
+membrane kinetics nor reduced to Boolean automata. We flag this
+positioning because the word "nerve" across these frameworks
+refers to genuinely incommensurable levels of description; the
+B-1/B-2/B-3 invariants are only meaningful at the protocol level
+and say nothing about nerve biophysics per se.
+
 ---
 
 ## 8. Artefacts, reproducibility, venue
