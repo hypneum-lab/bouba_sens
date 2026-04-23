@@ -29,13 +29,41 @@ This ADR records the verdict.
 
 ## Results
 
+### v1 — original n=9 with-replacement sampling (commit `c2870d8`)
+
 | Grid | Source ADR | B-3 raw median | Pre-reg rank | Percentile | `passes_95pct` |
 |---|---|---:|---:|---:|---|
-| ECG (real) | ADR-0009 (retracted) | 0.4453 | 2 / 9 | 22.2 % | **false** |
-| Mock (Studyforrest AR(1)) | ADR-0008 | 0.2891 | 4 / 9 | 44.4 % | **false** |
-| XOR (cluster repr.) | ADR-0005 | 0.1172 | 2 / 9 | 22.2 % | **false** |
+| ECG (real) | ADR-0009 (retracted) | 0.4453 | 2 / 9 | 22.2 % | false |
+| Mock (Studyforrest AR(1)) | ADR-0008 | 0.2891 | 4 / 9 | 44.4 % | false |
+| XOR (cluster repr.) | ADR-0005 | 0.1172 | 2 / 9 | 22.2 % | false |
 
-**Verdict per the issue #4 dichotomous framework :** **3 / 3 grids FAIL the partition control.**
+**Verdict per the issue #4 dichotomous framework :** **3 / 3 grids FAIL.**
+
+### v2 — exhaustive n=9 unique partitions (2026-04-24, this commit)
+
+The v1 sampling used `generate_random_3_2_partitions(n=k+1, seed=0)` with the default `unique=False`, which samples **with replacement** from the 9 distinct 3+2 alternatives. Only **5 of 9 unique partitions** were actually tested (the other 4 never appeared in any of the 9 indices). This was a methodological hole. Patched to `unique=True`, re-ran on the 3 original grids plus a 4th (Sinusoid cluster representative).
+
+| Grid | Source ADR | B-3 raw median | Pre-reg rank | Percentile | `passes_95pct` |
+|---|---|---:|---:|---:|---|
+| ECG (real) | ADR-0009 (retracted) | 0.4141 | 5 / 9 | 55.6 % | false |
+| Mock (Studyforrest AR(1)) | ADR-0008 | 0.2891 | 5 / 9 | 55.6 % | false |
+| XOR (cluster repr.) | ADR-0005 | 0.1172 | 3 / 9 | 33.3 % | false |
+| **Sinusoid** (cluster) | ADR-0005 | 0.1328 | **1 / 9** | **11.1 %** | false |
+
+**Verdict v2 :** **4 / 4 grids FAIL.** Pre-reg never exceeds the median on any grid ; on Sinusoid, pre-reg ranks **dead last** among the 9 alternatives.
+
+### Interpretation update — methodological caveat (Axe 2 positive-control finding)
+
+A constructed positive-control matrix where the partition structure is maximally salient (signal concentrated on all 6 pre-reg cross pairs, identical magnitude) gives `pre-reg ≤ all 9 random alternatives` because every random 3+2 partition's cross block intersects the pre-reg's. A second design (single hot pair audio↔gravity) gives pre-reg at 44.4 %, tied with 5 of 9 alternatives that catch the same pair in their cross block.
+
+**No matrix on 5 modalities, with the current max-statistic, can put pre-reg strictly above the 95th percentile of the 9 unique alternatives.** The combinatorics of 3+2 partitions of 5 modalities guarantee shared cross pairs. The `passes_95pct` flag is **theoretically unreachable** under this design.
+
+This means the v2 verdict has a layered reading :
+
+1. **Empirical (robust)** — pre-reg never beats the median across 4 structurally divergent grids spanning a 4× B-3 magnitude range. Even relaxing the threshold to "median or above", pre-reg only meets it on ECG and Mock (ties at 55.6 %), never on cluster grids. **The pre-registered partition does not capture more partition signal than a random alternative would.**
+2. **Methodological (caveat)** — the `passes_95pct` flag was the wrong success criterion for this design. A more diagnostic statistic on this small partition space is the **rank distribution across grids** : pre-reg ranks {5, 5, 3, 1} on {ECG, Mock, XOR, Sinu}, mean rank 3.5, median rank 4. A truly architectural partition would give ranks ≥ 8 across grids. The observed pattern is closer to "pre-reg is statistically equivalent to a random partition" than to "pre-reg captures partition structure but is below the binary detection threshold".
+
+Both readings agree that the architectural-property claim is unsupported. The methodological caveat is documented to prevent a future reader (or reviewer) from incorrectly inferring that the test was ever capable of "passing" in the binary sense.
 
 ## Decision
 
