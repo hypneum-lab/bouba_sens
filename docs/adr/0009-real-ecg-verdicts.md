@@ -1,8 +1,35 @@
 # ADR-0009 — Real-biological-signal verdicts (MIT-BIH ECG)
 
-**Status:** Accepted — **descriptive, not pre-registered**
-**Date:** 2026-04-20
+**Status:** Accepted — **descriptive, partially retracted 2026-04-22**
+**Date:** 2026-04-20 (original) ; **2026-04-22** (retraction note)
 **Sprint:** 7 (extended scope, post-Task-7.6b)
+
+## Retraction note (2026-04-22)
+
+Running the reusable critical-validation pipeline
+(`scripts/critical_validation_pipeline.sh`, commit `858ce51`) on
+the v0.4 real-ECG grid (`runs/v04_studyforrest_real_grid`) shows
+that the original §Decision and §Headline below **over-claimed**
+on B-3. The null-model partition control (n=9 random 3+2
+partitions of the same 5 ECG modalities) gives an identical Me6
+median (0.4141) ; the pre-registered perceptive/proprioceptive
+3+2 split ranks 2/9 (22.2 percentile), `passes_95pct = false`.
+
+In plain words : **the absolute B-3 magnitude on real ECG comes
+from the signal's per-modality entropy, not from the
+perceptive/proprioceptive cognitive structure** the ADR claimed
+to have validated. The "22.3× threshold lifts external-validity
+critique" headline is **retracted**.
+
+The B-1 and B-2 paragraphs of §Decision are also weakened :
+- B-1 Me7 bootstrap CI = [−0.037, +0.025] straddles 0 ; "confirms
+  topology-dependent pattern" was too strong, replaced by
+  "consistent with" and the explicit CI is now cited.
+- B-2 Me3_delta multi-estimator agreement at numerical noise
+  (Kraskov 0.000, binning 0.000, MINE −1.7×10⁻⁸) ; "sign flips
+  back to positive" was not robust at n=16 probe batch.
+
+Issue #3 carries the full evidence + the audit transcript.
 
 ## Context
 
@@ -38,49 +65,62 @@ cannot over-claim.
 |-----------|------:|----:|-----:|-----:|-------------:|---------|
 | B-1 Me7 > 0.05 | -0.0063 | -0.0062 | +0.0125 | 0.0000 | **-0.0062** | FAIL, back to the cluster sign |
 | B-2 Me3 delta > 0.10 | +0.0275 | +0.0034 | +0.0019 | -0.0288 | **+0.0111** | FAIL, positive again |
-| B-3 Me6 > 0.02 | 0.1484 | 0.1406 | 0.1406 | 0.3125 | **0.4453** | **PASS @ 22.3x threshold** |
+| B-3 Me6 > 0.02 | 0.1484 | 0.1406 | 0.1406 | 0.3125 | **0.4453** | raw magnitude clears threshold ; **partition control fails** (22nd pctl, n=9, see retraction note) |
 
-## Decision
+## Decision (revised 2026-04-22)
 
-**B-3 grows monotonically with input complexity:**
+**B-3 absolute magnitude grows with input richness, but the
+pre-registered partition is not distinguishable from random :**
 
-| Input class | B-3 median | Multiple of threshold |
-|-------------|-----------:|----------------------:|
-| Synthetic cluster (Gauss / XOR / Sinu) | ~0.14 | 7x |
-| AR(1)-scene mock (ADR-0008) | 0.31 | 15.6x |
-| **Real biological ECG** | **0.45** | **22.3x** |
+| Input class | B-3 raw median | Threshold multiple | Partition control |
+|-------------|---------------:|-------------------:|-------------------|
+| Synthetic cluster (Gauss / XOR / Sinu) | ~0.14 | 7× | not yet run |
+| AR(1)-scene mock (ADR-0008) | 0.31 | 15.6× | not yet run |
+| **Real biological ECG** | **0.45** | **22.3×** | **22nd pctl on n=9 random 3+2 splits — fails** |
 
-The perceptive / proprioceptive asymmetry is **not a synthetic-
-world artefact**. On a real 5-minute human ECG trace — temporal
-autocorrelation 0.97, intrinsic dimensionality 6/28 on
-audio/vision, clearly outside the synthetic cluster AND the
-AR(1) mock — B-3 is not merely preserved but reaches its
-strongest value of the whole benchmark. The 2026-04-20 external-
-validity critique is empirically lifted for this invariant.
+On a real 5-minute human ECG trace, B-3 reaches its largest raw
+value of the whole benchmark — but a null-distribution test (n=9
+random 3+2 partitions of the same 5 ECG modalities) gives an
+identical median (0.4141) ; the pre-registered
+perceptive/proprioceptive 3+2 split ranks **2/9** (22.2 pctl),
+not the > 95th percentile that would lift the external-validity
+critique. **The B-3 magnitude is driven by ECG signal entropy,
+not by the perceptive/proprioceptive cognitive structure
+claimed.** The 2026-04-20 external-validity critique is **not**
+lifted by this evidence ; it remains open pending a real
+Studyforrest replication AND a partition-controlled re-run on
+the cluster + mock grids.
 
-**B-1 confirms the topology-dependent pattern.** Real ECG gives
-the same ~-0.006 sign as Gaussian and XOR (orthogonal-factored)
-while Sinusoid (circular) remains the only world where B-1 has
-the pre-registered positive sign. The cluster / mock / real
-evidence is now consistent: B-1 is a property of the world's
-latent topology, not of the architecture.
+**B-1 is consistent with a topology-dependent pattern.** Real
+ECG gives the same ~−0.006 sign as Gaussian and XOR
+(orthogonal-factored) while Sinusoid (circular) remains the only
+world where B-1 has the pre-registered positive sign. However,
+the bootstrap 95% CI on Me7 is `[−0.037, +0.025]` — straddling
+0 — so the cluster / mock / real "consistency" is at best a
+directional observation within noise, not a confirmation of the
+topology-dependence hypothesis.
 
-**B-2 sign flips back to positive on real data.** The mock's
-negative B-2 (-0.029) was an artefact of the zeroed tactile /
-gravity / force modalities; on real ECG the MI migration sign
-matches the three synthetic worlds (+0.011 vs +0.002 to +0.028).
-The magnitude stays well below the 0.10 threshold, so the
-Sprint 5 Kraskov-estimator-limitation hypothesis from ADR-0004
-holds.
+**B-2 is at the noise floor across estimators on real data.**
+The mock's negative B-2 (−0.029) was an artefact of the zeroed
+tactile / gravity / force modalities. On real ECG the MI
+migration is +0.011 by the binning estimator, but at n=16 probe
+batch the multi-estimator robustness check (Kraskov 0.000,
+binning 0.000, MINE −1.7×10⁻⁸) puts all three estimators in the
+numerical-noise regime ; the sign of B-2 on real data is **not**
+robustly determined.
 
-## Headline
+## Headline (revised 2026-04-22)
 
-On the 5-monde benchmark (Gaussian, XOR, Sinusoid, mock AR(1),
-real ECG), **B-3 is the only invariant that PASSes every time,
-with effect sizes growing 7x → 15.6x → 22.3x as inputs move
-from synthetic-factorised to biologically-plausible**. This is
-strong prima facie evidence that B-3 captures an architectural
-property, not a data-cluster accident.
+On the 5-world benchmark (Gaussian, XOR, Sinusoid, mock AR(1),
+real ECG), **B-3 raw magnitude grows 7× → 15.6× → 22.3× as
+inputs move from synthetic-factorised to biologically-richer**,
+but the only partition control run to date (real ECG, n=9)
+shows the pre-registered split is statistically
+indistinguishable from random partitions of the same modalities.
+**The headline architectural-property claim from the 2026-04-20
+ADR is retracted** ; the magnitude growth is now a raw
+observation pending partition-controlled replications across the
+synthetic + mock grids, and a real Studyforrest run.
 
 ## Limits of the real-ECG replication
 
@@ -104,14 +144,38 @@ property, not a data-cluster accident.
    The v0.4.0 tag is withheld until an OSF amendment is filed
    covering the ECG bridge AND a real Studyforrest run is
    performed via datalad.
+5. **Null-model partition control fails (added 2026-04-22).**
+   `scripts/critical_validation_pipeline.sh` (commit `858ce51`)
+   on the same v0.4 grid : n=9 random 3+2 partitions of the
+   same 5 ECG modalities give an identical Me6 median (0.4141) ;
+   the pre-registered partition ranks 2/9 (22.2 percentile),
+   `passes_95pct = false`. The B-3 magnitude reported above is a
+   property of the ECG signal entropy, not of the
+   perceptive/proprioceptive partition structure. Until the same
+   partition control is run on the synthetic-cluster (ADR-0005)
+   and AR(1)-mock (ADR-0008) grids, the entire monotone-growth
+   table in §Decision must be read as raw-magnitude only.
 
 ## Next steps
 
 1. File the OSF amendment (`docs/osf/amendment-v0.4-studyforrest.md`)
    with ECG bridge added as an explicit secondary analysis path.
-2. Sprint 8: real Studyforrest via `datalad install ///studyforrest`
+2. **Re-run the critical-validation pipeline on ADR-0008 mock
+   and ADR-0005 cluster grids** (added 2026-04-22) — same
+   `null_b3` axis, n ≥ 9. Required gateway before Sprint 9
+   ADR-0012 acceptance per issue #3 conclusion. If those grids
+   *also* fail the partition control, the entire B-3
+   architectural-property narrative must be rebuilt from the
+   ground up ; if only the ECG fails, the issue is signal-
+   specific and the cluster-level B-3 claim survives at lower
+   magnitude.
+3. Sprint 8: real Studyforrest via `datalad install ///studyforrest`
    and a dedicated feature-extraction script on a machine with
-   git-annex available.
-3. Paper draft Sprint 8: use this ADR + ADR-0008 + ADR-0005 as
-   the three-tier evidence for B-3 robustness (synthetic cluster
-   → synthetic-outside → real-signal).
+   git-annex available — with the partition control wired in
+   from the start, not added retrospectively.
+4. Paper draft Sprint 8: this ADR can no longer serve as the
+   "real-signal" tier of a three-tier B-3 robustness narrative.
+   The §8 Discussion must either (a) defer all real-signal
+   claims to post-Studyforrest data, or (b) report this ADR's
+   raw magnitude observation explicitly alongside the failed
+   partition control.
