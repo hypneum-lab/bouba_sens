@@ -161,14 +161,20 @@ synthetic + mock grids, and a real Studyforrest run.
 1. File the OSF amendment (`docs/osf/amendment-v0.4-studyforrest.md`)
    with ECG bridge added as an explicit secondary analysis path.
 2. **Re-run the critical-validation pipeline on ADR-0008 mock
-   and ADR-0005 cluster grids** (added 2026-04-22) — same
-   `null_b3` axis, n ≥ 9. Required gateway before Sprint 9
-   ADR-0012 acceptance per issue #3 conclusion. If those grids
-   *also* fail the partition control, the entire B-3
-   architectural-property narrative must be rebuilt from the
-   ground up ; if only the ECG fails, the issue is signal-
-   specific and the cluster-level B-3 claim survives at lower
-   magnitude.
+   and ADR-0005 cluster grids** (added 2026-04-22 ; tracked in
+   issue #4) — same `null_b3` axis, n ≥ 9. Required gateway
+   before Sprint 9 ADR-0012 acceptance per issue #3 conclusion.
+   The pipeline lives at
+   `scripts/critical_validation_pipeline.sh` on branch
+   `sprint9/critical-pipeline` commit `858ce51` (not yet merged
+   to main). Dichotomous reading per issue #4 :
+   - all 3 grids fail → B-3 architectural-property narrative
+     dead, paper §8 must be rebuilt ;
+   - only ECG fails → signal-specific (entropy floods partition
+     signature), cluster-level B-3 claim survives at lower
+     magnitude ;
+   - mixed → diagnostic of which property B-3 captures, scope
+     for an ADR-0014.
 3. Sprint 8: real Studyforrest via `datalad install ///studyforrest`
    and a dedicated feature-extraction script on a machine with
    git-annex available — with the partition control wired in
