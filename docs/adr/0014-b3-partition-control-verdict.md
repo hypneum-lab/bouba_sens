@@ -84,11 +84,20 @@ to have validated.
 ## Implications for paper §8
 
 1. **Withdraw the "B-3 monotone growth across substrates → architectural property" narrative.** This was the centrepiece of the cross-world claim in §8.2-§8.4 ; the partition-control evidence does not support the architectural reading.
-2. **Reframe what B-3 actually measures.** Plausible candidates for the new framing :
-   - *Entropy proxy*: B-3 magnitude tracks per-modality entropy ; useful as a dataset-richness diagnostic but not a cognitive-architecture invariant.
-   - *Modality-count proxy*: B-3 may grow with the cardinality and dispersion of the modality set, independent of any partition.
-   - *Pipeline-internal smoothing*: a feature of the Me6 estimator on small partitions, surfaced by the n=9 null study.
-   The ADR-0014 verdict does not select among these — it only forecloses the "architectural property" reading.
+2. **Reframe what B-3 actually measures — Axe 3 numerical experiment (2026-04-24).** Three hypotheses were on the table : entropy proxy, modality-count proxy, pipeline-internal smoothing. A controlled numerical sweep distinguishes them :
+
+   | Sweep | Setup | Me6 raw range observed |
+   |---|---|---|
+   | A — entropy | k=5, sigma ∈ {0.01, 0.05, 0.1, 0.3, 1.0}, 50 trials each | Me6 ≈ 2.6 × sigma : `[0.027, 0.138, 0.266, 0.814, 2.549]` |
+   | B — modality-count | sigma=0.1 fixed, k ∈ {3, 5, 7, 9, 11, 15}, 50 trials each | Me6 grows logarithmically : `[0.192, 0.266, 0.309, 0.362, 0.370, 0.389]` |
+
+   **Decisive observation** : all 4 grids in this verdict have **k=5 modalities (fixed)**. The empirical B-3 range observed across them — 0.117 (XOR) → 0.133 (Sinu) → 0.289 (Mock) → 0.414 (ECG), spanning 3.5× — therefore **cannot** come from modality-count (constant) and **must** come from per-cell entropy variation across data sources. **Hypothesis A wins for the empirical pattern.** B-3 magnitude is dominated by per-cell entropy/variance, not by partition structure or modality count.
+
+   Concretely : the original ADR-0009 7× → 15.6× → 22.3× narrative is correctly reframed as *"per-modality entropy on real ECG > AR(1) mock > synthetic cluster, by a factor that exactly matches what a noise-level sweep predicts"*. This is a positive scientific finding (entropy is a real property of the data), but it is **not** an architectural invariant of the cognitive system the framework claims to model.
+
+3. **B-1 and B-2 status is unchanged from ADR-0009 retraction.** Bootstrap CI on B-1 still straddles 0 ; B-2 multi-estimator agreement still at noise floor on small probe batches. No new evidence from the partition control changes those.
+4. **Sprint 9 ADR-0012 acceptance is unblocked but constrained.** ADR-0012 (real-5modal-Studyforrest-verdicts) can proceed, but its B-3 reporting MUST include : (a) partition-control column per the dichotomous framework, (b) per-modality entropy column (so the entropy-proxy hypothesis can be quantified for that grid), (c) explicit caveat that `passes_95pct` is theoretically unreachable on 5 modalities.
+5. **Methodology fix (Axe 5)** : `scripts/run_grid_with_partition_control.sh` (commit `87cc48c`) now wraps `run_grid.sh` + `critical_validation_pipeline.sh` so future grids cannot ship without partition control attached.
 3. **B-1 and B-2 status is unchanged from ADR-0009 retraction.** Bootstrap CI on B-1 still straddles 0 ; B-2 multi-estimator agreement still at noise floor on small probe batches. No new evidence from the partition control changes those.
 4. **Sprint 9 ADR-0012 acceptance is unblocked but constrained.** ADR-0012 (real-5modal-Studyforrest-verdicts) can proceed, but its B-3 reporting MUST include a partition-control column as part of its acceptance criteria. The 5-modal real Studyforrest is the next opportunity to test whether *biological multi-modality* (rather than physiological single-channel ECG) recovers a partition-distinguishable signal — but the **prior** is now that it will not.
 
