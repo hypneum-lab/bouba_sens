@@ -4,7 +4,17 @@
 **Date:** 2026-04-20 (original) ; **2026-04-22** (retraction note)
 **Sprint:** 7 (extended scope, post-Task-7.6b)
 
-## Retraction note (2026-04-22)
+## Retraction note (2026-04-22, expanded 2026-04-24)
+
+**Update 2026-04-24 :** the §Next steps re-runs landed (see
+**ADR-0014** for the full verdict). Mock + XOR cluster grids
+**also** fail the partition control (44.4% and 22.2%
+respectively), confirming this ADR's retracted reading is part of
+a broader pattern : **3 / 3 grids fail**, the B-3
+architectural-property narrative is empirically dead, not
+ECG-specific. ADR-0014 is the authoritative paper-§8 framing.
+
+---
 
 Running the reusable critical-validation pipeline
 (`scripts/critical_validation_pipeline.sh`, commit `858ce51`) on
