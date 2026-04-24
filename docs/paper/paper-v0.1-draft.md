@@ -28,10 +28,23 @@ zero-ed gravity + CC-licensed audio substitute). Thresholds
 Across 9 grids (150 cells each, 5 seeds × 5 modalities × 2
 timings × 3 SNRs) and 18 ADRs, we report:
 
-1. **B-3 passes architecturally.** Median max off-diag = 0.109–
-   0.125 (5.5×–6.3× threshold), 5/5 seeds, invariant across
-   every hyperparameter and compound tested — consistent with a
-   hard-wired asymmetric modality mapping.
+1. **B-3 raw magnitude tracks per-modality entropy, not
+   partition structure** (revised 2026-04-24 per ADR-0014 + 0015).
+   Median max off-diag = 0.109–0.125 on the synthetic cluster
+   (5.5×–6.3× threshold), grows to 0.31 on AR(1) mock and 0.45
+   on real ECG. The growth is real and reproducible, but a null-
+   model partition control (n=9 unique 3+2 alternatives, mid-
+   rank pctl) puts pre-reg perceptive/proprioceptive at 44–72 %
+   percentile across 4 grids — never near the 95 % threshold.
+   ADR-0015 proves the threshold is structurally unreachable for
+   any modality count under the max-statistic design ; the
+   relevant comparison is to the per-(n,k,m) ceiling (≈72 %
+   for n=5), against which pre-reg sits in the middle of the
+   random-equivalent distribution. The original "B-3 architectural
+   property" reading is **withdrawn** ; the magnitude growth is
+   a per-modality entropy proxy (controlled numerical sweep
+   confirms B-3 ∝ noise scale at fixed k=5 ; B-3 is approximately
+   constant when entropy is fixed and only k varies).
 2. **B-1 is qualitatively reproduced in exactly one
    configuration.** `constellation_lock_after=100` with a
    hard-binary transducer gate yields median Me7 = +0.0125
@@ -128,9 +141,11 @@ Per-cell Me1 post-lesion accuracy, paired by `(seed, modality, SNR)` across T1 (
 
 Probe batch captured before `on_lesion` and after Phase 2 training. Codes are the mean-pooled fused representation ; `me3_delta = MI(codes_post; labels) - MI(codes_pre; labels)` via sklearn Kraskov kNN.
 
-### 3.3 B-3 (Me6) — structural asymmetry
+### 3.3 B-3 (Me6) — cross-modality asymmetry magnitude (revised reading)
 
-`AdaptationLoop.query_accuracy(modality)` zero-masks all but one modality and reports Me1. Stacking the 5 per-query vectors across one `(seed, timing, SNR)` trio yields a 5×5 matrix ; `me6_max_abs_off_diag(perf - perf.T)` is the invariant statistic.
+`AdaptationLoop.query_accuracy(modality)` zero-masks all but one modality and reports Me1. Stacking the 5 per-query vectors across one `(seed, timing, SNR)` trio yields a 5×5 performance matrix P ; `me6_max_abs_off_diag(P - P.T)` is the raw scalar statistic.
+
+**On the partition reading (revised 2026-04-24).** The original B-3 narrative read this magnitude as evidence for the perceptive/proprioceptive *partition* — a claim that requires the partitioned variant `me6_max_abs_off_diag_partitioned(P, partition=PERCEPTIVE_PROPRIOCEPTIVE)` to dominate the same statistic under random alternative partitions. The null-model verdict (ADR-0014) and the structural-ceiling lemma (ADR-0015) jointly establish that this reading is unsupported : the partition test cannot return a positive verdict on n=5 modalities with the max statistic, and pre-reg empirically performs no better than a random alternative across 4 grids. **B-3 magnitude is a per-modality entropy proxy** ; the partition reading is reserved for a re-designed test (planned Sprint 10).
 
 ---
 
@@ -156,9 +171,53 @@ Studyforrest AR(1) mock : B-3 = **0.3125** (15.6×, +2× amplification), B-1 = 0
 
 MIT-BIH ECG : B-3 = **0.4453** (22.3×, strongest of any world), B-1 = −0.0062, B-2 = +0.0111.
 
-### 4.4 The B-3 monotone-growth property
+### 4.4 The B-3 monotone-growth — entropy proxy, not architectural property (revised 2026-04-24)
 
-> **Key claim, load-bearing.** B-3 grows monotonically with input complexity : 7× synthetic cluster → 15.6× AR(1) mock → 22.3× real ECG. The perceptive/proprioceptive asymmetry is *not* a synthetic-cluster accident ; it intensifies when the inputs carry richer structure.
+> **Reframed claim** (replaces the original "load-bearing"
+> architectural reading, retracted via ADR-0014 + ADR-0015).
+> B-3 raw magnitude grows monotonically across data sources :
+> 7× cluster → 15.6× mock → 22.3× ECG. The growth is **real and
+> reproducible**, but our null-model partition control shows it
+> is **driven by per-modality signal entropy, not by the
+> perceptive/proprioceptive partition structure** the B-3
+> statistic was originally meant to measure.
+
+**Evidence** :
+
+1. *Partition control (ADR-0014 v2)* — exhaustive enumeration
+   of the 9 unique 3+2 partitions of 5 modalities on each grid
+   gives pre-reg mid-rank percentiles of 61.1 % (ECG), 72.2 %
+   (Mock), 55.6 % (XOR), 44.4 % (Sinu). Mean 58.3 %, well below
+   the per-(n=5) structural ceiling of 72.2 % derived in
+   ADR-0015. Pre-reg is statistically indistinguishable from a
+   random partition of the same modalities.
+
+2. *Structural ceiling (ADR-0015 Lemma)* — the binary
+   `passes_95pct` test is unreachable for any matrix design under
+   the max-statistic ; the upper bound on mid-rank percentile is
+   (1 + α)/2 where α counts the alternatives that miss the hot
+   pair. For n=5: ceiling = 72.2 %. For n=10: ceiling = 72.3 %.
+   Threshold-based reading must be replaced with ceiling-relative
+   reading.
+
+3. *Entropy-proxy verification (ADR-0014 Axe 3)* — controlled
+   numerical sweep at fixed k=5 modalities, varying noise scale
+   σ ∈ {0.01, 0.05, 0.1, 0.3, 1.0} produces B-3 raw values
+   {0.027, 0.138, 0.266, 0.814, 2.549} — the empirical
+   0.117–0.445 range across our 4 grids fits naturally as a
+   per-modality entropy variation. Modality-count sweep
+   (k ∈ {3, 5, 7, 9, 11, 15} at fixed σ=0.1) gives a milder
+   logarithmic dependence ; since k=5 is constant across all our
+   grids, the empirical growth must come from entropy, not k.
+
+**Implication for the broader benchmark.** B-3 is recovered as a
+*per-modality signal-richness diagnostic*, not as a measure of a
+cognitive partition the architecture would respect. This does
+not invalidate the bouba/kiki benchmark direction — it constrains
+the claims one can make from this specific statistic. A
+re-designed partition test (ADR-0014 §10) is the path forward
+for actually probing partition structure ; that work is scoped
+for Sprint 10.
 
 ---
 
