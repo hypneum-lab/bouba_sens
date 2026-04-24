@@ -65,6 +65,23 @@ This means the v2 verdict has a layered reading :
 
 Both readings agree that the architectural-property claim is unsupported. The methodological caveat is documented to prevent a future reader (or reviewer) from incorrectly inferring that the test was ever capable of "passing" in the binary sense.
 
+### Axe 6 amendment (2026-04-24) — mid-rank correction for tie-handling
+
+The v2 table above used the pipeline's `prereg_rank` definition `sum(1 for v in nulls if v < prereg) + 1`, which is **strict-less-than** ranking. In a discrete-median regime — and the per-grid Me6 medians fall in {0.125, 0.1328, 0.1406, ...}, multiples of 1/128 — strict-less-than systematically **underestimates** pre-reg's rank because it counts ties as "above" pre-reg. The standard statistical convention for ties is **mid-rank** : split tied values evenly between "below" and "above".
+
+| Grid | strict-less-than pctl (v2) | **mid-rank pctl** | n_tie / n_total |
+|---|---:|---:|---:|
+| ECG | 55.6 % | 61.1 % | 1 / 9 |
+| Mock | 55.6 % | 72.2 % | 3 / 9 |
+| XOR | 33.3 % | 55.6 % | 4 / 9 |
+| Sinu | 11.1 % | **44.4 %** | 6 / 9 |
+
+The Sinusoid "1/9 dead-last" reading was an **artifact** of strict-less-than ranking in the high-tie regime — 6 of the 9 alternatives tie pre-reg at exactly 0.1328125 (= 17/128), so the true mid-rank percentile is 44.4 %, near the median rather than at the bottom.
+
+**Refined empirical reading** : pre-reg averages 58.3 % mid-rank percentile across 4 grids — slightly above the median random alternative, with variance per grid. Mock comes closest to the 95 % threshold at 72.2 %. None passes (consistent with the Axe 2 unreachability finding ; mid-rank does not bypass the structural max-stat ceiling, only sharpens the within-ceiling estimate).
+
+The "anti-signal" interpretation considered briefly is **withdrawn** — Sinusoid is not pathological, the discrete-Me6 distribution + tie-handling artifact gave a misleading ranking. Investigation closes Axe 6 without an ADR-0015 ; this footnote documents the resolution.
+
 ## Decision
 
 The B-3 architectural-property narrative is **empirically dead** in
