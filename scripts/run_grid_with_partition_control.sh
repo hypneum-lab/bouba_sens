@@ -46,22 +46,22 @@ echo "[wrapper]   TAG=${TAG}"
 # Forward all relevant env vars to run_grid.sh. We pass them explicitly
 # rather than relying on inheritance so a typo in the parent shell
 # environment becomes a visible default rather than a silent override.
-OUT_ROOT="${OUT_ROOT}" \
-WORLD="${WORLD}" \
-STEPS_TRAIN="${STEPS_TRAIN:-200}" \
-STEPS_LESION="${STEPS_LESION:-100}" \
-METRICS="${METRICS:-Me1,Me2,Me3}" \
-LOCK_AFTER="${LOCK_AFTER:-}" \
-TRANSDUCER_GATING="${TRANSDUCER_GATING:-hard}" \
-GUMBEL_TAU="${GUMBEL_TAU:-1.0}" \
-CODEBOOK_LOCK="${CODEBOOK_LOCK:-}" \
-GATING_SCHEDULE="${GATING_SCHEDULE:-}" \
-GATING_TARGET="${GATING_TARGET:-}" \
-    bash scripts/run_grid.sh
-
-GRID_EXIT=$?
-if [[ ${GRID_EXIT} -ne 0 ]]; then
-    echo "[wrapper] grid run failed (exit ${GRID_EXIT}) — skipping partition control" >&2
+# `set -e` would abort on grid failure before we can capture $? and
+# emit our custom exit code 2. Wrap the call in `if !` so failure is
+# observable and routable.
+if ! OUT_ROOT="${OUT_ROOT}" \
+     WORLD="${WORLD}" \
+     STEPS_TRAIN="${STEPS_TRAIN:-200}" \
+     STEPS_LESION="${STEPS_LESION:-100}" \
+     METRICS="${METRICS:-Me1,Me2,Me3}" \
+     LOCK_AFTER="${LOCK_AFTER:-}" \
+     TRANSDUCER_GATING="${TRANSDUCER_GATING:-hard}" \
+     GUMBEL_TAU="${GUMBEL_TAU:-1.0}" \
+     CODEBOOK_LOCK="${CODEBOOK_LOCK:-}" \
+     GATING_SCHEDULE="${GATING_SCHEDULE:-}" \
+     GATING_TARGET="${GATING_TARGET:-}" \
+        bash scripts/run_grid.sh; then
+    echo "[wrapper] grid run failed — skipping partition control" >&2
     exit 2
 fi
 
@@ -76,14 +76,12 @@ if [[ ! -f "${PIPELINE_SCRIPT}" ]]; then
     exit 3
 fi
 
-bash "${PIPELINE_SCRIPT}" \
-    --grid-root "${OUT_ROOT}" \
-    --tag       "${TAG}" \
-    --world     "${WORLD}"
-
-PIPELINE_EXIT=$?
-if [[ ${PIPELINE_EXIT} -ne 0 ]]; then
-    echo "[wrapper] partition-control pipeline failed (exit ${PIPELINE_EXIT})" >&2
+# Same pattern for the partition-control pipeline.
+if ! bash "${PIPELINE_SCRIPT}" \
+        --grid-root "${OUT_ROOT}" \
+        --tag       "${TAG}" \
+        --world     "${WORLD}"; then
+    echo "[wrapper] partition-control pipeline failed" >&2
     exit 4
 fi
 

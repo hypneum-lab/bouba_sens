@@ -115,8 +115,6 @@ to have validated.
 3. **B-1 and B-2 status is unchanged from ADR-0009 retraction.** Bootstrap CI on B-1 still straddles 0 ; B-2 multi-estimator agreement still at noise floor on small probe batches. No new evidence from the partition control changes those.
 4. **Sprint 9 ADR-0012 acceptance is unblocked but constrained.** ADR-0012 (real-5modal-Studyforrest-verdicts) can proceed, but its B-3 reporting MUST include : (a) partition-control column per the dichotomous framework, (b) per-modality entropy column (so the entropy-proxy hypothesis can be quantified for that grid), (c) explicit caveat that `passes_95pct` is theoretically unreachable on 5 modalities.
 5. **Methodology fix (Axe 5)** : `scripts/run_grid_with_partition_control.sh` (commit `87cc48c`) now wraps `run_grid.sh` + `critical_validation_pipeline.sh` so future grids cannot ship without partition control attached.
-3. **B-1 and B-2 status is unchanged from ADR-0009 retraction.** Bootstrap CI on B-1 still straddles 0 ; B-2 multi-estimator agreement still at noise floor on small probe batches. No new evidence from the partition control changes those.
-4. **Sprint 9 ADR-0012 acceptance is unblocked but constrained.** ADR-0012 (real-5modal-Studyforrest-verdicts) can proceed, but its B-3 reporting MUST include a partition-control column as part of its acceptance criteria. The 5-modal real Studyforrest is the next opportunity to test whether *biological multi-modality* (rather than physiological single-channel ECG) recovers a partition-distinguishable signal — but the **prior** is now that it will not.
 
 ## What this does NOT change
 

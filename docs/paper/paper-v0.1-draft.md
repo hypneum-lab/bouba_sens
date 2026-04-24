@@ -33,7 +33,7 @@ timings × 3 SNRs) and 18 ADRs, we report:
    Median max off-diag = 0.109–0.125 on the synthetic cluster
    (5.5×–6.3× threshold), grows to 0.31 on AR(1) mock and 0.45
    on real ECG. The growth is real and reproducible, but a null-
-   model partition control (n=9 unique 3+2 alternatives, mid-
+   model partition control (9 unique 3+2 alternatives over the 5 modalities, mid-
    rank pctl) puts pre-reg perceptive/proprioceptive at 44–72 %
    percentile across 4 grids — never near the 95 % threshold.
    ADR-0015 proves the threshold is structurally unreachable for
@@ -319,7 +319,7 @@ T1/T2 difference — it pushes every world toward `me7 = 0`
 regardless of initial sign.
 
 The B-2 side-effect on Gaussian (flip to −0.0092) is the
-architecturally-correct behaviour of a critical-period model —
+lock-consistent behaviour of a critical-period model —
 a frozen constellation cannot re-route information — but does
 not help B-1 meet its threshold.
 
@@ -363,8 +363,11 @@ such that lesion-phase training reduces rather than grows the
 probe-code-vs-label MI, consistent with interference rather than
 migration.
 
-B-3, however, survives the lock in 5/5 worlds — further
-confirming its architectural-invariant status.
+B-3 magnitude, however, survives the lock in 5/5 worlds —
+further confirming its **manipulation-invariance** (per §3.3,
+the magnitude itself is reproducible and stable across
+plasticity controls ; the partition reading of B-3 is
+separately retracted in §4.4 + §4.5).
 
 ### 5.5 Dose-response LOCK_AFTER scan — Amedi peak (ADR-0013)
 
@@ -394,11 +397,13 @@ has already converged, erasing the differential. The shape
 matches the critical-period window predicted by Amedi 2007,
 in a regime the synthetic worlds cannot reach.
 
-B-3 remains lock-invariant across the full scan (4.7×-5.4×
-threshold), confirming the **architectural invariant**
-interpretation. B-2 reaches its most-negative value at the
-same LOCK_AFTER=100 peak, strengthening the
-"temporal-proximity interference" reading of §5.4.
+B-3 magnitude remains lock-invariant across the full scan
+(4.7×-5.4× threshold), confirming the **manipulation-invariance**
+reading — B-3's *value* is robust to lock parameterisation,
+distinct from the partition reading retracted in §4.4 / §4.5.
+B-2 reaches its most-negative value at the same LOCK_AFTER=100
+peak, strengthening the "temporal-proximity interference"
+reading of §5.4.
 
 ### 5.6 Compound critical-period (Sprint 11, ADR-0014)
 
@@ -557,8 +562,11 @@ produces a positive B-1 peak of practical significance on the
 4.5-modal real bridge remains **LOCK=100 + HARD transducer**
 (+0.0125 grid, 3+/5 seeds positive), from Sprint 10. Every
 compound attempted since has preserved, weakened, or destroyed
-it. B-2 is never robustly positive; B-3 is always positive and
-architecturally invariant regardless of P1/P2 manipulations.
+it. B-2 is never robustly positive; B-3 magnitude is always
+positive and manipulation-invariant across P1/P2 controls (per
+§3.3, this magnitude reads as a per-modality entropy proxy
+rather than as validation of the perceptive/proprioceptive
+partition — see §4.5 for the framework boundary).
 The paper's central empirical claim narrows to: **a frozen mux
 with hard transducer gating is the minimal configuration that
 qualitatively reproduces Amedi-style T1/T2 asymmetry; all

@@ -156,7 +156,7 @@ itself cannot return a positive verdict on small modality sets.
 
 ## Future work pointers
 
-The bound α(n, k) + (1 − α − 1/(C−1))/2 should appear as Figure
+The bound (1 + α(n, k))/2 should appear as Figure
 N in the paper appendix, plotted over (n, k) grid with the 95 %
 threshold marked as a horizontal line that the surface never
 crosses. This visual is the strongest possible argument for

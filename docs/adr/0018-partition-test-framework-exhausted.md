@@ -30,8 +30,11 @@ size k!·m! = 12.
 pre-reg partition.
 
 **Lemma**. The multiset of values {T(π·A·π^T, P*) : π ∈ Sym([n])}
-equals the multiset {T(A, P) : P ∈ {C(n,k) partitions}} with each
-value repeated exactly |Stab| = k!·m! = 12 times.
+equals the multiset {T(A, P) : P ∈ {C(n,k) partitions}}, scaled
+elementwise by |Stab| = k!·m! = 12 — i.e., each multiset element
+of Method 1 contributes 12 copies of itself to Method 2.
+(So a Method-1 value with multiplicity μ appears with multiplicity
+12·μ in Method 2, not literally "12 times" if μ > 1.)
 
 **Proof**. Permuting rows+cols of A by π and then evaluating T at
 fixed (B*, S*) reads A's entries at positions
