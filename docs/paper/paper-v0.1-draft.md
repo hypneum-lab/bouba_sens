@@ -215,9 +215,62 @@ MIT-BIH ECG : B-3 = **0.4453** (22.3×, strongest of any world), B-1 = −0.0062
 cognitive partition the architecture would respect. This does
 not invalidate the bouba/kiki benchmark direction — it constrains
 the claims one can make from this specific statistic. A
-re-designed partition test (ADR-0014 §10) is the path forward
-for actually probing partition structure ; that work is scoped
-for Sprint 10.
+re-designed partition test (ADR-0014 §10) was scoped for
+Sprint 10 ; the methodological investigation that followed is
+summarised in §4.5.
+
+### 4.5 Partition-test framework boundary (Sprint 10–11 closure)
+
+After ADR-0014 retracted the architectural reading of B-3 on
+empirical grounds (4/4 grids fail, mid-rank percentile 22–72 %),
+the Sprint 10–11 cycle searched for a replacement test that
+could either confirm or definitively refute a partition signal
+in the data. The conclusion is **negative and structural** :
+on n=5 modalities, no permutation-symmetric statistic on a
+fixed asymmetry matrix can resolve the question.
+
+**Three findings together close the partition-test framework on
+this benchmark** :
+
+1. **ADR-0015 ceiling lemma.** For any matrix A and any n ≥ 4
+   under the max-statistic partition test, the mid-rank
+   percentile of pre-reg is upper-bounded by (1 + α(n, k))/2,
+   where α counts random alternatives missing the optimum hot
+   pair. For (n=5, k=3) the ceiling is **72.2 %** ; the
+   `passes_95pct` flag is theoretically unreachable.
+
+2. **ADR-0017 mean-statistic verdict.** Replacing max with mean
+   over cross pairs gives a strictly higher ceiling under
+   uniform-cross positive control (100 %), but on the 4 v0.X
+   grids real data underperforms max-stat by Δ −29.2 % on
+   average (mean=29.2, max=58.3). Real bouba_sens grids are in
+   the sparse-signal regime where max picks up the dominant
+   pair and mean dilutes.
+
+3. **ADR-0018 equivalence theorem.** The natural escalation
+   "permutation test on modality labels at fixed partition" is
+   *mathematically equivalent* to the partition test at fixed
+   labels — both produce the same multiset of values from the
+   C(n,k) = 10 distinct partitions, by the orbit-stabilizer
+   theorem (120 permutations × 10 partitions × 12 stabilizer
+   elements). On n=5, the partition framework is
+   information-theoretically capped at log₂(10) ≈ 3.3 bits
+   regardless of how the test is instrumented.
+
+**What this paper claims** : the perceptive/proprioceptive
+partition reading of B-3 is **not statistically resolvable** on
+this benchmark with this modality set. The B-3 magnitude
+captured by Me6 is a per-modality entropy proxy (verified by
+controlled numerical sweep, ADR-0014 Axe 3) and is reported as
+such — useful as a dataset-richness diagnostic, not as a
+partition-validating invariant.
+
+**What follow-up work would be needed** to revisit the
+partition reading : either a benchmark with substantially more
+modalities (n ≥ 12, ADR-0016 §A) or a fundamentally different
+statistical framework (e.g., Bayesian model comparison with
+explicit priors over partition structures, ADR-0018 Path F).
+Both are out of scope for this paper.
 
 ---
 
