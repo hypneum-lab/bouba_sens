@@ -27,3 +27,8 @@ repos:
           - numpy>=2.0
           - typer>=0.12
         args: [--config-file=pyproject.toml]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
