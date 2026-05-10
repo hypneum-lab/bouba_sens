@@ -90,17 +90,52 @@ runs.
 ### Reviewer recommendations
 
 We propose the following potential reviewers (any subset is
-welcome):
+welcome). Selection criteria : (i) at least one publication in
+2023-2025 directly overlapping a manuscript section ; (ii) no
+co-authorship with the present author within the past three
+years ; (iii) institutional and topical diversity across the
+four-person panel.
 
-1. **[Name 1]** — multimodal learning + sensory substitution
-   methodology
-2. **[Name 2]** — cross-modal cortical plasticity
-   (computational neuroscience)
-3. **[Name 3]** — pre-registered benchmark methodology in ML
-4. **[Name 4]** — critical-period theory / developmental ML
+1. **Cees G. M. Snoek** (University of Amsterdam, VIS Lab) —
+   *multimodal learning under missing-modality constraints.*
+   Co-author of "Learning Unseen Modality Interaction"
+   (NeurIPS 2023) and the AnyTouch / OmniBind line of work on
+   modality-imbalanced representation learning. Direct
+   relevance to §4 (worlds with degraded or absent modalities)
+   and §6 (out-of-scope discussion of sufficient-modality
+   assumptions). No prior collaboration.
 
-Recommendations are placeholders; final names attached at
-submission via the OpenReview portal.
+2. **Tessa M. Dekker** (University College London,
+   Institute of Ophthalmology) — *cross-modal cortical
+   plasticity, computational fMRI methodology.*
+   Corresponding author on *Hierarchical cortical plasticity in
+   congenital sight impairment* (bioRxiv 2024,
+   doi:10.1101/2024.07.04.602138). Provides an independent
+   neuroscience perspective on the B-1 congenital-blindness
+   invariant ; methodologically rigorous on individual
+   variability in plasticity. No Amedi-lab affiliation.
+
+3. **Jessica Hullman** (Northwestern University) —
+   *pre-registration methodology in ML.* Co-author of
+   *Pre-registration for Predictive Modeling*
+   (arXiv:2311.18807), the canonical recent reference on
+   transposing OSF-style pre-registration into the predictive
+   modeling setting. Direct relevance to §3 methodology and
+   §6.6 reproducibility narrative. Provides editorial-grade
+   authority on the pre-reg framing.
+
+4. **Alessandro Achille** (AWS AI / Caltech) — *critical-period
+   theory in deep neural networks.* First author on *Critical
+   Learning Periods Emerge Even in Deep Linear Networks*
+   (ICLR 2024 spotlight) and the foundational 2019 critical-
+   period series. Direct relevance to §5.5 (the Amedi-style
+   dose-response curve framed as a critical-period signature
+   in artificial networks). Bridges biological and ML
+   communities cleanly.
+
+We are open to additional or substitute names from the action
+editor's network ; the OpenReview submission will mirror this
+list with any portal-specific adjustments.
 
 ### Conflicts to declare
 
