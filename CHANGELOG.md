@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Methodology
+
+- N8-Q3 5-seed verdict `Retract` (2026-05-11) : the §5.5 single-seed
+  non-monotone B-1 peak at LOCK_AFTER=100 (paper §5.5, originally
+  reported as +0.0125 on seed=0) does NOT robustly reproduce across
+  5 seeds (0/17/42/73/101). Median peak position is LOCK_AFTER=100
+  (3 of 5 seeds), but drift is 100% (range [50, 150]) and Jonckheere-
+  Terpstra one-tailed for non-monotonicity yields p=0.34 (n.s.).
+  Pre-registered decision criteria `Retract`. **TMLR submission
+  blocked** until §5.5 reformulation lands. Q3+ 10-seed extension
+  RUNNING on kxkm-23 may upgrade verdict. See
+  `reports/v0.5_amedi_curve_multiseed_5seed_interim.json` and
+  `docs/milestones/q3-amedi-seeds-2026-05-10.md`.
+
 ## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
 
 ### Added

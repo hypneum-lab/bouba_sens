@@ -37,7 +37,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
 | **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** every configuration, architectural invariant |
-| B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) |
+| B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.033 ±0.047 bits | 0/5 cross threshold | **Null** — two independent estimators (Kraskov + MINE) agree within 0.1 bit |
 
 **F1 — B-3 is an architectural invariant.** The perceptive /
