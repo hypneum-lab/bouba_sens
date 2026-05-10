@@ -30,7 +30,16 @@ CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 GATING_SCHEDULE="${GATING_SCHEDULE:-}"
 GATING_TARGET="${GATING_TARGET:-}"
 
-SEEDS=(0 1 2 3 4)
+# Seeds default to the 5-seed replication set used in paper v0.5. Q3
+# (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
+# var with a space-separated list to sweep custom seed sets without
+# editing this file.
+if [[ -n "${SEEDS:-}" ]]; then
+    # shellcheck disable=SC2206
+    SEEDS=(${SEEDS})
+else
+    SEEDS=(0 1 2 3 4)
+fi
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 
