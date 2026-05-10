@@ -34,9 +34,21 @@ BOUBA_SENS_MODULES = [
 
 
 def test_version_exposed() -> None:
+    """`bouba_sens.__version__` must equal pyproject.toml `[project].version`.
+
+    Derived from pyproject (single source of truth) so version bumps don't
+    re-break this test. See N4 Task 6 (2026-05-10).
+    """
+    import tomllib
+    from pathlib import Path
+
     import bouba_sens
 
-    assert bouba_sens.__version__ == "0.3.0"
+    pyproject = tomllib.loads((Path(__file__).resolve().parents[2] / "pyproject.toml").read_text())
+    declared = pyproject["project"]["version"]
+    assert bouba_sens.__version__ == declared, (
+        f"pyproject={declared}, package={bouba_sens.__version__}"
+    )
 
 
 def test_all_modules_import() -> None:
