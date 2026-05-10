@@ -1,12 +1,11 @@
 % bouba_sens Paper v0.1 — TMLR submission
 %
-% To compile, first clone the TMLR style file alongside this main.tex :
-%   git clone https://github.com/JmlrOrg/tmlr-style-file
-%   cp tmlr-style-file/tmlr.sty .
-%   cp tmlr-style-file/tmlr.bst .
-%   cp tmlr-style-file/fancyhdr.sty .
+% Style files (tmlr.sty, tmlr.bst, fancyhdr.sty) are vendored
+% alongside this main.tex. To rebuild from upstream, run :
+%   git clone https://github.com/JmlrOrg/tmlr-style-file && \
+%     cp tmlr-style-file/{tmlr.sty,tmlr.bst,fancyhdr.sty} .
 %
-% Then :
+% To compile :
 %   latexmk -pdf main.tex
 % or :
 %   pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
