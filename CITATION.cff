@@ -6,8 +6,8 @@ authors:
     given-names: "Clément"
     affiliation: "Hypneum Lab"
     email: "c.saillant@gmail.com"
-version: "0.5.8"
-date-released: "2026-04-23"
+version: "0.5.9"
+date-released: "2026-05-10"
 license: MIT
 repository-code: "https://github.com/hypneum-lab/bouba_sens"
 url: "https://github.com/hypneum-lab/bouba_sens"

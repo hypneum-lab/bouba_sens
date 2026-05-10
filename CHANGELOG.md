@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
+
+### Added
+
+- `docs/paper/cover-letter-tmlr.md` — TMLR submission cover letter
+  with Reproducibility track framing, narrow-and-falsifiable claim
+  positioning, open-science statement, and concurrent-work
+  paragraph addressing RecursiveMAS (Yang et al. arXiv:2604.25917).
+- Concrete 4-person reviewer panel (Cees Snoek UvA, Tessa Dekker
+  UCL, Jessica Hullman Northwestern, Alessandro Achille AWS/Caltech)
+  with selection criteria (publication recency, no co-authorship,
+  institutional+topical diversity).
+- Nested `CLAUDE.md` files at root and under `configs/`, `scripts/`,
+  `src/`, `tests/` for Claude Code progressive disclosure.
+
+### Notes
+
+- `version: "0.5.9"` in `CITATION.cff` and tag pushed to fire the
+  GitHub→Zenodo webhook with the up-to-date `.zenodo.json`
+  metadata. Companion to nerve-wml v1.8.1 release of the same day.
+- The previously local-only `v0.5.8` tag (commit `4eab231`) is
+  superseded by this release; the remote `v0.5.8` tag (commit
+  `30bc7ba`, distinct content) is preserved untouched.
+
 ## [0.3.0] — 2026-04-20 (Sprint 6 T6.1+T6.2 — cross-world B-3 replicated)
 
 ### Added
