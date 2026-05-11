@@ -31,9 +31,16 @@ pooled level until N12 lands.
 The Amedi-style non-monotone signature (concave-down quadratic with
 peak at LOCK_AFTER ∈ [85, 115]) emerges in the **tactile + floor
 SNR** AND/OR **force + plus10 SNR** subgroups when tested with
-N=20 seeds and Bonferroni α=0.025. Specifically : at least 1 of the
-2 subgroups produces c<0 with Bonferroni-corrected p<0.025, with
-peak estimate within [85, 115].
+**N=10 NEW seeds** (the 10 N9-Q3+ seeds informed subgroup selection
+and DO NOT enter the N12 verdict — see Risk section, training/test
+split). At least 1 of the 2 pre-registered subgroups produces c<0
+with Bonferroni-corrected p<0.025, peak estimate within [85, 115],
+**AND** family-wise error rate accounting for the 15-subgroup
+exploration is conservatively bounded at 15×0.025=0.375 ; therefore
+even a "significant" N12 result is **hypothesis-generating, not
+confirmatory**. Confirmatory replication would require α=0.0033
+(Bonferroni/15) which is underpowered with N=10 — left to future
+N≥30 sprint.
 
 ## Methodology
 
@@ -49,12 +56,27 @@ peak estimate within [85, 115].
   10 NEW seeds
 - **For each new seed** : 5 LOCK_AFTER × 30 cells = 150 cells per
   grid → 1500 NEW cells total
-- **Compute** : ~1.5h on `kx6tm-23` (parallel-4) per N9 wallclock
-  benchmark
+- **Compute** : ~2.5-3h on `kx6tm-23` (parallel-4) — pro-rata from
+  N9-Q3+ which ran 750 cells in 1h22min ; N12 = 1500 cells ≈
+  2h44min just for the sweep, +10min aggregation
 - **Statistical test** : per-subgroup quadratic regression (c<0),
   Bonferroni α=0.025 (only 2 PRE-REGISTERED subgroups)
 - **Ancillary** : keep the 13 other subgroups as exploratory
   observations, but they do **NOT** enter the verdict
+
+### Power analysis
+
+With N=10 NEW seeds per subgroup (5 LOCK_AFTER values × 1 me7 per
+(seed, LOCK) → 50 quadratic-fit data points but only 10 independent
+units), the effective degrees of freedom for the per-seed quadratic
+regression is bounded by the smaller of (number-of-LOCKs - 3 = 2)
+or (number-of-seeds = 10). The sign test on c<0 across 10 seeds
+reaches significance (p<0.05) when ≥9/10 seeds show concave-down —
+a strong requirement. The observed effects in N9-Q3+ pooled-v2
+(c=-2.1e-5 tactile-floor, c=-1.8e-5 force-plus10) had only 5/10
+sign-concordant in the N9 base ; if the true effect is at this
+magnitude, N=10 NEW seeds has ~30% power to detect at α=0.025.
+Hypothesis-generating framing is therefore appropriate.
 
 ## Decision criteria (pre-stated)
 
@@ -75,10 +97,11 @@ peak estimate within [85, 115].
 
 ## Compute budget
 
-- N12 sweep : 10 NEW seeds × 5 LOCK × 30 cells = 1500 cells, ~1.5h
-  on `kx6tm-23` 24-core CPU parallel-4
+- N12 sweep : 10 NEW seeds × 5 LOCK × 30 cells = 1500 cells,
+  ~2h44min on `kx6tm-23` 24-core CPU parallel-4 (pro-rata from
+  N9-Q3+ : 750 cells / 1h22min)
 - Aggregation + analysis : ~10 min
-- Total : ~2h, fits a single evening
+- Total : **~2.5-3h**, fits a single evening
 
 ## Risk factors
 
