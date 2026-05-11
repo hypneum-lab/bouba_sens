@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `reports/v0.5_amedi_curve_multiseed_10seed_final.json`. See
   `docs/milestones/q3-amedi-seeds-2026-05-10.md` Q3+ closeout
   section. (Supersedes 5-seed interim notice.)
+  - **Pooled v2 subgroup discovery (2026-05-11)** : follow-up
+    pooled subgroup-discovery analysis (150 me7 per LOCK_AFTER,
+    15 sub-pops modality × SNR) confirms the pooled non-monotone
+    signature is NOT present (quadratic c=-2.1e-6, p=0.19, peak
+    at LOCK≈148.9). Two sub-populations exhibit naïve-significant
+    concave-down fits in the original Amedi window : tactile-floor
+    (c=-2.107e-5, uncorrected p=0.020, peak@94.6) and force-plus10
+    (c=-1.786e-5, uncorrected p=0.048, peak@106.9). Neither
+    survives Bonferroni correction across 15 subgroups
+    (α=0.0033). Hypothesis-generating only ; pre-registered
+    targeted replication queued as N12 sprint (N=20 seeds, only
+    2 PRE-REGISTERED subgroups → Bonferroni α=0.025). Artefacts :
+    `reports/v0.5_amedi_curve_pooled_v2.json`,
+    `scripts/analyse_amedi_pooled_subgroup.py`. Pre-registration :
+    `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`
+    (mirrors `HYPNEUM-PLANS/preregistrations/n12_amedi_subgroup_replication.md`).
+    §5.5 reformulation drafts (3 versions A/B/C conditional on
+    N12 verdict) at `docs/paper/§5.5-reformulation-draft.md`.
 
 ## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
 

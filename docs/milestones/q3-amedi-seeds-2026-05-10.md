@@ -101,3 +101,69 @@ reproduce** across 10 seeds. The original 5-seed `Retract`
 verdict is **CONFIRMED FINAL**. Paper §5.5 must be reformulated
 or the claim retracted ; ADR-0019 mandatory before TMLR
 re-submission.
+
+## Pooled-v2 nuance discovery (2026-05-11)
+
+After the FINAL Retract closeout above, a follow-up **pooled
+subgroup-discovery analysis** was run on `root@kx6tm-23` to test
+whether averaging me7 within each LOCK_AFTER (instead of per-seed
+quadratic) reveals a different signal — and whether modality × SNR
+sub-populations exhibit the Amedi-style signature where the pooled
+mixture does not.
+
+Artefacts :
+- `reports/v0.5_amedi_curve_pooled_v2.json`
+- `scripts/analyse_amedi_pooled_subgroup.py`
+
+### Pooled verdict (150 me7 per LOCK_AFTER)
+
+| LOCK_AFTER | median me7 |
+|------------|-----------:|
+| 50         | -0.0125    |
+| 75         | -0.0063    |
+| 100        | +0.0000    |
+| 125        | -0.0125    |
+| 150        | -0.0063    |
+
+Pooled quadratic : c = -2.1e-6, p(c<0) = **0.19**, peak estimate
+LOCK_AFTER ≈ 148.9 (NOT 100). Pooled non-monotone signature **NOT
+confirmed**. The 5-seed and 10-seed Retract verdict above stands.
+
+### Per-subgroup signal (15 sub-pops modality × SNR)
+
+Two sub-populations exhibit naïve-significant concave-down quadratic
+fits with peaks in the original Amedi window :
+
+| Subgroup       | c          | uncorr p | peak  |
+|----------------|-----------:|---------:|------:|
+| tactile-floor  | -2.107e-5  | 0.020    | 94.6  |
+| force-plus10   | -1.786e-5  | 0.048    | 106.9 |
+
+Bonferroni correction across 15 subgroups (α = 0.05/15 = 0.0033) :
+**neither survives**. These are candidate signals, not confirmed
+findings. The remaining 13 subgroups show no quadratic signal.
+
+### Implications
+
+The FINAL Retract verdict at the **pooled / per-seed** level is
+**not contradicted**. The pooled curve has no Amedi-style signature
+and the 10-seed sign and t tests both failed to reject H0.
+
+However, the subgroup analysis hints that the signature, if real,
+may be **modality-specific** (proprioceptive : tactile-floor and
+force-plus10) rather than modality-agnostic. This is consistent
+with the Amedi sensory-substitution literature, but the current
+evidence is insufficient (winner's curse + post-hoc subgroup
+selection + 2/15 pre-Bonferroni hits is exactly what one expects
+under H0 for 15 tests).
+
+A pre-registered targeted replication of these 2 subgroups
+(N12 sprint, doubled seed count to N=20) is queued in
+`docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`
+and `HYPNEUM-PLANS/preregistrations/n12_amedi_subgroup_replication.md`.
+N12 outcome will determine the final §5.5 reformulation
+(see `docs/paper/§5.5-reformulation-draft.md` for 3 candidate
+versions A / B / C).
+
+The TMLR submission remains blocked on §5.5 reformulation +
+ADR-0019, as in the FINAL Retract closeout.
