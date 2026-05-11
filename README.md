@@ -18,6 +18,55 @@ late blindness (Amedi 2007, Merabet 2010, Heimler 2020).
   produces a quantitatively different plastic response than losing
   gravity/force.
 
+## 2026-05-11 update — Q3+ FINAL Retract, TMLR submission BLOCKED
+
+**§5.5 B-1 dose-response signature requires reformulation.** The
+N9 Q3+ 10-seed re-run with the correct test (quadratic regression
+over LOCK_AFTER) returned **sign p = 0.62**, paired t-test
+**p = 0.28** — verdict **FINAL Retract** per the Q3 pre-registered
+decision criteria. The earlier Q3 INTERIM verdict had used a
+Jonckheere-Terpstra test which the critic v2 review correctly
+flagged as the wrong test for a non-monotone (peaked) hypothesis ;
+fixing that and adding 5 more seeds collapsed the qualitative
++0.0125 Sprint 10 peak to noise.
+
+**TMLR benchmarks-track submission is BLOCKED** until §5.5 is
+reformulated. Three reformulation drafts (A / B / C, conditional on
+N12 outcome) are at `docs/paper/§5.5-reformulation-draft.md`.
+Decision-of-record : ADR-0019.
+
+**N12 targeted subgroup replication (RUNNING).** Pooled-v2 analysis
+surfaced two candidate subgroups for replication — **tactile-floor**
+and **force-plus10** — at sub-threshold but consistent positive
+shifts. N12 sweep (N=20 seeds, focused on those subgroups) is
+running tonight on `root@kx6tm-23`, ETA ~07:30 morning. The N12
+result picks which §5.5 reformulation draft (A / B / C) becomes the
+paper text.
+
+**Multi-seed-first-class lesson promoted portfolio-wide.** The Q3
+collapse from a 5-seed qualitative claim to a 10-seed null is the
+canonical evidence for the methodology rule that single-seed (or
+under-seeded) claims are fragile. Adopted across `nerve-wml`,
+`dream-of-kiki`, and this repo as a hard pre-publication gate.
+
+No new positive finding is announced ; this update is an honest
+scope statement on what tonight's verdicts removed and what the
+running sweep may add back.
+
+| Axis | Status |
+|---|---|
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
+| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation in flight |
+| **B-2** Me3 MI migration | **Null** (estimator-resolved, unchanged from v0.5.5) |
+| **TMLR submission** | **BLOCKED** until §5.5 reformulation lands |
+| **N12 subgroup replication** | **RUNNING** (kx6tm-23, ~07:30 ETA) |
+
+Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
+ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg
+locked. Honest scope ; no overselling.
+
+---
+
 ## Status
 
 **v0.5.5 (2026-04-23) — Paper v0.1 submit-ready.** Sprints 0–17
