@@ -48,8 +48,11 @@ Per the pre-registration's "Retract" branch :
 - N12 prereg : `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`
 - Critic v2 finding 1 (Jonckheere wrong test) : ID a0faff17b71d89f56 audit transcript
 
+## Closed (2026-05-11 N12 closeout)
+
+- N12 sweep verdict : **N12-loses** (0/2 subgroups replicate at Bonferroni α=0.025). Sweep completed 2026-05-11T05:41 CEST. Tactile+floor sign inverted, force+plus10 magnitude insufficient. §5.5 retract confirmed at subgroup level. See `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md` Result section.
+- §5.5 reformulation Version C selected (full retract framing) ; final text at `docs/paper/§5.5-reformulation-FINAL.md`.
+
 ## Open items
 
-- N12 sweep verdict (RUNNING ETA 2026-05-11T07:30 CEST on root@kx6tm-23) — may upgrade interpretation but does not unwind the Retract.
 - Confirmatory replication at N≥30 with α=0.0033 (Bonferroni/15 subgroups) needed if subgroup signal robust enough to warrant.
-- §5.5 reformulation final selection (version A/B/C) blocked on N12 verdict.

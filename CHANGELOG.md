@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (mirrors `HYPNEUM-PLANS/preregistrations/n12_amedi_subgroup_replication.md`).
     §5.5 reformulation drafts (3 versions A/B/C conditional on
     N12 verdict) at `docs/paper/§5.5-reformulation-draft.md`.
+  - N12 subgroup replication (2026-05-11) : 0/2 pre-registered subgroups
+    (tactile+floor, force+plus10) replicate at Bonferroni α=0.025 on 10 NEW
+    seeds. tactile-floor sign inverted (c=+2.14e-6, p=0.595) — winner's curse
+    manifest. §5.5 retract confirmed at subgroup level. ADR-0019 closed.
 
 ## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
 

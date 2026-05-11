@@ -1,0 +1,45 @@
+{
+  "n12_seeds": [
+    3,
+    11,
+    19,
+    29,
+    37,
+    41,
+    47,
+    59,
+    67,
+    79
+  ],
+  "target_subgroups": [
+    "tactile-floor",
+    "force-plus10"
+  ],
+  "alpha_bonferroni": 0.025,
+  "results_per_subgroup": [
+    {
+      "subgroup": "tactile-floor",
+      "c": 2.142857142857162e-06,
+      "se_c": 8.93360472680256e-06,
+      "p_one_tailed": 0.5947824577824397,
+      "peak_estimate": null,
+      "bonferroni_alpha": 0.025,
+      "sig_bonferroni": false,
+      "peak_in_band_85_115": false,
+      "verdict_subgroup": "n.s."
+    },
+    {
+      "subgroup": "force-plus10",
+      "c": -1.114285714285717e-05,
+      "se_c": 9.851208114447218e-06,
+      "p_one_tailed": 0.1290031775862296,
+      "peak_estimate": 106.05769230769228,
+      "bonferroni_alpha": 0.025,
+      "sig_bonferroni": false,
+      "peak_in_band_85_115": true,
+      "verdict_subgroup": "n.s."
+    }
+  ],
+  "n_replicate": 0,
+  "verdict_overall": "N12-loses"
+}

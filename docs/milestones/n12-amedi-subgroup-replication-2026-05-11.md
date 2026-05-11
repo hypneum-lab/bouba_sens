@@ -127,7 +127,31 @@ dir prefix to distinguish from N9). Combined N9+N12 analysis script
 `scripts/analyse_amedi_n12_combined.py` (TBD when sweep done). Paper
 §5.5 reformulation in `docs/paper/§5.5-reformulation-draft.md`.
 
-## Result
+## Result (executed 2026-05-11)
 
-TBD — populate after N12 sweep completes on `kx6tm-23`. Selected
-§5.5 version (A / B / C) and final reformulation paragraph go here.
+Sweep ran on root@kx6tm-23 (24-core CPU parallel-4), wallclock **2h37min** (03:04 → 05:41 CEST). 50 grids = 1500 cells. Bouba_sens HEAD at sweep start : `db0fc80`. Aggregator + analyse_n12_subgroup_verdict.py reproducibility artefacts at `reports/v0.5_amedi_n12_verdict.json`.
+
+### Per-subgroup quadratic regression on 10 NEW seeds
+
+| Subgroup | L50 | L75 | L100 | L125 | L150 | c | bootstrap p (one-tailed) | Peak | Verdict |
+|----------|-----|-----|------|------|------|---|--------------------------|------|---------|
+| tactile-floor | -0.0031 | -0.0313 | -0.0063 | -0.0031 | -0.0312 | +2.14e-6 | 0.595 | no peak (c>0) | n.s. — sign inverted vs N9 |
+| force-plus10 | -0.0281 | +0.0094 | -0.0187 | +0.0156 | +0.0125 | -1.11e-5 | 0.129 | @106.1 | n.s. — direction preserved |
+
+Bonferroni α (2 pre-registered subgroups) = 0.025. Neither subgroup reaches this threshold.
+
+### Verdict
+
+**`N12-loses`** per pre-stated decision criteria — 0/2 subgroups replicate at Bonferroni α=0.025.
+
+### Winner's curse manifestation
+
+The tactile+floor signal flipped sign entirely from N9-Q3+ pooled-v2 (c=-2.1e-5, p=0.020) to N12 (c=+2.14e-6, p=0.595). Maximum regression toward the mean. Force+plus10 preserved its direction (c<0) but magnitude shrank from -1.78e-5 (p=0.048) to -1.11e-5 (p=0.129). This is the empirical confirmation of the family-wise error rate concern flagged in the pre-registration (15-subgroup exploration → effective α=0.05/15=0.0033 for true control would have rejected both N9 candidates as well).
+
+### Consequences
+
+- §5.5 final retract confirmed at subgroup level too (no rescue from modality-specific framing)
+- §5.5 reformulation Version C selected and inserted into Paper draft : `docs/paper/§5.5-reformulation-FINAL.md`
+- ADR-0019 finalized (no upgrade to Reframe)
+- TMLR submission proceeds without §5.5 headline ; pivot to other findings (e.g., methodology paper emphasizing multi-seed-first-class discipline, like the v0.5.0 null-results paper structure)
+- Methodology lesson : pre-registered subgroup replication after exploratory winner-selection is hypothesis-generating, not confirmatory ; true confirmatory test would require N≥30 per pre-registered subgroup with α=0.05/15 ≈ 0.0033
