@@ -9,17 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Methodology
 
-- N8-Q3 5-seed verdict `Retract` (2026-05-11) : the §5.5 single-seed
-  non-monotone B-1 peak at LOCK_AFTER=100 (paper §5.5, originally
-  reported as +0.0125 on seed=0) does NOT robustly reproduce across
-  5 seeds (0/17/42/73/101). Median peak position is LOCK_AFTER=100
-  (3 of 5 seeds), but drift is 100% (range [50, 150]) and Jonckheere-
-  Terpstra one-tailed for non-monotonicity yields p=0.34 (n.s.).
-  Pre-registered decision criteria `Retract`. **TMLR submission
-  blocked** until §5.5 reformulation lands. Q3+ 10-seed extension
-  RUNNING on kxkm-23 may upgrade verdict. See
-  `reports/v0.5_amedi_curve_multiseed_5seed_interim.json` and
-  `docs/milestones/q3-amedi-seeds-2026-05-10.md`.
+- N8/N9-Q3+ 10-seed verdict `Retract` **FINAL** (2026-05-11) : the
+  §5.5 single-seed non-monotone B-1 peak at LOCK_AFTER=100
+  (originally reported as +0.0125 on seed=0) does NOT robustly
+  reproduce across 10 seeds (5 base + 5 plus =
+  {0,17,42,73,101,7,23,31,53,89}). Per critic MAJOR #4, the
+  verdict is now computed via **per-seed quadratic regression**
+  (`y = a + b*x + c*x^2`, test `c < 0`), not Jonckheere-Terpstra
+  (wrong statistical instrument for an inverted-U hypothesis).
+  Only 5 of 10 seeds yield concave-down fits (c<0) ; sign-test
+  binomial p=0.62 ; one-sample t-test on mean(c)<0 yields p=0.28.
+  Both fail to reject H0 at α=0.05. Median peak position
+  (argmax) is LOCK_AFTER=100 but drift is 100% (range [50, 150]).
+  Pre-registered decision criteria `Retract` **CONFIRMED**.
+  **TMLR submission blocked** until §5.5 reformulation lands and
+  ADR-0019 is drafted. Reusable analysis script :
+  `scripts/analyse_amedi_quadratic.py`. Final verdict JSON :
+  `reports/v0.5_amedi_curve_multiseed_10seed_final.json`. See
+  `docs/milestones/q3-amedi-seeds-2026-05-10.md` Q3+ closeout
+  section. (Supersedes 5-seed interim notice.)
 
 ## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
 

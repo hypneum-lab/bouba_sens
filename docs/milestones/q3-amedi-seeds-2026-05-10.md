@@ -70,3 +70,34 @@ reformulation lands and ADR-0019 is drafted.
 (ETA 2026-05-11T02:30 CEST). Verdict may upgrade to `Reframe`
 if expanded sample tightens Jonckheere below α=0.05. Final
 closeout pending Q3+ completion.
+
+## Q3+ closeout — 10-seed final verdict (2026-05-11)
+
+10-seed sweep completed on `root@kx6tm-23` (5 base + 5 plus =
+{0,17,42,73,101,7,23,31,53,89} × {50,75,100,125,150}). Per the
+N8/N9 critic MAJOR #4 finding, the verdict is computed via
+**per-seed quadratic regression** (`y = a + b*x + c*x^2`, test
+`c < 0`), not Jonckheere-Terpstra (which tests monotonic trend
+and is the wrong statistical instrument for an inverted-U
+hypothesis).
+
+Reusable analysis script : `scripts/analyse_amedi_quadratic.py`
+(adapted from the inline `/tmp/q3_combined_verdict.py` used on
+kx6tm-23). Final verdict JSON :
+`reports/v0.5_amedi_curve_multiseed_10seed_final.json`.
+
+| Statistic                                  | Value         |
+|--------------------------------------------|---------------|
+| Seeds with c<0 (concave-down)              | 5/10          |
+| Sign test p (binomial, c<0)                | 0.62          |
+| t-test mean(c)<0, one-tailed p             | 0.28          |
+| Median peak position (argmax)              | 100           |
+| Drift across seeds                         | 100% (50–150) |
+| Median peak position (quadratic, c<0 only) | 100           |
+
+Both the sign test and the t-test fail to reject H0 at α=0.05.
+The non-monotone (inverted-U) signature **does not robustly
+reproduce** across 10 seeds. The original 5-seed `Retract`
+verdict is **CONFIRMED FINAL**. Paper §5.5 must be reformulated
+or the claim retracted ; ADR-0019 mandatory before TMLR
+re-submission.
