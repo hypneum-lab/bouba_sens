@@ -25,6 +25,7 @@ dist/
 
 # Run outputs
 runs/
+runs_*/
 reports/
 data/
 *.parquet
