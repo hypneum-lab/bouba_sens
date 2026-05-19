@@ -94,6 +94,11 @@ proprioceptive asymmetry passes at 5–6× threshold across every
 grid, every world, every seed, and is insensitive to every
 plasticity control tested (LOCK_AFTER, transducer gating mode,
 Gumbel tau, codebook freeze, HARD → GUMBEL phase transition).
+B-3 is anchored as the empirical foundation of
+[`dream-of-kiki/docs/specs/2026-05-20-biophysical-stratification.md`](https://github.com/hypneum-lab/dream-of-kiki/blob/main/docs/specs/2026-05-20-biophysical-stratification.md)
+§4 (embodied sensorimotor grounding stratum). The B-1 Retract
+(ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
+never B-1.
 
 **F2 — B-1 is qualitatively reproduced in exactly one
 configuration.** On the 4.5-modal real biological bridge,
