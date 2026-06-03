@@ -9,3 +9,4 @@ by ADR-NNNN" at the top.
 | # | Title | Status |
 |---|-------|--------|
 | 0001 | Codebook sharing between SensoryWMLs | Accepted |
+| 0019 | B-2 re-run with MINE at N ≳ f(D) ; retire "probe batch ≥128" | Accepted |

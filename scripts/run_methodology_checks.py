@@ -90,9 +90,29 @@ def run(aggregate_path: Path, cells_dir: Path) -> dict[str, object]:
     probe_stats: dict[str, object] = {}
     try:
         labels, pre, post = _load_first_cell_probe(cells_dir)
+
+        # The Me3 sonde is now full-dimensional (B, K*d) by default. The
+        # discrete null-model + 1-quartile-binning checks below are 1-D by
+        # construction, so reduce the probe to its leading principal
+        # component (a sample-aligned 1-D summary). A legacy 1-D mean-pool
+        # sonde (B,) passes through unchanged. The Kraskov KSG estimator,
+        # by contrast, gets the full (B, K*d) joint.
+        def _to_2d(a: np.ndarray) -> np.ndarray:
+            return a.reshape(a.shape[0], -1) if a.ndim > 1 else a.reshape(-1, 1)
+
+        pre2d, post2d = _to_2d(pre), _to_2d(post)
+
+        def _pc1(a: np.ndarray) -> np.ndarray:
+            if a.shape[1] == 1:
+                return a[:, 0]
+            centred = a - a.mean(0, keepdims=True)
+            _, _, vt = np.linalg.svd(centred, full_matrices=False)
+            return centred @ vt[0]
+
+        pre_1d, post_1d = _pc1(pre2d), _pc1(post2d)
         # Quantise pre-codes to one-hot labels for discrete MI estimators.
-        pre_bins = np.digitize(pre, np.quantile(pre, [0.25, 0.5, 0.75]))
-        post_bins = np.digitize(post, np.quantile(post, [0.25, 0.5, 0.75]))
+        pre_bins = np.digitize(pre_1d, np.quantile(pre_1d, [0.25, 0.5, 0.75]))
+        post_bins = np.digitize(post_1d, np.quantile(post_1d, [0.25, 0.5, 0.75]))
 
         null_pre = null_model_mi(
             pre_bins.astype(np.int64),
@@ -107,7 +127,7 @@ def run(aggregate_path: Path, cells_dir: Path) -> dict[str, object]:
             seed=0,
         )
         kraskov = mi_kraskov_ksg_continuous(
-            pre.reshape(-1, 1),
+            pre2d,
             labels.reshape(-1, 1).astype(float),
             k=3,
         )

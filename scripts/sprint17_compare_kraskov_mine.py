@@ -73,16 +73,26 @@ def _pool_seed(
             or report.probe_labels is None
         ):
             continue
-        pres.append(report.pre_lesion_codes.detach().cpu().flatten())
-        posts.append(report.post_lesion_codes.detach().cpu().flatten())
+        # Keep the per-sample row structure. The full sonde is (B, K*d);
+        # the legacy mean-pool sonde is (B,). reshape(B, -1) normalises
+        # both to 2-D so pooling stays sample-aligned with labels (the
+        # old ``.flatten()`` collapsed (B, 896) -> (B*896,) and broke the
+        # alignment — that path only ever saw 1-D codes).
+        pre_c = report.pre_lesion_codes.detach().cpu()
+        post_c = report.post_lesion_codes.detach().cpu()
+        pres.append(pre_c.reshape(pre_c.shape[0], -1))
+        posts.append(post_c.reshape(post_c.shape[0], -1))
         labels.append(report.probe_labels.detach().cpu().flatten())
     if not pres:
         return None
-    return (
-        torch.cat(pres, dim=0),
-        torch.cat(posts, dim=0),
-        torch.cat(labels, dim=0),
-    )
+    pre_cat = torch.cat(pres, dim=0)
+    post_cat = torch.cat(posts, dim=0)
+    # Squeeze a trailing singleton so the 1-D legacy sonde still presents
+    # as (N,) to me3_delta's scalar path.
+    if pre_cat.shape[1] == 1:
+        pre_cat = pre_cat.squeeze(1)
+        post_cat = post_cat.squeeze(1)
+    return (pre_cat, post_cat, torch.cat(labels, dim=0))
 
 
 def _group_by_seed(root: Path) -> dict[str, list[Path]]:

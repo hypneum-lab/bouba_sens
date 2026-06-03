@@ -19,9 +19,11 @@ blindness T1/T2 gap, Amedi 2007), B-2 (informational migration
 under lesion, Me3 delta), and B-3 (perceptive/proprioceptive
 structural asymmetry, bouba/kiki) — across five synthetic worlds
 (Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and a
-4.5-modal real biological bridge (Studyforrest Phase-2: real
-movie vision + scene-cut tactile + cardiac-respiratory force +
-zero-ed gravity + CC-licensed audio substitute). Thresholds
+4.5-modal real biological bridge (OpenNeuro ds000113: real
+cardiac-respiratory force, real head-motion gravity regressors,
+and real scene-annotation tactile/labels; audio and vision are
+annotation-derived proxies, as the copyrighted soundtrack and
+movie frames are absent from OpenNeuro). Thresholds
 (0.05 / 0.10 / 0.02) are frozen by OSF registration
 `10.17605/OSF.IO/Q6JYN` before the evaluation campaign.
 
@@ -139,7 +141,7 @@ Per-cell Me1 post-lesion accuracy, paired by `(seed, modality, SNR)` across T1 (
 
 ### 3.2 B-2 (Me3 delta) — MI migration
 
-Probe batch captured before `on_lesion` and after Phase 2 training. Codes are the mean-pooled fused representation ; `me3_delta = MI(codes_post; labels) - MI(codes_pre; labels)` via sklearn Kraskov kNN.
+Probe batch captured before `on_lesion` and after Phase 2 training. Codes are the mean-pooled fused representation ; `me3_delta = MI(codes_post; labels) - MI(codes_pre; labels)` via sklearn Kraskov kNN. The full fused representation is `(B, K, d_hidden) = (B, 896)` with **effective dimension D ≈ 12** (§6.3.1) ; the default mean-pool to `(B,)` is a 1-D summary, and sample-size adequacy for the MI estimators is governed by N ≳ f(D), not a fixed batch (ADR-0019).
 
 ### 3.3 B-3 (Me6) — cross-modality asymmetry magnitude (revised reading)
 
@@ -647,6 +649,105 @@ shape, not estimator: the current Me3_delta collapses the
 `flatten(1).mean(-1)`. A richer probe (full `(B, d_fused)`
 without mean-pooling) would let MINE exploit high-dim
 structure and is declared follow-up for paper v0.2 (Sprint 18).
+
+#### 6.3.1 E1/E2 follow-up — dimensional criterion and full-probe MINE
+
+The Sprint-18 follow-up was executed (ADR-0019,
+`scripts/spikes/e1_b2_dimensional_mine.py`). Two corrections to the
+reading above.
+
+**(a) "MINE agrees with Kraskov at ≈0" is not an independent
+agreement.** The MINE column is **0.000 on every seed** because the
+1-D mean-pooled probe pins the Donsker-Varadhan critic to its floor —
+this is a property of the *probe shape*, not evidence about the
+network. The genuine cross-estimator statement is that **Kraskov,
+adaptive binning, and MINE on the full `(B, d_fused)` probe** all
+bracket zero.
+
+**(b) The "probe batch ≥128" recommendation is retired in favour of
+N ≳ f(D).** The Me3 probe has ambient dimension `d_fused = K·d_hidden
+= 896` but a **measured effective dimension D ≈ 12** (participation
+ratio 11.7; two-NN intrinsic dim 12.4, agreeing across 5 seeds). MI
+sample complexity scales with this **intrinsic** dimension, so the
+fixed "≥128" heuristic is replaced by an estimator-aware bound:
+report D alongside every MI estimate and treat any N ≲ 10³ for the
+Me3 probe as resolving *sign*, not *magnitude*.
+
+Re-estimating B-2 = MI_post − MI_pre at N=512 with bootstrap 95% CIs
+(gaussian world — see caveat):
+
+| Estimator (probe) | mean (bits) | 95% CI |
+|-------------------|------------:|--------|
+| Kraskov k-NN (1-D) | −0.031 | [−0.069, +0.005] |
+| Adaptive binning (1-D) | −0.016 | [−0.041, +0.008] |
+| MINE (1-D mean-pool) | 0.000 | [0.000, 0.000] |
+| MINE (full 896-D probe) | −0.038 | [−0.105, +0.002] |
+
+Feeding MINE the **full-dimensional** probe — the v0.2 hypothesis
+that "migration is there but the 1-D probe hides it" — does **not**
+surface a positive B-2 (mean −0.038, CI brackets 0). The B-2 verdict
+stays **Null**, now without the spurious MINE-1-D agreement and with
+the richer probe explicitly ruled out as a rescue.
+
+**(c) Independent full-sonde replication** (`b2_full_sonde.csv`, all
+three estimators on the 896-D probe, 5 seeds) reproduces this. MINE on
+the full probe is **no longer pinned to 0** — it varies per seed
+(−0.008 … +0.120, mean +0.031), confirming the `0.000` was a 1-D
+probe-shape artefact; but only 1/5 seeds crosses +0.10, so the verdict
+stays **Null**. Adaptive binning **collapses in 896-D** (−3 … −25
+bits) exactly as the N ≫ (#bins)^D argument predicts — usable only on
+a low-D summary, never the ambient probe.
+
+*Caveat (gaussian run, retained for history).* The table above ran on
+the **gaussian** world because the `BOUBA_SENS_STUDYFORREST_DATA` cache
+was unavailable when it was first executed. The methodological findings
+(probe-shape artefact, D ≈ 12, N ≳ f(D), full-probe MINE) are
+world-agnostic; the gaussian B-2 magnitudes are kept below as the
+synthetic-world reference and are **not** overwritten.
+
+**(d) Real-bridge promotion — `--world studyforrest` on the OpenNeuro
+ds000113 cache.** The one remaining step in (c)'s caveat was executed.
+The real Studyforrest cache was provisioned from **OpenNeuro ds000113**
+over the public S3 REST API (`scripts/fetch_studyforrest_sample.py
+--source openneuro`, 9000 frames @ 10 Hz; the dead `studyforrest.org`
+phase-1 URL is retired). Channel provenance is mixed and labelled
+verbatim in the cache MANIFEST: **force** (cardiac pulse-ox +
+respiration physio, 500 Hz), **gravity** (head-motion `*_bold_moco.txt`
+rotation regressors), **tactile** and **labels** (scenes.csv scene /
+DAY-NIGHT / INT-EXT annotation) are **real ds000113 signal**; **audio**
+and **vision** are **annotation-derived proxies** (narration-timing and
+scene-cut structure respectively) because the Forrest Gump soundtrack
+and movie are copyrighted and absent from OpenNeuro. The run uses
+`StudyforrestRealWorld` (mode `real5`, verified — not the mock stub).
+
+B-2 = MI_post − MI_pre, N=512, 5 seeds, 500-resample bootstrap 95% CIs,
+effective dim **D ≈ 12.5** (PR 12.9, two-NN 12.5 — matching the
+gaussian D ≈ 12):
+
+| Estimator (probe) | gaussian mean (bits) | **real-bridge mean (bits)** | **real 95% CI** |
+|-------------------|---------------------:|----------------------------:|-----------------|
+| Kraskov k-NN (1-D) | −0.031 | **−0.001** | [−0.0029, +0.000] |
+| Adaptive binning (1-D) | −0.016 | **−0.0024** | [−0.0072, +0.000] |
+| MINE (1-D mean-pool) | 0.000 | **−2.0e-7** | [−6.6e-7, +8.3e-8] |
+| MINE (full 896-D probe) | −0.038 | **−1.9e-5** | [−5.7e-5, −1.8e-9] |
+
+The real-bridge verdict is **identical to gaussian: B-2 Null.** Every
+estimator's CI brackets zero; no estimator crosses the +0.10 threshold
+on any of the 5 seeds. The probe-shape conclusions transfer unchanged:
+MINE-1-D is pinned at the DV floor (~0), and the full-probe MINE — the
+v0.2 "richer probe rescues B-2" hypothesis — again surfaces no positive
+signal (mean −1.9e-5). *The B-2 magnitudes here are smaller than
+gaussian's, which is expected:* the real bridge's lesioned audio channel
+is an annotation proxy, so there is even less audio-specific information
+available to migrate, but the qualitative null is the same.
+(`reports/e1_b2_dimensional_mine_studyforrest.json`.)
+
+*Honest scope.* This is a real bridge for force/gravity/tactile/labels
+and a documented proxy for audio/vision; it is **not** a full
+perceptual-stimulus replication (which would require the copyrighted
+media outside OpenNeuro). The promotion lifts the "gaussian-only"
+caveat for the B-2 *verdict* while keeping the audio/vision-proxy
+limitation explicit.
 
 ---
 

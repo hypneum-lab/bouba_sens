@@ -14,19 +14,36 @@ if TYPE_CHECKING:
 
 
 def me3_mi(codes: torch.Tensor, labels: torch.Tensor) -> float:
-    """Estimate MI(codes; labels) in bits via Kraskov kNN regression.
+    """Estimate MI(codes; labels) in bits via Kraskov kNN.
 
-    `codes` is a scalar feature per sample (shape `(B,)` or `(B, 1)`);
-    callers typically pass a modality-specific code vector flattened to
-    one dimension. `labels` is the target `(B,)` long tensor.
+    `codes` may be a scalar feature per sample (shape `(B,)` / `(B, 1)`)
+    OR the full multi-D fused representation (shape `(B, d)`, e.g.
+    `(B, 896)`). `labels` is the target `(B,)` long tensor.
+
+    1-D codes route through ``sklearn.mutual_info_regression`` (the
+    legacy Sprint 5..17 path, preserved bit-for-bit). Multi-D codes
+    route through the Kraskov-Stoegbauer-Grassberger (KSG) continuous
+    estimator (``nerve_wml.methodology.mi_kraskov_ksg_continuous``),
+    which respects the joint dimensionality instead of collapsing it
+    to a single column — the bug fixed in ADR-0019 lockstep with the
+    full sonde (paper §6.3.1).
 
     Returns bits = nats / ln(2). Robust below N=512 only at the
     structural level (positive vs zero) — numeric values are noisy for
     small batches (see R-sprint3-1 in the plan).
     """
-    x = codes.detach().cpu().numpy().reshape(-1, 1).astype(float)
+    arr = codes.detach().cpu().numpy().astype(float)
+    if arr.ndim == 1:
+        arr = arr.reshape(-1, 1)
     y = labels.detach().cpu().numpy().astype(float)
-    mi_nats = mutual_info_regression(x, y, random_state=0)[0]
+    if arr.shape[1] == 1:
+        # Legacy 1-D path — unchanged numerics.
+        mi_nats = mutual_info_regression(arr, y, random_state=0)[0]
+        return float(mi_nats / math.log(2))
+    # Multi-D path — proper joint KSG estimator. Helper returns nats.
+    from nerve_wml.methodology import mi_kraskov_ksg_continuous
+
+    mi_nats = mi_kraskov_ksg_continuous(arr, y.reshape(-1, 1))
     return float(mi_nats / math.log(2))
 
 
