@@ -224,6 +224,93 @@ lesioned `audio` channel is an annotation proxy carrying less
 audio-specific information to migrate — but the qualitative null is the
 same. Artefact: `reports/e1_b2_dimensional_mine_studyforrest.json`.
 
+## E1.3d — CC-film real-AV bridge (`--world ccfilm`, Big Buck Bunny CC-BY)
+
+E1.3c left one honest gap: on the Studyforrest bridge, `audio` and `vision`
+were **annotation-derived proxies**, not the perceptual stimuli (the Forrest
+Gump soundtrack/movie are copyrighted and absent from OpenNeuro). This
+section adds a **complementary** bridge that closes exactly that gap, at a
+different cost.
+
+The source is **Big Buck Bunny** (`BigBuckBunny_320x180.mp4`, Blender
+Foundation 2008, **CC-BY 3.0**), fetched from `download.blender.org`
+(`scripts/extract_ccfilm_features.py`, 300 s trimmed = 600 frames @ 2 fps).
+Audio and vision are **the perceptual signal itself**:
+
+- `audio` (N,128): 128-D **log-mel spectrogram** of the soundtrack —
+  `scipy.signal.stft` (n_fft=1024, hop=256, mono 16 kHz) → an **HTK mel
+  filter-bank written from scratch** (`hz_to_mel`/`mel_to_hz` + triangular
+  bins), pooled onto the frame grid, per-band standardised. No
+  torchaudio/librosa.
+- `vision` (N,16,16): decoded movie frames (PIL) → per-frame **16×16
+  mean-intensity patch grid**, normalised to [0,1].
+- `labels` (N,): **REAL shot-cuts** — per-frame `|frame_t − frame_{t-1}|`
+  mean, quantised by quartiles into 4 classes (150/150/150/150 populated).
+
+**Channel provenance (labelled verbatim in the cache MANIFEST):**
+
+| modality | provenance | real? |
+|----------|-----------|:-----:|
+| audio | 128-D log-mel of the soundtrack (scipy STFT + scratch mel bank) | **REAL** |
+| vision | (16,16) mean-intensity grid of decoded frames | **REAL** |
+| labels | frame-difference shot-cut energy, quartile-quantised to 4 | **REAL** |
+| tactile | RNG(seed=0) stream modulated by audio energy-flux envelope | **SYNTHETIC** |
+| gravity | same construction (3-D) | **SYNTHETIC** |
+| force | same construction (6-D) | **SYNTHETIC** |
+
+A film has **no proprioceptive channel**, so tactile/gravity/force are
+explicitly synthetic (seeded, flux-coupled for temporal coherence, **not
+measured signal**). The world loads as `CCFilmWorld` (mode `real_av`,
+verified in the run logs — **not** the mock stub).
+
+B-2, N=512, 5 seeds, 500-resample bootstrap, effective dim D_PR ≈ 7.6 /
+two-NN ≈ 13.1:
+
+| seed | D_PR | D_2NN | Kraskov | binning | MINE 1-D | MINE full |
+|-----:|-----:|------:|--------:|--------:|---------:|----------:|
+| 0 | 13.02 | 12.53 | −0.0800 | −0.0691 | +0.0e0 | −1.9e-2 |
+| 1 |  2.82 | 14.29 | +0.0000 | +0.0144 | +0.0e0 | −2.4e-2 |
+| 2 | 13.44 | 13.20 | −0.0274 | +0.0022 | +0.0e0 | +1.3e-2 |
+| 3 |  2.72 | 12.32 | +0.0069 | +0.0420 | +0.0e0 | +1.3e-2 |
+| 4 |  6.06 | 13.05 | −0.0579 | +0.0416 | +0.0e0 | +4.2e-3 |
+
+| Estimator | mean | 95% CI |
+|-----------|-----:|--------|
+| Kraskov (1-D) | −0.0317 | [−0.0633, −0.0020] |
+| binning (1-D) | +0.0062 | [−0.0327, +0.0363] |
+| MINE (1-D) | 0.0000 | [0.0000, 0.0000] |
+| MINE (full N×d) | −0.0027 | [−0.0159, +0.0110] |
+
+**Verdict on the CC-film real-AV bridge = B-2 Null.** No estimator's 95% CI
+brackets a positive +0.10 effect; MINE-1-D is pinned at the DV floor
+(probe-shape artefact, exactly as on gaussian/Studyforrest), full-probe MINE
+surfaces no positive signal (mean −0.003), binning brackets zero. The
+**only** CI excluding zero is Kraskov, and it excludes it on the **negative**
+side (mean −0.032) — i.e. lesion-adapted MI ≤ pre-lesion MI, the opposite of
+migration. So even with **genuinely real audio+vision** driving the
+representation, B-2 does not flip: the qualitative null transfers a *third*
+time, now under real perceptual stimuli.
+
+**What this bridge buys, and what it costs (it is NOT a Studyforrest
+replacement):**
+
+- **Gains** the perceptual core Studyforrest's bridge lacked — `audio` and
+  `vision` are *real signal*, not annotation proxies. This is the single
+  strongest answer to the E1.3c "audio/vision = proxy" caveat: the B-2 null
+  is now observed with the actual stimuli in the loop.
+- **Loses** Studyforrest's **biological anchoring** entirely — there is no
+  fMRI subject, no physio, no head-motion. The proprioceptive channels
+  (tactile/gravity/force) are **synthetic**, the inverse of Studyforrest
+  (real proprio, proxy AV).
+- It is therefore a **different trade-off bridge**, not a strict upgrade.
+  Read the two together: Studyforrest contributes real proprioception +
+  biological grounding with proxy AV; CC-film contributes real AV with
+  synthetic proprioception. **B-2 is Null across both**, plus gaussian — the
+  null is robust to which half of the modality set is real.
+
+Artefact: `reports/e1_b2_dimensional_mine_ccfilm.json`. Cache + per-channel
+SHA256/provenance: `data/ccfilm_real/MANIFEST.md`.
+
 ## Caveat — world substitution (RESOLVED for the verdict; proxy limit remains)
 
 *Original caveat (kept for history):* the headline B-2 figures were first
@@ -253,6 +340,14 @@ The B-2 null holds with this limitation stated.
 - `reports/e1_b2_dimensional_mine.json` — gaussian per-seed output.
 - `reports/e1_b2_dimensional_mine_studyforrest.json` — **real-bridge**
   per-seed output (E1.3c, OpenNeuro ds000113).
+- `reports/e1_b2_dimensional_mine_ccfilm.json` — **CC-film real-AV bridge**
+  per-seed output (E1.3d, Big Buck Bunny CC-BY).
+- `scripts/extract_ccfilm_features.py` — builds the `data/ccfilm_real/`
+  cache: REAL mel-128 audio + REAL 16×16 vision + REAL shot-cut labels +
+  SYNTHETIC proprioception. `data/ccfilm_real/MANIFEST.md` carries SHA256s,
+  the CC-BY source URL, and per-channel real-vs-synthetic provenance.
+- `src/bouba_sens/world/ccfilm.py` — `CCFilmWorld` (mode `real_av`); wired
+  into `cli._build_world` under the name `ccfilm`.
 - `scripts/fetch_studyforrest_sample.py` — `--source openneuro` provisions
   the real ds000113 cache from S3; `--source surrogate` keeps the offline
   non-scientific fallback. Cache `MANIFEST.md` carries SHA256s + real S3 URLs

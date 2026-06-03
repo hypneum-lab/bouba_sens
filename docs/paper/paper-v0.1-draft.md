@@ -749,6 +749,51 @@ media outside OpenNeuro). The promotion lifts the "gaussian-only"
 caveat for the B-2 *verdict* while keeping the audio/vision-proxy
 limitation explicit.
 
+**(e) CC-film real-AV bridge — `--world ccfilm` on Big Buck Bunny
+(CC-BY).** The proxy limitation of (d) is closed from the other side by a
+complementary bridge in which **audio and vision are the real perceptual
+signal**. The source is Big Buck Bunny (Blender Foundation 2008, **CC-BY
+3.0**), fetched from `download.blender.org`
+(`scripts/extract_ccfilm_features.py`, 300 s = 600 frames @ 2 fps).
+`audio` (N,128) is a **128-D log-mel spectrogram of the soundtrack** —
+`scipy` STFT (n_fft=1024, hop=256, mono 16 kHz) through an **HTK mel
+filter-bank written from scratch**, pooled to the frame grid and per-band
+standardised (no torchaudio/librosa). `vision` (N,16,16) is the per-frame
+**16×16 mean-intensity patch grid** of decoded frames. `labels` are
+**real shot-cuts** (frame-to-frame difference energy, quartile-quantised
+to 4, evenly populated). A film carries no proprioception, so
+tactile/gravity/force are **synthetic** (RNG seeded, audio-flux-modulated
+for temporal coherence; explicitly not measured signal). The world loads
+as `CCFilmWorld` (mode `real_av`, verified — not the mock stub).
+
+B-2, N=512, 5 seeds, 500-resample bootstrap, effective dim D_PR ≈ 7.6 /
+two-NN ≈ 13.1:
+
+| Estimator (probe) | mean (bits) | 95% CI |
+|-------------------|------------:|--------|
+| Kraskov k-NN (1-D) | −0.0317 | [−0.0633, −0.0020] |
+| Adaptive binning (1-D) | +0.0062 | [−0.0327, +0.0363] |
+| MINE (1-D mean-pool) | 0.0000 | [0.0000, 0.0000] |
+| MINE (full N×d probe) | −0.0027 | [−0.0159, +0.0110] |
+
+**Verdict = B-2 Null, a third time, now under real perceptual stimuli.**
+No estimator reaches the +0.10 threshold; MINE-1-D is pinned at the DV
+floor; full-probe MINE is null (−0.003); binning brackets zero. The only
+CI excluding zero is Kraskov, and it does so on the **negative** side
+(−0.032) — MI does not increase post-lesion. So even with genuinely real
+audio+vision driving the representation, B-2 does not flip.
+
+*Honest scope — a different trade-off, not a Studyforrest replacement.*
+CC-film **gains** the perceptual core Studyforrest's bridge lacked (real
+AV, not annotation proxies) but **loses** Studyforrest's biological
+anchoring entirely and has **synthetic** proprioception — the exact
+inverse of (d). Read together: (d) contributes real proprioception +
+biological grounding with proxy AV; (e) contributes real AV with
+synthetic proprioception. **B-2 is Null across both bridges and the three
+synthetic worlds** — the null is robust to which half of the modality set
+carries real signal. (`reports/e1_b2_dimensional_mine_ccfilm.json`;
+cache provenance `data/ccfilm_real/MANIFEST.md`.)
+
 ---
 
 ## 7. Related work
