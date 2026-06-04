@@ -61,8 +61,22 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
 
             return StudyforrestRealWorld(seed=seed, data_dir=data_dir)
         return StudyforrestWorld(seed=seed, data_dir=data_dir)
+    if key == "ccfilm":
+        # ADR-0019 §E1.3d — CC-BY film real-AV bridge. REAL audio+vision+labels,
+        # SYNTHETIC proprioception. Cache built by
+        # scripts/extract_ccfilm_features.py into data/ccfilm_real/.
+        raw_dir = os.getenv("BOUBA_SENS_CCFILM_DATA")
+        data_dir = Path(raw_dir) if raw_dir else Path("data/ccfilm_real")
+        if not (data_dir / "audio.pt").exists():
+            raise typer.BadParameter(
+                f"ccfilm cache missing at {data_dir}; run "
+                "scripts/extract_ccfilm_features.py first"
+            )
+        from bouba_sens.world.ccfilm import CCFilmWorld
+
+        return CCFilmWorld(seed=seed, data_dir=data_dir)
     raise typer.BadParameter(
-        f"unknown world '{name}'; pick gaussian | xor | sinusoid | studyforrest"
+        f"unknown world '{name}'; pick gaussian | xor | sinusoid | studyforrest | ccfilm"
     )
 
 
