@@ -57,7 +57,7 @@ running sweep may add back.
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation in flight |
-| **B-2** Me3 MI migration | **Null** (estimator-resolved, unchanged from v0.5.5) |
+| **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** until §5.5 reformulation lands |
 | **N12 subgroup replication** | **RUNNING** (kx6tm-23, ~07:30 ETA) |
 
@@ -87,7 +87,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
 |-----------|----------:|-----------------:|:---------------|---------|
 | **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** every configuration, architectural invariant |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
-| B-2 Me3 MI migration | 0.10 | mean +0.033 ±0.047 bits | 0/5 cross threshold | **Null** — two independent estimators (Kraskov + MINE) agree within 0.1 bit |
+| B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
 
 **F1 — B-3 is an architectural invariant.** The perceptive /
 proprioceptive asymmetry passes at 5–6× threshold across every
@@ -110,14 +110,46 @@ empirical claim is this narrow : a frozen mux with hard
 transducer gating is the *minimal* configuration that
 qualitatively reproduces the Amedi T1/T2 asymmetry.
 
-**F3 — B-2 is below threshold, estimator-resolved.** The earlier
-"bimodal positive B-2 at tau=0.30" claim (ADR-0016) was retracted
-after per-seed re-aggregation (ADR-0017 §14a). Sprint 17 replicates
-the §6.3 Kraskov limit with MINE (Donsker-Varadhan) on the Sprint 10
-peak grid : both estimators agree within 0.1 bit that B-2 does not
-exceed threshold on any seed. The remaining ambiguity concerns
-probe shape (1-D mean-pool vs full `(B, d_fused)`), not estimator
-choice — declared follow-up for paper v0.2.
+**F3 — B-2 is below threshold, Null confirmed/renforced (ADR-0019).**
+The earlier "bimodal positive B-2 at tau=0.30" claim (ADR-0016) was
+retracted after per-seed re-aggregation (ADR-0017 §14a). The probe-shape
+follow-up declared for v0.2 is now **closed (ADR-0019)** :
+
+- *Probe shape, not estimator agreement.* The Me3 sonde was made
+  configurable; its default is now the **full representation `(B, 896)`**.
+  The old 1-D mean-pool **pinned MINE to exactly 0.000 on every seed** —
+  a probe-shape artefact (the Donsker-Varadhan critic floors on a scalar
+  probe), *not* an independent two-estimator agreement. `mi_migration`
+  now handles the multi-D probe.
+- *Sample-size criterion re-derived.* The Me3 probe has ambient
+  dimension 896 but **effective dimension D ≈ 12** (participation ratio
+  11.7 / two-NN 12.4). The fixed "probe batch ≥128" heuristic is replaced
+  by an estimator-aware bound **N ≳ f(D)** (MI sample complexity scales
+  with intrinsic, not ambient, dimension).
+- *Verdict.* B-2 remains **Null** — **no estimator crosses +0.10**.
+  Feeding MINE the full 896-D probe (the v0.2 "richer probe rescues B-2"
+  hypothesis) surfaces no positive signal; adaptive binning collapses in
+  896-D exactly as the `N ≫ (#bins)^D` argument predicts. The null holds
+  on the gaussian reference **and on both real bridges** (Studyforrest +
+  CC-film, see F4), regardless of which half of the modalities is real.
+
+**F4 — Two real bridges with honestly-labelled channel provenance.**
+B-2 Null was re-checked on two real-signal bridges with **opposite**
+real/synthetic modality splits (complements, *not* a replacement of the
+headline synthetic findings) :
+
+- **Studyforrest (OpenNeuro ds000113).** force / gravity / tactile /
+  labels = **REAL** ds000113 signal ; audio / vision = annotation
+  **PROXY** (the Forrest Gump soundtrack and film are copyrighted and
+  absent from OpenNeuro — labelled as proxies, not "real movie vision").
+- **CC-film (Big Buck Bunny, CC-BY 3.0).** audio (log-mel) / vision
+  (frames) / labels (shot-cuts) = **REAL** perceptual signal ; tactile /
+  gravity / force = **SYNTHETIC** (a film has no proprioception).
+
+**B-2 Null holds on both bridges plus the three synthetic worlds** — the
+null is robust to which half of the modality set carries the true signal.
+The abstract is aligned to this per-channel provenance (no "real movie
+vision" overclaim).
 
 Full trail : `docs/adr/0004` through `0017`. Every verdict,
 retraction, and scope change is recorded inline with its grid
