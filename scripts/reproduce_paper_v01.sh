@@ -24,6 +24,23 @@ STUDYFORREST_DATA="${BOUBA_SENS_STUDYFORREST_DATA:-data/sf_phase2_adapted}"
 
 mkdir -p "${OUT_BASE}" "${REPORTS}"
 
+# N3 H9 fix (2026-05-10): ensure ${STUDYFORREST_DATA} exists before
+# any cell tries to load it. Idempotent: skips fetch + extract when
+# the adapted data dir is already populated. Without this, a cold
+# clone of the repo would hit "no such directory" mid-run on the
+# §5.5 Amedi cells.
+PHASE2_RAW="${BOUBA_SENS_STUDYFORREST_RAW:-data/studyforrest_phase2}"
+if [ ! -d "${STUDYFORREST_DATA}" ] || [ -z "$(ls -A "${STUDYFORREST_DATA}" 2>/dev/null)" ]; then
+    echo "[N3 H9] ${STUDYFORREST_DATA} missing or empty; fetching + extracting..."
+    bash scripts/fetch_studyforrest_phase2.sh "${PHASE2_RAW}"
+    uv run python scripts/extract_phase2_adapted.py \
+        --phase2-root "${PHASE2_RAW}" \
+        --out "${STUDYFORREST_DATA}"
+    echo "[N3 H9] Fetch + extract complete."
+else
+    echo "[N3 H9] ${STUDYFORREST_DATA} populated; skipping fetch."
+fi
+
 # Helper: run_grid.sh wrapper that passes through its env and then
 # aggregates the grid into a named JSON. Honours CHOOSE gating.
 _run() {

@@ -25,6 +25,7 @@ dist/
 
 # Run outputs
 runs/
+runs_*/
 reports/
 data/
 *.parquet
@@ -34,3 +35,14 @@ wandb/
 # OS
 .DS_Store
 Thumbs.db
+.remember/
+
+# LaTeX build artefacts (TMLR paper compile)
+docs/paper/*.aux
+docs/paper/*.bbl
+docs/paper/*.blg
+docs/paper/*.fdb_latexmk
+docs/paper/*.fls
+docs/paper/*.log
+docs/paper/*.out
+docs/paper/*.toc

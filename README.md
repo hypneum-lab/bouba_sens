@@ -18,6 +18,55 @@ late blindness (Amedi 2007, Merabet 2010, Heimler 2020).
   produces a quantitatively different plastic response than losing
   gravity/force.
 
+## 2026-05-11 update — Q3+ FINAL Retract, TMLR submission BLOCKED
+
+**§5.5 B-1 dose-response signature requires reformulation.** The
+N9 Q3+ 10-seed re-run with the correct test (quadratic regression
+over LOCK_AFTER) returned **sign p = 0.62**, paired t-test
+**p = 0.28** — verdict **FINAL Retract** per the Q3 pre-registered
+decision criteria. The earlier Q3 INTERIM verdict had used a
+Jonckheere-Terpstra test which the critic v2 review correctly
+flagged as the wrong test for a non-monotone (peaked) hypothesis ;
+fixing that and adding 5 more seeds collapsed the qualitative
++0.0125 Sprint 10 peak to noise.
+
+**TMLR benchmarks-track submission is BLOCKED** until §5.5 is
+reformulated. Three reformulation drafts (A / B / C, conditional on
+N12 outcome) are at `docs/paper/§5.5-reformulation-draft.md`.
+Decision-of-record : ADR-0019.
+
+**N12 targeted subgroup replication (RUNNING).** Pooled-v2 analysis
+surfaced two candidate subgroups for replication — **tactile-floor**
+and **force-plus10** — at sub-threshold but consistent positive
+shifts. N12 sweep (N=20 seeds, focused on those subgroups) is
+running tonight on `root@kx6tm-23`, ETA ~07:30 morning. The N12
+result picks which §5.5 reformulation draft (A / B / C) becomes the
+paper text.
+
+**Multi-seed-first-class lesson promoted portfolio-wide.** The Q3
+collapse from a 5-seed qualitative claim to a 10-seed null is the
+canonical evidence for the methodology rule that single-seed (or
+under-seeded) claims are fragile. Adopted across `nerve-wml`,
+`dream-of-kiki`, and this repo as a hard pre-publication gate.
+
+No new positive finding is announced ; this update is an honest
+scope statement on what tonight's verdicts removed and what the
+running sweep may add back.
+
+| Axis | Status |
+|---|---|
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
+| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation in flight |
+| **B-2** Me3 MI migration | **Null** (estimator-resolved, unchanged from v0.5.5) |
+| **TMLR submission** | **BLOCKED** until §5.5 reformulation lands |
+| **N12 subgroup replication** | **RUNNING** (kx6tm-23, ~07:30 ETA) |
+
+Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
+ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg
+locked. Honest scope ; no overselling.
+
+---
+
 ## Status
 
 **v0.5.5 (2026-04-23) — Paper v0.1 submit-ready.** Sprints 0–17
@@ -37,7 +86,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
 | **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** every configuration, architectural invariant |
-| B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) |
+| B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.033 ±0.047 bits | 0/5 cross threshold | **Null** — two independent estimators (Kraskov + MINE) agree within 0.1 bit |
 
 **F1 — B-3 is an architectural invariant.** The perceptive /
@@ -45,6 +94,11 @@ proprioceptive asymmetry passes at 5–6× threshold across every
 grid, every world, every seed, and is insensitive to every
 plasticity control tested (LOCK_AFTER, transducer gating mode,
 Gumbel tau, codebook freeze, HARD → GUMBEL phase transition).
+B-3 is anchored as the empirical foundation of
+[`dream-of-kiki/docs/specs/2026-05-20-biophysical-stratification.md`](https://github.com/hypneum-lab/dream-of-kiki/blob/main/docs/specs/2026-05-20-biophysical-stratification.md)
+§4 (embodied sensorimotor grounding stratum). The B-1 Retract
+(ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
+never B-1.
 
 **F2 — B-1 is qualitatively reproduced in exactly one
 configuration.** On the 4.5-modal real biological bridge,

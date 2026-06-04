@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Methodology
+
+- N8/N9-Q3+ 10-seed verdict `Retract` **FINAL** (2026-05-11) : the
+  §5.5 single-seed non-monotone B-1 peak at LOCK_AFTER=100
+  (originally reported as +0.0125 on seed=0) does NOT robustly
+  reproduce across 10 seeds (5 base + 5 plus =
+  {0,17,42,73,101,7,23,31,53,89}). Per critic MAJOR #4, the
+  verdict is now computed via **per-seed quadratic regression**
+  (`y = a + b*x + c*x^2`, test `c < 0`), not Jonckheere-Terpstra
+  (wrong statistical instrument for an inverted-U hypothesis).
+  Only 5 of 10 seeds yield concave-down fits (c<0) ; sign-test
+  binomial p=0.62 ; one-sample t-test on mean(c)<0 yields p=0.28.
+  Both fail to reject H0 at α=0.05. Median peak position
+  (argmax) is LOCK_AFTER=100 but drift is 100% (range [50, 150]).
+  Pre-registered decision criteria `Retract` **CONFIRMED**.
+  **TMLR submission blocked** until §5.5 reformulation lands and
+  ADR-0019 is drafted. Reusable analysis script :
+  `scripts/analyse_amedi_quadratic.py`. Final verdict JSON :
+  `reports/v0.5_amedi_curve_multiseed_10seed_final.json`. See
+  `docs/milestones/q3-amedi-seeds-2026-05-10.md` Q3+ closeout
+  section. (Supersedes 5-seed interim notice.)
+  - **Pooled v2 subgroup discovery (2026-05-11)** : follow-up
+    pooled subgroup-discovery analysis (150 me7 per LOCK_AFTER,
+    15 sub-pops modality × SNR) confirms the pooled non-monotone
+    signature is NOT present (quadratic c=-2.1e-6, p=0.19, peak
+    at LOCK≈148.9). Two sub-populations exhibit naïve-significant
+    concave-down fits in the original Amedi window : tactile-floor
+    (c=-2.107e-5, uncorrected p=0.020, peak@94.6) and force-plus10
+    (c=-1.786e-5, uncorrected p=0.048, peak@106.9). Neither
+    survives Bonferroni correction across 15 subgroups
+    (α=0.0033). Hypothesis-generating only ; pre-registered
+    targeted replication queued as N12 sprint (N=20 seeds, only
+    2 PRE-REGISTERED subgroups → Bonferroni α=0.025). Artefacts :
+    `reports/v0.5_amedi_curve_pooled_v2.json`,
+    `scripts/analyse_amedi_pooled_subgroup.py`. Pre-registration :
+    `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`
+    (mirrors `HYPNEUM-PLANS/preregistrations/n12_amedi_subgroup_replication.md`).
+    §5.5 reformulation drafts (3 versions A/B/C conditional on
+    N12 verdict) at `docs/paper/§5.5-reformulation-draft.md`.
+  - N12 subgroup replication (2026-05-11) : 0/2 pre-registered subgroups
+    (tactile+floor, force+plus10) replicate at Bonferroni α=0.025 on 10 NEW
+    seeds. tactile-floor sign inverted (c=+2.14e-6, p=0.595) — winner's curse
+    manifest. §5.5 retract confirmed at subgroup level. ADR-0019 closed.
+
+## [0.5.9] — 2026-05-10 (TMLR submission package + Zenodo refresh)
+
+### Added
+
+- `docs/paper/cover-letter-tmlr.md` — TMLR submission cover letter
+  with Reproducibility track framing, narrow-and-falsifiable claim
+  positioning, open-science statement, and concurrent-work
+  paragraph addressing RecursiveMAS (Yang et al. arXiv:2604.25917).
+- Concrete 4-person reviewer panel (Cees Snoek UvA, Tessa Dekker
+  UCL, Jessica Hullman Northwestern, Alessandro Achille AWS/Caltech)
+  with selection criteria (publication recency, no co-authorship,
+  institutional+topical diversity).
+- Nested `CLAUDE.md` files at root and under `configs/`, `scripts/`,
+  `src/`, `tests/` for Claude Code progressive disclosure.
+
+### Notes
+
+- `version: "0.5.9"` in `CITATION.cff` and tag pushed to fire the
+  GitHub→Zenodo webhook with the up-to-date `.zenodo.json`
+  metadata. Companion to nerve-wml v1.8.1 release of the same day.
+- The previously local-only `v0.5.8` tag (commit `4eab231`) is
+  superseded by this release; the remote `v0.5.8` tag (commit
+  `30bc7ba`, distinct content) is preserved untouched.
+
 ## [0.3.0] — 2026-04-20 (Sprint 6 T6.1+T6.2 — cross-world B-3 replicated)
 
 ### Added
