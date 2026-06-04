@@ -17,13 +17,19 @@ We introduce `bouba_sens`, a pre-registered benchmark measuring
 three invariants of cross-modal plasticity — B-1 (congenital-
 blindness T1/T2 gap, Amedi 2007), B-2 (informational migration
 under lesion, Me3 delta), and B-3 (perceptive/proprioceptive
-structural asymmetry, bouba/kiki) — across five synthetic worlds
-(Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and a
-4.5-modal real biological bridge (OpenNeuro ds000113: real
-cardiac-respiratory force, real head-motion gravity regressors,
-and real scene-annotation tactile/labels; audio and vision are
-annotation-derived proxies, as the copyrighted soundtrack and
-movie frames are absent from OpenNeuro). Thresholds
+structural asymmetry, bouba/kiki) — across five synthetic/surrogate
+worlds (Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and
+**two real bridges with opposite real/synthetic modality splits**.
+The **Studyforrest** bridge (OpenNeuro ds000113) carries real
+cardiac-respiratory force, real head-motion gravity regressors, and
+real scene-annotation tactile/labels, while audio and vision are
+annotation-derived **proxies** (the copyrighted soundtrack and movie
+frames are absent from OpenNeuro — not "real movie vision"). The
+**CC-film** bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio
+(log-mel), vision (frames), and labels (shot-cuts) are real perceptual
+signal, while tactile/gravity/force are **synthetic** (a film has no
+proprioception). The B-2 null below holds on both bridges regardless of
+which half of the modality set is real. Thresholds
 (0.05 / 0.10 / 0.02) are frozen by OSF registration
 `10.17605/OSF.IO/Q6JYN` before the evaluation campaign.
 
@@ -54,14 +60,21 @@ timings × 3 SNRs) and 18 ADRs, we report:
    compound attempted since (soft Gumbel gating, finer tau
    scans, codebook freeze, phase-transition schedule) preserved,
    weakened, or destroyed this peak — never amplified it.
-3. **B-2 does not exceed threshold under any configuration.**
-   Two estimators (kNN-Kraskov, MINE Donsker-Varadhan)
-   agree within 0.1 bit on the Sprint 10 peak grid (mean ±std =
-   +0.033 ±0.047 bits, Kraskov ; 0.000 ±0.000, MINE). Seed 1
-   reaches 0.097 under Kraskov (97 % of threshold) but MINE
-   gives 0; no single seed crosses threshold under either
-   estimator. The earlier "bimodal positive B-2" claim (ADR-0016)
-   is **retracted** after per-seed re-aggregation (ADR-0017).
+3. **B-2 does not exceed threshold under any configuration —
+   Null confirmed/renforced (ADR-0019).** The earlier "bimodal
+   positive B-2" claim (ADR-0016) is **retracted** after per-seed
+   re-aggregation (ADR-0017). The Me3 sonde is now configurable with
+   the **full `(B, 896)` representation as default**: the old 1-D
+   mean-pool **pinned MINE to exactly 0.000 on every seed**, a
+   probe-shape artefact (not an independent two-estimator agreement).
+   The under-derived "probe batch ≥128" heuristic is replaced by the
+   estimator-aware bound **N ≳ f(D)** keyed on the measured effective
+   dimension **D ≈ 12** (participation ratio 11.7 / two-NN 12.4).
+   Re-estimating with Kraskov, adaptive binning, and **MINE on the full
+   896-D probe** — all bracket zero; **no estimator crosses +0.10** on
+   any seed, on the gaussian reference and on **both real bridges**
+   (Studyforrest + CC-film). Binning collapses in 896-D as
+   `N ≫ (#bins)^D` predicts.
 
 The paper's central empirical claim is narrow and falsifiable:
 **a frozen mux with hard transducer gating is the minimal
@@ -117,15 +130,25 @@ Section 2 defines the five `WorldSimulator` implementations and the architecture
 
 5 × `SensoryWML` (one per modality) share the same mux via an `object.__setattr__` bypass that prevents `nn.Module` double-registration while preserving gradient flow. Lesions are applied through `CrossModalNerve.on_lesion` ; Phase 2 training runs with a θ-replay FIFO buffer (see `src/bouba_sens/loop.py`).
 
-### 2.3 The five worlds
+### 2.3 The worlds
 
-| World | Latent structure | Temporal? | Source |
+Five synthetic/surrogate worlds plus two real bridges with **opposite
+real/synthetic modality splits**. Channel provenance is labelled
+REAL / PROXY / SYNTHETIC per modality — never blurred.
+
+| World | Latent structure | Temporal? | Source / per-channel provenance |
 |-------|------------------|-----------|--------|
 | Gaussian | Orthogonal PSK projection of 32-dim N(0, I) | No | Synthetic |
 | XOR | Non-linearly-separable 4-class | No | Synthetic |
 | Sinusoid | Circular manifold | No | Synthetic |
 | Studyforrest mock | AR(1) scene-latent surrogate | **Yes** | Synthetic with bio-plausible stats |
 | MIT-BIH ECG | 1-sec-window spectrograms of real ECG | **Yes** | `scipy/dataset-ecg`, CC0, 5 min at 360 Hz |
+| **Studyforrest real bridge** | OpenNeuro ds000113 | **Yes** | force/gravity/tactile/labels = **REAL** ds000113 signal; audio/vision = annotation **PROXY** (copyrighted soundtrack/film absent from OpenNeuro). See §5.4 / §6.3.1(d). |
+| **CC-film bridge** | Big Buck Bunny (CC-BY 3.0) | **Yes** | audio (log-mel) / vision (frames) / labels (shot-cuts) = **REAL** perceptual signal; tactile/gravity/force = **SYNTHETIC** (a film has no proprioception). See §6.3.1(e). |
+
+The two real bridges carry the true signal on **opposite halves** of the
+modality set, so any verdict that holds on both is robust to which
+modalities are genuine — this is exploited for the B-2 null in §6.3.1.
 
 ### 2.4 The six-metric world-complexity audit
 
@@ -954,6 +977,7 @@ pre-registration protocol, not a weakness to be papered over.
       real bridge (ADR-0007 declared scope limit).
 - [ ] nerve-wml#5 per-modality transducer-gating schedules
       (finer-grained than the global schedule tested in §14c).
-- [ ] Higher-dim Me3 probe (skip the 1-D mean-pool, keep
-      `(B, d_fused)`) if Sprint 17 shows MINE benefits from richer
-      input shape.
+- [x] Higher-dim Me3 probe (skip the 1-D mean-pool, keep
+      `(B, d_fused)`) — **DONE (ADR-0019, §6.3.1)**: Me3 sonde made
+      configurable with full `(B, 896)` default; full-probe MINE
+      surfaces no positive B-2, verdict stays Null.

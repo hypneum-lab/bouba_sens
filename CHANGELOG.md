@@ -7,7 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Configurable Me3 probe — full representation `(B, 896)` default**
+  (`src/bouba_sens/loop.py`, `src/bouba_sens/metrics/mi_migration.py`).
+  The Me3 sonde pooling is now configurable; the default is the full
+  fused representation instead of the 1-D mean-pool. The old 1-D
+  mean-pool **pinned MINE to exactly 0.000 on every seed** — a
+  probe-shape artefact (the Donsker-Varadhan critic floors on a scalar
+  probe), **not** a genuine two-estimator agreement. `mi_migration` now
+  handles multi-D codes for MINE/Kraskov.
+- **Two real bridges with honestly-labelled per-channel provenance.**
+  - **Studyforrest real bridge** (`scripts/fetch_studyforrest_sample.py
+    --source openneuro`, `StudyforrestRealWorld` mode `real5`): real
+    **OpenNeuro ds000113** source over the public S3 REST API (the dead
+    phase-1 `studyforrest.org` URL is retired). **force / gravity /
+    tactile / labels = REAL** ds000113 signal; **audio / vision =
+    annotation PROXIES** (the copyrighted soundtrack/film are absent from
+    OpenNeuro — labelled as proxies, never "real movie vision").
+  - **CC-film bridge** (`scripts/extract_ccfilm_features.py`,
+    `CCFilmWorld` mode `real_av`, `src/bouba_sens/world/ccfilm.py`):
+    Big Buck Bunny (Blender Foundation 2008, **CC-BY 3.0**). **audio
+    (128-D log-mel) / vision (16×16 frame patches) / labels (shot-cuts)
+    = REAL** perceptual signal; **tactile / gravity / force = SYNTHETIC**
+    (a film has no proprioception). `cli._build_world` wiring +
+    `tests/unit/test_ccfilm_world.py`.
+  - The two bridges carry the real signal on **opposite halves** of the
+    modality set.
+
 ### Methodology
+
+- **B-2 re-estimated and confirmed Null (ADR-0019).** Closes
+  EXPERIMENT-BACKLOG E1 + E2. The Me3 probe has ambient dimension 896 but
+  **effective dimension D ≈ 12** (participation ratio 11.7 / two-NN 12.4,
+  agreeing across 5 seeds). The under-derived "probe batch ≥128"
+  heuristic is replaced by the estimator-aware bound **N ≳ f(D)** (MI
+  sample complexity scales with intrinsic, not ambient, dimension).
+  Re-estimating B-2 = MI_post − MI_pre with **MINE on the full 896-D
+  probe** (the v0.2 "richer probe rescues B-2" hypothesis) surfaces **no
+  positive signal**; Kraskov and adaptive binning bracket zero, and
+  binning **collapses in 896-D** exactly as the `N ≫ (#bins)^D` argument
+  predicts. **No estimator crosses the +0.10 threshold on any seed**, on
+  the gaussian reference **and on both real bridges** (Studyforrest +
+  CC-film) — the null is robust to which half of the modalities is real.
+  Verdict **B-2 Null confirmed/renforced**, not overturned. Artefacts:
+  `reports/e1_b2_dimensional_mine_studyforrest.json`,
+  `reports/e1_b2_dimensional_mine_ccfilm.json`,
+  `scripts/spikes/e1_b2_dimensional_mine.py`,
+  `scripts/spikes/e1_b2_full_sonde.py`. Paper draft §2.3 / §6.3.1(a–e)
+  and the abstract are aligned to the per-channel REAL/PROXY/SYNTHETIC
+  provenance.
 
 - N8/N9-Q3+ 10-seed verdict `Retract` **FINAL** (2026-05-11) : the
   §5.5 single-seed non-monotone B-1 peak at LOCK_AFTER=100
