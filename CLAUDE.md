@@ -96,5 +96,5 @@ uv run python -m bouba_sens.cli --help
 
 ## Closest CLAUDE.md wins
 
-Nested `src/bouba_sens/CLAUDE.md` and `tests/CLAUDE.md` exist and
+Nested `src/CLAUDE.md` and `tests/CLAUDE.md` exist and
 take precedence inside their subtrees.
