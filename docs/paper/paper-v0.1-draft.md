@@ -34,7 +34,7 @@ which half of the modality set is real. Thresholds
 `10.17605/OSF.IO/Q6JYN` before the evaluation campaign.
 
 Across 9 grids (150 cells each, 5 seeds × 5 modalities × 2
-timings × 3 SNRs) and 18 ADRs, we report:
+timings × 3 SNRs) and 19 ADRs, we report:
 
 1. **B-3 raw magnitude tracks per-modality entropy, not
    partition structure** (revised 2026-04-24 per ADR-0014 + 0015).
@@ -53,13 +53,12 @@ timings × 3 SNRs) and 18 ADRs, we report:
    a per-modality entropy proxy (controlled numerical sweep
    confirms B-3 ∝ noise scale at fixed k=5 ; B-3 is approximately
    constant when entropy is fixed and only k varies).
-2. **B-1 is qualitatively reproduced in exactly one
-   configuration.** `constellation_lock_after=100` with a
-   hard-binary transducer gate yields median Me7 = +0.0125
-   (25 % of threshold), seed-stable at 3+/5 seeds. Every
-   compound attempted since (soft Gumbel gating, finer tau
-   scans, codebook freeze, phase-transition schedule) preserved,
-   weakened, or destroyed this peak — never amplified it.
+2. **B-1 does not survive multi-seed validation (ADR-0019 FINAL
+   Retract).** The single-seed +0.0125 peak (Sprint 10) inverts to
+   −0.0250 on the canonical seed; 10-seed sign-test p=0.62 (chance);
+   pre-registered subgroup replication on N=10 new seeds fails at
+   Bonferroni α=0.025. B-1 is below the noise floor of this benchmark
+   (see §5.5 for the full retraction).
 3. **B-2 does not exceed threshold under any configuration —
    Null confirmed/renforced (ADR-0019).** The earlier "bimodal
    positive B-2" claim (ADR-0016) is **retracted** after per-seed
@@ -394,41 +393,28 @@ the magnitude itself is reproducible and stable across
 plasticity controls ; the partition reading of B-3 is
 separately retracted in §4.4 + §4.5).
 
-### 5.5 Dose-response LOCK_AFTER scan — Amedi peak (ADR-0013)
+### 5.5 Dose-response LOCK_AFTER scan — retraction (ADR-0013, ADR-0019)
 
-A 5-point scan over `LOCK_AFTER ∈ {50, 100, 200, 400, 800}` on
-the 4.5-modal real biological bridge (5 × 150 cells on Studio)
-reveals a **non-monotone B-1 peak at LOCK_AFTER=100** (50 % of
-STEPS_TRAIN):
+The B-1 dose-response curve was tested across 20 seeds × 5
+`LOCK_AFTER` × 5 modalities × 3 SNR conditions (1500 cells × 5
+LOCK = 7500 cells total, see Appendix C). The non-monotone
+signature originally reported in a single-seed run (v0.5.0 §5.5)
+**does not robustly reproduce**: pooled across 150 measurements per
+`LOCK_AFTER`, the quadratic concavity test fails to reject the null
+(p=0.19).
 
-| LOCK_AFTER | B-1 Me7 | B-2 Me3_delta | B-3 Me6 |
-|-----------:|--------:|--------------:|--------:|
-| 50 | +0.0062 | -0.0044 | 0.109 |
-| **100** | **+0.0125 (peak)** | -0.0190 | 0.109 |
-| 200 | 0.0000 | -0.0069 | 0.102 |
-| 400 | 0.0000 | -0.0063 | 0.109 |
-| 800 | 0.0000 | +0.0009 | 0.094 |
-| ∞ (no-lock) | 0.0000 | -0.0376 | 0.102 |
-
-![Amedi recovery curve](../../reports/v0.5_amedi_curve.png)
-
-The peak magnitude (+0.0125) stays below the pre-registered
-0.05 threshold but exceeds every B-1 value recorded across the
-4 synthetic-cluster worlds. This is the first non-monotone
-dose-response signature in the benchmark: fire the lock too
-early (LOCK_AFTER=50) and T1 has not accumulated enough
-plasticity advantage; fire it too late (>= 200) and the T2 mux
-has already converged, erasing the differential. The shape
-matches the critical-period window predicted by Amedi 2007,
-in a regime the synthetic worlds cannot reach.
-
-B-3 magnitude remains lock-invariant across the full scan
-(4.7×-5.4× threshold), confirming the **manipulation-invariance**
-reading — B-3's *value* is robust to lock parameterisation,
-distinct from the partition reading retracted in §4.4 / §4.5.
-B-2 reaches its most-negative value at the same LOCK_AFTER=100
-peak, strengthening the "temporal-proximity interference"
-reading of §5.4.
+Pre-registered subgroup replication of 2 candidate modalities
+(tactile+floor SNR and force+plus10 SNR) on N=10 new seeds also
+fails to reach Bonferroni-corrected significance (α=0.025):
+tactile+floor produces c=+2.14e-6 (sign inverted, p=0.595),
+force+plus10 produces c=-1.11e-5 (direction preserved but p=0.129).
+We retract the original single-seed claim and report this as a
+methodological lesson on multi-seed validation discipline (see
+ADR-0019). The dose-response signal, if present, is below the
+noise floor of this benchmark and would require substantial
+methodological refinement (different metric, finer `LOCK_AFTER`
+resolution, or N≥30 per subgroup with α=0.0033 to control for the
+15-subgroup family-wise error rate) to characterise.
 
 ### 5.6 Compound critical-period (Sprint 11, ADR-0014)
 
