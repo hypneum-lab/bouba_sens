@@ -56,10 +56,10 @@ running sweep may add back.
 | Axis | Status |
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
-| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation in flight |
+| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
-| **TMLR submission** | **BLOCKED** until §5.5 reformulation lands |
-| **N12 subgroup replication** | **RUNNING** (kx6tm-23, ~07:30 ETA) |
+| **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
+| **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
 Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
 ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg
@@ -69,10 +69,11 @@ locked. Honest scope ; no overselling.
 
 ## Status
 
-**v0.5.5 (2026-04-23) — Paper v0.1 submit-ready.** Sprints 0–17
-closed, 14 ADRs (0004–0017), 185+ tests. 9 grids (150 cells each)
-on the 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds
-synthetic.
+**v0.5.9 — Paper v0.1 draft (TMLR submission blocked; see
+2026-05-11 update above).** Sprints 0–17 closed, 19 ADRs
+(0004–0019), 185+ tests. 9 grids (150 cells each) on the
+4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
+§5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
 - OSF registration : `10.17605/OSF.IO/Q6JYN`, amendment v0.6
@@ -100,15 +101,14 @@ B-3 is anchored as the empirical foundation of
 (ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
 never B-1.
 
-**F2 — B-1 is qualitatively reproduced in exactly one
-configuration.** On the 4.5-modal real biological bridge,
-`constellation_lock_after=100` with a hard-binary transducer gate
-produces a seed-stable +0.0125 Me7 (Sprint 10 peak, ADR-0013).
-Every compound attempted since has preserved, weakened, or
-destroyed this peak — *never* amplified it. The paper's central
-empirical claim is this narrow : a frozen mux with hard
-transducer gating is the *minimal* configuration that
-qualitatively reproduces the Amedi T1/T2 asymmetry.
+**F2 — B-1 does not survive multi-seed validation (ADR-0019
+FINAL Retract).** The single-seed +0.0125 peak (Sprint 10,
+ADR-0013) inverts to −0.0250 on the canonical seed; 10-seed
+sign-test p=0.62 (chance); N12 pre-registered subgroup
+replication LOST 0/2 at Bonferroni α=0.025. B-1 is below the
+noise floor. The Sprint 10 single-seed result is a methodological
+lesson on multi-seed validation discipline, not a reproducible
+finding (see §5.5 retraction and ADR-0019).
 
 **F3 — B-2 is below threshold, Null confirmed/renforced (ADR-0019).**
 The earlier "bimodal positive B-2 at tau=0.30" claim (ADR-0016) was
