@@ -56,10 +56,10 @@ running sweep may add back.
 | Axis | Status |
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
-| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation in flight |
+| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
-| **TMLR submission** | **BLOCKED** until §5.5 reformulation lands |
-| **N12 subgroup replication** | **RUNNING** (kx6tm-23, ~07:30 ETA) |
+| **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
+| **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
 Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
 ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg

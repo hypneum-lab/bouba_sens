@@ -23,11 +23,12 @@ amendment v0.6):
 - **HEAD ≈ v0.5.9**, ~156 commits, 19 ADRs (0004–0019), 185+ tests.
 - **B-3 PASS** at 5–6× threshold (architectural invariant; anchors
   `dream-of-kiki` Stratum 4).
-- **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — TMLR
-  submission **BLOCKED** until §5.5 is reformulated.
+- **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation
+  now **landed in the manuscript**; TMLR submission still **BLOCKED**
+  by remaining gates (critic-review + N≥30 confirmatory decision).
 - **B-2 Null** (Kraskov + MINE agree within 0.1 bit).
-- **N12 subgroup replication** running (kx6tm-23, tactile-floor /
-  force-plus10) — picks reformulation draft A/B/C.
+- **N12 subgroup replication** DONE — **LOST 0/2** at Bonferroni
+  α=0.025 (ADR-0019); reformulation = full retract (landed).
 - Earlier landmarks: Sprints 0–10 closed 2026-04-21 (v0.5.0-final),
   Amedi dose-response curve (B-1 peak @ LOCK_AFTER=100), nerve-wml
   v1.5.3 methodology bootstrap CI, paper §5.5 populated (now under
