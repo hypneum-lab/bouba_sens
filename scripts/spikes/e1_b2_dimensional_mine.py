@@ -79,8 +79,14 @@ def _full_fused(loop, probe):
     return fused.flatten(1).detach().cpu()  # (B, d_fused)
 
 
-def capture_probe(world_name: str, seed: int, lock_after: int,
-                  steps_train: int, steps_lesion: int, batch_size: int):
+def capture_probe(
+    world_name: str,
+    seed: int,
+    lock_after: int,
+    steps_train: int,
+    steps_lesion: int,
+    batch_size: int,
+):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
     Mirrors AdaptationLoop.lesion_phase exactly, except the probe is kept
@@ -94,7 +100,9 @@ def capture_probe(world_name: str, seed: int, lock_after: int,
     labels = probe.label.detach().cpu()
 
     lesion = LesionSpec(
-        modality="audio", mode="M2", timing="T1",
+        modality="audio",
+        mode="M2",
+        timing="T1",
         schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=steps_lesion),
     )
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=batch_size, seed=seed)
@@ -118,8 +126,6 @@ def participation_ratio(x: np.ndarray) -> float:
 
 def twonn_intrinsic_dim(x: np.ndarray, seed: int = 0) -> float:
     """Two-NN intrinsic-dimension estimator (Facco et al. 2017)."""
-    rng = np.random.default_rng(seed)
-    n = x.shape[0]
     # pairwise distances
     d2 = np.sum(x * x, 1)[:, None] + np.sum(x * x, 1)[None, :] - 2 * x @ x.T
     np.fill_diagonal(d2, np.inf)
@@ -128,7 +134,7 @@ def twonn_intrinsic_dim(x: np.ndarray, seed: int = 0) -> float:
     dist.sort(axis=1)
     r1, r2 = dist[:, 0], dist[:, 1]
     mask = (r1 > 1e-12) & (r2 > r1)
-    mu = (r2[mask] / r1[mask])
+    mu = r2[mask] / r1[mask]
     mu = mu[np.isfinite(mu) & (mu > 1)]
     if mu.size < 5:
         return float("nan")
@@ -156,7 +162,7 @@ def mi_binning_bits(x: np.ndarray, y: np.ndarray, n_bins: int) -> float:
     xb = np.clip(np.digitize(x, qs[1:-1]), 0, qs.size - 2)
     yb = y.astype(int)
     joint = np.zeros((xb.max() + 1, yb.max() + 1))
-    for xi, yi in zip(xb, yb):
+    for xi, yi in zip(xb, yb, strict=False):
         joint[xi, yi] += 1
     joint /= joint.sum()
     px = joint.sum(1, keepdims=True)
@@ -173,33 +179,38 @@ def main() -> None:
     ap.add_argument("--lock-after", type=int, default=100)
     ap.add_argument("--steps-train", type=int, default=200)
     ap.add_argument("--steps-lesion", type=int, default=100)
-    ap.add_argument("--batch-size", type=int, default=512,
-                    help="probe batch N (E2 sets this from f(D))")
+    ap.add_argument(
+        "--batch-size", type=int, default=512, help="probe batch N (E2 sets this from f(D))"
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
-    ap.add_argument("--out", type=Path,
-                    default=Path("reports/e1_b2_dimensional_mine.json"))
+    ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
     args = ap.parse_args()
 
     from nerve_wml.methodology import mi_kraskov_ksg_continuous
+
     from bouba_sens.metrics.mi_migration import me3_mi_mine
 
     rng = np.random.default_rng(0)
     per_seed = []
-    D_pr_list, D_2nn_list = [], []
+    d_pr_list, d_2nn_list = [], []
 
     for seed in range(args.seeds):
         pre, post, labels = capture_probe(
-            args.world, seed, args.lock_after,
-            args.steps_train, args.steps_lesion, args.batch_size,
+            args.world,
+            seed,
+            args.lock_after,
+            args.steps_train,
+            args.steps_lesion,
+            args.batch_size,
         )
-        N, d_fused = pre.shape
+        n_samples, d_fused = pre.shape
 
         # --- E1.1 dimensionality of the Me3 probe representation ---
-        D_pr = participation_ratio(post)
-        D_2nn = twonn_intrinsic_dim(post, seed=seed)
-        D_pr_list.append(D_pr)
-        if math.isfinite(D_2nn):
-            D_2nn_list.append(D_2nn)
+        d_pr = participation_ratio(post)
+        d_2nn = twonn_intrinsic_dim(post, seed=seed)
+        d_pr_list.append(d_pr)
+        if math.isfinite(d_2nn):
+            d_2nn_list.append(d_2nn)
 
         # --- B-2 = MI(post) - MI(pre) with three estimators ---
         x_pre, x_post = me3_scalar(pre), me3_scalar(post)
@@ -212,57 +223,68 @@ def main() -> None:
         kras_delta = k_post - k_pre
 
         # Adaptive binning plug-in (sqrt(N) bins, Rice-like).
-        n_bins = max(2, int(round(math.sqrt(N))))
+        n_bins = max(2, round(math.sqrt(n_samples)))
         b_pre = mi_binning_bits(x_pre, labels, n_bins)
         b_post = mi_binning_bits(x_post, labels, n_bins)
         bin_delta = b_post - b_pre
 
         # MINE on the 1-D scalar (matches the repo / sprint17 probe shape).
-        m_pre = me3_mi_mine(x_pre.reshape(-1, 1), labels.reshape(-1, 1),
-                            batch_size=min(256, N))
-        m_post = me3_mi_mine(x_post.reshape(-1, 1), labels.reshape(-1, 1),
-                             batch_size=min(256, N))
+        m_pre = me3_mi_mine(
+            x_pre.reshape(-1, 1), labels.reshape(-1, 1), batch_size=min(256, n_samples)
+        )
+        m_post = me3_mi_mine(
+            x_post.reshape(-1, 1), labels.reshape(-1, 1), batch_size=min(256, n_samples)
+        )
         mine_delta = m_post - m_pre
 
         # MINE on the FULL (N, d_fused) representation — the dimensionally
         # honest probe the backlog asks for (not mean-pooled).
-        mf_pre = me3_mi_mine(pre, labels.reshape(-1, 1), batch_size=min(256, N))
-        mf_post = me3_mi_mine(post, labels.reshape(-1, 1), batch_size=min(256, N))
+        mf_pre = me3_mi_mine(pre, labels.reshape(-1, 1), batch_size=min(256, n_samples))
+        mf_post = me3_mi_mine(post, labels.reshape(-1, 1), batch_size=min(256, n_samples))
         mine_full_delta = mf_post - mf_pre
 
-        per_seed.append({
-            "seed": seed, "N": N, "d_fused": d_fused,
-            "D_participation_ratio": D_pr, "D_twoNN": D_2nn,
-            "kraskov_delta_bits": kras_delta,
-            "binning_delta_bits": bin_delta,
-            "mine_1d_delta_bits": mine_delta,
-            "mine_full_delta_bits": mine_full_delta,
-            "kraskov_pre": k_pre, "kraskov_post": k_post,
-            "mine_full_pre": mf_pre, "mine_full_post": mf_post,
-        })
-        print(f"seed={seed} N={N} d_fused={d_fused} "
-              f"D_PR={D_pr:.2f} D_2NN={D_2nn:.2f} | "
-              f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
-              f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}",
-              flush=True)
+        per_seed.append(
+            {
+                "seed": seed,
+                "N": n_samples,
+                "d_fused": d_fused,
+                "D_participation_ratio": d_pr,
+                "D_twoNN": d_2nn,
+                "kraskov_delta_bits": kras_delta,
+                "binning_delta_bits": bin_delta,
+                "mine_1d_delta_bits": mine_delta,
+                "mine_full_delta_bits": mine_full_delta,
+                "kraskov_pre": k_pre,
+                "kraskov_post": k_post,
+                "mine_full_pre": mf_pre,
+                "mine_full_post": mf_post,
+            }
+        )
+        print(
+            f"seed={seed} N={n_samples} d_fused={d_fused} "
+            f"D_PR={d_pr:.2f} D_2NN={d_2nn:.2f} | "
+            f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
+            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}",
+            flush=True,
+        )
 
     def ci(vals):
         a = np.array([v for v in vals if v is not None and math.isfinite(v)], float)
         if a.size == 0:
             return {"mean": None, "ci95": [None, None], "n": 0}
-        boot = np.array([rng.choice(a, a.size, replace=True).mean()
-                         for _ in range(args.bootstrap)])
-        return {"mean": float(a.mean()),
-                "ci95": [float(np.percentile(boot, 2.5)),
-                         float(np.percentile(boot, 97.5))],
-                "n": int(a.size)}
+        boot = np.array([rng.choice(a, a.size, replace=True).mean() for _ in range(args.bootstrap)])
+        return {
+            "mean": float(a.mean()),
+            "ci95": [float(np.percentile(boot, 2.5)), float(np.percentile(boot, 97.5))],
+            "n": int(a.size),
+        }
 
     summary = {
         "world": args.world,
         "lock_after": args.lock_after,
         "seeds": args.seeds,
-        "D_participation_ratio_mean": float(np.mean(D_pr_list)),
-        "D_twoNN_mean": (float(np.mean(D_2nn_list)) if D_2nn_list else None),
+        "D_participation_ratio_mean": float(np.mean(d_pr_list)),
+        "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
         "binning_delta": ci([s["binning_delta_bits"] for s in per_seed]),
         "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in per_seed]),
