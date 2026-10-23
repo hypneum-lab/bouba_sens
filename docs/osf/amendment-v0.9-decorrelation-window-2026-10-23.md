@@ -96,32 +96,43 @@ Outside the window, all arms are identical (same seeds, same batches).
 
 ### 3.3 Manipulation check (pre-registered, gates the experiment)
 
-On each pilot seed, a check sample of 512 rows is drawn as 32 contiguous
-windows of 16 (`world.sample(16, seed = s + 3·10⁶ + r)`, r = 0…31), to
-cover several labels. For each of the 10 modality pairs (a, b), with
-features flattened:
+The gate compares the two resampled arms under **matched resampling**,
+so that temporal structure, effective sample size and the donor scheme
+are identical and only the cross-modal pairing differs.
 
-- **Within-class linear CKA.** For each class c with n_c ≥ 10 rows,
-  column-centre X_a and X_b within the class and compute
+- **Check sample.** On each pilot seed, 512 anchor rows are drawn as 32
+  contiguous windows of 16 (`world.sample(16, seed = s + 3·10⁶ + r)`,
+  r = 0…31), to cover several labels.
+- **Draws.** For b = 1…200, the donor rule of §3.1 is applied to the
+  anchors with generator seed 10⁹ + 7·10⁸ + 1000 · s + b, producing one
+  joint-arm sample (one donor per anchor, all modalities) and one
+  decor-arm sample (independent donors per modality, the audio donor
+  shared with the joint sample), exactly as in training.
+- **Within-class linear CKA.** For each of the 10 modality pairs (a, b),
+  features flattened, and each class c with n_c ≥ 10 rows: column-centre
+  X_a and X_b within the class and compute
   CKA = ‖X_bᵀ X_a‖²_F / (‖X_aᵀ X_a‖_F · ‖X_bᵀ X_b‖_F) (linear kernel,
   biased HSIC estimator). A (pair, class) with a zero denominator (a
   modality constant within the class) is skipped. The pair value is the
-  n_c-weighted mean over the remaining classes; the check statistic
-  K is the mean over pairs with a value. If no (pair, class) is valid,
+  n_c-weighted mean over the remaining classes; the statistic K is the
+  mean over pairs with a value. If no (pair, class) is valid in a draw,
   the check fails.
-- **Shuffled null.** K is recomputed after applying the decor donor rule
-  of §3.1–3.2 to the check sample, with B = 200 independent generator
-  seeds (10⁹ + 7·10⁸ + 1000 · s + b). Finite-sample CKA is positive
-  even under conditional independence; this null calibrates that floor.
-- **Gate.** Average K over the 5 pilot seeds for the clean sample
-  (K_clean) and, draw by draw, for the null (K_null, 200 values). The
-  experiment is informative only if K_clean exceeds the 95th percentile
-  of K_null. Otherwise the world has no detectable within-class
-  cross-modal dependence to remove, the manipulation is a near no-op,
-  and the experiment is reported as *uninformative in this world* with
-  no verdict.
-- Reported (no decision): the excess K_clean − mean(K_null), and K for
-  the joint arm (expected ≈ K_clean).
+- **Gate statistic.** Δ_K = mean over pilot seeds and draws of
+  (K_joint − K_decor).
+- **Null calibration.** Under the null of no within-class cross-modal
+  dependence, joint and decor draws are exchangeable within a seed. The
+  null distribution of Δ_K is obtained by swapping the joint/decor
+  labels independently within each (seed, draw) pair, 10 000 times
+  (generator seed 20261023). The gate passes if the one-sided
+  permutation p-value of the observed Δ_K is < 0.05.
+- **Failure.** The world has no detectable within-class cross-modal
+  dependence under the resampling scheme, the manipulation is a
+  near no-op, and the experiment is reported as *uninformative in this
+  world* with no verdict.
+- Reported (no decision): Δ_K with its permutation p-value, the mean
+  K_joint and K_decor, and the CKA of the original contiguous anchors
+  (which differs from both in temporal structure and is not used for
+  the gate).
 
 ### 3.4 Outcome: fusion gain and deficit
 
@@ -163,24 +174,26 @@ with their cross-modal pairing intact.
 - Per seed: 15 main-grid runs, 2 persistence runs, 6 additional
   fixed-budget runs (o = 50, 100, 150 × decor, joint): 23 Phase-1 runs.
 
-**What the two grids separate.** In the main grid, onset is crossed with
-a fixed recovery, but total training (250 → 450 steps) and clean
-exposure (200 → 400 steps) grow with onset. In the fixed-budget grid,
-total training is constant but the recovery shrinks with onset, which
-biases the deficit *upward* at late onsets, i.e. **against** a
-decreasing trend. A decreasing trend in both grids is therefore not
-explained by training budget. A trend in the main grid only is reported
-as an onset effect under fixed post-window recovery whose separation
-from training budget is unresolved.
+**What the two grids do and do not separate.** In the main grid,
+onset is crossed with a fixed recovery, but total training (250 → 450
+steps) and clean exposure (200 → 400 steps) grow with onset. In the
+fixed-budget grid, total training is constant, but the recovery shrinks
+with onset (400 → 200), so onset remains coupled to recovery duration.
+Neither grid identifies the separate effects of onset, budget and
+recovery. If recovery reduced the deficit monotonically, a shorter
+recovery at late onsets would work against a decreasing trend, but that
+is an untested assumption, not a design property. The fixed-budget grid
+is therefore reported only as a **replication at fixed total training
+budget**, with the remaining recovery confound stated.
 
 ## 5. Hypotheses and tests
 
 | Id | Statement | Test | Status |
 |----|-----------|------|--------|
 | **D-1** | Early decorrelation reduces fusion gain: mean D(s, 0) > 0 (main grid) | one-sample t, one-sided, α = 0.05; equivalently L > 0 for the 90 % CI | confirmatory, step 1 |
-| **D-2** | The deficit decreases with onset (main grid, 5 onsets) | Page test, decreasing, within-block permutation (§6), α = 0.05 | confirmatory, step 2 (tested only if D-1 rejects) |
+| **D-2** | The deficit shows a decreasing ordered trend over onset (main grid, 5 onsets) | Page test, decreasing, within-block permutation (§6), α = 0.05 | confirmatory, step 2 (tested only if D-1 rejects) |
 | D-M | Magnitude of D(s, 0) relative to SESOI 0.05 | classification of the 90 % CI (§6) | confirmatory estimation statement |
-| D-2b | The deficit decreases with onset at fixed budget T = 450 | as D-2 | secondary, gated (§6) |
+| D-2b | The same decreasing ordered trend at fixed budget T = 450 | as D-2 | secondary, gated (§6) |
 | D-3 | Persistence: mean D(s, 0) at R = 400 > 0 | one-sample t, one-sided | secondary, gated (§6) |
 | D-4 | Effect on later lesion: after a standard T2 lesion phase (100 steps, floor SNR, each modality) applied to the o = 0, R = 200 decor and joint runs, the post-lesion Me1 differs | descriptive | exploratory |
 | D-5 | Representation geometry: S between decor and joint end-of-Phase-1 codes (v0.8 metric, k = 12) | descriptive | exploratory |
@@ -206,7 +219,14 @@ seed 20261023, p = (1 + #{L_perm ≥ L_obs}) / (1 + 100 000)
 (`page_perm_pvalue` in `scripts/power_prereg_2026_10.py`, applied to
 D[:, ::-1]). D takes values on a grid of 1/512, so ties are possible;
 mid-ranks handle them. Asymptotic and exact p-values are reported
-alongside; the permutation p decides.
+alongside; the permutation p decides. Validity rests on within-seed
+exchangeability of the 5 onset values under the null and on
+independent seeds. A significant L shows that earlier onsets tend to
+have larger within-seed ranks of D; it does not show that every
+adjacent step decreases. Claims say "decreasing ordered trend", never
+"monotone". The median over seeds of each adjacent difference
+D(s, o_{j+1}) − D(s, o_j), with 90 % bootstrap CIs, is reported to
+describe the shape (no decision).
 
 The verdict is reported on **three separate axes**. Each axis has
 mutually exclusive labels, and the paper sentence is the combination of
@@ -234,8 +254,9 @@ of mean D(s, 0):
 
 **Axis C — timing (D-2, only if A+).**
 
-- C+ "timing dependence detected: the deficit decreases with onset
-  (onset effect under fixed post-window recovery)": D-2 p < 0.05.
+- C+ "timing dependence detected: a decreasing ordered trend of the
+  deficit over onset (onset effect under fixed post-window recovery)":
+  D-2 p < 0.05.
 - C0 "timing dependence was not demonstrated": D-2 p ≥ 0.05. This does
   not establish that the deficit is independent of timing.
 - C– "not tested": A0 or A−.
@@ -246,9 +267,9 @@ The mirrored (increasing) Page test is reported as exploratory.
 
 | A | B | C | Paper statement |
 |---|---|---|-----------------|
-| A+ | B≥ | C+ | "Early decorrelation reduced fusion gain by at least the SESOI, and the deficit decreased with onset: a pre-registered onset effect under fixed post-window recovery." |
+| A+ | B≥ | C+ | "Early decorrelation reduced fusion gain by at least the SESOI, and the deficit showed a decreasing ordered trend over onset: a pre-registered onset effect under fixed post-window recovery." |
 | A+ | B? | C+ | Same, with "by an amount whose size relative to the SESOI is unresolved". |
-| A+ | B≈ | C+ | "A detectable but practically negligible (< SESOI) deficit that decreased with onset." |
+| A+ | B≈ | C+ | "A detectable but practically negligible (< SESOI) deficit with a decreasing ordered trend over onset." |
 | A+ | any | C0 | "Early decorrelation reduced fusion gain [magnitude label]; timing dependence was not demonstrated." |
 | A0 | B≈ | C– | "No deficit of practical size: the onset-0 deficit is bounded within ±0.05 (informative null)." |
 | A0 | B? | C– | "Inconclusive: neither a deficit nor its absence is established at N." |
@@ -258,9 +279,11 @@ The mirrored (increasing) Page test is reported as exploratory.
 
 **Gated qualifiers (only if A+ and C+).** With Holm over {D-2b, D-3}:
 
-- D-2b rejects: "the decreasing trend also holds at fixed total
-  training budget, so it is not explained by training budget". Not
-  rejected: "separating onset from training budget is unresolved".
+- D-2b rejects: "the decreasing ordered trend replicates at fixed total
+  training budget; in that grid, onset remains coupled to recovery
+  duration, so the separate effects of onset, budget and recovery are
+  not identified". Not rejected: "the trend was not shown to replicate
+  at fixed total training budget".
 - D-3 rejects: "the deficit persists through the tested recovery horizon
   of 400 steps". Not rejected: "persistence beyond 200 recovery steps
   was not demonstrated". No claim of permanence beyond the tested
@@ -320,7 +343,7 @@ publishable.
   | 20 | linear | 0 | 0.075 | 0.99 | 0.56 | 0.00 |
   | 20 | any | any | 0.10 | ≥ 0.98 | 0.96–0.97 | 0.00 |
   | 30 | linear | 0 | 0.05 | 0.93 | 0.05 | 0.05 |
-  | 30 | early | 0 | 0.05 | 0.80 | 0.05 | 0.05 |
+  | 30 | early | 0 | 0.05 | 0.795 | 0.05 | 0.05 |
   | 30 | linear | 0 | 0.075 | 1.00 | 0.72 | 0.00 |
 
   Two consequences. First, B≥ can only be expected when the true
@@ -330,11 +353,24 @@ publishable.
   SESOI (the earlier draft) would have power 0.50 at a true deficit of
   0.05 whatever N. Second, the headline power depends strongly on
   the onset profile and ρ, which the pilot estimates.
-- **N.** N = 20 is the minimum. The drafted rule: the smallest N ≥ 20
-  giving ≥ 0.80 for P(A+ and C+) at μ₀ = 0.05 under the "early"
-  profile, with the pilot SD UCL80 and pilot ρ, capped at 40. The PI
-  fixes N on the OSF form; it is never lowered after the confirmatory
-  runs start.
+  These numbers are conditional on the simulation model (Gaussian
+  seed and residual effects, the two onset profiles); the pilot
+  replaces the planning values.
+- **N.** N = 20 is the minimum. Drafted rule, from the 5 pilot seeds
+  (decor vs joint, main grid): σ̂ = sample SD (ddof = 1) of the 25
+  pilot D values pooled after removing onset means, inflated to its
+  one-sided UCL80; ρ̂ = one-way ANOVA intraclass correlation of D across
+  onsets with seeds as groups, truncated to [0, 0.9]. N is the smallest
+  N ≥ 20 whose simulated P(A+ and C+) at μ₀ = 0.05 under the "early"
+  profile is ≥ 0.80, **unrounded**, with at least 100 000 draws per
+  candidate N (Monte-Carlo SE ≤ 0.0013). With the planning values
+  (σ = 0.0605, ρ = 0) this gives N = 31, not 30 (P = 0.795 at N = 30).
+  If no N ≤ 40 qualifies, the amendment is not filed as drafted: the PI
+  either files N = 40 with its computed power stated on the form as
+  below target, or redesigns (for example a larger SESOI justified
+  independently of the data, or a different window) before filing. The
+  PI fixes N on the OSF form; it is never lowered after the
+  confirmatory runs start.
 - **Fixed-N design.** There is no interim look at outcomes and no
   optional stopping. A technical failure (crash, non-finite accuracy,
   missing run) is replaced from the reserve in order, blind to the
@@ -368,12 +404,18 @@ publishable.
       §3.4), with unit tests (CKA = 1 for identical features, zero
       denominators skipped).
 - [ ] Manipulation check passed on pilot seeds and recorded on the form,
-      with K_clean, the null 95th percentile and the excess.
+      with Δ_K, its permutation p-value, K_joint and K_decor.
 - [ ] Pilot SD(D), ρ and runtime recorded; N fixed on the form.
 - [x] No threshold or existing-metric change.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
 
 ## 10. Open decisions (PI, before filing)
+
+Every item below must be resolved, and the text edited to a single
+protocol, before filing. This draft is not fileable while any item is
+open; the scheduler, the fusion-gain and CKA code, the pilot (including
+the manipulation check) and a regenerated power analysis for the final
+configuration are also filing prerequisites.
 
 1. Correspondence with Kleinman et al. (2023): confirm that within-class
    cross-modal resampling is an acceptable analogue of their
@@ -381,16 +423,18 @@ publishable.
    after reading the paper.
 2. Window width w = 50 and recovery R = 200 (drafted) vs a second width.
    Each added width multiplies compute.
-3. Fixed-budget grid: keep (drafted; 6 extra runs per seed) or drop. If
-   dropped, every positive claim is limited to "an onset effect under
-   fixed post-window recovery", with training budget not separated.
+3. Fixed-budget grid: keep (drafted; 6 extra runs per seed, reported as
+   a replication at fixed budget) or drop. Either way, every positive
+   claim is limited to "an onset effect under fixed post-window
+   recovery"; separate identification of onset, budget and recovery
+   effects would need a further design (e.g. a factorial over recovery
+   length), not drafted.
 4. Primary comparator: joint-resampling control (drafted) vs the plain
    control. With the plain control, the deficit also contains the
    effect of losing within-batch temporal contiguity, and the attribution
    must be narrowed to "resampling with decorrelation".
-5. Manipulation-check gate: the 95th percentile of the shuffled null
-   (drafted), optionally plus a minimum CKA excess fixed before the
-   pilot.
+5. Manipulation-check gate: the matched joint-vs-decor permutation test
+   (drafted), optionally plus a minimum Δ_K fixed before the pilot.
 6. Whether the onset grid should also include LOCK_AFTER regimes (a
    cross with v0.8). Not drafted, to keep the family small.
 7. Optional mitigation arm (cross-modal reconstruction objective, which

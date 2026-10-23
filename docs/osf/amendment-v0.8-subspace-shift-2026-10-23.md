@@ -20,13 +20,16 @@
 
 The amendment adds **one new outcome metric**, a representation
 subspace shift after late lesion, and **one new confirmatory
-hypothesis**: the shift increases monotonically with the
-critical-period lock time `LOCK_AFTER`. No existing threshold, metric or
+hypothesis**: the shift shows an increasing ordered trend with the
+critical-period lock time `LOCK_AFTER` (higher levels tend to have
+higher within-seed ranks). The test does not establish strict
+monotonicity (§6). No existing threshold, metric or
 verdict changes.
 
 This is **not** a rescue of the retracted §5.5 claim. §5.5 claimed a
 *peaked* (inverted-U) dose-response of the *performance* gap Me7. Here
-the outcome is a *geometric* quantity, the prediction is *monotone*,
+the outcome is a *geometric* quantity, the prediction is an
+*increasing ordered trend*, not a peak,
 and Me7 plays no role in the decision. The ADR-0019 retraction stands
 whatever the outcome.
 
@@ -48,8 +51,9 @@ when one modality is later lesioned.
 Two lessons from Q3/Q3+ shape the design:
 
 - A Jonckheere-type test was the wrong instrument for a peaked
-  hypothesis (critic v2, ADR-0019). Here the hypothesis is monotone by
-  construction, and the test is a repeated-measures monotone trend test.
+  hypothesis (critic v2, ADR-0019). Here the hypothesis is an
+  increasing ordered trend, and the test is a repeated-measures ordered
+  trend test.
 - A single seed was misleading. The design uses 20 seeds as blocks.
 
 The direction is derived by analogy: Sui et al. study parameter
@@ -152,9 +156,9 @@ filing (§10).
 
 | Id | Statement | Test |
 |----|-----------|------|
-| **S-1** (primary) | Y(s, ℓ) increases with ℓ | Page's L trend test, one-sided (increasing), blocks = seeds, 7 ordered treatments, α = 0.05 |
+| **S-1** (primary) | Y(s, ℓ) shows an increasing ordered trend in ℓ | Page's L trend test, one-sided (increasing), blocks = seeds, 7 ordered treatments, α = 0.05 |
 | S-2 (exploratory) | Lesion-specific reorganisation exists: mean over seeds of Ȳ(s) = mean_ℓ Y(s, ℓ) is > 0 | one-sample t-test, one-sided; nominal p, no decision |
-| S-3 (exploratory) | Per-seed monotone association | per-seed Spearman ρ(ℓ, Y); Wilcoxon signed-rank on ρ > 0, one-sided; nominal p, no decision |
+| S-3 (exploratory) | Per-seed rank association | per-seed Spearman ρ(ℓ, Y); Wilcoxon signed-rank on ρ > 0, one-sided; nominal p, no decision |
 | S-4 (exploratory) | ΔS tracks performance harm | Spearman between cell ΔS and the cell's T2 Me1 drop; no decision |
 | S-5 (exploratory) | Parameter-subspace rotation shows the same trend | same Page test on the secondary metric; no decision |
 
@@ -167,14 +171,33 @@ over complete blocks of the within-seed rank of Y(s, ℓ) among the 7
 levels, j(ℓ) = 1…7 in increasing ℓ, and ties get mid-ranks. The p-value
 is a **within-block permutation** test: the 7 ranks of each seed are
 permuted independently, 100 000 permutations, generator seed 20261023,
-p = (1 + #{L_perm ≥ L_obs}) / (1 + 100 000). This is exact up to Monte
-Carlo error and valid with ties. Reference implementation:
+p = (1 + #{L_perm ≥ L_obs}) / (1 + 100 000). Validity rests on the null
+hypothesis that, within each seed, the 7 values are exchangeable
+across levels (no level effect); seeds are independent blocks. Under
+that assumption the test is exact up to Monte Carlo error and valid with
+ties.
+
+*What a significant L shows.* A small p-value shows that higher levels
+tend to receive higher within-seed ranks. It does not show that every
+adjacent step increases: a profile rising over six levels and falling
+at the last can still give a very small p. Claims are therefore worded
+as an "increasing ordered trend", never as "monotone". To describe the
+shape, the paper reports (no decision) the median over seeds of each
+adjacent difference Y(s, ℓ_{j+1}) − Y(s, ℓ_j) with its 90 % bootstrap
+CI. Reference implementation:
 `page_perm_pvalue` in `scripts/power_prereg_2026_10.py`. The
 asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
 p-values are reported alongside; the permutation p-value decides.
 
 Sensitivity analyses (reported, no decision): k ∈ {6, 24}; SNR floor
 cells only; per lesioned modality.
+
+*Subspace stability (reported, no decision).* For every Z_pre and Z_post
+the eigengap ratio λ₁₂ / λ₁₃ of the centred covariance is reported. A
+ratio below 1.1 marks a top-12 subspace that is unstable to small
+perturbations; the share of such matrices is reported per level, and
+the S-1 test is repeated on blocks without them as a sensitivity
+analysis.
 
 ## 6. Decision criteria (pre-stated)
 
@@ -185,14 +208,18 @@ this order:
   verdict.
 - **Supported:** S-1 permutation p < 0.05 **and** the median over
   complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
-  over the complete blocks and all 7 levels (magnitude guard: the trend is larger than PCA
-  sampling noise). The guard is part of one conjunctive rule; the Page
-  p-value alone is not advertised as a separate finding.
+  over the complete blocks and all 7 levels. This is a **heuristic
+  magnitude threshold**, not a calibrated noise test: the half-sample
+  pre/pre distance is not the sampling distribution of the full-sample,
+  control-subtracted endpoint contrast. The guard is part of one
+  conjunctive rule; the Page p-value alone is not advertised as a
+  separate finding.
 - **Detectable but sub-floor:** S-1 p < 0.05, magnitude guard fails.
-  Reported as "a monotone trend was detected but its size does not
-  exceed the PCA sampling floor"; no substantive geometric claim.
-- **Not demonstrated:** S-1 p ≥ 0.05. Reported as "a monotone increase
-  of the subspace shift with LOCK_AFTER was not demonstrated at N"; this
+  Reported as "an increasing ordered trend was detected, but its
+  endpoint size does not exceed the heuristic half-sample threshold"; no
+  substantive geometric claim.
+- **Not demonstrated:** S-1 p ≥ 0.05. Reported as "an increasing
+  ordered trend of the subspace shift with LOCK_AFTER was not demonstrated at N"; this
   is not evidence that no trend exists.
 
 Independently of the verdict, the mirrored (decreasing) Page test is
@@ -201,7 +228,8 @@ an exploratory contrary trend; the confirmatory direction was
 increasing.
 
 Paper consequence: if Supported, the paper may state a pre-registered
-monotone geometric correlate of lock timing. It is a new result, not a
+increasing ordered trend of a geometric quantity with lock timing,
+above a heuristic magnitude threshold. It is a new result, not a
 B-1 rescue: §5.5 stays retracted and Me7 is not re-interpreted. All
 outcomes are publishable.
 
@@ -248,14 +276,27 @@ outcomes are publishable.
   | 30 | 0 | 1.0 SD | 1.00 | 0.99 | 0.94 | 0.51 | 0.000 |
   | 30 | 0.10 | 1.0 SD | 0.97 | 0.96 | 0.91 | 0.49 | 0.024 |
 
-  The guard dominates: when the median S_split is as large as the
-  expected endpoint difference, P(Supported) is about 0.5 whatever N.
-  The pilot therefore estimates both the within-seed SD of Y and the
-  ratio g. The drafted rule for N: the smallest N ≥ 20 whose
-  complete-rule power is ≥ 0.80 at a total trend equal to the pilot
-  median S_split plus 0.70 within-seed SD, with q set to the pilot rank
-  exclusion rate (at least 0.05), capped at 40. N is fixed on the OSF
-  form; it is never below 20.
+  These numbers are **conditional on the simulation model**: a linear
+  trend, Gaussian noise, a guard g treated as a fixed known constant,
+  and rank exclusions independent of the outcome and of ℓ. None of these
+  is verified. The guard dominates: when g is as large as the expected
+  endpoint difference, P(Supported) is about 0.5 whatever N. Exclusions
+  also cap the attainable power: with a per-block exclusion probability
+  of 0.20, the protocol-failure probability stays near 0.4 even at
+  N = 40, so 0.80 unconditional power is not reachable.
+
+  *Drafted rule for N.* From the 5 pilot seeds: σ̂ = pooled within-seed
+  SD of Y (residuals after removing seed and level means, ddof as in a
+  two-way ANOVA), inflated to its one-sided UCL80; ĝ = pilot median
+  S_split / σ̂; q̂ = fraction of pilot blocks that are incomplete,
+  floored at 0.05. N is the smallest N ≥ 20 whose simulated P(Supported)
+  is ≥ 0.80, **unrounded**, with at least 100 000 draws per candidate
+  (Monte-Carlo SE ≤ 0.0013), at a total trend of ĝ + 0.70 SD units.
+  If no N ≤ 40 qualifies (for example because q̂ is large), the
+  amendment is not filed as drafted: the PI either files N = 40 with its
+  computed power stated on the form as below target, or revises the
+  rank rule or k before filing. N is fixed on the OSF form; it is never
+  below 20.
 - **Fixed-N design.** There is no interim look at outcomes and no
   optional stopping. A technical failure (crash, non-finite codes,
   missing capture) is replaced from the reserve list in order, blind to
@@ -292,10 +333,15 @@ outcomes are publishable.
 - [ ] Pilot within-seed SD of Y, median S_split, rank-exclusion rate and
       runtime recorded on the form; N fixed on the form.
 - [x] No threshold or existing-metric change.
-- [x] Hypothesis is monotone; no peaked-shape test.
+- [x] Hypothesis is an increasing ordered trend; no peaked-shape test.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
 
 ## 10. Open decisions (PI, before filing)
+
+Every item below must be resolved, and the text edited to a single
+protocol, before filing. This draft is not fileable while any item is
+open; the metric code, the pilot and a regenerated power analysis for
+the final configuration are also filing prerequisites.
 
 1. Magnitude guard: median S_split (drafted) vs a fixed SESOI on ΔS
    chosen after the pilot. The guard sets the power of the complete

@@ -27,9 +27,11 @@ reported as a bounded statement about a precisely defined estimand:
 - B-1: "the population mean of the E-1 estimand (§3) lies inside
   ±0.05; equivalence at α = 0.05 by TOST, i.e. the 90 % two-sided CI
   lies inside the bounds";
-- B-2: "the population mean of the primary-estimator ΔMI (§3) lies
-  inside ±0.10 bit; equivalence at α = 0.05 by TOST, i.e. the 90 %
-  two-sided CI lies inside the bounds".
+- B-2: "the population mean of an operational statistic, the
+  primary-estimator ΔMI on the fused code (§3), lies inside ±0.10 bit;
+  equivalence at α = 0.05 by TOST, i.e. the 90 % two-sided CI lies
+  inside the bounds". This bounds the estimated statistic only, not the
+  true MI change and not the original surviving-channel B-2 invariant.
 
 The original tests ask whether the effect is *above* threshold. A failure
 to reject there ("below the noise floor", §5.5 FINAL) is absence of
@@ -75,13 +77,20 @@ SNR level: effects of opposite sign can cancel in the aggregate. The
 all-lock claim needs E-1b. No per-modality or floor-SNR claim is made
 (those values are reported descriptively, §6).
 
-**B-2 estimand.** For one seed, ΔMI = MI(Z_post; y) − MI(Z_pre; y) in
-bits, computed by the primary estimator of §4.2 on the full fused
-probe representation (512 × 896) of the configuration of §4.2. E-2
-bounds this *estimated* quantity. It is read as "no MI migration of
-≥ 0.10 bit" only because the estimator must first pass the
-known-signal sensitivity gate of §4.3; the claim is limited to that
-world, lesion and configuration.
+**B-2 estimand.** For one seed, ΔMI-hat = MI-hat(Z_post; y) −
+MI-hat(Z_pre; y) in bits, computed by the primary estimator of §4.2 on
+the full fused probe representation (512 × 896), presented clean on all
+channels including the lesioned audio, in the configuration of §4.2.
+This is a **new, fused-code operational statistic**. It differs from the
+original B-2 invariant (design spec §1.2), which concerns MI of the
+*surviving* modalities: in the fused code, a gain on surviving channels
+can cancel a loss on the lesioned one. E-2 therefore bounds the
+estimated statistic only. No E-2 outcome is read as a bound on the true
+MI change, on surviving-channel MI or on the original B-2 invariant,
+and no E-2 outcome is described as "absence of MI migration". The
+known-signal calibration of §4.3 is reported to describe how the
+estimator responds to known MI changes; it does not license a reading
+in true-MI units.
 
 | Id | Quantity (population mean over seeds) | H0 (to reject) | H1 (equivalence) | Status |
 |----|---------------------------------------|----------------|------------------|--------|
@@ -141,8 +150,13 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   `nerve_wml.methodology.mi_kraskov_ksg_continuous` with k = 3,
   Chebyshev distance, the class label passed as a float column (no
   jitter), and each MI term clipped at 0 before the difference.
-  ΔMI = `me3_delta(Z_pre, Z_post, labels)` in bits. The `nerve_wml`
-  version is pinned by commit hash on the OSF form.
+  ΔMI-hat = `me3_delta(Z_pre, Z_post, labels)` in bits. The `nerve_wml`
+  version is pinned by commit hash on the OSF form. This estimator
+  assumes two continuous variables; the label is discrete (4 values)
+  and its many ties violate that assumption. Its output is therefore
+  registered as an **operational statistic** (continuity with v0.6 and
+  ADR-0019), not as a consistent MI estimate. A mixed discrete–continuous
+  estimator is not drafted; adopting one is Open decision 3.
 - Secondary estimators (E-2b, exploratory): MINE on the full probe
   (`me3_mi_mine`, as in the E1 runner); KSG on the 1-D mean-pool
   (legacy). Adaptive binning on the full probe is **not** used
@@ -164,32 +178,33 @@ authorised, and only these:
 3. A full-probe primary output `ksg_full_delta_bits` computed exactly as
    in §4.2. The existing 1-D and MINE outputs are kept unchanged as
    secondary outputs.
-4. A known-signal sensitivity harness (below), run before filing.
+4. A known-signal calibration harness (below), run before filing.
 
 Unit tests: the three batch sizes are honoured; the full-probe output
 equals `me3_delta` on the captured matrices; seed lists reproduce.
 
-**Known-signal sensitivity gate (pre-filing, synthetic data).** Codes of
-the confirmatory shape (N = 512, d = 896, 4 equiprobable classes) are
-generated as a 12-D Gaussian class mixture (class means a·m_y, fixed
-seeded unit vectors m_y, identity covariance) embedded in ℝ^896 by a
-fixed random orthonormal map, plus independent isotropic noise of SD
-0.1. The true MI is computed by Monte Carlo (10⁵ draws) and the scale a
-is solved for a target MI. MI_pre is set to the pilot mean of the
-primary estimator's MI_pre rounded to 0.05 bit (0.5 bit if the pilot is
-unavailable). Twenty replicate (pre, post) pairs are drawn at each true
-ΔMI ∈ {−0.10, 0, +0.10, +0.20} bit. The estimator **passes** if (i) its
-mean estimated ΔMI is ≥ +0.05 bit at true +0.10 and ≤ −0.05 bit at true
-−0.10, and (ii) the E-2 TOST does **not** conclude equivalence on the 20
-replicates at true +0.20 bit. If KSG fails and MINE passes, MINE becomes
-the primary estimator before filing (Open decision 3). If neither
-passes, E-2 is not filed as an equivalence test of MI migration; the PI
-either files it as a bound on the estimated quantity only, with that
-limitation stated, or drops it.
+**Known-signal calibration (pre-filing, synthetic data, descriptive).**
+Codes of the confirmatory shape (N = 512, d = 896, 4 equiprobable
+classes) are generated as a 12-D Gaussian class mixture (class means
+a·m_y, fixed seeded unit vectors m_y, identity covariance) embedded in
+ℝ^896 by a fixed random orthonormal map, plus independent isotropic
+noise of SD 0.1. The true MI is computed by Monte Carlo (10⁵ draws) and
+the scale a is solved for a target MI. Baselines are fixed, not taken
+from the pilot: true MI_pre ∈ {0.25, 0.50, 1.00} bit (all ≥ 0.25 bit,
+so every target below is feasible). At each baseline, twenty replicate
+(pre, post) pairs are drawn at each true ΔMI ∈ {−0.20, −0.10, 0,
++0.10, +0.20} bit. Reported for KSG and MINE: the mean and SD of the
+estimated ΔMI per cell, and the least-squares slope and intercept of
+estimated on true ΔMI per baseline. The calibration is descriptive.
+It is not a pass/fail gate and does not convert E-2 into a statement
+about true MI: an estimator that returns half the true change would
+calibrate visibly (slope ≈ 0.5), but E-2 still bounds the estimated
+statistic only (§3). The paper reports the slopes next to the E-2
+result so that readers can judge the estimator's resolution.
 
 **B-2 pilot (pre-filing).** Pilot seeds 1101–1105 run the frozen B-2
 configuration once, to measure the per-seed SD of the primary
-ΔMI, the pilot MI_pre for the gate and the runtime. Pilot data are
+ΔMI-hat and the runtime. Pilot data are
 excluded from every confirmatory test. No pilot is needed for B-1, whose
 planning data exist (§7).
 
@@ -320,9 +335,16 @@ E-2, N = 20 gives 0.96 at μ = 0 and 0.71 in the worst planning case
 in that case. N = 20 meets the lab's multi-seed-first-class rule
 (≥ 10 seeds). The choice between N = 20, 25 and 30 is an open PI
 decision (§12), to be made with the B-2 pilot SD and fixed on the OSF
-form; the drafted default rule is the smallest N ≥ 20 that gives
-≥ 0.80 complete-rule power for E-2 at μ = ±0.04 with the pilot UCL80 SD,
-capped at 40.
+form. Drafted rule: the pilot SD is the sample SD (ddof = 1) of the 5
+pilot ΔMI-hat values, inflated to its one-sided UCL80 (df = 4). N is the
+smallest N ≥ 20 whose simulated complete-rule P(Equivalent) at
+μ = ±0.04 is ≥ 0.80, **unrounded**, with at least 100 000 Monte-Carlo
+draws per candidate N (Monte-Carlo SE ≤ 0.0013), using
+`scripts/power_prereg_2026_10.py`. If no N ≤ 40 qualifies, the
+amendment is not filed as drafted: the PI either files N = 40 with its
+computed power stated on the form as below target, or redesigns E-2
+(another estimator or world) before filing. The planning-SD values
+above give N = 25 (P = 0.802).
 
 **Runtime.** B-1 alone needs N × 6 grids × 30 cells: **3,600 lesion
 cells at N = 20** (5,400 at N = 30), excluding B-2. The last measured
@@ -384,10 +406,10 @@ tested; if it passes, "and at the no-lock default". A failed step is
 reported as "not shown at every tested LOCK_AFTER" (or at no-lock),
 with no further claim.
 
-For E-2, the absence-of-migration reading ("no MI migration of
-≥ 0.10 bit in this configuration") is used only if the estimator passed
-the sensitivity gate of §4.3; otherwise the claim is limited to the
-estimated quantity.
+For E-2, every claim names the estimated fused-code statistic (§3).
+No E-2 outcome is reported as absence of MI migration, as a bound on
+true MI or as a bound on the original surviving-channel B-2 invariant.
+The §4.3 calibration slopes are reported alongside.
 
 **Relation to ADR-0019 and §5.5.** ADR-0019 remains the historical
 verdict on the data it analysed and is not edited. The new outcome is
@@ -412,10 +434,10 @@ which concerned a different estimand. All outcomes are publishable.
 - [ ] Filed on OSF by the PI before any confirmatory seed (1001–1044) is run.
 - [ ] Pre-filing code tasks of §4.3 merged with unit tests; commit hashes
       of `run_grid.sh`, `aggregate_grid.py`, `analyse_amedi_quadratic.py`,
-      the E1 runner, the sensitivity harness, the TOST analysis script
+      the E1 runner, the calibration harness, the TOST analysis script
       and the pinned `nerve_wml` recorded on the OSF form.
-- [ ] Sensitivity gate result and B-2 pilot SD / runtime recorded on the
-      form; N fixed on the form.
+- [ ] Calibration table and B-2 pilot SD / runtime recorded on the
+      form; N fixed on the form by the rule of §7.
 - [x] No threshold change.
 - [x] No metric-math change.
 - [x] Bounds derived from frozen thresholds, not from data.
@@ -424,16 +446,24 @@ which concerned a different estimand. All outcomes are publishable.
 
 ## 12. Open decisions (PI, before filing)
 
+Every item below must be resolved, and the text edited to a single
+protocol, before filing. This draft is not fileable while any item is
+open; the §4.3 code tasks, the pilot and a regenerated power analysis
+for the final configuration are also filing prerequisites.
+
 1. Bounds: symmetric ±threshold (drafted) vs one-sided non-superiority
    vs tight ±half-threshold as primary.
 2. N: 20, 25 or 30, fixed with the B-2 pilot SD (drafted rule in §7).
    N = 20 gives 0.71 complete-rule power for E-2 in the worst planning
    case; N = 25 gives 0.80 and N = 30 gives 0.86. N = 30 also raises
    E-1 → E-1b to 0.97.
-3. B-2 primary estimator: full-probe KSG (drafted, continuity with
-   v0.6) vs full-probe MINE (the estimator ADR-0019 treats as
-   load-bearing; KSG in 896 ambient dimensions at N = 512 has known
-   bias and clips at 0). The sensitivity gate of §4.3 may force MINE.
+3. B-2 primary estimator: full-probe KSG as an operational statistic
+   (drafted, continuity with v0.6) vs full-probe MINE (the estimator
+   ADR-0019 treats as load-bearing) vs a mixed discrete–continuous
+   k-NN estimator suited to a discrete label (would need an
+   implementation, tie handling and validation before filing). KSG in
+   896 ambient dimensions at N = 512 has known bias, clips at 0 and
+   treats the label as continuous.
    Also the batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8)
    vs 512 / 512 / 512 (the ADR-0019 E1.3 runs).
 4. B-2 primary world: Studyforrest (drafted; same bridge as B-1, but the
