@@ -6,8 +6,10 @@ Synthetic data only; nothing here runs an experiment.
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 
@@ -421,46 +423,93 @@ def test_gate_rejects_mismatched_shapes() -> None:
         manipulation_gate(torch.ones(2, 3), torch.ones(3, 2), n_perm=10)
 
 
-def _flatten_state(obj: object, prefix: str, out: dict[str, object], seen: set[int]) -> None:
-    """Collect every tensor/number reachable from ``obj`` (modules, optimiser, attributes)."""
+# Reachable objects that cannot be compared bit-for-bit; listed, never silently skipped.
+_NOT_COMPARABLE: dict[str, str] = {
+    "function": "code object; no mutable training state",
+    "builtin_function_or_method": "code object; no mutable training state",
+    "method": "bound method; state lives on its owner, which is flattened separately",
+    "module": "imported python module; not owned state",
+    "type": "class object; not owned state",
+    "Path": "filesystem path value; no mutable state",
+}
+
+
+def _flatten_state(
+    obj: object,
+    prefix: str,
+    out: dict[str, object],
+    seen: dict[int, object],
+    skipped: dict[str, str],
+) -> None:
+    """Collect every tensor/array/number/RNG state reachable from ``obj``."""
     if id(obj) in seen:
         return
     if isinstance(obj, torch.Tensor):
         out[prefix] = obj.detach().clone()
         return
-    if isinstance(obj, bool | int | float | str | type(None)):
+    if isinstance(obj, np.ndarray):
+        out[prefix] = torch.from_numpy(obj.copy())
+        return
+    if isinstance(obj, bool | int | float | str | bytes | type(None) | np.generic):
         out[prefix] = obj
         return
-    seen.add(id(obj))
-    if isinstance(obj, dict):
+    seen[id(obj)] = obj  # keep alive: transient state_dict() ids must not be reused
+    if isinstance(obj, torch.Generator):
+        out[prefix + ".torch_generator"] = obj.get_state()
+    elif isinstance(obj, np.random.Generator):
+        _flatten_state(obj.bit_generator.state, prefix + ".np_generator", out, seen, skipped)
+    elif isinstance(obj, np.random.RandomState):
+        _flatten_state(obj.get_state(), prefix + ".np_randomstate", out, seen, skipped)
+    elif isinstance(obj, dict):
         for k, v in obj.items():
-            _flatten_state(v, f"{prefix}[{k!r}]", out, seen)
-    elif isinstance(obj, list | tuple):
-        for k, v in enumerate(obj):
-            _flatten_state(v, f"{prefix}[{k}]", out, seen)
+            _flatten_state(v, f"{prefix}[{k!r}]", out, seen, skipped)
+    elif isinstance(obj, list | tuple | set | frozenset):
+        items = sorted(obj, key=repr) if isinstance(obj, set | frozenset) else obj
+        for k, v in enumerate(items):
+            _flatten_state(v, f"{prefix}[{k}]", out, seen, skipped)
+    elif isinstance(obj, torch.optim.Optimizer):
+        _flatten_state(obj.state_dict(), f"{prefix}.optimizer", out, seen, skipped)
     elif isinstance(obj, torch.nn.Module):
         for k, v in obj.state_dict().items():  # parameters + buffers
             out[f"{prefix}.state_dict.{k}"] = v.detach().clone()
         for k, v in vars(obj).items():  # plain attrs set via object.__setattr__
             if not k.startswith("_") or k in ("_step", "_t", "_count"):
-                _flatten_state(v, f"{prefix}.{k}", out, seen)
-    elif isinstance(obj, torch.optim.Optimizer):
-        _flatten_state(obj.state_dict(), f"{prefix}.optimizer", out, seen)
-    elif hasattr(obj, "__dict__"):
+                _flatten_state(v, f"{prefix}.{k}", out, seen, skipped)
+    elif hasattr(obj, "__dict__") and type(obj).__name__ not in _NOT_COMPARABLE:
         for k, v in vars(obj).items():
-            _flatten_state(v, f"{prefix}.{k}", out, seen)
+            _flatten_state(v, f"{prefix}.{k}", out, seen, skipped)
+    else:
+        skipped[prefix] = type(obj).__name__
 
 
 def _full_loop_state(loop: object) -> dict[str, object]:
-    """Everything the loop owns, enumerated from its attributes (world excluded)."""
+    """Everything the loop AND its world own, plus every process-global RNG."""
     out: dict[str, object] = {}
-    seen: set[int] = set()
+    seen: dict[int, object] = {}
+    skipped: dict[str, str] = {}
     for name, val in vars(loop).items():
-        if name == "world":
-            continue
-        _flatten_state(val, name, out, seen)
+        _flatten_state(val, name, out, seen, skipped)
+    unexplained = {k: t for k, t in skipped.items() if t not in _NOT_COMPARABLE}
+    assert not unexplained, f"uncomparable state without a documented reason: {unexplained}"
     out["<global torch RNG>"] = torch.get_rng_state()
+    out["<global numpy RNG>"] = _flatten_np_global()
+    out["<python random>"] = random.getstate()
+    if torch.cuda.is_available():
+        out["<cuda RNG>"] = torch.cuda.get_rng_state_all()  # pragma: no cover
+    if torch.backends.mps.is_available():
+        out["<mps RNG>"] = torch.mps.get_rng_state()  # pragma: no cover
     return out
+
+
+def _flatten_np_global() -> object:
+    kind, keys, pos, has_gauss, cached = np.random.get_state()
+    return (kind, keys.tobytes(), pos, has_gauss, cached)
+
+
+def _seed_all(n: int) -> None:
+    torch.manual_seed(n)
+    np.random.seed(n)
+    random.seed(n)
 
 
 def _assert_identical(a: dict[str, object], b: dict[str, object]) -> None:
@@ -471,18 +520,38 @@ def _assert_identical(a: dict[str, object], b: dict[str, object]) -> None:
         assert same, f"first differing entry: {k}"
 
 
+class _StatefulWorld(StudyforrestRealWorld):
+    """Real world plus hidden mutable state, so extra world draws become observable."""
+
+    def __init__(self, *, data_dir: Path) -> None:
+        super().__init__(seed=0, data_dir=data_dir)
+        self.calls = 0
+        self.cursor = torch.zeros(1)
+        self.gen = torch.Generator().manual_seed(7)
+        self.np_gen = np.random.default_rng(7)
+        self.np_rs = np.random.RandomState(7)
+
+    def sample_with_indices(self, batch_size: int, seed: int):  # type: ignore[no-untyped-def]
+        self.calls += 1
+        self.cursor += 1
+        torch.rand(1, generator=self.gen)
+        self.np_gen.random()
+        self.np_rs.rand()
+        return super().sample_with_indices(batch_size, seed)
+
+
 def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -> None:
     from tests.unit.test_loop import _build_loop
 
-    world = StudyforrestRealWorld(seed=0, data_dir=real_dir)
     torch.manual_seed(0)
     a = _build_loop(n_classes=4)
     torch.manual_seed(0)
     b = _build_loop(n_classes=4)
-    a.world = b.world = world
+    a.world = _StatefulWorld(data_dir=real_dir)
+    b.world = _StatefulWorld(data_dir=real_dir)  # own instance
     _assert_identical(_full_loop_state(a), _full_loop_state(b))  # same start
     start_keys = _full_loop_state(a).keys()
-    for owned in ("mux", "nerve", "head", "sensories", "opt"):
+    for owned in ("world", "mux", "nerve", "head", "sensories", "opt"):
         assert any(k.startswith(owned) for k in start_keys), owned
     seen_a: list[torch.Tensor] = []
     orig = a._forward
@@ -492,10 +561,11 @@ def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -
         return orig(sample)
 
     a._forward = spy  # type: ignore[method-assign]
-    torch.manual_seed(1)
+    _seed_all(1)
     a.pretrain(steps=4, batch_size=16, seed=3)
     a._forward = orig  # type: ignore[method-assign]
-    torch.manual_seed(1)
+    state_a = _full_loop_state(a)  # process-global RNGs must be read right after the run
+    _seed_all(1)
     # Replica of AdaptationLoop.pretrain as on origin/main f99f2dc938fa
     # (src/bouba_sens/loop.py lines 118-128: the mux_step/nerve_step lookup
     # and the `for step in range(steps)` body, before the Checkpoint return).
@@ -513,4 +583,4 @@ def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -
         if callable(nerve_step):
             nerve_step()
     assert len(seen_a) == 4
-    _assert_identical(_full_loop_state(a), _full_loop_state(b))
+    _assert_identical(state_a, _full_loop_state(b))
