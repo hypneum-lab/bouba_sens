@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Subspace-shift metric** (`src/bouba_sens/metrics/subspace.py`).
+  Top-k principal-direction shift S between pre/post-lesion codes, with
+  rank checks, split-half noise floor and eigengap report, as drafted in
+  amendment v0.8 (PR #9). Not yet used by any run.
 - **Configurable Me3 probe — full representation `(B, 896)` default**
   (`src/bouba_sens/loop.py`, `src/bouba_sens/metrics/mi_migration.py`).
   The Me3 sonde pooling is now configurable; the default is the full
