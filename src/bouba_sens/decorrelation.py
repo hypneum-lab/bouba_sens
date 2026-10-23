@@ -44,8 +44,6 @@ GATE_N_PERM = 10_000
 GATE_SEED = 20_261_023
 GATE_ALPHA = 0.05
 PROBE_ROWS = 512
-# Relative tolerance below which a centred feature block counts as constant.
-_CONSTANT_RTOL = 1e-10
 
 
 class IndexedWorld(Protocol):
@@ -184,22 +182,30 @@ class DecorrelationSchedule:
 # --- within-class linear CKA (3.3) -----------------------------------------------
 
 
-def _centre(x: Tensor) -> Tensor:
-    return x - x.mean(dim=0, keepdim=True)
+def _centre(x: Tensor) -> Tensor | None:
+    """Column-centre ``x``; ``None`` if every column is exactly constant.
+
+    Exact constancy is detected by subtracting the first row (translation
+    invariant, no magnitude-relative cutoff); the shifted block is then
+    mean-centred, which keeps large offsets numerically harmless.
+    """
+    shifted = x - x[:1]
+    if not bool((shifted != 0).any()):
+        return None
+    return shifted - shifted.mean(dim=0, keepdim=True)
 
 
 def linear_cka(xa: Tensor, xb: Tensor) -> float | None:
     """Linear CKA, biased HSIC: ||Xb^T Xa||_F^2 / (||Xa^T Xa||_F ||Xb^T Xb||_F).
 
-    Columns are centred first. Returns ``None`` when either centred block
-    is (numerically) zero, i.e. the zero-denominator case.
+    Columns are centred first. Returns ``None`` only for the zero
+    CENTRED denominator case (a block constant within the class).
     """
     xa = xa.double().reshape(len(xa), -1)
     xb = xb.double().reshape(len(xb), -1)
     ca, cb = _centre(xa), _centre(xb)
-    for raw, cen in ((xa, ca), (xb, cb)):
-        if float(cen.norm()) <= _CONSTANT_RTOL * max(float(raw.norm()), 1e-300):
-            return None
+    if ca is None or cb is None:
+        return None
     num = float((cb.T @ ca).norm() ** 2)
     den = float((ca.T @ ca).norm() * (cb.T @ cb).norm())
     if den <= 0.0:
@@ -307,6 +313,8 @@ def manipulation_gate(
     gate passes if p < 0.05. Any non-finite entry (a draw with no valid
     (pair, class)) fails the check.
     """
+    if k_joint.shape != k_decor.shape:
+        raise ValueError(f"shape mismatch: {tuple(k_joint.shape)} vs {tuple(k_decor.shape)}")
     kj = k_joint.double().flatten()
     kd = k_decor.double().flatten()
     if not (torch.isfinite(kj).all() and torch.isfinite(kd).all()):

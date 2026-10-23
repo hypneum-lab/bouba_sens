@@ -406,3 +406,59 @@ def test_fusion_gain_is_all_minus_best_single() -> None:
     res = fusion_gain(StubLoop(), train_seed=11)  # type: ignore[arg-type]
     assert res.acc_all == 1.0
     assert res.fusion_gain == pytest.approx(0.3)
+
+
+def test_cka_large_offset_is_translation_invariant() -> None:
+    col = torch.tensor([1e12 - 1, 1e12 + 1] * 6, dtype=torch.float64).unsqueeze(1)
+    assert linear_cka(col, col.clone()) == pytest.approx(1.0, abs=1e-12)
+    x = torch.randn(30, 3, dtype=torch.float64)
+    assert linear_cka(x + 1e12, x * 2 - 1e12) == pytest.approx(1.0, abs=1e-6)
+    assert linear_cka(col, torch.full((12, 1), 1e12, dtype=torch.float64)) is None
+
+
+def test_gate_rejects_mismatched_shapes() -> None:
+    with pytest.raises(ValueError, match="shape"):
+        manipulation_gate(torch.ones(2, 3), torch.ones(3, 2), n_perm=10)
+
+
+def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -> None:
+    from torch.nn import functional as F  # noqa: N812
+
+    from tests.unit.test_loop import _build_loop
+
+    world = StudyforrestRealWorld(seed=0, data_dir=real_dir)
+    torch.manual_seed(0)
+    a = _build_loop(n_classes=4)
+    torch.manual_seed(0)
+    b = _build_loop(n_classes=4)
+    a.world = b.world = world
+    seen_a: list[torch.Tensor] = []
+    orig = a._forward
+
+    def spy(sample: WorldSample) -> tuple[torch.Tensor, torch.Tensor]:
+        seen_a.append(sample.audio.clone())
+        return orig(sample)
+
+    a._forward = spy  # type: ignore[method-assign]
+    torch.manual_seed(1)
+    ckpt_a = a.pretrain(steps=4, batch_size=16, seed=3)
+    torch.manual_seed(1)
+    # Replica of the pre-v0.9 pretrain body.
+    for step in range(4):
+        sample = b.world.sample(batch_size=16, seed=3 + step)
+        assert torch.equal(seen_a[step], sample.audio)
+        carriers = {m: b.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
+        loss = F.cross_entropy(b.head(b.nerve.fuse(carriers)), sample.label)
+        b.opt.zero_grad()
+        loss.backward()
+        b.opt.step()
+        for obj in (b.mux, b.nerve):
+            fn = getattr(obj, "step", None)
+            if callable(fn):
+                fn()
+    ckpt_b = b.snapshot()
+    for k, v in ckpt_a.head_state.items():
+        assert torch.equal(v, ckpt_b.head_state[k])
+    for m in MODALITIES:
+        for k, v in ckpt_a.sensory_states[m].items():
+            assert torch.equal(v, ckpt_b.sensory_states[m][k])
