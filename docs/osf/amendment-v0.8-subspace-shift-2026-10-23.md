@@ -87,13 +87,41 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
 7. **Lesion-specific shift.** ΔS(c) = S(c) − C(s, ℓ).
 8. **Per-block outcome.** Y(s, ℓ) = median of ΔS over the 15 T2 cells of
    (s, ℓ) (5 lesioned modalities × 3 SNR levels).
-9. **Sampling-noise floor.** S_split(c) is S between the top-k subspaces
-   of two disjoint random halves (256 / 256, split seed = s) of Z_pre.
-   It is reported per cell and used in the magnitude guard (§6).
-10. **Rank guard.** If the numerical rank of centred Z_pre or Z_post is
-    below k (singular value < 1e-6 × the largest), the cell is flagged
-    and excluded. If more than 20 % of cells are excluded, the
-    experiment is reported as a protocol failure, with no verdict.
+9. **Sampling-noise floor.** S_split(s, ℓ) is S between the top-k
+   subspaces of two disjoint random halves (256 / 256, split seed = s)
+   of Z_pre. It is shared by the 15 cells of (s, ℓ), reported, and used
+   in the magnitude guard (§6).
+10. **Rank guard and exclusion rules** (§3.1).
+
+### 3.1 Rank guard, exclusion denominators and incomplete blocks
+
+A matrix *passes the rank check* if its column-centred numerical rank
+(singular values ≥ 1e-6 × the largest) is at least k. The check
+applies to every matrix that enters S: Z_pre (one per (s, ℓ)), Z_post
+(one per cell), the no-lesion control's end matrix (one per (s, ℓ)) and
+both 256-row split halves of Z_pre.
+
+- **Non-finite codes** (NaN/inf in any matrix) or a crash are
+  *technical failures*: the whole seed is replaced from the reserve
+  list (§7). Everything else below is an *outcome-dependent exclusion*
+  and is **never** replaced, because rank deficiency is a property of
+  the trained network, not of the infrastructure.
+- **Cell validity.** A T2 cell c is valid if Z_pre, Z_post(c), the
+  control matrix of its (s, ℓ) and both split halves pass. If Z_pre or
+  the control fails, all 15 cells of that (s, ℓ) are invalid.
+- **Block value.** Y(s, ℓ) is defined only if at least 12 of its 15
+  cells are valid; it is then the median over the valid cells.
+- **Complete seed block.** A seed is a complete block if Y(s, ℓ) is
+  defined at all 7 levels. The Page test, the magnitude guard and S-2/S-3
+  use complete blocks only, so both endpoint levels (ℓ = 25 and 175) are
+  defined for every analysed seed.
+- **Protocol failure.** If fewer than 80 % of the N confirmatory seeds
+  are complete blocks (fewer than 16 of 20, or 24 of 30), the
+  experiment is reported as a protocol failure with no verdict.
+- **Reporting.** The number of invalid cells and of undefined Y is
+  reported per level ℓ, with denominators (N × 15 cells and N blocks
+  per level). If exclusions differ across levels, the paper states that
+  the selection of complete blocks may itself depend on ℓ.
 
 T1 cells are excluded from the primary metric: their pre-lesion codes
 come from an untrained network, so S would measure training from
@@ -125,25 +153,52 @@ filing (§10).
 | Id | Statement | Test |
 |----|-----------|------|
 | **S-1** (primary) | Y(s, ℓ) increases with ℓ | Page's L trend test, one-sided (increasing), blocks = seeds, 7 ordered treatments, α = 0.05 |
-| S-2 (secondary) | Lesion-specific reorganisation exists: mean over seeds of Ȳ(s) = mean_ℓ Y(s, ℓ) is > 0 | one-sample t-test, one-sided, α = 0.05 |
-| S-3 (secondary) | Per-seed monotone association | per-seed Spearman ρ(ℓ, Y); Wilcoxon signed-rank on ρ > 0, one-sided |
+| S-2 (exploratory) | Lesion-specific reorganisation exists: mean over seeds of Ȳ(s) = mean_ℓ Y(s, ℓ) is > 0 | one-sample t-test, one-sided; nominal p, no decision |
+| S-3 (exploratory) | Per-seed monotone association | per-seed Spearman ρ(ℓ, Y); Wilcoxon signed-rank on ρ > 0, one-sided; nominal p, no decision |
 | S-4 (exploratory) | ΔS tracks performance harm | Spearman between cell ΔS and the cell's T2 Me1 drop; no decision |
 | S-5 (exploratory) | Parameter-subspace rotation shows the same trend | same Page test on the secondary metric; no decision |
+
+Only S-1, with its magnitude guard, is confirmatory. S-2 to S-5 are
+exploratory: they are reported with nominal p-values, labelled
+exploratory, and cannot support a claim on their own or replace S-1.
+
+**Page test, frozen method.** L = Σ_ℓ j(ℓ) · R_ℓ, where R_ℓ is the sum
+over complete blocks of the within-seed rank of Y(s, ℓ) among the 7
+levels, j(ℓ) = 1…7 in increasing ℓ, and ties get mid-ranks. The p-value
+is a **within-block permutation** test: the 7 ranks of each seed are
+permuted independently, 100 000 permutations, generator seed 20261023,
+p = (1 + #{L_perm ≥ L_obs}) / (1 + 100 000). This is exact up to Monte
+Carlo error and valid with ties. Reference implementation:
+`page_perm_pvalue` in `scripts/power_prereg_2026_10.py`. The
+asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
+p-values are reported alongside; the permutation p-value decides.
 
 Sensitivity analyses (reported, no decision): k ∈ {6, 24}; SNR floor
 cells only; per lesioned modality.
 
 ## 6. Decision criteria (pre-stated)
 
-- **Supported:** S-1 Page p < 0.05 **and** the median over seeds of
-  [Y(s, 175) − Y(s, 25)] exceeds the median S_split over all cells
-  (magnitude guard: the trend is larger than PCA sampling noise).
+The verdicts are exhaustive and mutually exclusive, evaluated in
+this order:
+
+- **Protocol failure:** fewer than 80 % complete blocks (§3.1). No
+  verdict.
+- **Supported:** S-1 permutation p < 0.05 **and** the median over
+  complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
+  over the complete blocks and all 7 levels (magnitude guard: the trend is larger than PCA
+  sampling noise). The guard is part of one conjunctive rule; the Page
+  p-value alone is not advertised as a separate finding.
 - **Detectable but sub-floor:** S-1 p < 0.05, magnitude guard fails.
-  Reported as such, with no substantive claim.
-- **Not supported:** S-1 p ≥ 0.05. Reported as a pre-registered null.
-- **Contrary (exploratory):** the mirrored (decreasing) Page test has
-  p < 0.05. Reported as exploratory only; the confirmatory direction was
-  increasing.
+  Reported as "a monotone trend was detected but its size does not
+  exceed the PCA sampling floor"; no substantive geometric claim.
+- **Not demonstrated:** S-1 p ≥ 0.05. Reported as "a monotone increase
+  of the subspace shift with LOCK_AFTER was not demonstrated at N"; this
+  is not evidence that no trend exists.
+
+Independently of the verdict, the mirrored (decreasing) Page test is
+reported as an exploratory result. If its p < 0.05, the paper calls it
+an exploratory contrary trend; the confirmatory direction was
+increasing.
 
 Paper consequence: if Supported, the paper may state a pre-registered
 monotone geometric correlate of lock timing. It is a new result, not a
@@ -155,12 +210,18 @@ outcomes are publishable.
 - **Pilot seeds:** 2101–2105. They are used to validate the pipeline,
   check the rank guard and estimate the within-seed SD of Y. Pilot data
   are excluded from every confirmatory test.
-- **Confirmatory seeds:** 2001–2020 (N = 20), disjoint from every seed
-  used so far (0–4, Q3/Q3+, N12) and from the v0.7 / v0.9 drafts.
-  **Reserve:** 2021–2024, for technical replacement only.
+- **Confirmatory seeds:** the first N of 2001, 2002, …, 2040 in order
+  (N = 20: 2001–2020), disjoint from every seed used so far (0–4,
+  Q3/Q3+, N12) and from the v0.7 / v0.9 drafts. **Reserve:** the four
+  seeds that follow the last confirmatory seed (N = 20: 2021–2024), for
+  technical replacement only.
 - **Power (no pilot data yet).** `scripts/power_prereg_2026_10.py`,
-  one-sided Page test, 7 levels, linear trend with a seed random
-  intercept. Results are in units of the within-seed SD of Y:
+  one-sided Page test (asymptotic in the simulation; it agrees with the
+  permutation test to within Monte Carlo error), 7 levels, linear trend
+  with a seed random intercept of 1 SD. Results are in units of the
+  within-seed SD of Y.
+
+  *Component-test power only* (Page test alone):
 
   | N | range 0.5 SD | range 1.0 SD | range 1.5 SD |
   |--:|-------------:|-------------:|-------------:|
@@ -168,16 +229,47 @@ outcomes are publishable.
   | 20 | 0.58 | 0.98 | 1.00 |
   | 30 | 0.72 | 1.00 | 1.00 |
 
-  N = 20 gives ≥ 0.80 power when the total trend across the grid is
-  ≥ about 0.75 within-seed SD, and 0.98 at 1 SD. The PI may raise N
-  after the pilot, never lower it below 20, and must fix it on the OSF
-  form at filing.
+  For the Page test alone, N = 20 reaches 0.80 at a total trend of about
+  **0.70 within-seed SD** (0.75 at 0.65 SD, 0.81 at 0.70 SD); N = 30
+  reaches it at about 0.60 SD.
+
+  *Complete rule* (P(Supported): Page p < 0.05 **and** median endpoint
+  difference > guard g, with g = median S_split expressed in
+  within-seed SD units; each seed block independently lost to rank
+  exclusion with probability q, no replacement; protocol failure if
+  < 80 % complete blocks):
+
+  | N | q | range | g = 0 | g = 0.25 | g = 0.5 | g = 1.0 | P(protocol failure) |
+  |--:|--:|------:|------:|---------:|--------:|--------:|--------------------:|
+  | 20 | 0 | 0.75 SD | 0.84 | 0.81 | 0.69 | 0.25 | 0.000 |
+  | 20 | 0 | 1.0 SD | 0.97 | 0.96 | 0.90 | 0.50 | 0.000 |
+  | 20 | 0 | 1.5 SD | 1.00 | 1.00 | 1.00 | 0.90 | 0.000 |
+  | 20 | 0.10 | 1.0 SD | 0.92 | 0.90 | 0.84 | 0.48 | 0.042 |
+  | 30 | 0 | 1.0 SD | 1.00 | 0.99 | 0.94 | 0.51 | 0.000 |
+  | 30 | 0.10 | 1.0 SD | 0.97 | 0.96 | 0.91 | 0.49 | 0.024 |
+
+  The guard dominates: when the median S_split is as large as the
+  expected endpoint difference, P(Supported) is about 0.5 whatever N.
+  The pilot therefore estimates both the within-seed SD of Y and the
+  ratio g. The drafted rule for N: the smallest N ≥ 20 whose
+  complete-rule power is ≥ 0.80 at a total trend equal to the pilot
+  median S_split plus 0.70 within-seed SD, with q set to the pilot rank
+  exclusion rate (at least 0.05), capped at 40. N is fixed on the OSF
+  form; it is never below 20.
 - **Fixed-N design.** There is no interim look at outcomes and no
-  optional stopping. A technical failure (crash, non-finite S, missing
-  capture) is replaced from the reserve list in order, blind to the
-  outcome. If more than 4 replacements are needed, the run halts and a
-  deviation note is filed. Extending N after an inconclusive result
-  needs a new amendment filed before the new data.
+  optional stopping. A technical failure (crash, non-finite codes,
+  missing capture) is replaced from the reserve list in order, blind to
+  the outcome. Rank exclusions are not replaced (§3.1). If more than 4
+  replacements are needed, the run halts and a deviation note is filed.
+  Extending N after an inconclusive result needs a new amendment filed
+  before the new data.
+- **Runtime.** Per seed: 7 Phase-1 runs (200 steps), 7 × 15 = 105 T2
+  lesion runs and 7 no-lesion control runs (100 steps each, probe 512),
+  plus 112 × 3 SVDs of 512 × 896 or 256 × 896 matrices. At N = 20 this
+  is 2,240 Phase-2 runs and 140 Phase-1 runs (3,360 / 210 at N = 30).
+  No timing exists for probe-512 captures; the pilot measures the
+  runtime per seed on the filing host, and the estimate is recorded on
+  the OSF form.
 
 ## 8. What is NOT being amended
 
@@ -188,12 +280,17 @@ outcomes are publishable.
 
 ## 9. Pre-registration fidelity checklist
 
-- [ ] Filed on OSF by the PI before any confirmatory seed (2001–2024) is run.
+- [ ] Filed on OSF by the PI before any confirmatory seed (2001–2044) is run.
 - [ ] Metric code + unit tests merged, commit hash on the OSF form.
       Required tests: S = 0 for identical subspaces, S = 1 for
       orthogonal subspaces, invariance to basis rotation.
 - [ ] Probe-size parameter (512, decoupled from batch 16) and the
       no-lesion control arm implemented and frozen.
+- [ ] Rank checks of §3.1 implemented with unit tests (rank-deficient
+      control invalidates its 15 cells; 12-of-15 rule; complete-block
+      selection), and the Page permutation test frozen.
+- [ ] Pilot within-seed SD of Y, median S_split, rank-exclusion rate and
+      runtime recorded on the form; N fixed on the form.
 - [x] No threshold or existing-metric change.
 - [x] Hypothesis is monotone; no peaked-shape test.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
@@ -201,11 +298,15 @@ outcomes are publishable.
 ## 10. Open decisions (PI, before filing)
 
 1. Magnitude guard: median S_split (drafted) vs a fixed SESOI on ΔS
-   chosen after the pilot.
-2. k = 12 (from ADR-0019 D_eff on gaussian/Studyforrest) vs
+   chosen after the pilot. The guard sets the power of the complete
+   rule (§7).
+2. Rank-exclusion thresholds: 12 of 15 cells per block and 80 %
+   complete blocks (drafted).
+3. k = 12 (from ADR-0019 D_eff on gaussian/Studyforrest) vs
    re-estimating D_eff on the pilot.
-3. N: 20 (drafted) vs a larger N from the pilot SD.
-4. Parameter list for the secondary metric (which `CrossModalNerve`
+4. N: 20 (drafted minimum) vs a larger N from the pilot, by the drafted
+   rule of §7 or another rule the PI states on the form.
+5. Parameter list for the secondary metric (which `CrossModalNerve`
    weights count as the interaction layer).
-5. Whether to also run the CC-film bridge as a secondary world.
-6. Pre-registration id (N-id) and final amendment number.
+6. Whether to also run the CC-film bridge as a secondary world.
+7. Pre-registration id (N-id) and final amendment number.

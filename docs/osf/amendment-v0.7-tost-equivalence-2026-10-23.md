@@ -10,8 +10,9 @@
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
 > file has been run. Confirmatory seeds (below) must not be run before
-> the PI files this text on OSF; the commit hash of the analysis code is
-> to be recorded on the OSF form at filing.
+> the PI files this text on OSF. The pre-filing code tasks of §4.3 must
+> be merged and frozen first; the commit hash of the analysis code is
+> recorded on the OSF form at filing.
 
 ---
 
@@ -20,23 +21,26 @@
 Nothing in Q6JYN is changed. The B-1 and B-2 thresholds (0.05 and
 0.10 bit) stay frozen, and so do the ADR-0019 verdicts (B-1 FINAL
 Retract, B-2 Null). This amendment adds **a confirmatory equivalence
-test** for the two invariants that ended null, so that the null can be
-reported as a positive bounded statement:
+test** for the two invariants that ended null, so that a null can be
+reported as a bounded statement about a precisely defined estimand:
 
-- B-1: "the congenital gap Me7 is smaller than 0.05 in absolute value,
-  with 95 % confidence";
-- B-2: "the MI migration Me3 delta is smaller than 0.10 bit in absolute
-  value, with 95 % confidence".
+- B-1: "the population mean of the E-1 estimand (§3) lies inside
+  ±0.05; equivalence at α = 0.05 by TOST, i.e. the 90 % two-sided CI
+  lies inside the bounds";
+- B-2: "the population mean of the primary-estimator ΔMI (§3) lies
+  inside ±0.10 bit; equivalence at α = 0.05 by TOST, i.e. the 90 %
+  two-sided CI lies inside the bounds".
 
 The original tests ask whether the effect is *above* threshold. A failure
 to reject there ("below the noise floor", §5.5 FINAL) is absence of
 evidence. Two one-sided tests (TOST) against the same thresholds give
-evidence of absence of an effect of at least the registered size.
+evidence that the tested estimand is smaller than the registered effect
+size. The claim is limited to that estimand (§3, §9).
 
 This amendment does **not** rescue the retracted §5.5 dose-response
-claim (ADR-0019). Whatever the outcome, the retraction stands. A
-successful equivalence test strengthens it: B-1 is then shown to be
-bounded below the registered effect size, not merely undetected.
+claim (ADR-0019). Whatever the outcome, the retraction stands, and
+ADR-0019 remains the historical verdict on the data it analysed. New
+outcomes are recorded in a new ADR (§9).
 
 ## 2. Motivation
 
@@ -54,23 +58,50 @@ bounded below the registered effect size, not merely undetected.
   cannot be confirmatory. This amendment re-tests the claim on **new
   seeds only**, following the N12 training/test split.
 
-## 3. Hypotheses
+## 3. Hypotheses and estimands
 
 Bounds are set from the frozen thresholds, never from data (§5).
 
-| Id | Quantity (population mean over seeds) | H0 (to reject) | H1 (equivalence) |
-|----|---------------------------------------|----------------|------------------|
-| **E-1** (primary) | μ₁ = mean over seeds of the per-seed mean Me7 across LOCK_AFTER ∈ {50, 75, 100, 125, 150} | μ₁ ≤ −0.05 or μ₁ ≥ +0.05 | −0.05 < μ₁ < +0.05 |
-| E-1b (secondary, IUT) | μ₁(ℓ) at each LOCK_AFTER ℓ separately | any ℓ with \|μ₁(ℓ)\| ≥ 0.05 | all five ℓ inside ±0.05 |
-| E-1c (secondary) | μ₁ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.05 | \|μ\| < 0.05 |
-| **E-2** (primary) | μ₂ = mean over seeds of B-2 = MI_post − MI_pre (bits), primary estimator | μ₂ ≤ −0.10 or μ₂ ≥ +0.10 | −0.10 < μ₂ < +0.10 |
-| E-2b (secondary) | same, secondary estimators and the CC-film bridge | \|μ\| ≥ 0.10 | \|μ\| < 0.10 |
+**B-1 estimand.** For one seed s and one LOCK_AFTER ℓ, the grid outcome
+is `invariants.b1.median_me7`: the median, over the 15 (modality, SNR)
+pairs of the grid (5 modalities × 3 SNR levels), of Me7 = mean Me1(T1)
+− mean Me1(T2) (`scripts/aggregate_grid.py`). The per-seed E-1 value is
+the arithmetic mean of the five grid medians (ℓ ∈ {50, 75, 100, 125,
+150}). E-1 is therefore an **average over five lock conditions of
+medians over modalities and SNR levels**. It is not the original B-1
+operationalisation at floor SNR per modality (design spec §1.2), and an
+E-1 pass does not exclude a gap of ≥ 0.05 at a single lock, modality or
+SNR level: effects of opposite sign can cancel in the aggregate. The
+all-lock claim needs E-1b. No per-modality or floor-SNR claim is made
+(those values are reported descriptively, §6).
 
-E-1 and E-2 are two separate claims about two separate invariants. Each
-is tested at α = 0.05 with no cross-family correction. E-1b is an
-intersection-union test: the claim "equivalent at every LOCK_AFTER" is
-made only if all five TOSTs pass. An IUT needs no multiplicity
-correction.
+**B-2 estimand.** For one seed, ΔMI = MI(Z_post; y) − MI(Z_pre; y) in
+bits, computed by the primary estimator of §4.2 on the full fused
+probe representation (512 × 896) of the configuration of §4.2. E-2
+bounds this *estimated* quantity. It is read as "no MI migration of
+≥ 0.10 bit" only because the estimator must first pass the
+known-signal sensitivity gate of §4.3; the claim is limited to that
+world, lesion and configuration.
+
+| Id | Quantity (population mean over seeds) | H0 (to reject) | H1 (equivalence) | Status |
+|----|---------------------------------------|----------------|------------------|--------|
+| **E-1** | μ₁ = mean of the per-seed E-1 value (above) | μ₁ ≤ −0.05 or μ₁ ≥ +0.05 | −0.05 < μ₁ < +0.05 | primary |
+| E-1b | μ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|μ₁(ℓ)\| ≥ 0.05 | all five inside ±0.05 (IUT) | confirmatory, step 2 of a fixed sequence |
+| E-1c | μ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.05 | \|μ\| < 0.05 | confirmatory, step 3 of a fixed sequence |
+| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator | μ₂ ≤ −0.10 or μ₂ ≥ +0.10 | −0.10 < μ₂ < +0.10 | primary |
+| E-2b | same quantity, secondary estimators and the CC-film bridge | — | — | exploratory, no decision |
+
+**Multiplicity.** E-1 and E-2 are two separate claims about two separate
+invariants, each tested at α = 0.05; no cross-family correction is
+applied, and each is reported as its own claim. Within B-1, the three
+equivalence tests form a **fixed sequence** E-1 → E-1b → E-1c, each at
+α = 0.05: a later step is tested only if every earlier step concluded
+equivalence. This controls the family-wise error rate of the
+equivalence claims at 0.05. E-1b is an intersection-union test: the
+claim "equivalent at every tested LOCK_AFTER" needs all five TOSTs to
+pass, and the IUT exemption covers that conjunction only; a single
+lock's TOST is not advertised as a separate finding. E-2b is
+exploratory and supports no claim.
 
 ## 4. Protocol
 
@@ -93,22 +124,74 @@ Exact replication of the Q3/Q3+ protocol
 
 ### 4.2 B-2 (E-2, E-2b)
 
-ADR-0019 E1 protocol (`scripts/spikes/e1_b2_dimensional_mine.py`):
+ADR-0019 E1 protocol, with the configuration frozen as follows:
 
 - World: `--world studyforrest` (primary), `--world ccfilm` (E-2b).
-- LOCK_AFTER = 100, HARD gating, `steps_train=200`, `steps_lesion=100`,
-  probe N = 512, full `(N, 896)` probe.
-- Primary estimator: Kraskov k-NN on the full 896-D probe. This keeps
-  the v0.6 choice of Kraskov as primary and applies it to the probe that
-  ADR-0019 made the default. This is an open decision; see §12.
-- Secondary estimators: MINE on the full probe; Kraskov on the 1-D
-  mean-pool (legacy). Adaptive binning on the full probe is **not** used
+- LOCK_AFTER = 100, HARD gating, `steps_train = 200`,
+  `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2, SNR
+  schedule 0 → −20 dB over the lesion steps).
+- **Batch sizes, frozen separately:** Phase-1 training batch **16**,
+  Phase-2 lesion batch **16**, probe **N = 512** (`world.sample(512,
+  seed = s − 99_999)`). These match B-1 and v0.8. The current runner
+  uses one `--batch-size` for all three (default 512, as in the
+  ADR-0019 E1.3 runs); see §4.3 and Open decision 3.
+- **Primary estimator:** Kraskov-Stögbauer-Grassberger (KSG,
+  algorithm 1) on the full (512, 896) probe, as implemented by the
+  multi-D path of `bouba_sens.metrics.mi_migration.me3_mi`, which calls
+  `nerve_wml.methodology.mi_kraskov_ksg_continuous` with k = 3,
+  Chebyshev distance, the class label passed as a float column (no
+  jitter), and each MI term clipped at 0 before the difference.
+  ΔMI = `me3_delta(Z_pre, Z_post, labels)` in bits. The `nerve_wml`
+  version is pinned by commit hash on the OSF form.
+- Secondary estimators (E-2b, exploratory): MINE on the full probe
+  (`me3_mi_mine`, as in the E1 runner); KSG on the 1-D mean-pool
+  (legacy). Adaptive binning on the full probe is **not** used
   (ADR-0019 E1.3b shows it collapses in 896-D).
 - The effective dimension D (participation ratio and two-NN) is reported
   per seed, as ADR-0019 requires.
-- The runner currently takes `--seeds <count>` (seeds 0…n−1). An explicit
-  seed-list option must be added before confirmatory runs. No other
-  change to the runner is allowed.
+
+### 4.3 Required pre-filing code tasks (B-2)
+
+The E1 runner (`scripts/spikes/e1_b2_dimensional_mine.py`) does not yet
+implement §4.2. Its Kraskov path (line 210) runs on the **1-D
+mean-pooled scalar**, its `--batch-size` sets training, lesion and probe
+size together, and `--seeds` takes a count. The following changes are
+authorised, and only these:
+
+1. `--seed-list` (explicit seeds) replacing the seed count.
+2. Three separate options `--train-batch`, `--lesion-batch`,
+   `--probe-n`, frozen at 16 / 16 / 512 for confirmatory runs.
+3. A full-probe primary output `ksg_full_delta_bits` computed exactly as
+   in §4.2. The existing 1-D and MINE outputs are kept unchanged as
+   secondary outputs.
+4. A known-signal sensitivity harness (below), run before filing.
+
+Unit tests: the three batch sizes are honoured; the full-probe output
+equals `me3_delta` on the captured matrices; seed lists reproduce.
+
+**Known-signal sensitivity gate (pre-filing, synthetic data).** Codes of
+the confirmatory shape (N = 512, d = 896, 4 equiprobable classes) are
+generated as a 12-D Gaussian class mixture (class means a·m_y, fixed
+seeded unit vectors m_y, identity covariance) embedded in ℝ^896 by a
+fixed random orthonormal map, plus independent isotropic noise of SD
+0.1. The true MI is computed by Monte Carlo (10⁵ draws) and the scale a
+is solved for a target MI. MI_pre is set to the pilot mean of the
+primary estimator's MI_pre rounded to 0.05 bit (0.5 bit if the pilot is
+unavailable). Twenty replicate (pre, post) pairs are drawn at each true
+ΔMI ∈ {−0.10, 0, +0.10, +0.20} bit. The estimator **passes** if (i) its
+mean estimated ΔMI is ≥ +0.05 bit at true +0.10 and ≤ −0.05 bit at true
+−0.10, and (ii) the E-2 TOST does **not** conclude equivalence on the 20
+replicates at true +0.20 bit. If KSG fails and MINE passes, MINE becomes
+the primary estimator before filing (Open decision 3). If neither
+passes, E-2 is not filed as an equivalence test of MI migration; the PI
+either files it as a bound on the estimated quantity only, with that
+limitation stated, or drops it.
+
+**B-2 pilot (pre-filing).** Pilot seeds 1101–1105 run the frozen B-2
+configuration once, to measure the per-seed SD of the primary
+ΔMI, the pilot MI_pre for the gate and the runtime. Pilot data are
+excluded from every confirmatory test. No pilot is needed for B-1, whose
+planning data exist (§7).
 
 ## 5. Equivalence bounds and their justification
 
@@ -117,8 +200,9 @@ ADR-0019 E1 protocol (`scripts/spikes/e1_b2_dimensional_mine.py`):
 1. *The bounds equal the frozen OSF thresholds.* Q6JYN defines 0.05
    and 0.10 bit as the smallest effects that count as a congenital gap
    and as MI migration. Using them as the smallest effect size of
-   interest means the equivalence test answers exactly the registered
-   question, in the opposite direction. No new quantity is introduced.
+   interest keeps the registered effect scale. No new quantity is
+   introduced. The estimands differ from the original operationalisation
+   as stated in §3.
 2. *They are fixed before any new data and are not derived from the
    observed effects.* This avoids the circularity of bounds fitted to
    the 10-seed data.
@@ -144,20 +228,26 @@ adopts them at filing):**
 - Unit of analysis: the seed. Cells within a seed are not treated as
   independent.
 - TOST: two one-sided one-sample t-tests at α = 0.05 each. Equivalently,
-  the 90 % CI of the mean lies inside the bounds. Report the 90 % and
-  95 % CIs, both one-sided p-values, the mean and the SD.
+  the **90 % two-sided CI** of the mean lies inside the bounds. Report
+  the 90 % CI (decision-relevant), the 95 % CI (descriptive), both
+  one-sided p-values, the mean and the SD.
 - Robustness (reported, not decision-relevant): the same TOST on a
   10 000-resample percentile bootstrap of the mean, and a
   Wilcoxon-based TOST. The data are quantised and may be non-normal. If
   parametric and non-parametric verdicts disagree, both are reported and
   the disagreement is stated in the paper.
+- Descriptive only: per-modality Me7 at floor SNR, per ℓ; per-seed D
+  for B-2; E-2b estimators.
 - Exclusions: a seed is excluded only for a technical failure, i.e. a
-  crash or a non-finite metric (§8). Outliers are not removed.
+  crash, a missing aggregate or a non-finite metric (§8). Outliers are
+  not removed. A KSG value clipped at 0 is a valid value, not a failure.
 
 ## 7. Power analysis and sample size
 
 Computed by `scripts/power_prereg_2026_10.py` (Monte Carlo, α = 0.05,
-script seed 20261023) from data already in the repo:
+script seed 20261023, about 20 s) from data already in the repo. The
+first tables give **component-test power only** (one TOST in
+isolation). The complete decision rule is simulated below them.
 
 **B-1 (Q3/Q3+ 10 seeds × 5 LOCK_AFTER).**
 
@@ -167,6 +257,8 @@ script seed 20261023) from data already in the repo:
 | Per-LOCK SD range | 0.0196 – 0.0468 |
 | Upper 80 % confidence limit of the per-seed SD (df = 9) | 0.0208 |
 
+Component-test power only:
+
 | Scenario | N for 80 % power | N for 90 % power |
 |----------|-----------------:|-----------------:|
 | E-1, true μ = 0, SD 0.0161 | 3 | 4 |
@@ -175,10 +267,16 @@ script seed 20261023) from data already in the repo:
 | E-1b (IUT, 5 LOCKs), true μ = 0, observed covariance | 10 | 12 |
 | E-1b (IUT, 5 LOCKs), true μ = observed per-LOCK means | 18 | 23 |
 
-**B-2 (ADR-0019 per-seed tables, 5 seeds each).** The planning SD is
-the largest per-table SD, 0.0749 bit (gaussian MINE-full, E1.3). Its
-UCL80 (df = 4) is 0.1166 bit. The real-bridge SDs are far smaller
-(Studyforrest Kraskov 0.0022), so this choice is conservative.
+**B-2 (ADR-0019 per-seed tables, 5 seeds each).** No full-probe KSG SD
+exists for the frozen configuration of §4.2. The available per-table
+SDs come from other configurations (mostly the gaussian world, one batch
+size of 512 for training, lesion and probe, other estimators). The
+planning SD is the largest of them, 0.0749 bit (gaussian MINE-full,
+E1.3), with UCL80 (df = 4) 0.1166 bit. This is a *planning assumption*,
+not evidence about the confirmatory SD; the B-2 pilot (§4.3) measures
+the latter, and N is fixed from it at filing.
+
+Component-test power only:
 
 | Scenario | N for 80 % power | N for 90 % power |
 |----------|-----------------:|-----------------:|
@@ -191,24 +289,64 @@ Normal-approximation formula used as a cross-check: for true μ = 0,
 N ≈ ((z₁₋α + z₁₋β/₂) · σ / δ)²; for μ ≠ 0, N ≈ ((z₁₋α + z₁₋β) · σ /
 (δ − |μ|))², with δ the bound.
 
-**Chosen N = 20 new seeds** for both E-1 and E-2. Power is ≥ 0.99 for
-E-1, 0.86 for E-1b at the observed means, > 0.90 for E-2 at μ = 0 with
-the UCL80 SD (N = 17 suffices for 90 %), and 0.72 for E-2 in the worst case (μ = −0.04 with the
-UCL80 SD). N = 20 also meets the lab's multi-seed-first-class rule
-(≥ 10 seeds, after the 5→10 seed collapse of Q3/Q3+). N = 30 is the
-alternative listed in §12.
+**Complete decision rule (simulated).** Each scenario draws seeds,
+applies the full §9 classification (90 % CI against {−δ, 0, +δ}) and,
+for B-1, the fixed sequence E-1 → E-1b, with per-LOCK values drawn from
+the observed 5 × 5 covariance and rounded to the 0.00625 quantum.
+E-1c cannot be simulated (no no-lock planning data).
+
+| Scenario (B-1) | N | P(E-1 equivalent) | P(E-1 and E-1b equivalent) |
+|----------------|--:|------------------:|---------------------------:|
+| observed per-LOCK means, observed covariance | 20 | 1.000 | 0.863 |
+| same | 30 | 1.000 | 0.968 |
+| μ = 0, observed covariance | 20 | 1.000 | 0.997 |
+| observed means, covariance inflated to the UCL80 SD | 20 | 1.000 | 0.627 |
+| same | 30 | 1.000 | 0.826 |
+
+| Scenario (B-2, SD 0.1166) | N | equivalent | effect detected, size unresolved | inconclusive |
+|---------------------------|--:|-----------:|---------------------------------:|-------------:|
+| μ = 0 | 20 | 0.960 | 0.029 | 0.011 |
+| μ = −0.04 | 20 | 0.713 | 0.260 | 0.027 |
+| μ = −0.04 | 25 | 0.802 | 0.195 | 0.003 |
+| μ = −0.04 | 30 | 0.860 | 0.140 | 0.000 |
+
+(μ = +0.04 gives the mirror image. No scenario produces a
+"beyond bound" verdict.)
+
+**Sample size.** N = 20 gives ≈ 1.00 for E-1 and 0.86 for the E-1 → E-1b
+sequence at the observed means (0.63 if the SD is at its UCL80). For
+E-2, N = 20 gives 0.96 at μ = 0 and 0.71 in the worst planning case
+(μ = ±0.04, SD 0.1166); **N = 25 is needed for 0.80** and N = 34 for 0.90
+in that case. N = 20 meets the lab's multi-seed-first-class rule
+(≥ 10 seeds). The choice between N = 20, 25 and 30 is an open PI
+decision (§12), to be made with the B-2 pilot SD and fixed on the OSF
+form; the drafted default rule is the smallest N ≥ 20 that gives
+≥ 0.80 complete-rule power for E-2 at μ = ±0.04 with the pilot UCL80 SD,
+capped at 40.
+
+**Runtime.** B-1 alone needs N × 6 grids × 30 cells: **3,600 lesion
+cells at N = 20** (5,400 at N = 30), excluding B-2. The last measured
+throughput (N12, `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`:
+1,500 cells in 2 h 37 min, 24-core host, parallel-4) gives about 6.3 h
+at N = 20 and 9.4 h at N = 30. B-2 adds N single-seed runs of the
+E1 runner whose runtime is not yet measured (probe 512, KSG on 896-D).
+Measuring the B-2 runtime on the filing host, during the pilot, is a
+pre-filing task; the estimate is recorded on the OSF form.
 
 ## 8. Seeds and stopping rule
 
-- **Confirmatory seeds:** 1001–1020 (20 seeds). They are disjoint from
-  every seed used so far: the default grid seeds 0–4, Q3/Q3+
-  {0, 17, 42, 73, 101, 7, 23, 31, 53, 89} and N12 {3, 11, 19, 29, 37,
-  41, 47, 59, 67, 79}.
-- **Reserve seeds (technical replacement only):** 1021–1024, used in
-  that order.
-- **Fixed-N design.** There is no interim look at outcomes and no
-  optional stopping or extension. Every analysis runs once, after all
-  20 seeds have finished.
+- **Confirmatory seeds:** the first N seeds of 1001, 1002, …, 1040 in
+  order (N = 20: 1001–1020; N = 30: 1001–1030). The same list serves
+  B-1 and B-2. They are disjoint from every seed used so far: the
+  default grid seeds 0–4, Q3/Q3+ {0, 17, 42, 73, 101, 7, 23, 31, 53,
+  89} and N12 {3, 11, 19, 29, 37, 41, 47, 59, 67, 79}, and from the
+  v0.8 / v0.9 drafts.
+- **Reserve seeds (technical replacement only):** the four seeds that
+  follow the last confirmatory seed (N = 20: 1021–1024), used in order.
+- **B-2 pilot seeds:** 1101–1105 (§4.3), never confirmatory.
+- **Fixed-N design.** N is fixed on the OSF form. There is no interim
+  look at outcomes and no optional stopping or extension. Every analysis
+  runs once, after all N seeds have finished.
 - **Technical failure** (crash, NaN/inf metric, missing aggregate): the
   seed is replaced by the next reserve seed. The decision is made from
   logs, blind to the outcome. If more than 4 replacements are needed,
@@ -219,16 +357,45 @@ alternative listed in §12.
 
 ## 9. Decision rule for the paper
 
-| Outcome | Paper claim |
-|---------|-------------|
-| E-1 passes | "B-1 is bounded: \|Me7\| < 0.05 with 95 % confidence on 20 pre-registered new seeds (TOST). The §5.5 signature remains retracted (ADR-0019)." |
-| E-1 fails, upper test rejects | "No congenital gap ≥ 0.05; a reverse (late-lesion) advantage cannot be excluded." |
-| E-1 fails, lower test rejects | "A congenital gap of the registered size cannot be excluded at N = 20." Reported as is; this does **not** reinstate §5.5. |
-| E-1b passes | "Equivalence holds at every tested LOCK_AFTER." |
-| E-2 passes | "B-2 is bounded: \|ΔMI\| < 0.10 bit with 95 % confidence (primary estimator), with D reported." |
-| E-2 fails | "B-2 remains null but is not shown equivalent at N = 20 (estimator-limited)." |
+Each primary test (E-1, E-2) is classified from the 90 % two-sided CI
+[L, U] of the mean against its bound δ (0.05 for B-1, 0.10 bit for
+B-2). The six classes below are exhaustive and mutually exclusive.
+"Registered direction" is a positive gap (T1 better) for B-1 and an MI
+increase for B-2. Every claim names the estimand of §3.
 
-All outcomes are publishable. None reverses an ADR-0019 verdict.
+| Class | Condition | Paper claim |
+|-------|-----------|-------------|
+| Equivalent | −δ < L and U < δ | "The [estimand] is bounded within ±δ (TOST, α = 0.05; 90 % CI inside the bounds) on N pre-registered new seeds." If 0 ∉ [L, U], add: "it is non-zero but smaller than the registered effect size." |
+| Beyond bound, registered direction | L ≥ δ | "An effect of at least the registered size, in the registered direction, on the [estimand]." Reported as a new pre-registered finding in a new ADR. |
+| Beyond bound, reverse direction | U ≤ −δ | "A reverse effect of at least the registered size on the [estimand]." New ADR. |
+| Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches the registered size is unresolved at N." |
+| Reverse effect detected, size unresolved | L ≤ −δ < U < 0 | "A non-zero reverse effect; size relative to the registered size unresolved at N." |
+| Inconclusive | L ≤ 0 ≤ U and (L ≤ −δ or U ≥ δ) | "Neither an effect nor its absence is established at N." |
+
+All labels are read from the same CI, so exactly one is reported per
+test. Each label rests on one-sided tests at α = 0.05; the probability
+that the reported label is false is at most 0.05 for each direction of
+error and at most 0.10 overall.
+
+Fixed-sequence add-ons for B-1: if E-1 is Equivalent, E-1b is tested;
+if it passes, the paper adds "equivalence holds at each of the five
+tested LOCK_AFTER values (grid medians)". If that passes, E-1c is
+tested; if it passes, "and at the no-lock default". A failed step is
+reported as "not shown at every tested LOCK_AFTER" (or at no-lock),
+with no further claim.
+
+For E-2, the absence-of-migration reading ("no MI migration of
+≥ 0.10 bit in this configuration") is used only if the estimator passed
+the sensitivity gate of §4.3; otherwise the claim is limited to the
+estimated quantity.
+
+**Relation to ADR-0019 and §5.5.** ADR-0019 remains the historical
+verdict on the data it analysed and is not edited. The new outcome is
+recorded in a new ADR whatever it is, including a "beyond bound" or
+"effect detected" outcome that conflicts with the ADR-0019 null; the
+paper then reports both, dated, without overwriting the earlier
+verdict. No outcome reinstates the §5.5 dose-response (peak) claim,
+which concerned a different estimand. All outcomes are publishable.
 
 ## 10. What is NOT being amended
 
@@ -242,10 +409,13 @@ All outcomes are publishable. None reverses an ADR-0019 verdict.
 
 ## 11. Pre-registration fidelity checklist
 
-- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1024) is run.
-- [ ] Commit hash of `run_grid.sh`, `analyse_amedi_quadratic.py`, the E1
-      runner (with the seed-list option) and the TOST analysis script
-      recorded on the OSF form.
+- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1044) is run.
+- [ ] Pre-filing code tasks of §4.3 merged with unit tests; commit hashes
+      of `run_grid.sh`, `aggregate_grid.py`, `analyse_amedi_quadratic.py`,
+      the E1 runner, the sensitivity harness, the TOST analysis script
+      and the pinned `nerve_wml` recorded on the OSF form.
+- [ ] Sensitivity gate result and B-2 pilot SD / runtime recorded on the
+      form; N fixed on the form.
 - [x] No threshold change.
 - [x] No metric-math change.
 - [x] Bounds derived from frozen thresholds, not from data.
@@ -256,13 +426,16 @@ All outcomes are publishable. None reverses an ADR-0019 verdict.
 
 1. Bounds: symmetric ±threshold (drafted) vs one-sided non-superiority
    vs tight ±half-threshold as primary.
-2. N: 20 (drafted) vs 30. N = 30 raises E-1b power to 0.97 and E-2
-   worst-case power to between 0.80 and 0.90 (N = 25 gives 80 %,
-   N = 34 gives 90 %).
-3. B-2 primary estimator: Kraskov on the full probe (drafted, continuity
-   with v0.6) vs MINE on the full probe (the estimator ADR-0019 treats as
-   load-bearing). Kraskov k-NN in 896 ambient dimensions at N = 512 has
-   known bias; the PI may prefer MINE.
+2. N: 20, 25 or 30, fixed with the B-2 pilot SD (drafted rule in §7).
+   N = 20 gives 0.71 complete-rule power for E-2 in the worst planning
+   case; N = 25 gives 0.80 and N = 30 gives 0.86. N = 30 also raises
+   E-1 → E-1b to 0.97.
+3. B-2 primary estimator: full-probe KSG (drafted, continuity with
+   v0.6) vs full-probe MINE (the estimator ADR-0019 treats as
+   load-bearing; KSG in 896 ambient dimensions at N = 512 has known
+   bias and clips at 0). The sensitivity gate of §4.3 may force MINE.
+   Also the batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8)
+   vs 512 / 512 / 512 (the ADR-0019 E1.3 runs).
 4. B-2 primary world: Studyforrest (drafted; same bridge as B-1, but the
    lesioned audio channel is an annotation proxy) vs CC-film (audio is
    the real signal).

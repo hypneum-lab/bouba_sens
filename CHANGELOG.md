@@ -14,13 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (0.05 / 0.10 / 0.02) are unchanged; ADR-0019 verdicts and the §5.5
   retraction are unchanged.
   - `docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`: TOST
-    equivalence for B-1 (±0.05) and B-2 (±0.10 bit), N = 20 new seeds.
+    equivalence for B-1 (±0.05) and B-2 (±0.10 bit), N ≥ 20 new seeds.
   - `docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md`: principal
     subspace shift after late lesion vs `LOCK_AFTER`, Page trend test.
   - `docs/osf/amendment-v0.9-decorrelation-window-2026-10-23.md`:
     within-class cross-modal decorrelation window, fusion-gain deficit.
 - `scripts/power_prereg_2026_10.py`: power analysis for the three
-  drafts from committed data (Q3/Q3+ Me7 matrix, ADR-0019 B-2 tables).
+  drafts from committed data (Q3/Q3+ Me7 matrix, ADR-0019 B-2 tables):
+  component-test power and Monte-Carlo simulation of each complete
+  decision rule, plus the reference Page permutation test.
 
 ### Added
 
