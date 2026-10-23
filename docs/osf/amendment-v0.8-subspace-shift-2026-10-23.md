@@ -100,7 +100,11 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
 ### 3.1 Rank guard, exclusion denominators and incomplete blocks
 
 A matrix *passes the rank check* if its column-centred numerical rank
-(singular values ≥ 1e-6 × the largest) is at least k. The check
+is at least k. The numerical rank is 0 if the largest singular value of
+the centred matrix is 0 (a zero or constant code); otherwise it is the
+number of singular values ≥ 1e-6 × the largest (which is then > 0).
+Unit tests cover zero and constant-code fixtures (rank 0, check
+failed). The check
 applies to every matrix that enters S: Z_pre (one per (s, ℓ)), Z_post
 (one per cell), the no-lesion control's end matrix (one per (s, ℓ)) and
 both 256-row split halves of Z_pre.

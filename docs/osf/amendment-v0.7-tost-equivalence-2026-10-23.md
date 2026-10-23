@@ -185,11 +185,11 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
     that reference and may be material; it is measured by the
     calibration of §4.3. A bias common to Z_pre and Z_post cancels in
     ΔMI-hat; a bias that depends on the MI level or on the code
-    geometry that the lesion changes does not. Like any estimate of
-    MI with a 4-class label, MI-hat is bounded in expectation by the
-    label entropy (≤ 2 bits), so a code that separates the classes
-    almost perfectly before and after the lesion leaves little room
-    for ΔMI-hat.
+    geometry that the lesion changes does not. Because m_i ≥ k, each
+    I_i ≤ ψ(N) − ψ(N_y(i)), so MI-hat is capped near the empirical
+    label entropy (≈ 2 bits for balanced classes); a code that
+    separates the classes almost perfectly before and after the lesion
+    leaves little room for ΔMI-hat (ceiling effect).
   The `nerve_wml` and `bouba_sens` versions are pinned by commit hash
   on the OSF form. The estimator is new code (§4.3); it adds a
   function and changes no existing metric implementation (§10).
