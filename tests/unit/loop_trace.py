@@ -146,7 +146,6 @@ def _rng_entries() -> dict[str, str]:
     import random
 
     import numpy as np
-
     import torch.mps
 
     dev: dict[str, str] = {}
