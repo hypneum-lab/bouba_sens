@@ -71,7 +71,9 @@ not from a batch-sized pool, so a same-label donor always exists:
   a single row, the sample would be its own donor; this is logged and
   counted (not expected: every class has many rows).
 - Generator: `torch.Generator` seeded with 10⁹ + 1000 · s + t (s =
-  training seed, t = step), one stream per run, modalities drawn in the
+  training seed, t = step), freshly re-seeded at each step with this
+  formula (no stream carried across steps, so step t is reproducible on
+  its own), modalities drawn in the
   fixed order audio, vision, tactile, gravity, force.
 - No class weighting: the donor is drawn uniformly within the label of
   i, and the label of i is kept, so the label distribution of each batch
