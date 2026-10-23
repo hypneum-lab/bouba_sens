@@ -95,10 +95,10 @@ def test_control_arm_has_no_lesion_event() -> None:
 def test_control_shares_probe_and_z_pre_with_lesion_arm() -> None:
     ckpt = _build_loop().pretrain(steps=3, batch_size=4, seed=0)
     ctrl = _restored_loop(ckpt).lesion_phase(
-        None, steps=3, batch_size=4, seed=50, probe_size=16, capture_seed=9
+        None, steps=3, batch_size=4, seed=50, probe_size=16, probe_demod="hard"
     )
     les = _restored_loop(ckpt).lesion_phase(
-        _spec(), steps=3, batch_size=4, seed=50, probe_size=16, capture_seed=9
+        _spec(), steps=3, batch_size=4, seed=50, probe_size=16, probe_demod="hard"
     )
     assert ctrl.probe_labels is not None and les.probe_labels is not None
     assert ctrl.pre_lesion_codes is not None and les.pre_lesion_codes is not None
@@ -109,32 +109,48 @@ def test_control_shares_probe_and_z_pre_with_lesion_arm() -> None:
 def test_control_post_differs_from_lesion_post() -> None:
     ckpt = _build_loop().pretrain(steps=3, batch_size=4, seed=0)
     ctrl = _restored_loop(ckpt).lesion_phase(
-        None, steps=5, batch_size=4, seed=50, probe_size=16, capture_seed=9
+        None, steps=5, batch_size=4, seed=50, probe_size=16, probe_demod="hard"
     )
     les = _restored_loop(ckpt).lesion_phase(
-        _spec(), steps=5, batch_size=4, seed=50, probe_size=16, capture_seed=9
+        _spec(), steps=5, batch_size=4, seed=50, probe_size=16, probe_demod="hard"
     )
     assert ctrl.post_lesion_codes is not None and les.post_lesion_codes is not None
     assert not torch.equal(ctrl.post_lesion_codes, les.post_lesion_codes)
 
 
-def test_capture_seed_makes_codes_deterministic() -> None:
-    """Gumbel-softmax demodulation draws from the global RNG; capture_seed pins it."""
+def test_hard_probe_is_bit_identical_without_any_seeding() -> None:
+    """Hard (argmax) demodulation: same checkpoint -> same codes, no RNG involved."""
     ckpt = _build_loop().pretrain(steps=3, batch_size=4, seed=0)
-    kw = {"batch_size": 4, "seed": 50, "probe_size": 16, "capture_seed": 9}
+    kw = {"batch_size": 4, "seed": 50, "probe_size": 16, "probe_demod": "hard"}
+    torch.manual_seed(1)
     a = _restored_loop(ckpt).lesion_phase(None, steps=0, **kw)
-    torch.manual_seed(12345)  # different global RNG state must not matter
+    torch.manual_seed(98765)  # unrelated global RNG state must not matter
     b = _restored_loop(ckpt).lesion_phase(None, steps=0, **kw)
     assert a.pre_lesion_codes is not None and b.pre_lesion_codes is not None
     assert torch.equal(a.pre_lesion_codes, b.pre_lesion_codes)
-    # Untrained control (0 steps): same net, same noise -> post == pre exactly.
+    # Untrained control (0 steps): same net -> post == pre exactly.
     assert torch.equal(a.pre_lesion_codes, a.post_lesion_codes)  # type: ignore[arg-type]
 
 
-def test_capture_seed_does_not_disturb_global_rng() -> None:
+def test_hard_probe_does_not_consume_global_rng() -> None:
     ckpt = _build_loop().pretrain(steps=3, batch_size=4, seed=0)
     loop = _restored_loop(ckpt)
     torch.manual_seed(7)
     state = torch.get_rng_state()
-    loop.lesion_phase(None, steps=0, batch_size=4, probe_size=8, capture_seed=3)
+    loop.lesion_phase(None, steps=0, batch_size=4, probe_size=8, probe_demod="hard")
     assert torch.equal(torch.get_rng_state(), state)
+
+
+def test_soft_probe_remains_the_stochastic_legacy_default() -> None:
+    ckpt = _build_loop().pretrain(steps=3, batch_size=4, seed=0)
+    a = _restored_loop(ckpt).lesion_phase(None, steps=0, batch_size=4, probe_size=8)
+    b = _restored_loop(ckpt).lesion_phase(None, steps=0, batch_size=4, probe_size=8)
+    assert a.pre_lesion_codes is not None and b.pre_lesion_codes is not None
+    assert not torch.equal(a.pre_lesion_codes, b.pre_lesion_codes)
+
+
+def test_unknown_probe_demod_is_rejected() -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="probe_demod"):
+        _build_loop().lesion_phase(None, steps=0, batch_size=4, probe_demod="nope")

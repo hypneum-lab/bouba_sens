@@ -154,7 +154,7 @@ class AdaptationLoop:
         probe_pool: str = "full",
         probe_size: int | None = None,
         probe_seed: int | None = None,
-        capture_seed: int | None = None,
+        probe_demod: str = "soft",
     ) -> AdaptationReport:
         """Phase 2: lesion-active training + theta-replay buffer.
 
@@ -175,13 +175,12 @@ class AdaptationLoop:
         the same ``seed``), no ``on_lesion``, no noise injection, so that
         ``Z_post`` shows the shift caused by continued training alone.
 
-        ``fuse`` demodulates through Gumbel-softmax, which draws from the
-        global torch RNG, so probe captures are stochastic by default.
-        ``capture_seed`` (``None`` = legacy behaviour) pins that noise: each
-        of the two captures runs in a forked RNG state seeded with it, so
-        ``Z_pre`` is bit-identical across arms for the same checkpoint and
-        probe, pre/post share the same noise realisation, and the global
-        RNG is left untouched.
+        ``fuse`` demodulates through Gumbel-softmax by default, which draws
+        from the global torch RNG, so probe captures are stochastic
+        (legacy behaviour, ``probe_demod="soft"``). ``probe_demod="hard"``
+        captures both Z_pre and Z_post with deterministic argmax
+        demodulation (``fuse(hard_demod=True)``): same checkpoint, same
+        codes, no RNG use. Training steps are unaffected either way.
         """
         from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
 
@@ -204,15 +203,13 @@ class AdaptationLoop:
         # the surviving channel. `probe_pool="mean"` restores the legacy
         # 1-D mean-pooled scalar (Sprint 5..17) for reproducibility.
         # Seed stepped far from the Phase-2 training seeds to avoid overlap.
+        if probe_demod not in ("soft", "hard"):
+            raise ValueError(f"probe_demod must be 'soft' or 'hard'; got {probe_demod!r}")
+
         def _capture(sample: WorldSample) -> Tensor:
-            with (
-                torch.no_grad(),
-                torch.random.fork_rng(devices=[], enabled=capture_seed is not None),
-            ):
-                if capture_seed is not None:
-                    torch.manual_seed(capture_seed)
+            with torch.no_grad():
                 carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
-                return self.nerve.fuse(carriers)
+                return self.nerve.fuse(carriers, hard_demod=probe_demod == "hard")
 
         def _pool(fused: Tensor) -> Tensor:
             flat = fused.flatten(1)  # (B, K*d)

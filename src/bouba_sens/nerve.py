@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, cast
 
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F  # noqa: N812
 
 from bouba_sens.sensory import MODALITIES, Modality
 
@@ -268,11 +269,16 @@ class CrossModalNerve(nn.Module):
             return self._transducer_gating_target
         return self.transducer_gating
 
-    def fuse(self, letters: dict[Modality, Tensor]) -> Tensor:
+    def fuse(self, letters: dict[Modality, Tensor], *, hard_demod: bool = False) -> Tensor:
         """Fuse 5 modality carriers into a shared `(B, K, d_hidden)` tensor.
 
         Args:
             letters: 5-entry dict mapping each Modality to its `(B, T)` carrier.
+            hard_demod: deterministic probe path (amendment v0.8). Demodulate
+                with argmax (`demodulate(hard=True)`) and feed the one-hot
+                code distribution to the codebook: no Gumbel sampling, no RNG
+                use, same carriers -> same output. Default False keeps the
+                stochastic Gumbel-softmax training behaviour unchanged.
 
         Returns:
             fused: `(B, K, d_hidden)` float32. Gradient flows back through
@@ -281,7 +287,16 @@ class CrossModalNerve(nn.Module):
             AND through every active transducer.
         """
         # 1. Soft demod each carrier to (B, K, A) distribution.
-        soft = {m: self.mux.demodulate(letters[m], hard=False, tau=1.0) for m in MODALITIES}
+        if hard_demod:
+            n_alpha = self.mux.cfg.alphabet_size
+            soft = {
+                m: F.one_hot(self.mux.demodulate(letters[m], hard=True), n_alpha).to(
+                    letters[m].dtype
+                )
+                for m in MODALITIES
+            }
+        else:
+            soft = {m: self.mux.demodulate(letters[m], hard=False, tau=1.0) for m in MODALITIES}
         # 2. Project each modality via the adaptive codebook -> (B, K, d_hidden).
         h: dict[Modality, Tensor] = {m: self.codebook(soft[m]) for m in MODALITIES}
 

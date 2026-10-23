@@ -69,8 +69,8 @@ def capture_block(
     ``constellation_lock_after=lock`` mux); each arm restores ``ckpt`` into
     its own loop. All arms use the same ``phase2_seed`` (default: the
     experiment ``seed``), hence the same probe, the same fresh and replay
-    batches, and the same pinned capture noise (``capture_seed = probe
-    seed``). Before each arm the global torch RNG is re-seeded with
+    batches, and deterministic hard-demodulation captures (no Gumbel
+    sampling, PI decision 2026-10-23). Before each arm the global torch RNG is re-seeded with
     ``phase2_seed`` so the lesion noise stream is reproducible and common
     across cells. ``lock`` is recorded; the lock itself is applied by
     ``make_loop`` / the checkpoint.
@@ -92,7 +92,7 @@ def capture_block(
             seed=p2_seed,
             probe_size=probe_size,
             probe_seed=probe_seed,
-            capture_seed=probe_seed,
+            probe_demod="hard",
         )
 
     control = run(None)

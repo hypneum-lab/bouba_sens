@@ -16,10 +16,10 @@ from bouba_sens.metrics.subspace_aggregate import (
     N_CELLS,
     BlockResult,
     RunHaltedError,
+    SeedRoster,
     TechnicalFailureError,
     aggregate,
     evaluate_block,
-    SeedRoster,
     verdict,
 )
 from bouba_sens.sensory import MODALITIES
