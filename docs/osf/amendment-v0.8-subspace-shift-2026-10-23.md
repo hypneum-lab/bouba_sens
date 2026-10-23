@@ -235,7 +235,8 @@ outcomes are publishable.
 
 ## 7. Seeds, power and stopping rule
 
-- **Pilot seeds:** 2101–2105. They are used to validate the pipeline,
+- **Pilot seeds:** 2101–2105, extendable in order (2106, 2107, …) under
+  the rule of the power paragraph below. They are used to validate the pipeline,
   check the rank guard and estimate the within-seed SD of Y. Pilot data
   are excluded from every confirmatory test.
 - **Confirmatory seeds:** the first N of 2001, 2002, …, 2040 in order
@@ -244,8 +245,9 @@ outcomes are publishable.
   seeds that follow the last confirmatory seed (N = 20: 2021–2024), for
   technical replacement only.
 - **Power (no pilot data yet).** `scripts/power_prereg_2026_10.py`,
-  one-sided Page test (asymptotic in the simulation; it agrees with the
-  permutation test to within Monte Carlo error), 7 levels, linear trend
+  one-sided Page test (asymptotic for the component table; the
+  complete-rule table uses the permutation critical value,
+  `page_perm_crit`), 7 levels, linear trend
   with a seed random intercept of 1 SD. Results are in units of the
   within-seed SD of Y.
 
@@ -285,13 +287,22 @@ outcomes are publishable.
   of 0.20, the protocol-failure probability stays near 0.4 even at
   N = 40, so 0.80 unconditional power is not reachable.
 
-  *Drafted rule for N.* From the 5 pilot seeds: σ̂ = pooled within-seed
-  SD of Y (residuals after removing seed and level means, ddof as in a
-  two-way ANOVA), inflated to its one-sided UCL80; ĝ = pilot median
-  S_split / σ̂; q̂ = fraction of pilot blocks that are incomplete,
-  floored at 0.05. N is the smallest N ≥ 20 whose simulated P(Supported)
-  is ≥ 0.80, **unrounded**, with at least 100 000 draws per candidate
-  (Monte-Carlo SE ≤ 0.0013), at a total trend of ĝ + 0.70 SD units.
+  *Drafted rule for N.* From the pilot seeds (§7, at least 5): σ̂ =
+  residual SD of Y from the two-way ANOVA without replication (seed ×
+  level) fitted on the **complete** pilot blocks only (df = (n_c − 1) ×
+  6 for n_c complete blocks; at least 3 complete blocks are needed,
+  otherwise the pilot is extended with seeds 2106, 2107, … until 3 are
+  complete), inflated to its one-sided UCL80 (χ², same df); ĝ = pilot
+  median S_split / σ̂. The planning exclusion rate q̂ is the exact
+  (Clopper–Pearson) one-sided **80 % upper bound** of the pilot
+  incomplete-block fraction, not the point estimate: 0/5 incomplete
+  gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077. Because a large
+  q̂ makes the target unreachable (q = 0.20 already gives a 0.41
+  protocol-failure probability at N = 40), the PI may extend the pilot
+  to tighten q̂ before computing N. N is the smallest N ≥ 20 for which
+  the simulated P(Supported), **minus two Monte-Carlo SEs**, is ≥ 0.80,
+  with at least 100 000 draws per candidate, the permutation-calibrated
+  Page test and a total trend of ĝ + 0.70 SD units.
   If no N ≤ 40 qualifies (for example because q̂ is large), the
   amendment is not filed as drafted: the PI either files N = 40 with its
   computed power stated on the form as below target, or revises the

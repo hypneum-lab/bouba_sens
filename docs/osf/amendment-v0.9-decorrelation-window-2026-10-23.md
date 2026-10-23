@@ -48,8 +48,12 @@ The operationalisation below (within-class cross-modal resampling, the
 window grid, the fusion-gain outcome, the controls) is ours. It is not
 copied from Kleinman et al. The PI should check the correspondence
 before filing (§10). Our claims are limited to what the design tests:
-an onset effect under a fixed post-window recovery, persistence through
-the tested recovery horizon, and nothing about permanence beyond it.
+whether the deficit varies across the specified training schedules
+(in which onset, total training and clean exposure co-vary), persistence
+through the tested recovery horizon, and nothing about permanence
+beyond it. The design does not identify a special early sensitivity: a
+deficit that simply declines with total training could produce the same
+main-grid trend.
 
 ## 3. Manipulation, controls and outcome (pre-registered)
 
@@ -125,10 +129,9 @@ are identical and only the cross-modal pairing differs.
   labels independently within each (seed, draw) pair, 10 000 times
   (generator seed 20261023). The gate passes if the one-sided
   permutation p-value of the observed Δ_K is < 0.05.
-- **Failure.** The world has no detectable within-class cross-modal
-  dependence under the resampling scheme, the manipulation is a
-  near no-op, and the experiment is reported as *uninformative in this
-  world* with no verdict.
+- **Failure.** If p ≥ 0.05, the check failed: the experiment is
+  reported as *uninformative in this world* with no verdict. No
+  inference is drawn about the size of the manipulation.
 - Reported (no decision): Δ_K with its permutation p-value, the mean
   K_joint and K_decor, and the CKA of the original contiguous anchors
   (which differs from both in temporal structure and is not used for
@@ -254,10 +257,11 @@ of mean D(s, 0):
 
 **Axis C — timing (D-2, only if A+).**
 
-- C+ "timing dependence detected: a decreasing ordered trend of the
-  deficit over onset (onset effect under fixed post-window recovery)":
-  D-2 p < 0.05.
-- C0 "timing dependence was not demonstrated": D-2 p ≥ 0.05. This does
+- C+ "schedule dependence detected: a decreasing ordered trend of the
+  deficit over the main-grid schedules, in which onset, total training
+  and clean exposure co-vary": D-2 p < 0.05. It is not attributed to
+  onset alone.
+- C0 "timing (schedule) dependence was not demonstrated": D-2 p ≥ 0.05. This does
   not establish that the deficit is independent of timing.
 - C– "not tested": A0 or A−.
 
@@ -267,9 +271,9 @@ The mirrored (increasing) Page test is reported as exploratory.
 
 | A | B | C | Paper statement |
 |---|---|---|-----------------|
-| A+ | B≥ | C+ | "Early decorrelation reduced fusion gain by at least the SESOI, and the deficit showed a decreasing ordered trend over onset: a pre-registered onset effect under fixed post-window recovery." |
+| A+ | B≥ | C+ | "Early decorrelation reduced fusion gain by at least the SESOI, and the deficit showed a decreasing ordered trend across the specified training schedules, in which onset, total training and clean exposure co-vary; the trend is not attributed to onset alone." |
 | A+ | B? | C+ | Same, with "by an amount whose size relative to the SESOI is unresolved". |
-| A+ | B≈ | C+ | "A detectable but practically negligible (< SESOI) deficit with a decreasing ordered trend over onset." |
+| A+ | B≈ | C+ | "A detectable but practically negligible (< SESOI) deficit with a decreasing ordered trend across the specified training schedules (confounds as above)." |
 | A+ | any | C0 | "Early decorrelation reduced fusion gain [magnitude label]; timing dependence was not demonstrated." |
 | A0 | B≈ | C– | "No deficit of practical size: the onset-0 deficit is bounded within ±0.05 (informative null)." |
 | A0 | B? | C– | "Inconclusive: neither a deficit nor its absence is established at N." |
@@ -293,18 +297,20 @@ The mirrored (increasing) Page test is reported as exploratory.
 Axis B label is a one-sided α = 0.05 claim from the same CI; the
 probability that the reported Axis B label is false is at most 0.05 per
 direction. Under no effect (μ = 0), the simulated probability of the
-headline A+ and C+ is 0.009–0.015 (§7).
+headline A+ and C+ is 0.009–0.014 (§7).
 
 Paper consequence: a supported result is a *new* pre-registered
-critical-period-style finding with a correlated-signal manipulation,
-not channel removal. It does not reinstate B-1 or §5.5. All outcomes are
+finding that a correlated-signal manipulation (not channel removal)
+reduces fusion gain and that the deficit varies across the specified
+training schedules. It is not described as a critical period, because
+the design does not separate onset from training budget and recovery. It does not reinstate B-1 or §5.5. All outcomes are
 publishable.
 
 ## 7. Seeds, power and stopping rule
 
 - **Pilot seeds:** 3101–3105, used to validate the pipeline, run the
-  manipulation check, estimate SD(D) and the within-seed correlation
-  across onsets, and measure the runtime. They are excluded from
+  manipulation check, estimate the variance components of D (reported;
+  the planning ρ stays 0) and measure the runtime. They are excluded from
   confirmatory tests.
 - **Confirmatory seeds:** the first N of 3001, 3002, …, 3040 in order
   (N = 20: 3001–3020), disjoint from every seed used so far and from the
@@ -328,22 +334,24 @@ publishable.
   D-2 alone (Page, 5 levels): N = 20 gives power 0.94 for a total trend
   of 1 within-seed SD and 0.48 for 0.5 SD (N = 30: 0.98 / 0.59).
 
-  *Complete rule* (SD 0.0605, D quantised to 1/512, onsets correlated
+  *Complete rule* (SD 0.0605, D quantised to 1/512, D-2 decided at the
+  permutation critical value of Page's L (`page_perm_crit`, no-tie
+  calibration; ties from quantisation are rare at this SD), onsets correlated
   through a seed effect with intraclass correlation ρ; "linear" = true
   deficit μ₀ at o = 0 falling linearly to 0 at o = 200; "early" = only
   o = 0 affected):
 
   | N | profile | ρ | μ₀ | P(A+ and C+) | P(B≥) | P(B≈) |
   |--:|---------|--:|---:|-------------:|------:|------:|
-  | 20 | any | any | 0 | 0.009–0.015 | 0.000 | 0.94 |
-  | 20 | linear | 0 | 0.05 | 0.82 | 0.05 | 0.05 |
+  | 20 | any | any | 0 | 0.009–0.014 | 0.000 | 0.94 |
+  | 20 | linear | 0 | 0.05 | 0.805 | 0.05 | 0.05 |
   | 20 | linear | 0.5 | 0.05 | 0.95 | 0.05 | 0.05 |
-  | 20 | early | 0 | 0.05 | 0.64 | 0.05 | 0.05 |
-  | 20 | early | 0.5 | 0.05 | 0.85 | 0.05 | 0.05 |
-  | 20 | linear | 0 | 0.075 | 0.99 | 0.56 | 0.00 |
+  | 20 | early | 0 | 0.05 | 0.618 | 0.05 | 0.05 |
+  | 20 | early | 0.5 | 0.05 | 0.843 | 0.05 | 0.05 |
+  | 20 | linear | 0 | 0.075 | 0.985 | 0.56 | 0.00 |
   | 20 | any | any | 0.10 | ≥ 0.98 | 0.96–0.97 | 0.00 |
   | 30 | linear | 0 | 0.05 | 0.93 | 0.05 | 0.05 |
-  | 30 | early | 0 | 0.05 | 0.795 | 0.05 | 0.05 |
+  | 30 | early | 0 | 0.05 | 0.789 | 0.05 | 0.05 |
   | 30 | linear | 0 | 0.075 | 1.00 | 0.72 | 0.00 |
 
   Two consequences. First, B≥ can only be expected when the true
@@ -352,19 +360,27 @@ publishable.
   construction. A rule that required the point estimate to reach the
   SESOI (the earlier draft) would have power 0.50 at a true deficit of
   0.05 whatever N. Second, the headline power depends strongly on
-  the onset profile and ρ, which the pilot estimates.
+  the onset profile and ρ; planning uses the least favourable ρ.
   These numbers are conditional on the simulation model (Gaussian
   seed and residual effects, the two onset profiles); the pilot
-  replaces the planning values.
+  replaces the planning SD. ρ = 0 gives the lowest headline power in
+  every simulated scenario, so planning uses ρ = 0 and does not estimate
+  ρ.
 - **N.** N = 20 is the minimum. Drafted rule, from the 5 pilot seeds
-  (decor vs joint, main grid): σ̂ = sample SD (ddof = 1) of the 25
-  pilot D values pooled after removing onset means, inflated to its
-  one-sided UCL80; ρ̂ = one-way ANOVA intraclass correlation of D across
-  onsets with seeds as groups, truncated to [0, 0.9]. N is the smallest
-  N ≥ 20 whose simulated P(A+ and C+) at μ₀ = 0.05 under the "early"
-  profile is ≥ 0.80, **unrounded**, with at least 100 000 draws per
-  candidate N (Monte-Carlo SE ≤ 0.0013). With the planning values
-  (σ = 0.0605, ρ = 0) this gives N = 31, not 30 (P = 0.795 at N = 30).
+  (decor vs joint, main grid, 5 seeds × 5 onsets): fit the two-way
+  model D(s, o) = μ_o + u_s + e_so by ANOVA without replication;
+  σ̂_e² = MS_residual (df = 16), σ̂_u² = max(0, (MS_seed − MS_residual)
+  / 5), σ̂² = σ̂_u² + σ̂_e² (the marginal SD the planning model needs).
+  Its planning value is the 80th percentile of σ̂ over 2 000 parametric
+  bootstrap replicates of 5 seeds drawn from the fitted model (seed
+  20261023), which accounts for the seed correlation that an ordinary
+  χ² limit ignores. With ρ = 0 (above), N is the smallest N ≥ 20 for
+  which the simulated P(A+ and C+) at μ₀ = 0.05 under the "early"
+  profile, **minus two Monte-Carlo SEs**, is ≥ 0.80, using at least
+  100 000 draws per candidate N and the permutation-calibrated Page
+  test. With the planning SD 0.0605 this gives **N = 32** (estimates
+  0.788 / 0.801 / 0.809 at N = 30 / 31 / 32; lower bounds 0.786 /
+  0.799 / 0.807; `scripts/power_prereg_2026_10.py`).
   If no N ≤ 40 qualifies, the amendment is not filed as drafted: the PI
   either files N = 40 with its computed power stated on the form as
   below target, or redesigns (for example a larger SESOI justified
@@ -405,7 +421,8 @@ publishable.
       denominators skipped).
 - [ ] Manipulation check passed on pilot seeds and recorded on the form,
       with Δ_K, its permutation p-value, K_joint and K_decor.
-- [ ] Pilot SD(D), ρ and runtime recorded; N fixed on the form.
+- [ ] Pilot variance components of D, bootstrap planning SD and runtime
+      recorded; N fixed on the form.
 - [x] No threshold or existing-metric change.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
 
@@ -425,8 +442,8 @@ configuration are also filing prerequisites.
    Each added width multiplies compute.
 3. Fixed-budget grid: keep (drafted; 6 extra runs per seed, reported as
    a replication at fixed budget) or drop. Either way, every positive
-   claim is limited to "an onset effect under fixed post-window
-   recovery"; separate identification of onset, budget and recovery
+   claim is limited to "the deficit varies across the specified
+   training schedules"; separate identification of onset, budget and recovery
    effects would need a further design (e.g. a factorial over recovery
    length), not drafted.
 4. Primary comparator: joint-resampling control (drafted) vs the plain

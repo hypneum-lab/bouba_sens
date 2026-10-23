@@ -31,7 +31,9 @@ Two kinds of output:
   quantisation, rank exclusions and the protocol-failure rule).
 
 `page_perm_pvalue` is the reference implementation of the
-pre-registered Page test (within-block permutation, mid-ranks).
+pre-registered Page test (within-block permutation, mid-ranks). The
+complete-rule simulations use its permutation critical value
+(`page_perm_crit`, no-tie calibration) rather than the asymptotic test.
 
 Usage:
     python scripts/power_prereg_2026_10.py [--sims 100000]
@@ -168,6 +170,37 @@ def page_asym_p(data: np.ndarray) -> np.ndarray:
     return stats.norm.sf((page_l(data) - mean) / math.sqrt(var))
 
 
+_PAGE_CRIT: dict[tuple[int, int], float] = {}
+
+
+def page_perm_crit(n: int, m: int, draws: int = 200_000) -> float:
+    """Permutation critical value of Page's L (no ties), one-sided alpha.
+
+    Smallest c with P0(L >= c) <= alpha under within-block exchangeability,
+    estimated from `draws` random rank permutations (fixed generator), so
+    that power simulations use the registered permutation calibration
+    rather than the asymptotic normal approximation.
+    """
+    key = (n, m)
+    if key not in _PAGE_CRIT:
+        g = np.random.default_rng(20261023 + 1000 * n + m)
+        weights = np.arange(1, m + 1)
+        lvals = np.zeros(draws)
+        for start in range(0, draws, 20_000):
+            k = min(20_000, draws - start)
+            ranks = g.random((k, n, m)).argsort(-1).argsort(-1) + 1
+            lvals[start : start + k] = (ranks * weights).sum(axis=(-2, -1))
+        lv, counts = np.unique(lvals, return_counts=True)
+        tail = np.cumsum(counts[::-1])[::-1] / draws  # P(L >= lv)
+        _PAGE_CRIT[key] = float(lv[np.argmax(tail <= ALPHA)])
+    return _PAGE_CRIT[key]
+
+
+def page_perm_reject(data: np.ndarray) -> np.ndarray:
+    """Vectorised one-sided (increasing) Page rejection at the permutation critical value."""
+    return page_l(data) >= page_perm_crit(data.shape[-2], data.shape[-1])
+
+
 def page_perm_pvalue(data: np.ndarray, n_perm: int, rng) -> float:
     """Pre-registered Page test: within-block permutation of mid-ranks.
 
@@ -213,10 +246,10 @@ def v08_rule(n, effect, guard, q_loss, sims, rng, levels=7, sd_seed=1.0):
     for k in np.unique(n_keep[~fail]):
         idx = np.where((n_keep == k) & ~fail)[0]
         yk = np.stack([y[i][keep[i]] for i in idx])  # (len, k, levels)
-        p = page_asym_p(yk)
+        rej = page_perm_reject(yk)
         guard_ok = np.median(yk[..., -1] - yk[..., 0], axis=-1) > guard
-        page_ok[idx] = p < ALPHA
-        supported[idx] = (p < ALPHA) & guard_ok
+        page_ok[idx] = rej
+        supported[idx] = rej & guard_ok
     return supported.mean(), page_ok.mean(), fail.mean()
 
 
@@ -239,7 +272,7 @@ def v09_rule(n, mu0, profile, sd, rho, sims, rng, quantum=1 / 512):
     d0 = d[..., 0]
     t = d0.mean(-1) / (d0.std(-1, ddof=1) / math.sqrt(n))
     harm = t > stats.t.ppf(1 - ALPHA, n - 1)  # D-1
-    timing = page_asym_p(d[..., ::-1]) < ALPHA  # D-2, decreasing
+    timing = page_perm_reject(d[..., ::-1])  # D-2, decreasing, permutation-calibrated
     lo, hi = ci90(d0)
     mag = classify(lo, hi, B1_BOUND)
     return {
@@ -430,6 +463,14 @@ def main() -> int:
                         r = v09_rule(n, mu0, profile, sd, rho, rs, rng)
                         txt = " ".join(f"{k.strip()}={v:.3f}" for k, v in r.items())
                         print(f"  N={n} sd={sd:.4f} rho={rho} {profile:6s} mu0={mu0:.3f}: {txt}")
+
+    print("\n== v0.9 N selection: early profile, mu0=0.05, rho=0 (conservative), sd=0.0605")
+    print("   permutation-calibrated Page; select N with estimate - 2 MC SE >= 0.80")
+    for n in (30, 31, 32, 33, 34):
+        sims = 100_000
+        pw = v09_rule(n, 0.05, "early", sd9, 0.0, sims, rng)["headline D-1&D-2"]
+        se = math.sqrt(pw * (1 - pw) / sims)
+        print(f"  N={n}: P(A+ and C+)={pw:.4f} (MC SE {se:.4f}, lower={pw - 2 * se:.4f})")
     return 0
 
 

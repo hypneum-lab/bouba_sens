@@ -318,9 +318,9 @@ E-1c cannot be simulated (no no-lock planning data).
 | observed means, covariance inflated to the UCL80 SD | 20 | 1.000 | 0.627 |
 | same | 30 | 1.000 | 0.826 |
 
-| Scenario (B-2, SD 0.1166) | N | equivalent | effect detected, size unresolved | inconclusive |
+| Scenario (B-2, SD 0.1166) | N | equivalent | effect detected in the direction of μ, size unresolved | inconclusive |
 |---------------------------|--:|-----------:|---------------------------------:|-------------:|
-| μ = 0 | 20 | 0.960 | 0.029 | 0.011 |
+| μ = 0 | 20 | 0.960 | 0.029 (either direction) | 0.011 |
 | μ = −0.04 | 20 | 0.713 | 0.260 | 0.027 |
 | μ = −0.04 | 25 | 0.802 | 0.195 | 0.003 |
 | μ = −0.04 | 30 | 0.860 | 0.140 | 0.000 |
