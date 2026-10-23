@@ -41,11 +41,9 @@ measuring three invariants of cross-modal plasticity --- B-1
 (informational migration under lesion, Me3 delta), and B-3
 (perceptive/proprioceptive structural asymmetry, bouba/kiki) ---
 across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
-real MIT-BIH ECG) and two real bridges with opposite
-real/synthetic modality splits: Studyforrest (OpenNeuro ds000113;
-real force, gravity, and tactile/label channels, annotation-derived
-audio and vision proxies) and CC-film (Big Buck Bunny, CC-BY 3.0;
-real audio, vision, and labels, synthetic proprioception).
+real MIT-BIH ECG) and a real biological bridge (Studyforrest,
+OpenNeuro ds000113; real force, gravity, and tactile/label
+channels, annotation-derived audio and vision proxies).
 Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
 registration \texttt{10.17605/OSF.IO/Q6JYN} before the evaluation
 campaign. Across 9 grids (150 cells each, 5 seeds $\times$ 5
@@ -63,9 +61,8 @@ the canonical seed and yields a 10-seed sign-test $p=0.62$
 (chance); pre-registered subgroup replication on $N=10$ new seeds
 fails at Bonferroni $\alpha=0.025$ (ADR-0019) --- B-1 is below
 the noise floor; (iii) B-2 does not exceed threshold under any
-configuration: Kraskov, adaptive binning, and MINE on the full
-896-D probe all bracket zero on the gaussian reference and on
-both real bridges (ADR-0019). An earlier version of this paper
+configuration, and Kraskov vs.\ MINE agree within 0.1\,bit on
+the null (ADR-0019). An earlier version of this paper
 claimed that a frozen mux with hard transducer gating is the
 minimal configuration that qualitatively reproduces the Amedi
 T1/T2 asymmetry; that claim rested on the single-seed B-1 pattern
