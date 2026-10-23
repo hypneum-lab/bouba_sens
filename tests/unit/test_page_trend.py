@@ -21,7 +21,7 @@ from bouba_sens.metrics.page_trend import (
 def _exact_p(data: np.ndarray) -> float:
     """Exhaustive within-block permutation p-value of Page's L (handles ties)."""
     ranks = midranks(data)
-    n, m = ranks.shape
+    m = ranks.shape[1]
     w = np.arange(1, m + 1)
     l_obs = float((ranks * w).sum())
     total = 0
