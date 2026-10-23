@@ -1,5 +1,15 @@
 """Deterministic trace of the DEFAULT AdaptationLoop path (regression guard).
 
+NOT comparable (explicitly excluded, with reason):
+* callables (lesion schedule closure, bound methods): identity is not state;
+  only their type name is hashed.
+* the per-call ``torch.Generator`` created and discarded inside
+  ``world.sample``: unreachable after the call; its effect is covered by the
+  batch contents (code hashes) and the batch (size, seed) log.
+* CUDA RNG: no CUDA device on the reference host (hashed when available).
+* hash values on a different torch version / CPU architecture: float
+  kernels may differ, so the test only enforces them where both match.
+
 Used by test_loop_default_regression.py and, to generate the golden file,
 against a checkout of origin/main (before the v0.8 probe/control options).
 """
@@ -24,7 +34,7 @@ from bouba_sens.head import IntegrationHead
 from bouba_sens.lesion import LesionSpec, m2_snr_schedule
 from bouba_sens.loop import AdaptationLoop
 from bouba_sens.nerve import CrossModalNerve
-from bouba_sens.sensory import SensoryWML
+from bouba_sens.sensory import Modality, SensoryWML
 from bouba_sens.world.gaussian import GaussianWorld
 
 
@@ -54,38 +64,67 @@ def _sha_tensor(t: torch.Tensor) -> str:
     return _sha_bytes(str((t.dtype, tuple(t.shape))).encode() + t.numpy().tobytes())
 
 
-def _plain(value: object) -> object:
-    """JSON-able view of simple attributes (None if not a plain value)."""
-    if isinstance(value, bool | int | float | str) or value is None:
-        return value
-    if isinstance(value, list | tuple):
-        items = [_plain(v) for v in value]
-        return items if all(i is not None or v is None for i, v in zip(items, value)) else None
-    return None
+def _walk(name: str, obj: object, out: dict[str, str], seen: set[int], depth: int = 0) -> None:
+    """Hash everything reachable from ``obj`` (tensors, generators, containers, attributes).
+
+    Not hashable by value, hence recorded only as a type tag: callables
+    (bound methods, lesion schedules) and modules' non-state objects.
+    """
+    import numpy as np
+
+    if isinstance(obj, bool | int | float | str | bytes) or obj is None:
+        out[name] = _sha_bytes(repr(obj).encode())
+        return
+    if id(obj) in seen or depth > 6:
+        return
+    seen.add(id(obj))
+    if isinstance(obj, torch.Tensor):
+        out[name] = _sha_tensor(obj)
+    elif isinstance(obj, torch.Generator):
+        out[name] = _sha_bytes(obj.get_state().numpy().tobytes())
+    elif isinstance(obj, np.random.Generator):
+        out[name] = _sha_bytes(repr(obj.bit_generator.state).encode())
+    elif isinstance(obj, np.random.RandomState):
+        out[name] = _sha_bytes(repr(obj.get_state()).encode())
+    elif isinstance(obj, np.ndarray):
+        out[name] = _sha_bytes(str((obj.dtype, obj.shape)).encode() + obj.tobytes())
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            _walk(f"{name}[{k!r}]", v, out, seen, depth + 1)
+    elif isinstance(obj, list | tuple | set | frozenset):
+        items = sorted(obj, key=repr) if isinstance(obj, set | frozenset) else obj
+        for i, v in enumerate(items):
+            _walk(f"{name}[{i}]", v, out, seen, depth + 1)
+    elif callable(obj) and not isinstance(obj, torch.nn.Module):
+        out[name] = _sha_bytes(type(obj).__qualname__.encode())
+    else:
+        if isinstance(obj, torch.nn.Module):
+            for k, v in obj.state_dict().items():
+                out[f"{name}.state.{k}"] = _sha_tensor(v)
+            for k, v in obj.named_buffers():
+                out[f"{name}.buffer.{k}"] = _sha_tensor(v)
+            for k, v in obj.named_parameters():
+                out[f"{name}.param.{k}"] = _sha_tensor(v)
+            out[f"{name}.training"] = _sha_bytes(repr(obj.training).encode())
+        for k, v in sorted(vars(obj).items()):
+            if k.startswith("_") and isinstance(obj, torch.nn.Module) and k in _MODULE_INTERNALS:
+                continue
+            _walk(f"{name}.attr.{k}", v, out, seen, depth + 1)
 
 
-def _component_entries(name: str, obj: object, out: dict[str, str]) -> None:
-    """Hash every state-dict entry, buffer, parameter and plain attribute of a component."""
-    if isinstance(obj, torch.nn.Module):
-        for k, v in obj.state_dict().items():
-            out[f"{name}.state.{k}"] = _sha_tensor(v)
-        for k, v in obj.named_buffers():
-            out[f"{name}.buffer.{k}"] = _sha_tensor(v)
-        for k, v in obj.named_parameters():
-            out[f"{name}.param.{k}"] = _sha_tensor(v)
-    for k, v in sorted(vars(obj).items()):
-        if isinstance(v, torch.Tensor):
-            out[f"{name}.attr.{k}"] = _sha_tensor(v)
-        elif (plain := _plain(v)) is not None or v is None:
-            out[f"{name}.attr.{k}"] = _sha_bytes(json.dumps(plain, sort_keys=True).encode())
+_MODULE_INTERNALS = {
+    "_parameters", "_buffers", "_modules", "_non_persistent_buffers_set", "training",
+    "_backward_hooks", "_backward_pre_hooks", "_forward_hooks", "_forward_hooks_with_kwargs",
+    "_forward_hooks_always_called", "_forward_pre_hooks", "_forward_pre_hooks_with_kwargs",
+    "_state_dict_hooks", "_state_dict_pre_hooks", "_load_state_dict_pre_hooks",
+    "_load_state_dict_post_hooks", "_is_full_backward_hook",
+}  # fmt: skip
 
 
 def loop_entries(loop: AdaptationLoop) -> dict[str, str]:
-    """Hash the COMPLETE loop state, enumerating components from the loop object."""
+    """Hash the COMPLETE loop state (incl. the world), enumerated from the loop object."""
     out: dict[str, str] = {}
     for attr, value in sorted(vars(loop).items()):
-        if attr == "world":
-            continue
         if isinstance(value, torch.optim.Optimizer):
             sd = value.state_dict()
             out[f"{attr}.param_groups"] = _sha_bytes(
@@ -94,13 +133,12 @@ def loop_entries(loop: AdaptationLoop) -> dict[str, str]:
             for pid, st in sorted(sd["state"].items()):
                 for k, v in sorted(st.items()):
                     out[f"{attr}.state[{pid}].{k}"] = (
-                        _sha_tensor(v) if isinstance(v, torch.Tensor) else _sha_bytes(str(v).encode())
+                        _sha_tensor(v)
+                        if isinstance(v, torch.Tensor)
+                        else _sha_bytes(str(v).encode())
                     )
-        elif isinstance(value, dict):
-            for key, comp in sorted(value.items()):
-                _component_entries(f"{attr}[{key}]", comp, out)
         else:
-            _component_entries(attr, value, out)
+            _walk(attr, value, out, set())
     return out
 
 
@@ -109,7 +147,17 @@ def _rng_entries() -> dict[str, str]:
 
     import numpy as np
 
+    import torch.mps
+
+    dev: dict[str, str] = {}
+    if torch.cuda.is_available():
+        dev["rng.cuda"] = _sha_bytes(
+            b"".join(t.numpy().tobytes() for t in torch.cuda.get_rng_state_all())
+        )
+    if torch.backends.mps.is_available():
+        dev["rng.mps"] = _sha_bytes(torch.mps.get_rng_state().numpy().tobytes())
     return {
+        **dev,
         "rng.torch": _sha_bytes(torch.get_rng_state().numpy().tobytes()),
         "rng.numpy": _sha_bytes(repr(np.random.get_state()).encode()),
         "rng.python": _sha_bytes(repr(random.getstate()).encode()),
@@ -126,7 +174,7 @@ def trace() -> dict[str, object]:
     torch.manual_seed(0)
     world = RecordingWorld()
     mux = GammaThetaMultiplexer(seed=0)
-    sensories = {
+    sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(id=0, modality="audio", input_proj=AudioEncoder(), mux=mux, seed=1),
         "vision": SensoryWML(id=1, modality="vision", input_proj=VisionEncoder(), mux=mux, seed=2),
         "tactile": SensoryWML(
