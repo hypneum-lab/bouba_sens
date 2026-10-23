@@ -6,6 +6,7 @@
 **Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.8-subspace-shift-2026-10-23.md`
 **Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), draft PR #14 on `docs/adr-snr-floor-audit`. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
@@ -178,6 +179,17 @@ with their cross-modal pairing intact.
   o = 0 cell of the fixed-budget grid.
 - Per seed: 15 main-grid runs, 2 persistence runs, 6 additional
   fixed-budget runs (o = 50, 100, 150 × decor, joint): 23 Phase-1 runs.
+- **Lesion phase for D-4 (SNR schedule: changed versus the historical
+  grids, ADR-0020).** The "standard T2 lesion phase" is 100 lesion steps
+  with SNR(t) = max(−20, 20 − 40 · min(1, t / k)) and **`k_steps` = 50**.
+  The floor −20.00 dB is reached at step 50 (generally, `k_steps` = N
+  reaches the floor within the first N steps, N ≤ 99) and held to step
+  99; mean SNR over the 100 steps is −9.80 dB. The historical default
+  (`k_steps` = 5000) only reached 19.21 dB at the last step (ADR-0020,
+  PR #14), so D-4 is not comparable with historical lesion results. The
+  CLI already has `--k-steps`; `run_grid.sh` does not forward it, so the
+  D-4 driver must pass `--k-steps 50` explicitly (code task, not done by
+  this draft; code defaults unchanged).
 
 **What the two grids do and do not separate.** In the main grid,
 onset is crossed with a fixed recovery, but total training (250 → 450
@@ -200,7 +212,7 @@ budget**, with the remaining recovery confound stated.
 | D-M | Magnitude of D(s, 0) relative to SESOI 0.05 | classification of the 90 % CI (§6) | confirmatory estimation statement |
 | D-2b | The same decreasing ordered trend at fixed budget T = 450 | as D-2 | secondary, gated (§6) |
 | D-3 | Persistence: mean D(s, 0) at R = 400 > 0 | one-sample t, one-sided | secondary, gated (§6) |
-| D-4 | Effect on later lesion: after a standard T2 lesion phase (100 steps, floor SNR, each modality) applied to the o = 0, R = 200 decor and joint runs, the post-lesion Me1 differs | descriptive | exploratory |
+| D-4 | Effect on later lesion: after a standard T2 lesion phase (100 steps, floor SNR reached at step 50 with `k_steps` = 50, each modality; §4, ADR-0020) applied to the o = 0, R = 200 decor and joint runs, the post-lesion Me1 differs | descriptive | exploratory |
 | D-5 | Representation geometry: S between decor and joint end-of-Phase-1 codes (v0.8 metric, k = 12) | descriptive | exploratory |
 
 **SESOI = 0.05 accuracy units.** D is an accuracy difference, like Me7,
@@ -460,3 +472,4 @@ configuration are also filing prerequisites.
    Kleinman et al. report reduces critical-period sensitivity). Not
    drafted.
 8. Pre-registration id (N-id) and final amendment number.
+9. SNR schedule `k_steps` = 50 for the D-4 lesion phase (drafted, ADR-0020) vs another N.

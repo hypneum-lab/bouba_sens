@@ -6,6 +6,7 @@
 **Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`
 **Amendment tag on file:** `bouba_sens/v0.8-subspace-shift` (to be created at filing)
 **Draft date:** 2026-10-23
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), draft PR #14 on `docs/adr-snr-floor-audit`. This draft corrects the SNR schedule (§4).
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
@@ -156,6 +157,22 @@ filing (§10).
 - World: `StudyforrestRealWorld` (4.5-modal real bridge), as in Q3/N12.
 - `STEPS_TRAIN=200`, `STEPS_LESION=100`, batch 16, HARD gating, no
   codebook lock, no gating schedule.
+- **SNR schedule: changed versus the historical grids (ADR-0020).** The
+  historical grids ran `m2_snr_schedule` with `k_steps` = 5000 over 100
+  lesion steps and only reached 19.21 / 19.41 / 19.80 dB for the
+  nominal floors −20 / −10 / +10 dB (ADR-0020, PR #14). Here every
+  lesion run uses SNR(t) = max(floor, 20 + (floor − 20) · min(1, t / k)),
+  t = 0 … 99, with **`k_steps` = 50** (the floor is reached at step
+  t = k, so `k_steps` = N hits the floor within the first N lesion
+  steps, N ≤ 99). The floors −20.00 / −10.00 / +10.00 dB are reached at
+  step 50 and held to step 99; mean SNR over the 100 steps is −9.80 /
+  −2.35 / +12.55 dB. The three SNR levels f in the cell definition (§3)
+  are therefore distinct severities, which they were not historically.
+  Consequence: cell values are not comparable with the historical
+  grids. The CLI already has `--k-steps`; `run_grid.sh` does not
+  forward it, and the new metric script must pass it (a `K_STEPS`
+  pass-through in `run_grid.sh` is a pre-filing code task, §10; not done
+  by this draft). Code defaults are unchanged.
 - **LOCK_AFTER ℓ ∈ {25, 50, 75, 100, 125, 150, 175}** (7 ordered
   levels). All are below `STEPS_TRAIN`, so every T2 cell enters Phase 2
   with a frozen constellation, and only the time of freezing varies.
@@ -201,7 +218,7 @@ CI. Reference implementation:
 asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
 p-values are reported alongside; the permutation p-value decides.
 
-Sensitivity analyses (reported, no decision): k ∈ {6, 24}; SNR floor
+Sensitivity analyses (reported, no decision): k ∈ {6, 24}; nominal-floor (−20 dB, reached)
 cells only; per lesioned modality.
 
 *Subspace stability (reported, no decision).* For every Z_pre and Z_post
@@ -379,3 +396,4 @@ the final configuration are also filing prerequisites.
    weights count as the interaction layer).
 6. Whether to also run the CC-film bridge as a secondary world.
 7. Pre-registration id (N-id) and final amendment number.
+8. SNR schedule `k_steps` = 50 (drafted, ADR-0020) vs another N; and the `K_STEPS` pass-through in `run_grid.sh` (code task, not made by this draft).

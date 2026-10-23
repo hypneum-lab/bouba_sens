@@ -6,6 +6,7 @@
 **Sibling drafts (same date, filed independently):** `amendment-v0.8-subspace-shift-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`
 **Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), draft PR #14 on `docs/adr-snr-floor-audit`. This draft corrects the SNR schedule (§4.1, §4.2).
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series; see Open decisions)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 
@@ -121,7 +122,7 @@ exploratory and supports no claim.
 
 ### 4.1 B-1 (E-1, E-1b, E-1c)
 
-Exact replication of the Q3/Q3+ protocol
+Replication of the Q3/Q3+ protocol, except for the SNR schedule (below),
 (`docs/milestones/q3-amedi-seeds-2026-05-10.md`) on new seeds:
 
 - World: `StudyforrestRealWorld` (4.5-modal real bridge, as in Q3).
@@ -130,11 +131,38 @@ Exact replication of the Q3/Q3+ protocol
 - LOCK_AFTER ∈ {50, 75, 100, 125, 150}, plus one no-lock grid per seed
   for E-1c.
 - 30 cells per grid (5 modalities × 2 timings × 3 SNR), `run_grid.sh`
-  unchanged.
+  with the SNR schedule below (the only change to `run_grid.sh` behaviour).
 - Outcome per (seed, LOCK_AFTER): `invariants.b1.median_me7` from
   `v0.1_aggregate.json`, read exactly as `scripts/analyse_amedi_quadratic.py`
   reads it.
 - Per-seed summary for E-1: arithmetic mean of the five values.
+
+**SNR schedule: changed versus the historical grids (ADR-0020).** The
+historical Q3/Q3+/N12 grids ran `m2_snr_schedule` with its defaults
+(`snr_init` = +20 dB, `k_steps` = 5000) over 100 lesion steps. The ramp
+covered 99/5000 of its length, so the nominal floors −20 / −10 / +10 dB
+only reached 19.21 / 19.41 / 19.80 dB at the last step, and the three
+"SNR levels" were near-replicates (ADR-0020, PR #14). This amendment
+does **not** reuse that schedule. Schedule in effect for every lesion
+run of §4.1:
+
+- SNR(t) = max(floor, 20 + (floor − 20) · min(1, t / k)), t = 0 … 99.
+- The floor is reached at step t = k, so to hit the floor within the
+  first N lesion steps set **`k_steps` = N** (valid for N ≤ 99, the
+  last step index). Frozen: **N = 50**, `snr_init` = +20 dB.
+- Reached values: the floors −20.00 / −10.00 / +10.00 dB are reached at
+  step 50 and held for steps 50 … 99 (50 of the 100 lesion steps are at
+  the floor). Mean SNR over the 100 steps: −9.80 / −2.35 / +12.55 dB.
+- **Consequence:** E-1 is no longer an exact replication of Q3/Q3+/N12.
+  It is a replication on new seeds with a stronger and genuinely
+  three-level SNR factor. The equivalence bounds (±0.025) are unchanged
+  because they derive from the frozen threshold, not from data.
+  Estimates are not comparable cell by cell with the historical grids.
+- **Code status:** `bouba-sens lesion` already has `--k-steps`
+  (`cli.py:268`), but `run_grid.sh` does not forward it. A `K_STEPS`
+  environment pass-through (→ `--k-steps`) must be added to
+  `run_grid.sh` before filing (§4.3 item 7); this draft does not make
+  that change. Code defaults stay as they are.
 
 ### 4.2 B-2 (E-2, E-2b)
 
@@ -142,8 +170,8 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
 
 - World: `--world studyforrest` (primary), `--world ccfilm` (E-2b).
 - LOCK_AFTER = 100, HARD gating, `steps_train = 200`,
-  `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2, SNR
-  schedule 0 → −20 dB over the lesion steps).
+  `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2) except for the SNR
+  schedule: `snr_init` = 0 dB, floor −20 dB, `k_steps` = 50, so −20.00 dB is reached at step 50 and held to step 99 (mean SNR −14.90 dB). **This differs from ADR-0019 E1**, whose runner sets k = `steps_lesion` = 100 and reaches only −19.80 dB at the last step (`e1_b2_dimensional_mine.py:98`; ADR-0020). It needs a `--k-steps` option in the runner (§4.3 item 6).
 - **Batch sizes, frozen separately:** Phase-1 training batch **16**,
   Phase-2 lesion batch **16**, probe **N = 512** (`world.sample(512,
   seed = s − 99_999)`). These match B-1 and v0.8. The current runner
@@ -225,6 +253,15 @@ authorised, and only these:
    secondary outputs.
 5. An implementation verification and a known-signal calibration
    harness (below), both run before filing.
+6. A `--k-steps` option in the E1 runner (currently hard-coded to
+   k = `steps_lesion`, line 98), frozen at 50 for confirmatory runs
+   (SNR schedule of §4.2).
+7. A `K_STEPS` environment pass-through in `scripts/run_grid.sh`
+   (forwarded as `--k-steps` to `bouba-sens lesion`), frozen at 50 for
+   confirmatory B-1 grids (SNR schedule of §4.1). The CLI flag exists;
+   the script does not forward it. Defaults of the CLI and of
+   `m2_snr_schedule` are not changed by this amendment (follow-up in
+   ADR-0020).
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
@@ -529,6 +566,7 @@ which concerned a different estimand. All outcomes are publishable.
       form; N = 95 on the form.
 - [x] No threshold change.
 - [x] No metric-math change.
+- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged, effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
 - [x] Bounds derived from frozen thresholds (half of each), not from data.
 - [x] Seeds disjoint from all previously used seeds.
 - [x] Verdicts to be recorded in a new ADR; ADR-0019 untouched.
