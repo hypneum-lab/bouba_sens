@@ -41,24 +41,35 @@ measuring three invariants of cross-modal plasticity --- B-1
 (informational migration under lesion, Me3 delta), and B-3
 (perceptive/proprioceptive structural asymmetry, bouba/kiki) ---
 across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
-real MIT-BIH ECG) and a 4.5-modal real biological bridge
-(Studyforrest Phase-2: real movie vision + scene-cut tactile +
-cardiac-respiratory force + zero-ed gravity + CC-licensed audio
-substitute). Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
+real MIT-BIH ECG) and two real bridges with opposite
+real/synthetic modality splits: Studyforrest (OpenNeuro ds000113;
+real force, gravity, and tactile/label channels, annotation-derived
+audio and vision proxies) and CC-film (Big Buck Bunny, CC-BY 3.0;
+real audio, vision, and labels, synthetic proprioception).
+Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
 registration \texttt{10.17605/OSF.IO/Q6JYN} before the evaluation
 campaign. Across 9 grids (150 cells each, 5 seeds $\times$ 5
 modalities $\times$ 2 timings $\times$ 3 SNRs) and 19 ADRs, we
-report: (i) B-3 passes architecturally (median max off-diagonal
-$= 0.109$--$0.125$, $5.5$--$6.3\times$ threshold, 5/5 seeds,
-invariant across every hyperparameter and compound tested);
+report: (i) B-3 passes on magnitude only (median max off-diagonal
+$= 0.109$--$0.125$, $5.5$--$6.3\times$ threshold, 5/5 seeds); a
+null-model partition control places the pre-registered
+perceptive/proprioceptive partition at the 44--72th percentile of
+random alternatives, and the magnitude tracks per-modality
+entropy, so the original ``architectural property'' reading of
+B-3 is withdrawn (ADR-0014, ADR-0015);
 (ii) B-1 does not survive multi-seed validation --- the
 single-seed $+0.0125$ peak (Sprint 10) inverts to $-0.0250$ on
 the canonical seed and yields a 10-seed sign-test $p=0.62$
 (chance); pre-registered subgroup replication on $N=10$ new seeds
 fails at Bonferroni $\alpha=0.025$ (ADR-0019) --- B-1 is below
 the noise floor; (iii) B-2 does not exceed threshold under any
-configuration, and Kraskov vs.\ MINE agree within 0.1\,bit on
-the null (ADR-0019). \texttt{bouba\_sens} is released at
+configuration: Kraskov, adaptive binning, and MINE on the full
+896-D probe all bracket zero on the gaussian reference and on
+both real bridges (ADR-0019). An earlier version of this paper
+claimed that a frozen mux with hard transducer gating is the
+minimal configuration that qualitatively reproduces the Amedi
+T1/T2 asymmetry; that claim rested on the single-seed B-1 pattern
+and is withdrawn together with it. \texttt{bouba\_sens} is released at
 \url{https://git.saillant.cc/hypneum-lab/bouba_sens}
 (tag \texttt{v0.5.9}, 19 ADRs) as a reusable instrument for
 stress-testing cross-modal architectures under OSF-compliant
@@ -706,11 +717,13 @@ threshold. \citet{bavelier2002cross} and
 \citet{merabet2010neural} frame this as a critical-period
 phenomenon: lock-style plasticity constraints mid-development
 produce the T1/T2 gap that adult-onset reorganisation cannot
-close. bouba\_sens's \texttt{constellation\_lock\_after} is a
-direct architectural analogue of that critical period, and the
-Section~\ref{sec:dose-response} dose-response curve reproduces the
-qualitative Amedi pattern without meeting the pre-registered
-magnitude threshold.
+close; \citet{heimler2020critical} review to what extent such
+critical periods remain reversible in the adult brain.
+bouba\_sens's \texttt{constellation\_lock\_after} is a direct
+architectural analogue of that critical period. The single-seed
+dose-response pattern that appeared to reproduce the qualitative
+Amedi asymmetry did not survive multi-seed validation and is
+retracted (Section~\ref{sec:dose-response}, ADR-0019).
 
 \paragraph{Bouba/kiki correspondence and ideasthesia.}
 \citet{kohler1947gestalt} and
@@ -719,10 +732,16 @@ cross-cultural agreement on round-vs-spiky sound-shape mapping;
 \citet{sidhu2018five} review the converging evidence that this
 mapping is a structural property of sensory integration, not
 learned. Our B-3 invariant formalises that asymmetry as the max
-off-diagonal magnitude of the 5-modality perf matrix; its
+off-diagonal magnitude of the 5-modality perf matrix. Its
 $5$--$6\times$ threshold pass across every grid in this paper,
-independent of all Phase-1/Phase-2 controls, is consistent with a
-hard-wired asymmetric mapping.
+independent of all Phase-1/Phase-2 controls, is a magnitude result
+only: the partition null model and the structural-ceiling lemma
+(ADR-0014, ADR-0015) show that it tracks per-modality entropy and
+does not support a hard-wired perceptive/proprioceptive mapping.
+Bouba/kiki is therefore a motivating analogue for B-3, not a
+property the benchmark establishes. In models,
+\citet{alper2023kiki} probe sound symbolism in vision-and-language
+models (CLIP, Stable Diffusion).
 
 \paragraph{$\gamma/\theta$ phase-amplitude coupling as a cross-modal binding substrate.}
 \citet{lisman1995storage}, \citet{tort2010measuring}, and
