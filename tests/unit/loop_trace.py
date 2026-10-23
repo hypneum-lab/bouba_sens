@@ -105,6 +105,10 @@ def _walk(name: str, obj: object, out: dict[str, str], seen: set[int], depth: in
                 out[f"{name}.buffer.{k}"] = _sha_tensor(v)
             for k, v in obj.named_parameters():
                 out[f"{name}.param.{k}"] = _sha_tensor(v)
+                out[f"{name}.requires_grad.{k}"] = _sha_bytes(repr(v.requires_grad).encode())
+                out[f"{name}.grad.{k}"] = (
+                    _sha_tensor(v.grad) if v.grad is not None else _sha_bytes(b"grad=None")
+                )
             out[f"{name}.training"] = _sha_bytes(repr(obj.training).encode())
         for k, v in sorted(vars(obj).items()):
             if k.startswith("_") and isinstance(obj, torch.nn.Module) and k in _MODULE_INTERNALS:
@@ -202,6 +206,10 @@ def trace() -> dict[str, object]:
     entries["report.probe_labels"] = _sha_tensor(report.probe_labels)  # type: ignore[arg-type]
     for fld in ("loss_curve", "accuracy_curve", "codebook_entropy_trajectory"):
         entries[f"report.{fld}"] = _sha_bytes(json.dumps(getattr(report, fld)).encode())
+    entries["report.lesion_events"] = _sha_bytes(repr(report.lesion_events).encode())
+    entries["report.transducer_activation_trajectory"] = _sha_bytes(
+        json.dumps(report.transducer_activation_trajectory).encode()
+    )
     entries["report.gate_trajectory"] = _sha_bytes(
         json.dumps(report.gate_trajectory, sort_keys=True).encode()
     )
@@ -211,6 +219,7 @@ def trace() -> dict[str, object]:
         "machine": platform.machine(),
         "pretrain_calls": world.calls[:n_pretrain],
         "lesion_calls": world.calls[n_pretrain:],
+        "loss_curve": report.loss_curve,
         "entries": entries,
     }
 

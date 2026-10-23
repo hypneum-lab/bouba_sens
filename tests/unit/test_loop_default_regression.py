@@ -29,12 +29,41 @@ def test_golden_provenance_is_pinned() -> None:
     assert "loop.py:110-259" in GOLDEN["provenance"]["reference_code"]
 
 
+REQUIRED_COVERAGE = [
+    "opt.state[",  # optimiser moments
+    "opt.param_groups",
+    "rng.torch",
+    "rng.numpy",
+    "rng.python",
+    ".requires_grad.",
+    ".grad.",  # gradients left by the last backward
+    "_lesion_log",
+    "report.lesion_events",
+    "report.transducer_activation_trajectory",
+    "report.gate_trajectory",
+    "report.codebook_entropy_trajectory",
+    "world.attr._proj_audio",
+]
+LOSS_RTOL = 1e-4  # off-platform only: float kernels may differ in the last bits
+
+
+def test_golden_covers_required_state() -> None:
+    names = list(GOLDEN["entries"])
+    missing = [pat for pat in REQUIRED_COVERAGE if not any(pat in n for n in names)]
+    assert not missing, f"golden lacks entries for: {missing}"
+
+
 def test_default_path_matches_main() -> None:
     got = trace()
     assert [list(c) for c in got["pretrain_calls"]] == GOLDEN["pretrain_calls"]  # type: ignore[attr-defined]
     assert [list(c) for c in got["lesion_calls"]] == GOLDEN["lesion_calls"]  # type: ignore[attr-defined]
-    if (got["torch"], got["machine"]) != (GOLDEN["torch"], GOLDEN["machine"]):
-        pytest.skip("golden hashes were generated on a different torch/machine")
+    same_platform = (got["torch"], got["machine"]) == (GOLDEN["torch"], GOLDEN["machine"])
+    # Losses are always compared: exactly on the golden platform, else to LOSS_RTOL.
+    if same_platform:
+        assert got["loss_curve"] == GOLDEN["loss_curve"]
+    else:
+        assert got["loss_curve"] == pytest.approx(GOLDEN["loss_curve"], rel=LOSS_RTOL)
+        pytest.skip("entry hashes were generated on a different torch/machine")
     entries: dict[str, str] = got["entries"]  # type: ignore[assignment]
     ref: dict[str, str] = GOLDEN["entries"]
     assert set(entries) == set(ref), sorted(set(entries) ^ set(ref))[:5]
