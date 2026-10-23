@@ -246,14 +246,13 @@ def test_split_half_requires_even_enough_rows() -> None:
 
 
 def test_eigengap_ratio_known_spectrum() -> None:
-    # Centred covariance eigenvalues proportional to s^2; k=2 -> lambda_2/lambda_3.
+    # Analytically centred rows +/- s_i * e_i: column means are exactly 0 and
+    # the covariance eigenvalues are proportional to s_i^2, so with k=2 the
+    # ratio is lambda_2 / lambda_3 = 3^2 / 1^2 = 9.
     s = torch.tensor([4.0, 3.0, 1.0], dtype=torch.float64)
     base = torch.diag(s)
-    z = torch.cat([base, -base.sum(0, keepdim=True) * 0], dim=0)
-    z = z - z.mean(0, keepdim=True)
-    # Recompute expected from the centred matrix directly.
-    ev = torch.linalg.svdvals(z) ** 2
-    assert eigengap_ratio(z, k=2) == pytest.approx(float(ev[1] / ev[2]), rel=1e-9)
+    z = torch.cat([base, -base], dim=0)
+    assert eigengap_ratio(z, k=2) == pytest.approx(9.0, rel=1e-9)
 
 
 def test_eigengap_ratio_inf_when_next_eigenvalue_zero() -> None:
@@ -266,3 +265,57 @@ def test_eigengap_ratio_inf_when_next_eigenvalue_zero() -> None:
 def test_eigengap_ratio_flat_spectrum_near_one() -> None:
     z = torch.linalg.qr(_codes(n=64, d=D, seed=2))[0] @ torch.eye(D, dtype=torch.float64)
     assert eigengap_ratio(z, k=K) < 1.1
+
+
+# --- review follow-up: constant codes and non-finite precedence ------------
+
+
+@pytest.mark.parametrize("n", [512, 256])
+@pytest.mark.parametrize("value", [3.7, -0.1, 1e6])
+def test_constant_float64_codes_have_rank_zero(n: int, value: float) -> None:
+    z = torch.full((n, D), value, dtype=torch.float64)
+    assert numerical_rank(z) == 0
+    assert not passes_rank_check(z, k=K)
+    with pytest.raises(SubspaceRankError):
+        principal_directions(z, k=K)
+
+
+def test_constant_columns_with_distinct_values_have_rank_zero() -> None:
+    z = torch.arange(D, dtype=torch.float64).repeat(512, 1) * 3.7
+    assert numerical_rank(z) == 0
+
+
+def _assert_technical_not_rank(fn: object) -> None:
+    with pytest.raises(ValueError, match="non-finite") as ei:
+        fn()  # type: ignore[operator]
+    assert not isinstance(ei.value, SubspaceRankError)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_post_not_masked_by_pre_rank_failure(bad: float) -> None:
+    z_pre = torch.full((128, D), 3.7, dtype=torch.float64)  # rank 0
+    z_post = _codes()
+    z_post[3, 5] = bad
+    _assert_technical_not_rank(lambda: subspace_shift(z_pre, z_post, k=K))
+
+
+def test_non_finite_pre_not_masked_by_post_rank_failure() -> None:
+    z_pre = _codes()
+    z_pre[0, 0] = float("nan")
+    z_post = torch.zeros(128, D, dtype=torch.float64)
+    _assert_technical_not_rank(lambda: subspace_shift(z_pre, z_post, k=K))
+
+
+def test_non_finite_in_one_half_not_masked_by_other_half_rank_failure() -> None:
+    z = _codes(n=256)
+    z[:128] = 3.7  # constant block
+    z[200, 3] = float("inf")  # non-finite wherever the split puts it
+    _assert_technical_not_rank(lambda: split_half_noise_floor(z, k=K, seed=0))
+
+
+def test_non_finite_precedes_rank_check_in_rank_helpers() -> None:
+    z = torch.zeros(64, D, dtype=torch.float64)
+    z[1, 1] = float("nan")
+    _assert_technical_not_rank(lambda: numerical_rank(z))
+    _assert_technical_not_rank(lambda: passes_rank_check(z, k=K))
+    _assert_technical_not_rank(lambda: principal_directions(z, k=K))

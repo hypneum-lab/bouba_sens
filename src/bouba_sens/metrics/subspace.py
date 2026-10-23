@@ -37,13 +37,25 @@ class SubspaceRankError(ValueError):
     """A code matrix fails the rank check of amendment v0.8 section 3.1."""
 
 
-def _centred(z: Tensor) -> Tensor:
+def _as_finite_f64(z: Tensor) -> Tensor:
+    """Validate shape and finiteness (technical failure) before any rank logic."""
     if z.dim() != 2:
         raise ValueError(f"codes must be a 2-D (n, d) matrix; got shape {tuple(z.shape)}")
     z64 = z.detach().to(dtype=torch.float64, device="cpu")
     if not bool(torch.isfinite(z64).all()):
         raise ValueError("codes contain non-finite values (technical failure)")
-    return z64 - z64.mean(dim=0, keepdim=True)
+    return z64
+
+
+def _centred(z: Tensor) -> Tensor:
+    z64 = _as_finite_f64(z)
+    if z64.shape[0] == 0:
+        return z64
+    # Centre relative to a reference row first: identical rows then give an
+    # exactly zero matrix (plain mean-subtraction leaves ~1e-16 residue that
+    # passes the relative rank threshold), and accuracy is no worse.
+    d = z64 - z64[:1]
+    return d - d.mean(dim=0, keepdim=True)
 
 
 def _check_k(k: int) -> None:
@@ -108,6 +120,10 @@ def subspace_shift(z_pre: Tensor, z_post: Tensor, k: int = K_DEFAULT) -> float:
             f"codes must be 2-D with equal feature dim; got {tuple(z_pre.shape)}, "
             f"{tuple(z_post.shape)}"
         )
+    # Non-finite codes (technical failure) take precedence over any rank
+    # failure, whichever matrix carries them.
+    _as_finite_f64(z_pre)
+    _as_finite_f64(z_post)
     return subspace_shift_from_bases(
         principal_directions(z_pre, k), principal_directions(z_post, k)
     )
@@ -123,6 +139,7 @@ def split_half_noise_floor(z_pre: Tensor, k: int = K_DEFAULT, *, seed: int) -> f
     n = z_pre.shape[0] if z_pre.dim() == 2 else 0
     if n < 2:
         raise ValueError("need a 2-D matrix with at least 2 rows to split")
+    _as_finite_f64(z_pre)  # a non-finite entry must not hide behind a rank failure
     g = torch.Generator().manual_seed(seed)
     perm = torch.randperm(n, generator=g)
     half = n // 2
