@@ -52,6 +52,10 @@ from scipy import stats
 ALPHA = 0.05
 B1_BOUND = 0.05  # OSF Q6JYN B-1 threshold (frozen)
 B2_BOUND = 0.10  # OSF Q6JYN B-2 threshold, bits (frozen)
+# v0.7 equivalence bounds decided by the PI on 2026-10-23: half-threshold.
+V07_B1_BOUND = B1_BOUND / 2  # +-0.025 accuracy units
+V07_B2_BOUND = B2_BOUND / 2  # +-0.05 bit
+V07_N = 30  # v0.7 sample size decided by the PI on 2026-10-23
 
 # ADR-0019 per-seed B-2 = MI_post - MI_pre (bits), 5 seeds each.
 B2_TABLES: dict[str, list[float]] = {
@@ -217,15 +221,45 @@ def page_perm_pvalue(data: np.ndarray, n_perm: int, rng) -> float:
     return float((1 + np.sum(l_perm >= l_obs - 1e-9)) / (1 + n_perm))
 
 
-def v07_b1_rule(mu, cov, n, sims, rng, quantum=0.00625):
+def v07_b1_rule(mu, cov, n, sims, rng, quantum=0.00625, bound=B1_BOUND):
     """E-1 verdict classes and the fixed-sequence E-1 -> E-1b claim."""
     x = rng.multivariate_normal(mu, cov, size=(sims, n))  # (sims, n, 5)
     x = np.round(x / quantum) * quantum  # grid medians are quantised
     lo, hi = ci90(x.mean(-1))
-    e1 = classify(lo, hi, B1_BOUND)
+    e1 = classify(lo, hi, bound)
     lo_l, hi_l = ci90(np.moveaxis(x, -1, -2))  # (sims, 5)
-    e1b = (e1 == EQUIV) & ((lo_l > -B1_BOUND) & (hi_l < B1_BOUND)).all(-1)
+    e1b = (e1 == EQUIV) & ((lo_l > -bound) & (hi_l < bound)).all(-1)
     return e1, e1b
+
+
+def tost_power_chunked(mu: float, sd: float, n: int, bound: float, sims: int, rng) -> float:
+    """`tost_power_mc` in chunks, for large N."""
+    chunk = max(1, min(sims, 4_000_000 // n))
+    hits = 0
+    for start in range(0, sims, chunk):
+        hits += tost_power_mc(mu, sd, n, bound, min(chunk, sims - start), rng) * min(
+            chunk, sims - start
+        )
+    return hits / sims
+
+
+def n_needed(fn, target: float, n_lo: int, n_hi: int) -> int | None:
+    """Smallest N in [n_lo, n_hi] with fn(N) >= target, by bisection.
+
+    Assumes power is non-decreasing in N (true up to Monte-Carlo noise).
+    Returns None if fn(n_hi) < target.
+    """
+    if fn(n_hi) < target:
+        return None
+    if fn(n_lo) >= target:
+        return n_lo
+    while n_hi - n_lo > 1:
+        mid = (n_lo + n_hi) // 2
+        if fn(mid) >= target:
+            n_hi = mid
+        else:
+            n_lo = mid
+    return n_hi
 
 
 def v08_rule(n, effect, guard, q_loss, sims, rng, levels=7, sd_seed=1.0):
@@ -471,7 +505,101 @@ def main() -> int:
         pw = v09_rule(n, 0.05, "early", sd9, 0.0, sims, rng)["headline D-1&D-2"]
         se = math.sqrt(pw * (1 - pw) / sims)
         print(f"  N={n}: P(A+ and C+)={pw:.4f} (MC SE {se:.4f}, lower={pw - 2 * se:.4f})")
+
+    v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, len(seeds), sd2, sd2u)
     return 0
+
+
+def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> None:
+    """v0.7 at the PI-decided bounds (+-half-threshold) and N = 30.
+
+    Uses its own generator so that every earlier table (including the
+    v0.7 tables at +-threshold, kept for reference, and the v0.8/v0.9
+    tables quoted in their drafts) is reproduced bit for bit.
+    """
+    rng = np.random.default_rng(args.seed + 707)
+    b1, b2, n0 = V07_B1_BOUND, V07_B2_BOUND, V07_N
+    sims = args.sims
+    rs = max(args.sims // 5, 2000)
+    print(
+        f"\n== v0.7 DECIDED: bounds +-{b1:.3f} (B-1) / +-{b2:.2f} bit (B-2), N={n0}"
+    )
+    se = sd1 / math.sqrt(n_seeds)
+    p_lo = 1 - stats.t.cdf((mu1 + b1) / se, n_seeds - 1)
+    p_hi = 1 - stats.t.cdf((b1 - mu1) / se, n_seeds - 1)
+    print(f"  descriptive TOST +-{b1} on existing 10 seeds: p_lower={p_lo:.2e} p_upper={p_hi:.2e}")
+
+    print("  -- B-1 E-1 component TOST [component-test power only]")
+    sd1u = sd_ucl(sd1, n_seeds)
+    for label, mu, sd in [
+        ("mu=0, sd=obs", 0.0, sd1),
+        ("mu=observed, sd=obs", mu1, sd1),
+        ("mu=observed, sd=UCL80", mu1, sd1u),
+        ("mu=0, sd=max per-LOCK sd", 0.0, sd_max_lock),
+    ]:
+        pw = tost_power_mc(mu, sd, n0, b1, sims, rng)
+        n80 = n_needed(
+            lambda k, mu=mu, sd=sd: tost_power_chunked(mu, sd, k, b1, sims // 5, rng), 0.80, 3, 2000
+        )
+        print(
+            f"  [{label}] sd={sd:.4f} power@N={n0}={pw:.3f} N80_mc={n80} "
+            f"N80_normal={n_normal_approx(mu, sd, b1, 0.80)}"
+        )
+
+    print("  -- B-1 complete rule (quantised; 90% CI classes; E-1 -> E-1b sequence)")
+    infl = (sd1u / sd1) ** 2
+    for label, mu, cv in [
+        ("mu=observed per-LOCK, cov=observed", y.mean(0), cov),
+        ("mu=0, cov=observed", np.zeros(5), cov),
+        ("mu=observed per-LOCK, cov x UCL80 inflation", y.mean(0), cov * infl),
+    ]:
+        e1, e1b = v07_b1_rule(mu, cv, n0, rs, rng, bound=b1)
+        print(f"  [{label}] N={n0}: {class_probs(e1)} | E-1b claim={e1b.mean():.3f}")
+        rs_n = max(rs // 10, 2000)
+        n_e1 = n_needed(
+            lambda k, mu=mu, cv=cv: float(
+                np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[0] == EQUIV)
+            ),
+            0.80, 3, 400,
+        )
+        n_e1b = n_needed(
+            lambda k, mu=mu, cv=cv: float(
+                np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[1])
+            ),
+            0.80, 3, 400,
+        )
+        print(f"     N for 0.80: E-1 equivalent={n_e1} | E-1 and E-1b={n_e1b} (None = > 400)")
+
+    print("  -- B-2 complete rule (normal model; planning SDs from OTHER estimators)")
+    for sd in (sd2, sd2u):
+        for mu in (0.0, -0.02, -0.04):
+            x = rng.normal(mu, sd, (rs, n0))
+            lo, hi = ci90(x)
+            codes = classify(lo, hi, b2)
+            n80 = n_needed(
+                lambda k, mu=mu, sd=sd: tost_power_chunked(mu, sd, k, b2, sims // 5, rng),
+                0.80, 3, 4000,
+            )
+            print(
+                f"  [sd={sd:.4f} mu={mu:+.2f}] N={n0}: {class_probs(codes)} | "
+                f"N80_mc={n80} N80_normal={n_normal_approx(mu, sd, b2, 0.80)}"
+            )
+    for target in (0.80,):
+        for mu in (0.0, -0.02):
+            sd_max = sd_for_power(mu, n0, b2, target, sims, rng)
+            print(f"  largest SD giving P(equiv)>={target:.2f} at N={n0}, mu={mu:+.2f}: {sd_max:.4f}")
+
+
+def sd_for_power(mu: float, n: int, bound: float, target: float, sims: int, rng) -> float:
+    """Largest per-seed SD at which TOST power at N reaches `target` (bisection)."""
+    lo, hi = 1e-4, bound * 4
+    for _ in range(30):
+        mid = (lo + hi) / 2
+        if tost_power_mc(mu, mid, n, bound, sims, rng) >= target:
+            lo = mid
+        else:
+            hi = mid
+    return lo
 
 
 if __name__ == "__main__":
