@@ -47,7 +47,7 @@ import math
 from pathlib import Path
 
 import numpy as np
-from scipy import stats
+from scipy import integrate, stats
 
 ALPHA = 0.05
 B1_BOUND = 0.05  # OSF Q6JYN B-1 threshold (frozen)
@@ -55,7 +55,11 @@ B2_BOUND = 0.10  # OSF Q6JYN B-2 threshold, bits (frozen)
 # v0.7 equivalence bounds decided by the PI on 2026-10-23: half-threshold.
 V07_B1_BOUND = B1_BOUND / 2  # +-0.025 accuracy units
 V07_B2_BOUND = B2_BOUND / 2  # +-0.05 bit
-V07_N = 30  # v0.7 sample size decided by the PI on 2026-10-23
+# v0.7 sample size (PI decision, 2026-10-23, second round): the smallest N
+# whose exact E-2 TOST power reaches 0.80 in the planning case
+# (mu = +-0.02 bit, SD = UCL80 of the largest ADR-0019 SD); see
+# `tost_power_exact` and the "v0.7 N selection" section.
+V07_N = 95
 
 # ADR-0019 per-seed B-2 = MI_post - MI_pre (bits), 5 seeds each.
 B2_TABLES: dict[str, list[float]] = {
@@ -76,6 +80,27 @@ def tost_power_mc(mu: float, sd: float, n: int, bound: float, sims: int, rng) ->
     se = x.std(1, ddof=1) / math.sqrt(n)
     tc = stats.t.ppf(1 - ALPHA, n - 1)
     return float(np.mean(((m + bound) / se > tc) & ((bound - m) / se > tc)))
+
+
+def tost_power_exact(mu: float, sd: float, n: int, bound: float) -> float:
+    """Exact power of a one-sample TOST (bounds +-bound, alpha), normal data.
+
+    Conditions on the sample SD s ((n-1) s^2 / sd^2 ~ chi2(n-1)): the TOST
+    passes iff |mean - 0| stays inside +-(bound - t_crit s / sqrt(n)).
+    """
+    df = n - 1
+    tc = stats.t.ppf(1 - ALPHA, df)
+    se = sd / math.sqrt(n)
+
+    def f(s: float) -> float:
+        h = bound - tc * s / math.sqrt(n)
+        if h <= 0:
+            return 0.0
+        p = stats.norm.cdf((h - mu) / se) - stats.norm.cdf((-h - mu) / se)
+        return p * stats.chi2.pdf(df * s * s / sd**2, df) * 2 * df * s / sd**2
+
+    s_max = bound * math.sqrt(n) / tc  # beyond this h <= 0
+    return float(integrate.quad(f, 0.0, s_max, limit=200)[0])
 
 
 def iut_power_mc(mu: np.ndarray, cov: np.ndarray, n: int, bound: float, sims: int, rng) -> float:
@@ -521,9 +546,7 @@ def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> 
     b1, b2, n0 = V07_B1_BOUND, V07_B2_BOUND, V07_N
     sims = args.sims
     rs = max(args.sims // 5, 2000)
-    print(
-        f"\n== v0.7 DECIDED: bounds +-{b1:.3f} (B-1) / +-{b2:.2f} bit (B-2), N={n0}"
-    )
+    print(f"\n== v0.7 DECIDED: bounds +-{b1:.3f} (B-1) / +-{b2:.2f} bit (B-2), N={n0}")
     se = sd1 / math.sqrt(n_seeds)
     p_lo = 1 - stats.t.cdf((mu1 + b1) / se, n_seeds - 1)
     p_hi = 1 - stats.t.cdf((b1 - mu1) / se, n_seeds - 1)
@@ -548,6 +571,7 @@ def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> 
 
     print("  -- B-1 complete rule (quantised; 90% CI classes; E-1 -> E-1b sequence)")
     infl = (sd1u / sd1) ** 2
+    rs_n = max(rs // 10, 2000)
     for label, mu, cv in [
         ("mu=observed per-LOCK, cov=observed", y.mean(0), cov),
         ("mu=0, cov=observed", np.zeros(5), cov),
@@ -555,18 +579,19 @@ def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> 
     ]:
         e1, e1b = v07_b1_rule(mu, cv, n0, rs, rng, bound=b1)
         print(f"  [{label}] N={n0}: {class_probs(e1)} | E-1b claim={e1b.mean():.3f}")
-        rs_n = max(rs // 10, 2000)
         n_e1 = n_needed(
             lambda k, mu=mu, cv=cv: float(
                 np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[0] == EQUIV)
             ),
-            0.80, 3, 400,
+            0.80,
+            3,
+            400,
         )
         n_e1b = n_needed(
-            lambda k, mu=mu, cv=cv: float(
-                np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[1])
-            ),
-            0.80, 3, 400,
+            lambda k, mu=mu, cv=cv: float(np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[1])),
+            0.80,
+            3,
+            400,
         )
         print(f"     N for 0.80: E-1 equivalent={n_e1} | E-1 and E-1b={n_e1b} (None = > 400)")
 
@@ -578,16 +603,27 @@ def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> 
             codes = classify(lo, hi, b2)
             n80 = n_needed(
                 lambda k, mu=mu, sd=sd: tost_power_chunked(mu, sd, k, b2, sims // 5, rng),
-                0.80, 3, 4000,
+                0.80,
+                3,
+                4000,
             )
             print(
                 f"  [sd={sd:.4f} mu={mu:+.2f}] N={n0}: {class_probs(codes)} | "
                 f"N80_mc={n80} N80_normal={n_normal_approx(mu, sd, b2, 0.80)}"
             )
+    print("  -- v0.7 N selection: E-2 planning case mu=-0.02, sd=UCL80, exact TOST power")
+    for n in range(90, 101):
+        print(f"  N={n}: exact power={tost_power_exact(-0.02, sd2u, n, b2):.5f}")
+    n_sel = next(n for n in range(3, 2000) if tost_power_exact(-0.02, sd2u, n, b2) >= 0.80)
+    pw_mc = tost_power_chunked(-0.02, sd2u, n_sel, b2, 400_000, rng)
+    se_mc = math.sqrt(pw_mc * (1 - pw_mc) / 400_000)
+    print(f"  selected N={n_sel} (V07_N={n0}); MC check 400k draws: {pw_mc:.4f} (SE {se_mc:.4f})")
     for target in (0.80,):
         for mu in (0.0, -0.02):
             sd_max = sd_for_power(mu, n0, b2, target, sims, rng)
-            print(f"  largest SD giving P(equiv)>={target:.2f} at N={n0}, mu={mu:+.2f}: {sd_max:.4f}")
+            print(
+                f"  largest SD giving P(equiv)>={target:.2f} at N={n0}, mu={mu:+.2f}: {sd_max:.4f}"
+            )
 
 
 def sd_for_power(mu: float, n: int, bound: float, target: float, sims: int, rng) -> float:
