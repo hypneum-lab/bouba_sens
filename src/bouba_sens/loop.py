@@ -144,7 +144,7 @@ class AdaptationLoop:
 
     def lesion_phase(
         self,
-        lesion: LesionSpec,
+        lesion: LesionSpec | None,
         steps: int,
         *,
         batch_size: int = 32,
@@ -152,6 +152,9 @@ class AdaptationLoop:
         stats_every: int = 10,
         seed: int = 10_000,
         probe_pool: str = "full",
+        probe_size: int | None = None,
+        probe_seed: int | None = None,
+        capture_seed: int | None = None,
     ) -> AdaptationReport:
         """Phase 2: lesion-active training + theta-replay buffer.
 
@@ -162,10 +165,27 @@ class AdaptationLoop:
         Replay buffer is a FIFO of raw unlesioned `WorldSample` instances
         drawn at Phase-2 entry; half of each step's batch is taken from
         the buffer so the model does not over-fit the lesion distribution.
+
+        Amendment v0.8 (subspace shift): ``probe_size`` decouples the size
+        of the clean probe from the training ``batch_size`` (``None`` keeps
+        the legacy ``batch_size`` probe; the amendment uses 512 with batch
+        16) and ``probe_seed`` overrides the probe draw (default
+        ``seed - 99_999``). ``lesion=None`` runs the **no-lesion control
+        arm**: identical data schedule (same fresh and replay batches for
+        the same ``seed``), no ``on_lesion``, no noise injection, so that
+        ``Z_post`` shows the shift caused by continued training alone.
+
+        ``fuse`` demodulates through Gumbel-softmax, which draws from the
+        global torch RNG, so probe captures are stochastic by default.
+        ``capture_seed`` (``None`` = legacy behaviour) pins that noise: each
+        of the two captures runs in a forked RNG state seeded with it, so
+        ``Z_pre`` is bit-identical across arms for the same checkpoint and
+        probe, pre/post share the same noise realisation, and the global
+        RNG is left untouched.
         """
         from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
 
-        scheduler = LesionScheduler(lesion)
+        scheduler = LesionScheduler(lesion) if lesion is not None else None
 
         # Capture baseline BEFORE on_lesion so gate_trajectory[0] reflects
         # the pre-lesion (uniform) state; acceptance tests compare [0] vs [-1]
@@ -184,21 +204,33 @@ class AdaptationLoop:
         # the surviving channel. `probe_pool="mean"` restores the legacy
         # 1-D mean-pooled scalar (Sprint 5..17) for reproducibility.
         # Seed stepped far from the Phase-2 training seeds to avoid overlap.
+        def _capture(sample: WorldSample) -> Tensor:
+            with (
+                torch.no_grad(),
+                torch.random.fork_rng(devices=[], enabled=capture_seed is not None),
+            ):
+                if capture_seed is not None:
+                    torch.manual_seed(capture_seed)
+                carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
+                return self.nerve.fuse(carriers)
+
         def _pool(fused: Tensor) -> Tensor:
             flat = fused.flatten(1)  # (B, K*d)
             if probe_pool == "mean":
                 return flat.mean(dim=-1)  # (B,) legacy scalar sonde
             return flat  # (B, K*d) full sonde
 
-        probe = self.world.sample(batch_size=batch_size, seed=seed - 99_999)
-        with torch.no_grad():
-            carriers_pre = {m: self.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
-            fused_pre = self.nerve.fuse(carriers_pre)
+        probe = self.world.sample(
+            batch_size=batch_size if probe_size is None else probe_size,
+            seed=seed - 99_999 if probe_seed is None else probe_seed,
+        )
+        fused_pre = _capture(probe)
         report.probe_labels = probe.label.detach().clone()
         report.pre_lesion_codes = _pool(fused_pre).detach().clone()
 
-        self.nerve.on_lesion(lesion.modality, lesion.schedule(0))
-        report.lesion_events = list(self.nerve._lesion_log)
+        if lesion is not None:
+            self.nerve.on_lesion(lesion.modality, lesion.schedule(0))
+            report.lesion_events = list(self.nerve._lesion_log)
 
         replay_buffer: list[WorldSample] = [
             self.world.sample(batch_size=batch_size, seed=seed - 1 - i)
@@ -212,7 +244,7 @@ class AdaptationLoop:
         nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
             fresh = self.world.sample(batch_size=batch_size, seed=seed + step)
-            lesioned = scheduler.apply(fresh, step)
+            lesioned = scheduler.apply(fresh, step) if scheduler is not None else fresh
             loss_fresh, logits = self._forward(lesioned)
 
             # Replay a clean batch with half weight (theta-phase signal).
@@ -250,9 +282,7 @@ class AdaptationLoop:
         # Task 5.1 — post-lesion probe capture. Feed the same clean probe
         # batch through the lesion-adapted network; pooled identically to
         # the pre-lesion capture (full (B, K*d) by default).
-        with torch.no_grad():
-            carriers_post = {m: self.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
-            fused_post = self.nerve.fuse(carriers_post)
+        fused_post = _capture(probe)
         report.post_lesion_codes = _pool(fused_post).detach().clone()
 
         return report
