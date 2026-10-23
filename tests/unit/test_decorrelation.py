@@ -206,7 +206,9 @@ def test_window_rejects_bad_args() -> None:
     with pytest.raises(ValueError, match="width"):
         DecorrelationWindow(0, 0)
     with pytest.raises(ValueError, match="arm"):
-        DecorrelationSchedule(DecorrelationWindow(0, 50), "bogus", seed=1, world=SyntheticIndexedWorld())
+        DecorrelationSchedule(
+            DecorrelationWindow(0, 50), "bogus", seed=1, world=SyntheticIndexedWorld()
+        )
 
 
 # --- CKA estimator (§3.3) ----------------------------------------------
