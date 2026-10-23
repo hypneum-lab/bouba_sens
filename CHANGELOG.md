@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   retraction are unchanged.
   - `docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`: TOST
     equivalence for B-1 (±0.025) and B-2 (±0.05 bit), half the frozen
-    thresholds, N = 30 new seeds; B-2 primary estimator = Ross (2014)
+    thresholds, N = 95 new seeds; B-2 primary estimator = Ross (2014)
     mixed discrete–continuous k-NN MI estimator (PI decisions
     2026-10-23).
   - `docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md`: principal

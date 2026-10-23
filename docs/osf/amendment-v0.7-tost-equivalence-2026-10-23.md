@@ -7,7 +7,7 @@
 **Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series; see Open decisions)
-**PI decisions applied (2026-10-23):** N = 30; equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
+**PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
 > file has been run. Confirmatory seeds (below) must not be run before
@@ -298,9 +298,10 @@ units) and ±0.05 bit (B-2), i.e. ±half the frozen thresholds.**
    in steps of 0.00625, so ±0.025 spans 4 quanta on each side. The
    bound is above measurement resolution.
 
-The price of the tighter bounds is power (§7): at N = 30 several
-components are under-powered, and the study's expected
-informativeness is stated there.
+The price of the tighter bounds is sample size (§7): N = 95 is needed
+for 0.80 power on E-2 in the planning case, and E-1b stays
+under-powered at the observed per-LOCK means; the expected
+informativeness of each component is stated there.
 
 ## 6. Analysis plan
 
@@ -326,20 +327,23 @@ informativeness is stated there.
 
 Computed by `scripts/power_prereg_2026_10.py` (Monte Carlo, α = 0.05,
 script seed 20261023, about 40 s) from data already in the repo. The
-tables below are the script section "v0.7 DECIDED" (its own generator,
-seed 20261023 + 707), at the decided bounds (±0.025 / ±0.05 bit) and
-N = 30. The script still prints the earlier tables at ±0.05 / ±0.10
-bit; they are superseded and kept only for reference. "Component-test
-power" is one TOST in isolation; the complete decision rule is
-simulated below it. N needed for 0.80 is found by bisection on
-Monte-Carlo power (20,000 draws per N for single TOSTs, 2,000 per N for
-the B-1 complete rule), so it is approximate.
+tables below are the script sections "v0.7 DECIDED" and "v0.7 N
+selection" (own generator, seed 20261023 + 707), at the decided bounds
+(±0.025 / ±0.05 bit) and N = 95. The script still prints the earlier
+tables at ±0.05 / ±0.10 bit; they are superseded and kept only for
+reference. "Component-test power" is one TOST in isolation; the
+complete decision rule is simulated below it. Where stated, N needed
+for 0.80 is found by bisection on Monte-Carlo power (20,000 draws per N
+for single TOSTs, 2,000 per N for the B-1 complete rule), so it is
+approximate; the selected N itself uses exact TOST power.
 
-**Sample size: N = 30 (PI decision, 2026-10-23).** N is fixed at 30
-whatever the power computations below or the pilot show. Where power
-at N = 30 is below 0.80, the N that would be needed is stated and the
-expected informativeness of that component is labelled; N is not
-changed.
+**Sample size: N = 95 (PI decision, 2026-10-23).** The PI set N to the
+smallest value giving 0.80 power for E-2 in the planning case (below:
+μ = ±0.02 bit, SD 0.1166). Exact TOST power (normal data, conditioning
+on the sample SD; `tost_power_exact`) is 0.7968 at N = 94 and **0.8006
+at N = 95**; a Monte-Carlo check with 400,000 draws gives 0.7997
+(SE 0.0006) at N = 95. N = 95 is fixed on the OSF form. The B-2 pilot
+does not change it (§4.3).
 
 **B-1 (Q3/Q3+ 10 seeds × 5 LOCK_AFTER).**
 
@@ -352,23 +356,23 @@ changed.
 
 Component-test power only (E-1, bound ±0.025):
 
-| Scenario | Power at N = 30 | N for 80 % power |
+| Scenario | Power at N = 95 | N for 80 % power |
 |----------|----------------:|-----------------:|
 | true μ = 0, SD 0.0161 | 1.000 | 6 |
-| true μ = −0.0106, SD 0.0161 | 0.999 | 10 |
-| true μ = −0.0106, SD UCL80 0.0208 | 0.979 | 15 |
-| true μ = 0, worst per-LOCK SD 0.0468 | 0.774 | 32 |
+| true μ = −0.0106, SD 0.0161 | 1.000 | 10 |
+| true μ = −0.0106, SD UCL80 0.0208 | 1.000 | 15 |
+| true μ = 0, worst per-LOCK SD 0.0468 | 1.000 | 32 |
 
 Complete decision rule (simulated): seeds drawn from the observed
 5 × 5 covariance of the per-LOCK values, rounded to the 0.00625 quantum,
 full §9 classification of E-1 and the fixed sequence E-1 → E-1b. E-1c
 cannot be simulated (no no-lock planning data).
 
-| Scenario (B-1), N = 30 | P(E-1 equivalent) | P(E-1 and E-1b equivalent) | N for 0.80: E-1 / E-1 → E-1b |
+| Scenario (B-1), N = 95 | P(E-1 equivalent) | P(E-1 and E-1b equivalent) | N for 0.80: E-1 / E-1 → E-1b |
 |------------------------|------------------:|---------------------------:|-----------------------------:|
-| observed per-LOCK means, observed covariance | 0.999 | 0.069 | 10 / ≈ 340 |
-| μ = 0 at every lock, observed covariance | 1.000 | 0.689 | 6 / ≈ 37 |
-| observed means, covariance inflated to the UCL80 SD | 0.979 | 0.028 | 15 / > 400 |
+| observed per-LOCK means, observed covariance | 1.000 | 0.255 | 10 / ≈ 340 |
+| μ = 0 at every lock, observed covariance | 1.000 | 1.000 | 6 / ≈ 36 |
+| observed means, covariance inflated to the UCL80 SD | 1.000 | 0.146 | 15 / > 400 |
 
 **B-2 (primary estimator: Ross 2014, k = 3).** No planning data exist
 for the primary estimator: it has never been run on this model. The
@@ -381,69 +385,74 @@ B-2 pilot (§4.3) measures the latter. The planning case is
 
 Complete decision rule (normal model, 90 % CI classes against
 {−0.05, 0, +0.05}; for E-2, "Equivalent" is the TOST pass, so the
-complete-rule and component powers coincide):
+complete-rule and component powers coincide; Monte Carlo, 20,000
+draws per row):
 
-| Scenario (B-2), N = 30 | Equivalent | effect detected in the direction of μ, size unresolved | inconclusive | N for 0.80 |
+| Scenario (B-2), N = 95 | Equivalent | effect detected in the direction of μ, size unresolved | inconclusive | N for 0.80 |
 |------------------------|-----------:|------------------------------:|-------------:|-----------:|
-| μ = 0, SD 0.0749 | 0.945 | 0.044 (either direction) | 0.011 | 21 |
-| μ = −0.02, SD 0.0749 | 0.692 | 0.282 | 0.025 | 40 |
-| μ = −0.04, SD 0.0749 | 0.178 | 0.797 | 0.016 | ≈ 350 |
-| μ = 0, SD 0.1166 | 0.481 | 0.099 (either direction) | 0.419 | 48 |
-| μ = −0.02, SD 0.1166 (planning case) | 0.335 | 0.232 | 0.427 | ≈ 97 |
-| μ = −0.04, SD 0.1166 | 0.114 | 0.553 | 0.314 | ≈ 840 |
+| μ = 0, SD 0.0749 | 1.000 | 0.000 | 0.000 | 21 |
+| μ = −0.02, SD 0.0749 | 0.987 | 0.013 | 0.000 | 40 |
+| μ = −0.04, SD 0.0749 | 0.364 | 0.634 | 0.000 | ≈ 345 |
+| μ = 0, SD 0.1166 | 0.988 | 0.012 (either direction) | 0.000 | 48 |
+| μ = −0.02, SD 0.1166 (planning case) | 0.806 (exact 0.8006) | 0.193 | 0.000 | 95 (exact) |
+| μ = −0.04, SD 0.1166 | 0.215 | 0.778 | 0.000 | ≈ 845 |
 
 (μ = +0.02 / +0.04 give the mirror image. The remaining probability
-is "beyond bound" in the direction of μ: at most 0.019, at μ = −0.04,
-SD 0.1166.) At N = 30, P(Equivalent) ≥ 0.80 needs a per-seed SD of
-the primary ΔMI-hat ≤ 0.091 bit if μ = 0 and ≤ 0.065 bit if
-μ = ±0.02.
+is "beyond bound" in the direction of μ: at most 0.007, at μ = −0.04,
+SD 0.1166.) At N = 95, P(Equivalent) ≥ 0.80 needs a per-seed SD of
+the primary ΔMI-hat ≤ 0.166 bit if μ = 0 and ≤ 0.117 bit if
+μ = ±0.02. A true |μ| of 0.04 bit (0.8 × the bound) is not resolvable
+as equivalence at this N.
 
-**Expected informativeness at N = 30 (stated on the OSF form).**
+**Expected informativeness at N = 95 (stated on the OSF form).**
 
-- **E-1: high.** P(Equivalent) ≥ 0.97 in every planning scenario of the
-  complete rule.
-- **E-1 → E-1b: low.** P = 0.07 at the observed per-LOCK means (two
-  locks sit at −0.018, close to −0.025), 0.69 if every per-LOCK mean
-  is 0; ≈ 340 seeds would be needed for 0.80 at the observed means.
-  A failed E-1b step at N = 30 is expected and is reported as "not
-  shown at every tested LOCK_AFTER", not as evidence of a lock effect.
-- **E-2: low under the planning assumptions.** P(Equivalent) = 0.335
-  in the planning case (≈ 97 seeds needed for 0.80) and 0.48 at μ = 0
-  with SD 0.1166. Whether it is better depends on the pilot SD of the
-  Ross ΔMI-hat. At filing, the script is rerun with the pilot SD
-  inflated to its one-sided UCL80 (df = 4), at least 100,000
-  Monte-Carlo draws, μ = 0 and μ = ±0.02; the resulting power and the
-  N needed for 0.80 are recorded on the form with one label: "adequately
-  powered" (planning-case power ≥ 0.80), "under-powered" (0.50–0.80)
-  or "low informativeness" (< 0.50). N stays 30 in every case, and an
+- **E-1: high.** P(Equivalent) = 1.000 in every planning scenario of
+  the complete rule.
+- **E-1 → E-1b: still under-powered at the observed per-LOCK means.**
+  P = 0.26 at the observed means (two locks sit at −0.018, close to
+  −0.025) and 0.15 with the inflated covariance; ≈ 340 seeds would be
+  needed for 0.80 at the observed means. It is 1.00 if every per-LOCK
+  mean is 0. N is not changed for E-1b. A failed E-1b step is
+  expected and is reported as "not shown at every tested LOCK_AFTER",
+  not as evidence of a lock effect.
+- **E-2: 0.80 in the planning case by construction** (0.99 at μ = 0
+  with SD 0.1166). Its real power depends on the pilot SD of the Ross
+  ΔMI-hat. At filing, the script is rerun with the pilot SD inflated
+  to its one-sided UCL80 (df = 4), μ = 0 and μ = ±0.02, using exact
+  TOST power; the resulting power and the N that would be needed for
+  0.80 are recorded on the form with one label: "adequately powered"
+  (planning-case power ≥ 0.80), "under-powered" (0.50–0.80) or "low
+  informativeness" (< 0.50). N stays 95 in every case, and an
   inconclusive E-2 is reported with the label and the N that would
   have been needed.
 
 Normal-approximation formula used as a cross-check: for true μ = 0,
 N ≈ ((z₁₋α + z₁₋β/₂) · σ / δ)²; for μ ≠ 0, N ≈ ((z₁₋α + z₁₋β) · σ /
 (δ − |μ|))², with δ the bound (δ = 0.025 for B-1, 0.05 bit for B-2).
+It gives 94 for the planning case, against 95 from the exact power.
 
-**Runtime.** B-1 needs N × 6 grids × 30 cells: **5,400 lesion cells at
-N = 30**, excluding B-2. The last measured throughput (N12,
+**Runtime.** B-1 needs N × 6 grids × 30 cells: **17,100 lesion cells
+at N = 95**, excluding B-2. The last measured throughput (N12,
 `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`: 1,500
-cells in 2 h 37 min, 24-core host, parallel-4) gives about 9.4 h. B-2
-adds 30 single-seed runs of the E1 runner whose runtime is not yet
-measured (probe 512, k-NN estimators on 896-D). Measuring the B-2
-runtime on the filing host, during the pilot, is a pre-filing task;
-the estimate is recorded on the OSF form.
+cells in 2 h 37 min, 24-core host, parallel-4) gives about **30 h**
+(17,100 / 1,500 × 157 min ≈ 1,790 min). B-2 adds 95 single-seed runs
+of the E1 runner whose runtime is not yet measured (probe 512, k-NN
+estimators on 896-D). Measuring the B-2 runtime on the filing host,
+during the pilot, is a pre-filing task; the total estimate is recorded
+on the OSF form.
 
 ## 8. Seeds and stopping rule
 
-- **Confirmatory seeds:** 1001–1030 (N = 30), the same list for B-1
+- **Confirmatory seeds:** 1001–1095 (N = 95), the same list for B-1
   and B-2. They are disjoint from every seed used so far: the default
   grid seeds 0–4, Q3/Q3+ {0, 17, 42, 73, 101, 7, 23, 31, 53, 89} and
   N12 {3, 11, 19, 29, 37, 41, 47, 59, 67, 79}, and from the v0.8
   (2001–2044, pilots from 2101) and v0.9 (3001–3044, pilots 3101–3105)
   seed pools.
-- **Reserve seeds (technical replacement only):** 1031–1034, used in
-  order.
+- **Reserve seeds (technical replacement only):** 1096–1099, used in
+  order. They do not overlap the pilot seeds.
 - **B-2 pilot seeds:** 1101–1105 (§4.3), never confirmatory.
-- **Fixed-N design.** N = 30 is fixed on the OSF form. There is no interim
+- **Fixed-N design.** N = 95 is fixed on the OSF form. There is no interim
   look at outcomes and no optional stopping or extension. Every analysis
   runs once, after all N seeds have finished.
 - **Technical failure** (crash, NaN/inf metric, missing aggregate): the
@@ -467,9 +476,9 @@ increase for B-2. Every claim names the estimand of §3.
 | Equivalent | −δ < L and U < δ | "The [estimand] is bounded within ±δ (TOST, α = 0.05; 90 % CI inside the bounds) on N pre-registered new seeds." If 0 ∉ [L, U], add: "it is non-zero but smaller than half the registered effect size." |
 | Beyond bound, registered direction | L ≥ δ | "An effect of at least half the registered size (≥ δ), in the registered direction, on the [estimand]." Reported as a new pre-registered finding in a new ADR; this does not establish an effect of the full registered size. |
 | Beyond bound, reverse direction | U ≤ −δ | "A reverse effect of at least half the registered size (≥ δ) on the [estimand]." New ADR. |
-| Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches δ (half the registered size) is unresolved at N = 30." |
-| Reverse effect detected, size unresolved | L ≤ −δ < U < 0 | "A non-zero reverse effect; size relative to δ unresolved at N = 30." |
-| Inconclusive | L ≤ 0 ≤ U and (L ≤ −δ or U ≥ δ) | "Neither an effect nor its absence is established at N = 30." The expected-informativeness label of §7 is quoted. |
+| Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches δ (half the registered size) is unresolved at N = 95." |
+| Reverse effect detected, size unresolved | L ≤ −δ < U < 0 | "A non-zero reverse effect; size relative to δ unresolved at N = 95." |
+| Inconclusive | L ≤ 0 ≤ U and (L ≤ −δ or U ≥ δ) | "Neither an effect nor its absence is established at N = 95." The expected-informativeness label of §7 is quoted. |
 
 All labels are read from the same CI, so exactly one is reported per
 test. Each label rests on one-sided tests at α = 0.05; the probability
@@ -509,7 +518,7 @@ which concerned a different estimand. All outcomes are publishable.
 
 ## 11. Pre-registration fidelity checklist
 
-- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1034) is run.
+- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1099) is run.
 - [ ] Pre-filing code tasks of §4.3 merged with unit tests; commit hashes
       of `run_grid.sh`, `aggregate_grid.py`, `analyse_amedi_quadratic.py`,
       the E1 runner, the calibration harness, the TOST analysis script
@@ -517,7 +526,7 @@ which concerned a different estimand. All outcomes are publishable.
 - [ ] Primary-estimator implementation verification (§4.3) passed;
       calibration table, B-2 pilot SD / runtime and the recomputed
       E-2 power with its informativeness label (§7) recorded on the
-      form; N = 30 on the form.
+      form; N = 95 on the form.
 - [x] No threshold change.
 - [x] No metric-math change.
 - [x] Bounds derived from frozen thresholds (half of each), not from data.
@@ -533,7 +542,8 @@ and the calibration), the pilot and the regenerated E-2 power with the
 pilot SD are also filing prerequisites.
 
 Decided by the PI on 2026-10-23 and applied above (no longer open):
-N = 30; bounds ±half-threshold (±0.025 / ±0.05 bit), symmetric; B-2
+N = 95 (second-round decision: 0.80 power for E-2 in the planning
+case); bounds ±half-threshold (±0.025 / ±0.05 bit), symmetric; B-2
 primary estimator = Ross (2014) mixed discrete–continuous k-NN, k = 3,
 with full-probe KSG and MINE secondary.
 
