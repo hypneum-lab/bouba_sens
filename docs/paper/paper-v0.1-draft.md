@@ -75,15 +75,20 @@ timings × 3 SNRs) and 19 ADRs, we report:
    (Studyforrest + CC-film). Binning collapses in 896-D as
    `N ≫ (#bins)^D` predicts.
 
-The paper's central empirical claim is narrow and falsifiable:
-**a frozen mux with hard transducer gating is the minimal
-configuration that qualitatively reproduces Amedi T1/T2
-asymmetry ; all additional plasticity controls we tested are
-null or harmful**. bouba_sens is released at
+An earlier version of this paper claimed that a frozen mux with
+hard transducer gating is the minimal configuration that
+qualitatively reproduces Amedi T1/T2 asymmetry. That claim rested
+on the single-seed B-1 pattern and is **withdrawn together with
+it** (§5.5, ADR-0019). The surviving claims are narrow: B-1 is
+retracted (below the noise floor of this benchmark), B-2 is null
+on every estimator and bridge tested, and B-3 passes on magnitude
+only, with its structural (partition) reading withdrawn.
+bouba_sens is released at
 `github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`, PyPI
 `bouba-sens==0.5.4`) as a reusable instrument for stress-
 testing other cross-modal architectures under OSF-compliant
-pre-registration.
+pre-registration ; the B-1 retraction (ADR-0019) constitutes a
+portable multi-seed validation protocol for future benchmarks.
 
 ---
 
@@ -815,10 +820,42 @@ operationalises this asymmetry as a Me7 threshold. Bavelier &
 Neville (2002) and Merabet & Pascual-Leone (2010) frame this as a
 critical-period phenomenon: lock-style plasticity constraints mid-
 development produce the T1/T2 gap that adult-onset reorganisation
-cannot close. bouba_sens's `constellation_lock_after` is a direct
-architectural analogue of that critical period, and the §5.5 dose-
-response curve reproduces the qualitative Amedi pattern without
-meeting the pre-registered magnitude threshold.
+cannot close; Heimler & Amedi (2020) review to what extent such
+critical periods remain reversible in the adult brain.
+bouba_sens's `constellation_lock_after` is a direct architectural
+analogue of that critical period. The single-seed §5.5 dose-response
+pattern that appeared to reproduce the qualitative Amedi asymmetry
+did not survive multi-seed validation and is retracted (§5.5,
+ADR-0019).
+
+**Missing-modality robustness and critical periods in deep
+multimodal networks.** Most multimodal benchmarks assume modality
+completeness at evaluation time (MultiBench, Liang et al. 2021),
+and joint-embedding models such as ImageBind (Girdhar et al. 2023)
+bind modalities through a shared space without testing
+reorganisation after channel loss. Ma et al. (2022) show that
+multimodal Transformers are sensitive to missing modalities and
+that the most robust fusion strategy is dataset dependent. Sui et
+al. (2026) characterise a deployment-time failure mode in which
+models trained on full modalities underperform unimodal models
+when one modality is missing; they associate it with learned
+cross-modal dependencies in principal parameter subspaces
+(structured rotations, particularly in cross-modal interaction
+layers) and correct it by rotating the principal input subspace
+toward a unimodal reference along a geodesic. This is the closest
+current ML statement of the "late lesion hurts" intuition that B-1
+operationalises. Kleinman, Achille & Soatto (2023) show that deep
+networks exhibit critical learning periods for multisensory
+integration: interfering with properly correlated multi-source
+signals early in training can permanently impair integration.
+Their deficit is defined by correlated-signal deprivation during
+an early window, not by removing one modality after convergence,
+which is the manipulation `constellation_lock_after` implements.
+We are not aware of an artificial-network model that directly
+contrasts congenital and late sensory loss in the sense of Amedi
+et al. (2007); bouba_sens targets that gap, and its B-1 retraction
+(§5.5) shows that, in this benchmark, the lock mechanism does not
+produce a T1/T2 gap above the noise floor.
 
 **Bouba/kiki correspondence and ideasthesia.** Köhler (1947) and
 Ramachandran & Hubbard (2001) established the 95 %+ cross-cultural
@@ -826,9 +863,23 @@ agreement on round-vs-spiky sound-shape mapping; Sidhu & Pexman
 (2018) review the converging evidence that this mapping is a
 structural property of sensory integration, not learned. Our B-3
 invariant formalises that asymmetry as the max off-diagonal
-magnitude of the 5-modality perf matrix; its 5–6× threshold pass
+magnitude of the 5-modality perf matrix. Its 5–6× threshold pass
 across every grid in this paper, independent of all Phase-1/Phase-2
-controls, is consistent with a hard-wired asymmetric mapping.
+controls, is a magnitude result only: the partition null model and
+the structural-ceiling lemma (§3.3, §4.4–4.5) show that it tracks
+per-modality entropy and does not support a hard-wired
+perceptive/proprioceptive mapping. Bouba/kiki is therefore a
+motivating analogue for B-3, not a property the benchmark
+establishes. In models, Alper & Averbuch-Elor (2023) probe sound
+symbolism in vision-and-language models (CLIP, Stable Diffusion). Using real
+speech, Tsai et al. (2026) separate auditory, cross-modal, and
+visual components of the effect and find that speech language
+models align poorly with human auditory judgments and that
+open-weight models cannot reliably link a heard sound to its
+shape; Keleş et al. (2026) find that vision-language models remain
+well below human baselines on sign-language form–meaning mapping.
+These studies concern learned correspondences rather than
+plasticity after lesion and serve here as framing only.
 
 **γ/θ phase-amplitude coupling as a cross-modal binding
 substrate.** Lisman & Idiart (1995), Tort et al. (2010), and Colgin
@@ -846,6 +897,25 @@ bouba_sens follows the OSF locked-threshold protocol (registration
 B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
 and are not revisited by any ADR in this paper, including the
 retraction in §5.9.
+
+**Null calibration and mutual-information estimation.** Gröger,
+Wen & Brbić (2026) show that representational similarity metrics
+are confounded by network scale and introduce a permutation-based
+null calibration; after calibration, the apparent global
+cross-modal convergence largely disappears while local
+neighbourhood agreement remains. The B-3 partition null model
+(§4.4–4.5) reaches an analogous conclusion at small scale: the raw
+asymmetry magnitude is reproducible, but its structural reading
+does not survive comparison with random partitions. For B-2,
+Abdelaleem, Martini & Nemenman (2025) argue that the sample
+complexity of neural MI estimators is governed by latent rather
+than ambient dimensionality and give a protocol with consistency
+checks, bias correction, and confidence intervals, which matches
+the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1).
+Foresti et al. (2026) benchmark non-parametric, discriminative,
+and generative MI estimators and find no universal winner, which
+supports triangulating Kraskov, binning, and MINE rather than
+relying on any single estimator.
 
 **Biophysical vs protocol-level nerve simulators.** Readers
 searching for "nerve" in the Python ecosystem will encounter

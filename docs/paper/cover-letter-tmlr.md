@@ -41,15 +41,14 @@ The manuscript fits TMLR's reviewing criteria as follows:
    modality-loss generalisation in deep models — a sub-community
    underserved by current vision/language benchmarks, which
    typically assume modality completeness.
-3. **No requirement on perceived significance.** We make a
-   **narrow and falsifiable** central claim: a frozen PSK mux
-   with hard-binary transducer gating is the **minimal
-   architectural configuration** that qualitatively reproduces
-   the Amedi 2007 T1/T2 asymmetry on the real biological bridge.
-   Every compound tested (soft Gumbel gating, finer τ scans,
-   codebook freeze, phase-transition schedule) was null or
-   harmful. We report the negative results with equal weight to
-   the positive one.
+3. **No requirement on perceived significance.** The claims are
+   **narrow**: B-1 (the Amedi 2007 T1/T2 gap) is retracted after
+   multi-seed validation (ADR-0019), B-2 is null on every
+   estimator and bridge tested, and B-3 passes on magnitude only
+   (its structural reading is withdrawn). An earlier "minimal
+   architectural configuration that reproduces Amedi T1/T2"
+   claim rested on the retracted B-1 pattern and is withdrawn.
+   Negative and retracted results are reported with full weight.
 
 ### What is new
 
@@ -60,11 +59,13 @@ The manuscript fits TMLR's reviewing criteria as follows:
   informational migration, B-3 perceptive/proprioceptive
   asymmetry) decouple effects that prior single-axis benchmarks
   conflate.
-- **Critical-period dose-response curve.** §5.5 of the
-  manuscript reports the first non-monotone Amedi-style
-  dose-response curve obtained on the 4.5-modal real bridge:
-  B-1 peaks at `LOCK_AFTER=100` (50 % of `STEPS_TRAIN`) at
-  `+0.0125` (0.25 × the OSF-locked threshold of `0.05`).
+- **Critical-period dose-response scan, retracted.** §5.5
+  reports the `LOCK_AFTER` scan whose single-seed peak
+  (`+0.0125` at `LOCK_AFTER=100`) did not survive multi-seed
+  validation (10-seed sign test p=0.62; pre-registered subgroup
+  replication 0/2 at Bonferroni α=0.025; ADR-0019). The
+  retraction is reported as a portable multi-seed validation
+  protocol.
 - **Reproducibility infrastructure.** `bash
   scripts/reproduce_paper_v01.sh` regenerates every figure and
   table from a clean checkout in under [N] minutes on commodity
@@ -82,10 +83,10 @@ explicit out-of-scope items.
 
 We also **do not** claim novelty for the architectural primitives
 themselves (PSK mux, hard-binary transducer). Their novelty is in
-the **falsified ablation matrix**: the manuscript demonstrates
-which configurations produce Amedi-style behaviour and which do
-not, on a benchmark whose thresholds were locked before the
-runs.
+the **falsified ablation matrix**: the manuscript reports which
+configurations were tested against Amedi-style predictions and
+how each failed, on a benchmark whose thresholds were locked
+before the runs.
 
 ### Reviewer recommendations
 

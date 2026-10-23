@@ -50,9 +50,9 @@ uv run python -m bouba_sens.cli --help
 ## Domain-specific gotchas
 
 - **§5.5 of the paper is under FINAL Retract** (ADR-0019, Q3+ 10-seed). TMLR submission is **BLOCKED** until §5.5 is reformulated. Do not advance toward submission while §5.5 is in Retract state.
-- **N12 subgroup replication** runs on kx6tm-23 (tactile-floor / force-plus10) and picks the reformulation draft A/B/C — wait for N12 verdict before touching §5.5.
+- **N12 subgroup replication** is DONE — LOST 0/2 (ADR-0019); the full-retract reformulation (Version C) has landed in §5.5. Do not reintroduce the retracted dose-response claim.
 - **B-2 is Null** (Kraskov + MINE agree within 0.1 bit). Do not silently re-state as "trend".
-- **B-3 PASSES at 5-6× threshold** and anchors `dream-of-kiki` Stratum 4 — protect this invariant.
+- **B-3 PASSES on magnitude at 5-6× threshold** and anchors `dream-of-kiki` Stratum 4 — protect this result, but do not call it an "architectural invariant": the paper withdrew that reading (entropy proxy, ADR-0014/0015).
 - **nerve-wml is a local sibling dep** via `[tool.uv.sources]` (not on PyPI). New checkouts must have `../nerve-wml` cloned beside this repo or `uv sync` will fail.
 - **Python 3.14 required** — older venvs (3.12/3.13) will resolve incompatible wheels.
 - **Numerical reports re-generate from runs/**; do not hand-edit `reports/*.json` or paper figures — re-run the script.

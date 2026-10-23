@@ -16,13 +16,15 @@ amendment v0.6):
 
 - **B-1** — Congenital gap (lesion pre-training > lesion post-conv)
 - **B-2** — MI migration (post-lesion MI rise)
-- **B-3** — Perceptive/proprioceptive asymmetry (architectural)
+- **B-3** — Perceptive/proprioceptive asymmetry (magnitude)
 
 ## Status
 
 - **HEAD ≈ v0.5.9**, ~156 commits, 19 ADRs (0004–0019), 185+ tests.
-- **B-3 PASS** at 5–6× threshold (architectural invariant; anchors
-  `dream-of-kiki` Stratum 4).
+- **B-3 PASS on magnitude** at 5–6× threshold (anchors
+  `dream-of-kiki` Stratum 4). The "architectural property" reading
+  is withdrawn in the paper (entropy proxy, ADR-0014/0015) — do not
+  describe B-3 as an architectural invariant.
 - **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation
   now **landed in the manuscript**; TMLR submission still **BLOCKED**
   by remaining gates (critic-review + N≥30 confirmatory decision).
