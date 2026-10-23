@@ -421,9 +421,57 @@ def test_gate_rejects_mismatched_shapes() -> None:
         manipulation_gate(torch.ones(2, 3), torch.ones(3, 2), n_perm=10)
 
 
-def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -> None:
-    from torch.nn import functional as F  # noqa: N812
+def _flatten_state(obj: object, prefix: str, out: dict[str, object], seen: set[int]) -> None:
+    """Collect every tensor/number reachable from ``obj`` (modules, optimiser, attributes)."""
+    if id(obj) in seen:
+        return
+    if isinstance(obj, torch.Tensor):
+        out[prefix] = obj.detach().clone()
+        return
+    if isinstance(obj, bool | int | float | str | type(None)):
+        out[prefix] = obj
+        return
+    seen.add(id(obj))
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            _flatten_state(v, f"{prefix}[{k!r}]", out, seen)
+    elif isinstance(obj, list | tuple):
+        for k, v in enumerate(obj):
+            _flatten_state(v, f"{prefix}[{k}]", out, seen)
+    elif isinstance(obj, torch.nn.Module):
+        for k, v in obj.state_dict().items():  # parameters + buffers
+            out[f"{prefix}.state_dict.{k}"] = v.detach().clone()
+        for k, v in vars(obj).items():  # plain attrs set via object.__setattr__
+            if not k.startswith("_") or k in ("_step", "_t", "_count"):
+                _flatten_state(v, f"{prefix}.{k}", out, seen)
+    elif isinstance(obj, torch.optim.Optimizer):
+        _flatten_state(obj.state_dict(), f"{prefix}.optimizer", out, seen)
+    elif hasattr(obj, "__dict__"):
+        for k, v in vars(obj).items():
+            _flatten_state(v, f"{prefix}.{k}", out, seen)
 
+
+def _full_loop_state(loop: object) -> dict[str, object]:
+    """Everything the loop owns, enumerated from its attributes (world excluded)."""
+    out: dict[str, object] = {}
+    seen: set[int] = set()
+    for name, val in vars(loop).items():
+        if name == "world":
+            continue
+        _flatten_state(val, name, out, seen)
+    out["<global torch RNG>"] = torch.get_rng_state()
+    return out
+
+
+def _assert_identical(a: dict[str, object], b: dict[str, object]) -> None:
+    assert a.keys() == b.keys(), sorted(set(a) ^ set(b))
+    for k in a:
+        va, vb = a[k], b[k]
+        same = torch.equal(va, vb) if isinstance(va, torch.Tensor) else va == vb
+        assert same, f"first differing entry: {k}"
+
+
+def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -> None:
     from tests.unit.test_loop import _build_loop
 
     world = StudyforrestRealWorld(seed=0, data_dir=real_dir)
@@ -432,6 +480,10 @@ def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -
     torch.manual_seed(0)
     b = _build_loop(n_classes=4)
     a.world = b.world = world
+    _assert_identical(_full_loop_state(a), _full_loop_state(b))  # same start
+    start_keys = _full_loop_state(a).keys()
+    for owned in ("mux", "nerve", "head", "sensories", "opt"):
+        assert any(k.startswith(owned) for k in start_keys), owned
     seen_a: list[torch.Tensor] = []
     orig = a._forward
 
@@ -441,24 +493,24 @@ def test_pretrain_without_decorrelation_matches_main_behaviour(real_dir: Path) -
 
     a._forward = spy  # type: ignore[method-assign]
     torch.manual_seed(1)
-    ckpt_a = a.pretrain(steps=4, batch_size=16, seed=3)
+    a.pretrain(steps=4, batch_size=16, seed=3)
+    a._forward = orig  # type: ignore[method-assign]
     torch.manual_seed(1)
-    # Replica of the pre-v0.9 pretrain body.
+    # Replica of AdaptationLoop.pretrain as on origin/main f99f2dc938fa
+    # (src/bouba_sens/loop.py lines 118-128: the mux_step/nerve_step lookup
+    # and the `for step in range(steps)` body, before the Checkpoint return).
+    mux_step = getattr(b.mux, "step", None)
+    nerve_step = getattr(b.nerve, "step", None)
     for step in range(4):
         sample = b.world.sample(batch_size=16, seed=3 + step)
-        assert torch.equal(seen_a[step], sample.audio)
-        carriers = {m: b.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
-        loss = F.cross_entropy(b.head(b.nerve.fuse(carriers)), sample.label)
+        assert torch.equal(seen_a[step], sample.audio), f"batch differs at step {step}"
+        loss, _ = b._forward(sample)
         b.opt.zero_grad()
         loss.backward()
         b.opt.step()
-        for obj in (b.mux, b.nerve):
-            fn = getattr(obj, "step", None)
-            if callable(fn):
-                fn()
-    ckpt_b = b.snapshot()
-    for k, v in ckpt_a.head_state.items():
-        assert torch.equal(v, ckpt_b.head_state[k])
-    for m in MODALITIES:
-        for k, v in ckpt_a.sensory_states[m].items():
-            assert torch.equal(v, ckpt_b.sensory_states[m][k])
+        if callable(mux_step):
+            mux_step()
+        if callable(nerve_step):
+            nerve_step()
+    assert len(seen_a) == 4
+    _assert_identical(_full_loop_state(a), _full_loop_state(b))
