@@ -73,6 +73,14 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    entry. Z_post: the same probe, presented clean on all channels,
    through the network after the 100-step lesion phase. Both are already
    captured as `pre_lesion_codes` / `post_lesion_codes`.
+   **Hard-demodulation probe rule (PI decision 2026-10-23).** Both
+   captures use deterministic argmax demodulation of the carriers
+   (`demodulate(hard=True)`, one-hot code distribution into the
+   codebook), not the Gumbel-softmax sampling used in training. The
+   same checkpoint therefore always yields bit-identical codes, with no
+   random draw in the subspace measurement. Training and lesion-phase
+   steps are unchanged; only the two probe captures use the hard path
+   (`probe_demod="hard"`).
 3. **Subspaces.** Column-centre each matrix. V_pre, V_post ∈ ℝ^{896×k}
    are the top-k right singular vectors, i.e. the top-k principal
    directions in feature space, with **k = 12**. This is the effective
