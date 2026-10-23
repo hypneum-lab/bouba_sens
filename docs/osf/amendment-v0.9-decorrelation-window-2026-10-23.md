@@ -45,6 +45,25 @@ disturbance*, not by removing a modality. bouba_sens has tested only
 removal (B-1, T1 vs T2), and B-1 did not survive multi-seed validation.
 A decorrelation window tests the precedent's own kind of manipulation.
 
+**Novelty statement.** Temporary decorrelation of modalities as a
+critical-period intervention is prior art: Kleinman, Achille & Soatto
+already decorrelated the sources during an early window and measured
+the lasting deficit in integration. This amendment does not claim
+decorrelation itself as new. What it adds rests on the design: the
+multiplexed (mux) multi-channel fused code of bouba_sens, a grid of
+window onsets, and the comparison with the channel-lesion paradigm
+(B-1, T1 vs T2) on the same architecture and world. Whether that
+combination yields a timing law is the open question (§6, §7).
+
+Context, not a competitor (descriptive): Han et al., "Towards Physics
+of Multimodal Pretraining: Knowledge Flow, Modality Synergy, Early
+Unification, and Recipes" (arXiv:2608.05000, v2), sweep the onset of
+joint training at a fixed total token budget and report that later
+unification degrades vision. They manipulate delayed introduction of a
+modality, not decorrelation, and share the confound declared below:
+onset, total training and clean exposure co-vary. Cited as supporting
+context only; it adds no hypothesis and no test.
+
 The operationalisation below (within-class cross-modal resampling, the
 window grid, the fusion-gain outcome, the controls) is ours. It is not
 copied from Kleinman et al. The PI should check the correspondence
@@ -155,6 +174,22 @@ At the end of Phase 1 (no lesion), on one clean probe of 512 rows,
 - **Secondary contrasts (descriptive):** D_plain(s, o) = FG_plain −
   FG_decor, and the resampling effect FG_plain − FG_joint.
 
+*Exploratory check, train vs held-out fusion gain (descriptive, no
+test, no decision).* SynIB (Kontras et al., "SynIB: Informational
+Bottleneck for Maximizing Synergy in Multimodal Learning",
+arXiv:2606.09853) reports that synergistic cues are learned but then
+overfit, which would compete with a lost-plasticity reading of a
+deficit. To separate the two readings, FG and D are also computed at
+the end of Phase 1 on 512 rows drawn from the Phase-1 training
+samples (dataset indices recorded by the scheduler) in addition to the
+held-out probe above, and the train-side and held-out D are reported
+side by side per onset. The held-out probe is the one defined above;
+whether its rows are disjoint from the training indices is checked in
+code before filing (code task, §9). A deficit that appears only on
+the held-out side would fit overfitting of re-learned cross-modal
+cues; one on both sides would fit reduced fusion itself. This is not
+tested.
+
 Positive D means the decorrelation window reduced fusion gain at the
 end of the run, relative to a run that saw the same resampled inputs
 with their cross-modal pairing intact.
@@ -166,6 +201,17 @@ with their cross-modal pairing intact.
   Subject to the manipulation check.
 - HARD gating, no constellation lock (LOCK_AFTER unset; a lock would
   confound the window with a freeze), no codebook lock, batch 16.
+- **Learning-rate schedule (frozen).** The optimiser is Adam with a
+  constant learning rate 1e-3 (the `AdaptationLoop` default in
+  `src/bouba_sens/loop.py`; no scheduler exists there). The rate is the
+  same before, during and after the window, with no warm-up, no cyclic
+  schedule and no reset when the window ends, and the optimiser state
+  is not reset at window start or end. The driver must not override it
+  (checked in code before filing, §9). Pawlak, "On the Occurence of
+  Critical Learning Periods in Neural Networks" (arXiv:2510.09687),
+  reports that critical-period deficits can be largely avoided by a
+  cyclic learning rate or a reset when the deficit ends, so any
+  deficit or trend reported here is conditional on this schedule.
 - Window width **w = 50** steps.
 - **Main grid (fixed recovery):** onsets o ∈ {0, 50, 100, 150, 200}
   (5 ordered levels), recovery **R = 200** clean steps after the
@@ -420,6 +466,11 @@ publishable.
 
 - Thresholds 0.05 / 0.10 / 0.02, the M2 lesion, the T1/T2 arms and
   every existing metric.
+
+**What is NOT claimed.** Results are conditional on the frozen
+constant learning rate (§4); no claim is made about other schedules,
+including a cyclic rate or a reset at the end of the window. The
+decorrelation window itself is not claimed as a new intervention (§2).
 - ADR-0019 verdicts and the §5.5 FINAL text.
 
 ## 9. Pre-registration fidelity checklist
@@ -430,6 +481,10 @@ publishable.
       donor label = sample label; joint arm shares the decor audio
       donor; identity outside the window; deterministic given seed;
       world exposes dataset indices.
+- [ ] Learning rate confirmed constant at 1e-3 in the v0.9 driver (no
+      override, no scheduler, no optimiser reset), and train-side
+      fusion-gain output implemented; train/held-out row disjointness
+      of the §3.4 probe checked (descriptive output only).
 - [ ] Fusion-gain probe and CKA check implemented as specified (§3.3,
       §3.4), with unit tests (CKA = 1 for identical features, zero
       denominators skipped).
