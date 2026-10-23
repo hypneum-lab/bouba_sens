@@ -37,8 +37,9 @@ whatever the outcome.
 ## 2. Motivation
 
 Sui, Tan, Zhang, Khan, Hu & Chen, "Do More Modalities Always Help? A
-Geometric Perspective on Missing-Modality Robustness", NeurIPS 2026
-(arXiv:2610.04792), report that multimodal training induces structured
+Geometric Perspective on Missing-Modality Robustness" (arXiv:2610.04792,
+v2 revised 2026-10-13; the arXiv comment reads "NeurIPS 2026 Main
+Conference"), report that multimodal training induces structured
 rotations of principal parameter subspaces, mainly in cross-modal
 interaction layers. These rotations go with larger representation harm
 when a modality is missing at inference. In bouba_sens, `LOCK_AFTER` is
@@ -59,6 +60,14 @@ Two lessons from Q3/Q3+ shape the design:
 
 The direction is derived by analogy: Sui et al. study parameter
 subspaces in other architectures, and bouba_sens has not been tested.
+
+The primary metric S is not Sui et al.'s quantity and is not a
+replication of it. Sui et al. use the mean principal angle (in degrees)
+between **weight** singular subspaces as their diagnostic. S is the
+normalised chordal (squared sine) distance between **representation**
+subspaces, the top-k principal directions of the fused codes (§3). The
+secondary parameter-subspace metric of §3 is the closer analogue of
+their measurement.
 A significant trend in the opposite direction is reported as an
 exploratory contrary finding (§6).
 
@@ -219,10 +228,19 @@ asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
 p-values are reported alongside; the permutation p-value decides.
 
 Sensitivity analyses (reported, no decision): k ∈ {6, 24}; nominal-floor (−20 dB, reached)
-cells only; per lesioned modality.
+cells only; per lesioned modality. Also k ∈ {8, 16} (descriptive;
+exploratory): plug-in empirical singular vectors leak out of the
+population subspace, with a bias that grows for directions of smaller
+singular value (Song, Yang & Ma, "Bias-Corrected Subspace Intersection:
+Minimax-Optimal Shared Subspace Estimation in Multi-View Data",
+arXiv:2609.05617, a different estimation problem, cited for the bias
+mechanism only). Directions near the k = 12 cutoff are the most
+affected, so S could vary with ℓ through spectrum changes alone. The
+S_split floor (§3, item 9) partly controls for this.
 
 *Subspace stability (reported, no decision).* For every Z_pre and Z_post
-the eigengap ratio λ₁₂ / λ₁₃ of the centred covariance is reported. A
+the eigengap ratio λ₁₂ / λ₁₃ of the centred covariance is reported per
+cell (arXiv:2609.05617 motivates this report; descriptive). A
 ratio below 1.1 marks a top-12 subspace that is unstable to small
 perturbations; the share of such matrices is reported per level, and
 the S-1 test is repeated on blocks without them as a sensitivity
@@ -365,6 +383,14 @@ outcomes are publishable.
 - [ ] Metric code + unit tests merged, commit hash on the OSF form.
       Required tests: S = 0 for identical subspaces, S = 1 for
       orthogonal subspaces, invariance to basis rotation.
+- [ ] Pre-filing task (not done by this draft; no probe matrices Z_pre
+      are stored in the repo, only the ADR-0019 summary values):
+      recompute the participation ratio behind k = 12 (11.7 in
+      ADR-0019 E1.1) with the finite-sample-corrected estimator of Chun,
+      Canatar, Chung & Lee, "Estimating Dimensionality of Neural
+      Representations from Finite Samples" (arXiv:2509.26560), on the
+      pilot codes, and record it next to 11.7. Descriptive; it only
+      supports the justification of k and does not change the metric.
 - [ ] Probe-size parameter (512, decoupled from batch 16) and the
       no-lesion control arm implemented and frozen.
 - [ ] Rank checks of §3.1 implemented with unit tests (rank-deficient
