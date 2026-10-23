@@ -299,7 +299,15 @@ as secondary: the mean and SD
 of the estimated MI and ΔMI per cell (bias = mean estimate − truth),
 and the least-squares slope and intercept of estimated on true ΔMI per
 baseline. The calibration is required before filing and its table is
-recorded on the OSF form, but it is descriptive.
+recorded on the OSF form, but it is descriptive. The ΔMI = 0 rows are
+the known-null calibration and the ΔMI = ±0.05 bit rows are the
+injected-effect calibration at the equivalence bound; both report bias
+and resolution of the estimators in that weak-signal regime. This
+follows the ground-truth benchmarking of information-theoretic
+estimators by Andrews & Mengaldo, "When Does Text Inform? Benchmarking
+Information-Theoretic Metrics for Multimodal Time-Series Forecasting"
+(arXiv:2609.11282), whose abstract reports that estimator performance
+differs on weak signals.
 It is not a pass/fail gate and does not convert E-2 into a statement
 about true MI: an estimator that returns half the true change would
 calibrate visibly (slope ≈ 0.5), but E-2 still bounds the estimated
@@ -355,6 +363,13 @@ informativeness of each component is stated there.
   the disagreement is stated in the paper.
 - Descriptive only: per-modality Me7 at floor SNR, per ℓ; per-seed D
   for B-2; E-2b estimators.
+- Descriptive only, estimator noise (after Knopov & Shvai,
+  arXiv:2610.23700, who separate a seed level from an item level): for
+  B-2, report per seed the within-seed noise of ΔMI-hat, i.e. the SD of
+  ΔMI-hat over a bootstrap over probe items (1,000 resamples of the 512
+  probe rows, Ross estimator re-evaluated), separately from the
+  between-seed SD of the 95 per-seed ΔMI-hat that TOST uses. The TOST
+  itself is unchanged and still uses one ΔMI-hat per seed.
 - Exclusions: a seed is excluded only for a technical failure, i.e. a
   crash, a missing aggregate or a non-finite metric (§8). Outliers are
   not removed. A negative primary MI-hat, and a secondary KSG value
@@ -419,6 +434,23 @@ other estimators and other configurations; the largest is 0.0749 bit
 *planning assumptions*, not evidence about the confirmatory SD. The
 B-2 pilot (§4.3) measures the latter. The planning case is
 μ = ±0.02 bit (0.4 × the bound) at SD 0.1166.
+
+*Provenance of SD 0.1166* (checked against
+`scripts/power_prereg_2026_10.py`). `B2_TABLES` holds the per-seed
+ΔMI values of the ADR-0019 E1.3 / E1.3b / E1.3c tables (5 seeds each).
+The script takes the largest sample SD over those tables, 0.0749 bit,
+and applies `sd_ucl(sd, 5)`: the one-sided upper 80 % confidence limit
+of an SD, sd · √(df / χ²₀.₂₀,df) with df = 4, which gives 0.1166 bit.
+N = 95 is therefore already sized on an **upper confidence bound** of
+the planning variance, not on a point SD. This is the design rule of
+Knopov & Shvai, "Equivalence testing and run-count design for
+stochastic machine-learning experiments" (arXiv:2610.23700), who
+recommend an upper confidence bound of the pilot variance in the
+run-count formula, with seeds as the experimental unit. The same
+bound is applied to the B-2 pilot at filing (see "Expected
+informativeness" below):
+if the pilot upper 80 % limit implies N > 95, the study is reported as
+under-powered for E-2 (labels below); N is not changed.
 
 Complete decision rule (normal model, 90 % CI classes against
 {−0.05, 0, +0.05}; for E-2, "Equivalent" is the TOST pass, so the
