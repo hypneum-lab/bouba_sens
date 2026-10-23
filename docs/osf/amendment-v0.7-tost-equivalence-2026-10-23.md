@@ -147,9 +147,9 @@ does **not** reuse that schedule. Schedule in effect for every lesion
 run of §4.1:
 
 - SNR(t) = max(floor, 20 + (floor − 20) · min(1, t / k)), t = 0 … 99.
-- The floor is reached at step t = k, so to hit the floor within the
-  first N lesion steps set **`k_steps` = N** (valid for N ≤ 99, the
-  last step index). Frozen: **N = 50**, `snr_init` = +20 dB.
+- The floor is reached at step t = k (0-indexed) and held until the
+  last lesion step, so set **`k_steps` = N** to reach it at step N
+  (valid for N ≤ 99, the last step index). Frozen: **N = 50**, `snr_init` = +20 dB.
 - Reached values: the floors −20.00 / −10.00 / +10.00 dB are reached at
   step 50 and held for steps 50 … 99 (50 of the 100 lesion steps are at
   the floor). Mean SNR over the 100 steps: −9.80 / −2.35 / +12.55 dB.

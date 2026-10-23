@@ -163,8 +163,8 @@ filing (§10).
   nominal floors −20 / −10 / +10 dB (ADR-0020, PR #14). Here every
   lesion run uses SNR(t) = max(floor, 20 + (floor − 20) · min(1, t / k)),
   t = 0 … 99, with **`k_steps` = 50** (the floor is reached at step
-  t = k, so `k_steps` = N hits the floor within the first N lesion
-  steps, N ≤ 99). The floors −20.00 / −10.00 / +10.00 dB are reached at
+  t = k, 0-indexed, and is held until the last lesion step, so
+  `k_steps` = N reaches the floor at step N, N ≤ 99). The floors −20.00 / −10.00 / +10.00 dB are reached at
   step 50 and held to step 99; mean SNR over the 100 steps is −9.80 /
   −2.35 / +12.55 dB. The three SNR levels f in the cell definition (§3)
   are therefore distinct severities, which they were not historically.

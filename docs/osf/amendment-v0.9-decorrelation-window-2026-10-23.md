@@ -183,8 +183,8 @@ with their cross-modal pairing intact.
   grids, ADR-0020).** The "standard T2 lesion phase" is 100 lesion steps
   with SNR(t) = max(−20, 20 − 40 · min(1, t / k)) and **`k_steps` = 50**.
   The floor −20.00 dB is reached at step 50 (generally, `k_steps` = N
-  reaches the floor within the first N steps, N ≤ 99) and held to step
-  99; mean SNR over the 100 steps is −9.80 dB. The historical default
+  reaches the floor at step N, 0-indexed, N ≤ 99) and held until the
+  last lesion step (step 99); mean SNR over the 100 steps is −9.80 dB. The historical default
   (`k_steps` = 5000) only reached 19.21 dB at the last step (ADR-0020,
   PR #14), so D-4 is not comparable with historical lesion results. The
   CLI already has `--k-steps`; `run_grid.sh` does not forward it, so the
