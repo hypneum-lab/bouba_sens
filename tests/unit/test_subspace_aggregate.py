@@ -19,7 +19,7 @@ from bouba_sens.metrics.subspace_aggregate import (
     TechnicalFailureError,
     aggregate,
     evaluate_block,
-    replace_technical_failures,
+    SeedRoster,
     verdict,
 )
 from bouba_sens.sensory import MODALITIES
@@ -208,12 +208,33 @@ def test_protocol_failure_threshold(n: int, complete: int, failure: bool) -> Non
     assert agg.protocol_failure is failure
 
 
-def test_rank_deficient_seeds_are_never_replaced() -> None:
-    # Aggregation takes exactly N confirmatory seeds: no reserve seed can enter.
+def test_seed_count_must_match_n_confirmatory() -> None:
     with pytest.raises(ValueError, match="confirmatory"):
         aggregate(_grid(21), n_confirmatory=20)
     with pytest.raises(ValueError, match="confirmatory"):
         aggregate(_grid(19), n_confirmatory=20)
+
+
+def test_rank_excluded_seeds_stay_in_the_denominator() -> None:
+    """A rank-excluded seed is not swapped for a reserve seed: the roster is authorised."""
+    roster = SeedRoster(list(range(2001, 2021)), [2021, 2022, 2023, 2024])
+    agg = aggregate(_grid(20, undefined={0: [25]}), n_confirmatory=20, expected_seeds=roster.active)
+    assert 2001 not in agg.seeds_complete
+    assert agg.n_confirmatory == 20
+    # an unauthorised (reserve) seed in place of a rank-excluded one is rejected
+    swapped = [b for b in _grid(20) if b.seed != 2001]
+    swapped += [replace(b, seed=2021) for b in _grid(20) if b.seed == 2001]
+    with pytest.raises(ValueError, match="roster"):
+        aggregate(swapped, n_confirmatory=20, expected_seeds=roster.active)
+
+
+def test_duplicate_block_is_rejected_in_either_order() -> None:
+    bad = _res(2005, 100, None)
+    good = _res(2005, 100, 0.3)
+    for extra in ([bad, good], [good, bad]):
+        blocks = [b for b in _grid(20) if not (b.seed == 2005 and b.lock == 100)] + extra
+        with pytest.raises(ValueError, match="duplicate"):
+            aggregate(blocks, n_confirmatory=20)
 
 
 def test_missing_level_for_a_seed_is_an_error() -> None:
@@ -222,19 +243,36 @@ def test_missing_level_for_a_seed_is_an_error() -> None:
         aggregate(blocks, n_confirmatory=20)
 
 
-def test_replace_technical_failures_in_reserve_order() -> None:
-    seeds = list(range(2001, 2021))
-    reserve = [2021, 2022, 2023, 2024]
-    out = replace_technical_failures(seeds, reserve, failed=[2003, 2010])
-    assert out[2] == 2021 and out[9] == 2022
-    assert len(out) == 20 and 2003 not in out
-    assert replace_technical_failures(seeds, reserve, failed=[]) == seeds
+def test_roster_replaces_in_reserve_order_across_calls() -> None:
+    r = SeedRoster(list(range(2001, 2021)), [2021, 2022, 2023, 2024])
+    assert r.fail(2001) == 2021
+    assert r.fail(2002) == 2022  # each reserve is allocated once
+    assert r.active[0] == 2021 and r.active[1] == 2022
+    assert len(r.active) == 20 and len(set(r.active)) == 20
+    assert r.n_failures == 2 and r.consumed == [2021, 2022]
 
 
-def test_more_than_four_technical_replacements_halt() -> None:
-    seeds = list(range(2001, 2021))
+def test_failed_replacement_is_replaced_and_counted() -> None:
+    r = SeedRoster(list(range(2001, 2021)), [2021, 2022, 2023, 2024])
+    assert r.fail(2001) == 2021
+    assert r.fail(2021) == 2022  # the replacement itself fails
+    assert r.active[0] == 2022 and 2021 not in r.active
+    assert r.n_failures == 2
+
+
+def test_fifth_technical_failure_halts() -> None:
+    r = SeedRoster(list(range(2001, 2021)), [2021, 2022, 2023, 2024, 2025])
+    for seed in (2001, 2002, 2003, 2004):
+        r.fail(seed)
     with pytest.raises(RunHaltedError):
-        replace_technical_failures(seeds, [2021, 2022, 2023, 2024, 2025], failed=seeds[:5])
+        r.fail(2005)
+    assert r.n_failures == 4  # the halting failure is not silently absorbed
+
+
+def test_unknown_seed_cannot_fail() -> None:
+    r = SeedRoster([1, 2], [3])
+    with pytest.raises(ValueError, match="not in the active roster"):
+        r.fail(99)
 
 
 # -------------------------------------------------------------------- verdict

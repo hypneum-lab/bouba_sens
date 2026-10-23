@@ -7,7 +7,7 @@
   (``Z_pre``, each ``Z_post``, the control end matrix, both 256-row halves
   of ``Z_pre``); non-finite codes are a *technical failure*
   (``TechnicalFailureError``: the whole seed is replaced from the reserve list,
-  see ``replace_technical_failures``), every rank failure is an
+  see ``SeedRoster``), every rank failure is an
   outcome-dependent exclusion and is **never** replaced;
 * if ``Z_pre``, the control or a split half fails, all 15 cells are invalid;
 * ``Y`` is the median of ``dS = S - C`` over valid cells, defined only if
@@ -149,17 +149,28 @@ def aggregate(
     *,
     n_confirmatory: int,
     locks: Sequence[int] = LOCKS,
+    expected_seeds: Sequence[int] | None = None,
 ) -> AggregateResult:
     """Keep complete seed blocks, count exclusions per level, test the 80 % rule.
 
     ``blocks`` must hold every (seed, lock) result of exactly
     ``n_confirmatory`` seeds, technical replacements already applied;
-    rank-excluded seeds stay in the denominator (never replaced).
+    rank-excluded seeds stay in the denominator (never replaced);
+    ``expected_seeds`` (``SeedRoster.active``) rejects any other seed.
     """
     locks = tuple(locks)
     by_seed: dict[int, dict[int, BlockResult]] = {}
     for b in blocks:
-        by_seed.setdefault(b.seed, {})[b.lock] = b
+        per_lock = by_seed.setdefault(b.seed, {})
+        if b.lock in per_lock:
+            raise ValueError(f"duplicate block result for seed {b.seed}, lock {b.lock}")
+        per_lock[b.lock] = b
+    if expected_seeds is not None and set(by_seed) != set(expected_seeds):
+        raise ValueError(
+            "seeds differ from the authorised roster: "
+            f"extra {sorted(set(by_seed) - set(expected_seeds))}, "
+            f"missing {sorted(set(expected_seeds) - set(by_seed))}"
+        )
     if len(by_seed) != n_confirmatory:
         raise ValueError(
             f"expected {n_confirmatory} confirmatory seeds (no replacement of rank exclusions); "
@@ -200,23 +211,45 @@ def aggregate(
     )
 
 
-def replace_technical_failures(
-    seeds: Sequence[int], reserve: Sequence[int], failed: Sequence[int]
-) -> list[int]:
-    """Replace technically failed seeds by the next reserve seeds, in order.
+class SeedRoster:
+    """Authorised confirmatory seeds with blind, ordered technical replacement.
 
-    Position is preserved. More than ``MAX_TECHNICAL_REPLACEMENTS``
-    replacements (or an exhausted reserve) raises ``RunHaltedError``.
+    ``fail(seed)`` replaces a technically failed active seed (also a
+    previous replacement) by the next unused reserve seed, in order; every
+    reserve is allocated at most once and failures accumulate across
+    calls. A fifth technical failure (or an exhausted reserve) raises
+    ``RunHaltedError`` without being absorbed. Rank exclusions never go
+    through here.
     """
-    failed_set = set(failed)
-    n_fail = sum(s in failed_set for s in seeds)
-    if n_fail > MAX_TECHNICAL_REPLACEMENTS or n_fail > len(reserve):
-        raise RunHaltedError(
-            f"{n_fail} technical replacements needed (max {MAX_TECHNICAL_REPLACEMENTS}); "
-            "halt and file a deviation note"
-        )
-    spare = iter(reserve)
-    return [next(spare) if s in failed_set else s for s in seeds]
+
+    def __init__(self, seeds: Sequence[int], reserve: Sequence[int]) -> None:
+        if len(set(seeds) | set(reserve)) != len(seeds) + len(reserve):
+            raise ValueError("seeds and reserve must be distinct")
+        self.active: list[int] = list(seeds)
+        self._reserve: list[int] = list(reserve)
+        self.consumed: list[int] = []
+        self.failed: list[int] = []
+
+    @property
+    def n_failures(self) -> int:
+        return len(self.failed)
+
+    def fail(self, seed: int) -> int:
+        if seed not in self.active:
+            raise ValueError(f"seed {seed} is not in the active roster")
+        if self.n_failures + 1 > MAX_TECHNICAL_REPLACEMENTS or len(self.consumed) >= len(
+            self._reserve
+        ):
+            raise RunHaltedError(
+                f"technical failure #{self.n_failures + 1} (max {MAX_TECHNICAL_REPLACEMENTS} "
+                "replacements, reserve of "
+                f"{len(self._reserve)}); halt and file a deviation note"
+            )
+        replacement = self._reserve[len(self.consumed)]
+        self.consumed.append(replacement)
+        self.failed.append(seed)
+        self.active[self.active.index(seed)] = replacement
+        return replacement
 
 
 def verdict(agg: AggregateResult, *, p_value: float, alpha: float = 0.05) -> str:
