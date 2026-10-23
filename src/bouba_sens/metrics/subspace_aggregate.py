@@ -71,9 +71,7 @@ def _all_finite(z: torch.Tensor) -> bool:
     return bool(torch.isfinite(z.detach()).all())
 
 
-def evaluate_block(
-    block: BlockCodes, *, k: int = K_DEFAULT, n_cells: int = N_CELLS
-) -> BlockResult:
+def evaluate_block(block: BlockCodes, *, k: int = K_DEFAULT, n_cells: int = N_CELLS) -> BlockResult:
     """Rank-check one (seed, lock) block and compute ``Y`` (``None`` if undefined).
 
     ``block`` is a ``subspace_protocol.BlockCodes``. Raises ``TechnicalFailureError``
@@ -84,7 +82,9 @@ def evaluate_block(
         raise ValueError(f"expected {n_cells} cells per block; got {len(block.z_post)}")
     for name, z in (("Z_pre", block.z_pre), ("control", block.z_control)):
         if not _all_finite(z):
-            raise TechnicalFailureError(f"non-finite {name} at seed={block.seed}, lock={block.lock}")
+            raise TechnicalFailureError(
+                f"non-finite {name} at seed={block.seed}, lock={block.lock}"
+            )
     for key, z in block.z_post.items():
         if not _all_finite(z):
             raise TechnicalFailureError(
@@ -172,7 +172,9 @@ def aggregate(
 
     complete = [s for s in sorted(by_seed) if all(by_seed[s][lk].y is not None for lk in locks)]
     y = np.array([[by_seed[s][lk].y for lk in locks] for s in complete], dtype=np.float64)
-    splits = np.array([[by_seed[s][lk].s_split for lk in locks] for s in complete], dtype=np.float64)
+    splits = np.array(
+        [[by_seed[s][lk].s_split for lk in locks] for s in complete], dtype=np.float64
+    )
     per_level = []
     for lk in locks:
         results = [by_seed[s][lk] for s in by_seed]
