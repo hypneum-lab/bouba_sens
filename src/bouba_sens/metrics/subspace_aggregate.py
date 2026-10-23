@@ -28,7 +28,6 @@ from dataclasses import dataclass, field
 import numpy as np
 import torch
 
-from bouba_sens.subspace_protocol import BlockCodes, CellKey
 from bouba_sens.metrics.subspace import (
     K_DEFAULT,
     SubspaceRankError,
@@ -37,6 +36,7 @@ from bouba_sens.metrics.subspace import (
     split_half_noise_floor,
     subspace_shift,
 )
+from bouba_sens.subspace_protocol import BlockCodes, CellKey
 
 LOCKS: tuple[int, ...] = (25, 50, 75, 100, 125, 150, 175)
 N_CELLS = 15  # 5 lesioned modalities x 3 SNR levels
