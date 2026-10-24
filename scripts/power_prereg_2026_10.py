@@ -317,6 +317,64 @@ def v08_rule(
     return supported.mean(), page_ok.mean(), fail.mean()
 
 
+V08_ADV_HIGH_LEVELS = 4  # locks 25..100 (first 4 levels) imputed high, 125..175 low
+
+
+def v08_rule_selection(
+    n,
+    effect,
+    guard,
+    q_loss,
+    sims,
+    rng,
+    *,
+    exclusion,
+    threshold=V08_COMPLETE_MIN,
+    levels=7,
+    sd_seed=1.0,
+):
+    """v0.8 rule with the selection safeguard (Codex round 2, 2026-10-24).
+
+    `exclusion`: "independent" (each block lost with probability q) or
+    "outcome" (a block is lost when its endpoint difference falls below
+    its null q-quantile, sqrt(2) * z_q: outcome-dependent selection that
+    keeps about 1 - q of the blocks under the null). Excluded blocks are
+    wholly undefined. Returns the P(Supported) of the complete-block rule
+    alone and of the safeguarded rule (also Page + guard on the full set
+    with excluded blocks imputed adversarially: first levels tied high,
+    last levels tied low, endpoint contrast -inf), plus P(fail) and the
+    kept fraction. Units: within-seed SD.
+    """
+    trend = np.linspace(0.0, effect, levels)
+    y = trend + rng.normal(0, 1, (sims, n, levels)) + rng.normal(0, sd_seed, (sims, n, 1))
+    endpoint = y[..., -1] - y[..., 0]
+    if exclusion == "independent":
+        keep = rng.random((sims, n)) >= q_loss
+    elif exclusion == "outcome":
+        keep = endpoint > math.sqrt(2) * stats.norm.ppf(q_loss)
+    else:
+        raise ValueError(f"unknown exclusion model {exclusion!r}")
+    n_keep = keep.sum(1)
+    fail = n_keep < math.ceil(threshold * n)
+    comp = np.zeros(sims, bool)
+    for k in np.unique(n_keep[~fail]):
+        idx = np.where((n_keep == k) & ~fail)[0]
+        yk = np.stack([y[i][keep[i]] for i in idx])
+        rej = page_perm_reject(yk)
+        comp[idx] = rej & (np.median(yk[..., -1] - yk[..., 0], axis=-1) > guard)
+    adv = np.where(np.arange(levels) < V08_ADV_HIGH_LEVELS, 1e6, -1e6)
+    ya = np.where(keep[..., None], y, adv)
+    rej_a = page_perm_reject(ya)
+    guard_a = np.median(np.where(keep, endpoint, -np.inf), axis=-1) > guard
+    safe = comp & rej_a & guard_a
+    return {
+        "complete_only": float(comp.mean()),
+        "safeguarded": float(safe.mean()),
+        "fail": float(fail.mean()),
+        "kept_fraction": float(keep.mean()),
+    }
+
+
 def v09_rule(n, mu0, profile, sd, rho, sims, rng, quantum=1 / 512):
     """v0.9 complete rule on the three axes, correlated onsets.
 
@@ -538,7 +596,26 @@ def main() -> int:
 
     v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, len(seeds), sd2, sd2u)
     v08_threshold_and_v09_secondary(args)
+    v08_selection_safeguard(args)
     return 0
+
+
+def v08_selection_safeguard(args) -> None:
+    """Codex round 2 (2026-10-24): outcome-dependent exclusion (own generator)."""
+    rng = np.random.default_rng(20261025)
+    sims = max(args.sims // 5, 2000)
+    print(f"\n== v0.8 selection safeguard, q=0.149, {sims} draws per row")
+    print("   P(Supported): complete-block rule alone vs safeguarded rule (P fail, kept)")
+    for exclusion in ("independent", "outcome"):
+        for eff, g in ((0.0, 0.0), (0.70, 0.0), (0.95, 0.25), (1.20, 0.5)):
+            out = []
+            for n in (20, 30, 40):
+                r = v08_rule_selection(n, eff, g, 0.149, sims, rng, exclusion=exclusion)
+                out.append(
+                    f"N={n}:{r['complete_only']:.3f}/{r['safeguarded']:.3f}"
+                    f"(fail {r['fail']:.3f}, kept {r['kept_fraction']:.2f})"
+                )
+            print(f"  {exclusion:11s} trend={eff:.2f} g={g}: " + " ".join(out))
 
 
 def v08_threshold_and_v09_secondary(args) -> None:

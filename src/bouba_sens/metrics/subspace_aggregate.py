@@ -15,8 +15,15 @@
 
 ``aggregate`` keeps *complete* seed blocks (``Y`` defined at all 7 levels),
 counts invalid cells and undefined blocks per level with their
-denominators, and flags a protocol failure below 80 % complete blocks.
-``verdict`` applies the ordered decision rule of section 6.
+denominators, and flags a protocol failure below 70 % complete blocks
+(PI decision 2026-10-24; was 80 %). It also keeps every block (``y_all``,
+NaN where ``Y`` is undefined) for the selection safeguard: rank
+exclusions are outcome-dependent, so an analysis of complete blocks
+alone can be biased (Codex round-2 counterexample). ``adversarial_matrix``
+imputes every undefined ``Y`` against the increasing hypothesis (+inf
+at locks <= 100, -inf above), and ``verdict`` requires the Page test and
+the magnitude guard to pass on both the complete blocks and the
+adversarially imputed full set.
 """
 
 from __future__ import annotations
@@ -41,7 +48,8 @@ from bouba_sens.subspace_protocol import BlockCodes, CellKey
 LOCKS: tuple[int, ...] = (25, 50, 75, 100, 125, 150, 175)
 N_CELLS = 15  # 5 lesioned modalities x 3 SNR levels
 MIN_VALID_CELLS = 12
-MIN_COMPLETE_FRACTION = 0.8  # applied in integer form: 5 * complete >= 4 * N
+MIN_COMPLETE_FRACTION = 0.7  # applied in integer form: 10 * complete >= 7 * N
+ADVERSARIAL_SPLIT_LOCK = 100  # undefined Y at lock <= 100 -> +inf, above -> -inf
 MAX_TECHNICAL_REPLACEMENTS = 4
 
 
@@ -142,6 +150,8 @@ class AggregateResult:
     per_level: list[LevelCounts]
     complete_fraction: float
     protocol_failure: bool
+    seeds_all: list[int] = field(default_factory=list)
+    y_all: np.ndarray = field(default_factory=lambda: np.empty((0, 0)))  # NaN = undefined
 
 
 def aggregate(
@@ -151,7 +161,7 @@ def aggregate(
     locks: Sequence[int] = LOCKS,
     expected_seeds: Sequence[int] | None = None,
 ) -> AggregateResult:
-    """Keep complete seed blocks, count exclusions per level, test the 80 % rule.
+    """Keep complete seed blocks, count exclusions per level, test the 70 % rule.
 
     ``blocks`` must hold every (seed, lock) result of exactly
     ``n_confirmatory`` seeds, technical replacements already applied;
@@ -207,8 +217,52 @@ def aggregate(
         locks=locks,
         per_level=per_level,
         complete_fraction=n_complete / n_confirmatory,
-        protocol_failure=5 * n_complete < 4 * n_confirmatory,
+        protocol_failure=10 * n_complete < 7 * n_confirmatory,
+        seeds_all=sorted(by_seed),
+        y_all=np.array(
+            [
+                [np.nan if by_seed[s][lk].y is None else by_seed[s][lk].y for lk in locks]
+                for s in sorted(by_seed)
+            ],
+            dtype=np.float64,
+        ).reshape(len(by_seed), len(locks)),
     )
+
+
+def adversarial_matrix(agg: AggregateResult) -> np.ndarray:
+    """Every block, undefined ``Y`` imputed against an increasing trend.
+
+    Within each block, undefined values at locks <= ``ADVERSARIAL_SPLIT_LOCK``
+    take the highest ranks and those above it the lowest ranks; imputed
+    values on the same side tie (mid-ranks in the Page test). They are
+    written as finite numbers (block maximum + 1 and block minimum - 1;
+    1 and -1 for a block with no defined value) so that the Page test,
+    which works on ranks, accepts the matrix. Observed values are
+    unchanged; with no exclusion this equals ``agg.y``.
+    """
+    imp = agg.y_all.copy()
+    high = np.array([lk <= ADVERSARIAL_SPLIT_LOCK for lk in agg.locks])
+    for row in imp:
+        miss = np.isnan(row)
+        if not miss.any():
+            continue
+        obs = row[~miss]
+        top = float(obs.max()) + 1.0 if obs.size else 1.0
+        bottom = float(obs.min()) - 1.0 if obs.size else -1.0
+        row[miss & high] = top
+        row[miss & ~high] = bottom
+    return imp
+
+
+def adversarial_endpoint_contrast(agg: AggregateResult) -> float:
+    """Median over all blocks of ``Y(175) - Y(25)`` on the imputed matrix.
+
+    An undefined endpoint makes the block's contrast -inf.
+    """
+    lo, hi = agg.locks.index(min(agg.locks)), agg.locks.index(max(agg.locks))
+    diff = agg.y_all[:, hi] - agg.y_all[:, lo]
+    diff[np.isnan(diff)] = -np.inf
+    return float(np.median(diff))
 
 
 class SeedRoster:
@@ -252,19 +306,30 @@ class SeedRoster:
         return replacement
 
 
-def verdict(agg: AggregateResult, *, p_value: float, alpha: float = 0.05) -> str:
-    """Ordered decision rule of section 6.
+def verdict(
+    agg: AggregateResult, *, p_value: float, p_value_adversarial: float, alpha: float = 0.05
+) -> str:
+    """Ordered decision rule of section 6, with the selection safeguard.
 
-    Returns ``protocol_failure``, ``supported``, ``detectable_sub_floor`` or
-    ``not_demonstrated``. The magnitude guard is the (heuristic) strict
-    inequality: median over complete blocks of ``Y(175) - Y(25)`` greater than
-    the median ``S_split`` over complete blocks and all levels.
+    ``p_value`` is the Page permutation p-value on the complete blocks,
+    ``p_value_adversarial`` the same test on ``adversarial_matrix(agg)``
+    (all blocks). Returns ``protocol_failure``, ``not_demonstrated``
+    (complete-block Page fails), ``not_robust_to_exclusions`` (complete
+    blocks reject, the adversarial analysis does not), ``supported``
+    (both Page tests and both guards pass) or ``detectable_sub_floor``.
+    The magnitude guard is the (heuristic) strict inequality: median
+    endpoint contrast greater than the median ``S_split`` over complete
+    blocks and all levels; on the imputed set an undefined endpoint
+    counts as -inf.
     """
     if agg.protocol_failure:
         return "protocol_failure"
     if not p_value < alpha:
         return "not_demonstrated"
+    if not p_value_adversarial < alpha:
+        return "not_robust_to_exclusions"
     lo, hi = agg.locks.index(min(agg.locks)), agg.locks.index(max(agg.locks))
     contrast = float(np.median(agg.y[:, hi] - agg.y[:, lo]))
     floor = float(np.median(agg.s_split))
-    return "supported" if contrast > floor else "detectable_sub_floor"
+    guard_ok = contrast > floor and adversarial_endpoint_contrast(agg) > floor
+    return "supported" if guard_ok else "detectable_sub_floor"

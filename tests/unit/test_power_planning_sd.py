@@ -50,3 +50,27 @@ def test_v08_protocol_failure_threshold_is_70_percent() -> None:
     assert f70 == pytest.approx(exact70, abs=0.03)
     assert f80 == pytest.approx(exact80, abs=0.03)
     assert f70 < f80
+
+
+SAFEGUARD_TOLERANCE = 0.01  # stated in v0.8 section 7
+
+
+def test_selection_counterexample_is_controlled_by_the_safeguard() -> None:
+    """Codex round-2 counterexample: N = 40, 7 iid N(0,1) levels, no trend,
+    guard 0, outcome-dependent exclusion keeping blocks whose endpoint
+    difference exceeds its null 14.9th percentile (~85 % kept)."""
+    import numpy as np
+
+    sims = 4000
+    out = power.v08_rule_selection(
+        40, 0.0, 0.0, 0.149, sims, np.random.default_rng(1), exclusion="outcome"
+    )
+    se = math.sqrt(0.05 * 0.95 / sims)
+    assert out["complete_only"] > 0.15  # the problem is reproduced
+    assert out["safeguarded"] <= 0.05 + SAFEGUARD_TOLERANCE + 3 * se
+    assert 0.80 < out["kept_fraction"] < 0.90
+    ind = power.v08_rule_selection(
+        40, 0.0, 0.0, 0.149, sims, np.random.default_rng(2), exclusion="independent"
+    )
+    assert ind["complete_only"] <= 0.05 + 3 * se
+    assert ind["safeguarded"] <= ind["complete_only"] + 1e-12
