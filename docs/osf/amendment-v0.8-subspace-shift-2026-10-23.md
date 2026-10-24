@@ -10,10 +10,15 @@
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
-> file has been run. The metric does not exist in the code base yet; its
-> implementation and unit tests must be merged and frozen (commit hash on
-> the OSF form) before any confirmatory seed runs. Pilot seeds (§7) may
-> run before filing.
+> file has been run. The metric, probe capture, control arm, rank rules,
+> aggregation and Page test are merged with unit tests (PRs #10 and #13:
+> `metrics/subspace.py`, `subspace_protocol.py`,
+> `metrics/subspace_aggregate.py`, `metrics/page_trend.py`). Still
+> missing: the driver that trains the Phase-1 checkpoints and calls
+> `capture_block` for every (seed, lock) block, the S-2 to S-5 analyses
+> and the secondary parameter-subspace metric (§9). All of it is frozen
+> (commit hash on the OSF form) before any confirmatory seed runs. Pilot
+> seeds (§7) may run before filing.
 
 ---
 
@@ -114,6 +119,17 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    of Z_pre. It is shared by the 15 cells of (s, ℓ), reported, and used
    in the magnitude guard (§6).
 10. **Rank guard and exclusion rules** (§3.1).
+11. **Seed mapping (frozen; implemented by `capture_block`).** For
+    seed s and lock ℓ: the Phase-1 checkpoint is trained with seed s
+    and `LOCK_AFTER` = ℓ (batch 16, 200 steps). Every Phase-2 arm of
+    the block (the no-lesion control and the 15 cells) restores that
+    checkpoint into a fresh loop and uses one Phase-2 seed, s, for the
+    probe (`world.sample(512, seed = s − 99_999)`) and for the fresh and
+    replay batches, and re-seeds the global torch RNG with s before the
+    arm, so lesion noise draws are common to the 16 arms. The 7 blocks
+    of a seed share the same Phase-2 seed and probe; only the
+    checkpoint (ℓ) differs. `run_grid.sh`, which gives every cell its
+    own seed (seed × 10 000 + cell count), is not used for v0.8.
 
 ### 3.1 Rank guard, exclusion denominators and incomplete blocks
 
@@ -178,10 +194,14 @@ filing (§10).
   −2.35 / +12.55 dB. The three SNR levels f in the cell definition (§3)
   are therefore distinct severities, which they were not historically.
   Consequence: cell values are not comparable with the historical
-  grids. The CLI already has `--k-steps`; `run_grid.sh` does not
-  forward it, and the new metric script must pass it (a `K_STEPS`
-  pass-through in `run_grid.sh` is a pre-filing code task, §10; not done
-  by this draft). Code defaults are unchanged.
+  grids. Code: `capture_block` defaults to `k_steps` = 50 (constant
+  `subspace_protocol.K_STEPS`), and `run_grid.sh` forwards `K_STEPS`
+  to `--k-steps` if a grid is ever run for this amendment. The CLI and
+  `m2_snr_schedule` defaults are unchanged.
+- **World check.** `--world studyforrest` falls back, without an
+  error, to a 2-modal stub when the real cache is absent
+  (`cli.py:54-63`); the driver records the world class and a run on the
+  stub is a technical failure.
 - **LOCK_AFTER ℓ ∈ {25, 50, 75, 100, 125, 150, 175}** (7 ordered
   levels). All are below `STEPS_TRAIN`, so every T2 cell enters Phase 2
   with a frozen constellation, and only the time of freezing varies.
@@ -380,9 +400,16 @@ outcomes are publishable.
 ## 9. Pre-registration fidelity checklist
 
 - [ ] Filed on OSF by the PI before any confirmatory seed (2001–2044) is run.
-- [ ] Metric code + unit tests merged, commit hash on the OSF form.
-      Required tests: S = 0 for identical subspaces, S = 1 for
-      orthogonal subspaces, invariance to basis rotation.
+- [x] Metric code + unit tests merged (PR #10,
+      `tests/unit/test_metrics_subspace.py`: S = 0 for identical
+      subspaces, S = 1 for orthogonal subspaces, invariance to basis
+      rotation, rank 0 for zero/constant codes). Commit hash recorded on
+      the OSF form at filing.
+- [ ] Driver merged with unit tests: Phase-1 checkpoints per (seed,
+      lock), `capture_block` per block with the seed mapping of §3
+      item 11, world-class check, aggregation and Page test end to end;
+      S-2 to S-5 analyses; secondary parameter-subspace metric (after
+      Open decision 5).
 - [ ] Pre-filing task (not done by this draft; no probe matrices Z_pre
       are stored in the repo, only the ADR-0019 summary values):
       recompute the participation ratio behind k = 12 (11.7 in
@@ -391,11 +418,14 @@ outcomes are publishable.
       Representations from Finite Samples" (arXiv:2509.26560), on the
       pilot codes, and record it next to 11.7. Descriptive; it only
       supports the justification of k and does not change the metric.
-- [ ] Probe-size parameter (512, decoupled from batch 16) and the
-      no-lesion control arm implemented and frozen.
-- [ ] Rank checks of §3.1 implemented with unit tests (rank-deficient
+- [x] Probe-size parameter (512, decoupled from batch 16), hard
+      demodulation and the no-lesion control arm implemented (PR #13,
+      `lesion_phase(probe_size, probe_seed, probe_demod)`,
+      `subspace_protocol.capture_block`, default `k_steps` = 50).
+- [x] Rank checks of §3.1 implemented with unit tests (rank-deficient
       control invalidates its 15 cells; 12-of-15 rule; complete-block
-      selection), and the Page permutation test frozen.
+      selection; seed roster with reserve replacement), and the Page
+      permutation test implemented (`metrics/page_trend.py`, PR #13).
 - [ ] Pilot within-seed SD of Y, median S_split, rank-exclusion rate and
       runtime recorded on the form; N fixed on the form.
 - [x] No threshold or existing-metric change.
@@ -408,6 +438,10 @@ Every item below must be resolved, and the text edited to a single
 protocol, before filing. This draft is not fileable while any item is
 open; the metric code, the pilot and a regenerated power analysis for
 the final configuration are also filing prerequisites.
+
+Decided by the PI on 2026-10-23 and applied above (no longer open):
+hard-demodulation probe captures (§3 item 2); SNR ramp `k_steps` = 50
+(§4, ADR-0020).
 
 1. Magnitude guard: median S_split (drafted) vs a fixed SESOI on ΔS
    chosen after the pilot. The guard sets the power of the complete
@@ -422,4 +456,13 @@ the final configuration are also filing prerequisites.
    weights count as the interaction layer).
 6. Whether to also run the CC-film bridge as a secondary world.
 7. Pre-registration id (N-id) and final amendment number.
-8. SNR schedule `k_steps` = 50 (drafted, ADR-0020) vs another N; and the `K_STEPS` pass-through in `run_grid.sh` (code task, not made by this draft).
+8. Pilot size for the exclusion rate. Extending the pilot after seeing
+   its exclusions (§7) is data-dependent stopping, so the
+   Clopper–Pearson bound loses its nominal coverage. Either fix the
+   pilot size before it runs (for example 10 seeds, 2101–2110: q̂ =
+   0.149 at 0/10) or state a sequential rule. At the 5-seed pilot with
+   0/5 exclusions (q̂ = 0.275), P(protocol failure) at N = 40 is 0.810
+   (exact binomial: fewer than 32 of 40 complete blocks), so the
+   complete rule could not reach 0.80; at q̂ = 0.149 (0/10) it is
+   0.167 / 0.149 / 0.131 at N = 20 / 30 / 40, and at q̂ = 0.077 (0/20)
+   0.016 / 0.007 / 0.003.
