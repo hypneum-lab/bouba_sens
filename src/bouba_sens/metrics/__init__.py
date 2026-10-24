@@ -6,7 +6,7 @@ Public surface:
 - `me1_accuracy`, `me2_recovery_auc`, `me3_mi`, `me3_delta`,
   `me6_asymmetry`, `me6_max_abs_off_diag`, `me7_congenital_gap`,
   `me8_baselines`, `freeze_nerve_plasticity`, `random_rewire_nerve`,
-  `me9_bootstrap`.
+  `me9_bootstrap`, `subspace_shift`, `split_half_noise_floor`.
 """
 
 from __future__ import annotations
@@ -25,6 +25,12 @@ from bouba_sens.metrics.mi_migration import me3_delta, me3_mi
 from bouba_sens.metrics.mi_ross import mi_ross_discrete_continuous
 from bouba_sens.metrics.performance import me1_accuracy, me2_recovery_auc
 from bouba_sens.metrics.replication import me9_bootstrap
+from bouba_sens.metrics.subspace import (
+    SubspaceRankError,
+    eigengap_ratio,
+    split_half_noise_floor,
+    subspace_shift,
+)
 
 
 @dataclass
@@ -61,6 +67,8 @@ class Metric(Protocol):
 __all__ = [
     "EvalReport",
     "Metric",
+    "SubspaceRankError",
+    "eigengap_ratio",
     "freeze_nerve_plasticity",
     "me1_accuracy",
     "me2_recovery_auc",
@@ -73,4 +81,6 @@ __all__ = [
     "me9_bootstrap",
     "mi_ross_discrete_continuous",
     "random_rewire_nerve",
+    "split_half_noise_floor",
+    "subspace_shift",
 ]

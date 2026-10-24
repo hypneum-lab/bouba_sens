@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Subspace-shift metric** (`src/bouba_sens/metrics/subspace.py`).
+  Top-k principal-direction shift S between pre/post-lesion codes, with
+  rank checks, split-half noise floor and eigengap report, as drafted in
+  amendment v0.8 (PR #9). Not yet used by any run.
 - **Ross (2014) mixed discrete-continuous k-NN MI estimator**
   (`src/bouba_sens/metrics/mi_ross.py`): `mi_ross_discrete_continuous`
   (bits), `_nats` helper, duplicate counter. Primary B-2 estimator of the
