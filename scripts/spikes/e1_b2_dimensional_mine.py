@@ -85,17 +85,40 @@ def capture_probe(
     lock_after: int,
     steps_train: int,
     steps_lesion: int,
-    batch_size: int,
+    batch_size: int | None = None,
+    *,
+    train_batch: int | None = None,
+    lesion_batch: int | None = None,
+    probe_n: int | None = None,
+    k_steps: int | None = None,
+    rng_seed: int | None = None,
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
     Mirrors AdaptationLoop.lesion_phase exactly, except the probe is kept
     at full dimensionality instead of being mean-pooled to (B,).
-    """
-    loop = build_loop(world_name, seed, lock_after)
-    loop.pretrain(steps_train, batch_size=batch_size, seed=seed)
 
-    probe = loop.world.sample(batch_size=batch_size, seed=seed - 99_999)
+    Legacy call (ADR-0019 E1.3): one ``batch_size`` sets training, lesion
+    and probe size, and the SNR ramp uses k = ``steps_lesion``. Amendment
+    v0.7 (section 4.3) sets them separately: ``train_batch``,
+    ``lesion_batch`` and ``probe_n`` override ``batch_size`` one by one,
+    and ``k_steps`` overrides the ramp length. ``rng_seed`` re-seeds the
+    global torch RNG first, so a seed's result does not depend on which
+    seeds ran before it in the same process.
+    """
+    tb = batch_size if train_batch is None else train_batch
+    lb = batch_size if lesion_batch is None else lesion_batch
+    pn = batch_size if probe_n is None else probe_n
+    if tb is None or lb is None or pn is None:
+        raise ValueError("give batch_size or all of train_batch, lesion_batch, probe_n")
+    k = steps_lesion if k_steps is None else k_steps
+    if rng_seed is not None:
+        torch.manual_seed(rng_seed)
+
+    loop = build_loop(world_name, seed, lock_after)
+    loop.pretrain(steps_train, batch_size=tb, seed=seed)
+
+    probe = loop.world.sample(batch_size=pn, seed=seed - 99_999)
     pre_full = _full_fused(loop, probe)
     labels = probe.label.detach().cpu()
 
@@ -103,11 +126,34 @@ def capture_probe(
         modality="audio",
         mode="M2",
         timing="T1",
-        schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=steps_lesion),
+        schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=k),
     )
-    loop.lesion_phase(lesion, steps=steps_lesion, batch_size=batch_size, seed=seed)
+    loop.lesion_phase(lesion, steps=steps_lesion, batch_size=lb, seed=seed, probe_size=pn)
     post_full = _full_fused(loop, probe)
     return pre_full.numpy(), post_full.numpy(), labels.numpy()
+
+
+def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict[str, float]:
+    """Amendment v0.7 B-2 outputs on the full (N, d_fused) probe, in bits.
+
+    Primary: Ross (2014) mixed discrete-continuous k-NN, k = 3, no
+    clipping (section 4.2). Secondary: full-probe KSG, computed exactly as
+    ``me3_delta`` on the same matrices.
+    """
+    from bouba_sens.metrics.mi_migration import me3_delta
+    from bouba_sens.metrics.mi_ross import mi_ross_discrete_continuous, ross_n_zero_distance
+
+    r_pre = mi_ross_discrete_continuous(pre, labels, k=3)
+    r_post = mi_ross_discrete_continuous(post, labels, k=3)
+    ksg = me3_delta(torch.from_numpy(pre), torch.from_numpy(post), torch.from_numpy(labels))
+    return {
+        "ross_full_delta_bits": r_post - r_pre,
+        "ross_full_pre_bits": r_pre,
+        "ross_full_post_bits": r_post,
+        "ross_n_zero_distance_pre": ross_n_zero_distance(pre),
+        "ross_n_zero_distance_post": ross_n_zero_distance(post),
+        "ksg_full_delta_bits": ksg,
+    }
 
 
 # --------------------------------------------------------------------------
@@ -172,19 +218,44 @@ def mi_binning_bits(x: np.ndarray, y: np.ndarray, n_bins: int) -> float:
     return mi_nats / math.log(2)
 
 
-def main() -> None:
+def _seed_list(text: str) -> list[int]:
+    return [int(tok) for tok in text.replace(" ", "").split(",") if tok]
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--world", default="gaussian")
-    ap.add_argument("--seeds", type=int, default=5)
+    seeds = ap.add_mutually_exclusive_group()
+    seeds.add_argument("--seeds", type=int, default=5, help="legacy: seeds 0..N-1")
+    seeds.add_argument(
+        "--seed-list",
+        type=_seed_list,
+        default=None,
+        help="explicit comma-separated seeds (amendment v0.7); each seed re-seeds torch",
+    )
     ap.add_argument("--lock-after", type=int, default=100)
     ap.add_argument("--steps-train", type=int, default=200)
     ap.add_argument("--steps-lesion", type=int, default=100)
     ap.add_argument(
         "--batch-size", type=int, default=512, help="probe batch N (E2 sets this from f(D))"
     )
+    ap.add_argument("--train-batch", type=int, default=None, help="Phase-1 batch (v0.7: 16)")
+    ap.add_argument("--lesion-batch", type=int, default=None, help="Phase-2 batch (v0.7: 16)")
+    ap.add_argument("--probe-n", type=int, default=None, help="probe rows (v0.7: 512)")
+    ap.add_argument(
+        "--k-steps", type=int, default=None, help="SNR ramp length (default steps-lesion; v0.7: 50)"
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
-    args = ap.parse_args()
+    return ap
+
+
+def resolve_seeds(args: argparse.Namespace) -> list[int]:
+    return list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
+
+
+def main() -> None:
+    args = build_parser().parse_args()
 
     from nerve_wml.methodology import mi_kraskov_ksg_continuous
 
@@ -194,7 +265,7 @@ def main() -> None:
     per_seed = []
     d_pr_list, d_2nn_list = [], []
 
-    for seed in range(args.seeds):
+    for seed in resolve_seeds(args):
         pre, post, labels = capture_probe(
             args.world,
             seed,
@@ -202,6 +273,11 @@ def main() -> None:
             args.steps_train,
             args.steps_lesion,
             args.batch_size,
+            train_batch=args.train_batch,
+            lesion_batch=args.lesion_batch,
+            probe_n=args.probe_n,
+            k_steps=args.k_steps,
+            rng_seed=seed if args.seed_list is not None else None,
         )
         n_samples, d_fused = pre.shape
 
@@ -243,6 +319,9 @@ def main() -> None:
         mf_post = me3_mi_mine(post, labels.reshape(-1, 1), batch_size=min(256, n_samples))
         mine_full_delta = mf_post - mf_pre
 
+        # Amendment v0.7: primary Ross and secondary KSG on the full probe.
+        full_b2 = full_probe_b2(pre, post, labels)
+
         per_seed.append(
             {
                 "seed": seed,
@@ -258,13 +337,16 @@ def main() -> None:
                 "kraskov_post": k_post,
                 "mine_full_pre": mf_pre,
                 "mine_full_post": mf_post,
+                **full_b2,
             }
         )
         print(
             f"seed={seed} N={n_samples} d_fused={d_fused} "
             f"D_PR={d_pr:.2f} D_2NN={d_2nn:.2f} | "
             f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
-            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}",
+            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f} "
+            f"Ross={full_b2['ross_full_delta_bits']:+.4f} "
+            f"KSGfull={full_b2['ksg_full_delta_bits']:+.4f}",
             flush=True,
         )
 
@@ -282,13 +364,19 @@ def main() -> None:
     summary = {
         "world": args.world,
         "lock_after": args.lock_after,
-        "seeds": args.seeds,
+        "seeds": args.seeds if args.seed_list is None else list(args.seed_list),
+        "train_batch": args.batch_size if args.train_batch is None else args.train_batch,
+        "lesion_batch": args.batch_size if args.lesion_batch is None else args.lesion_batch,
+        "probe_n": args.batch_size if args.probe_n is None else args.probe_n,
+        "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
         "binning_delta": ci([s["binning_delta_bits"] for s in per_seed]),
         "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in per_seed]),
         "mine_full_delta": ci([s["mine_full_delta_bits"] for s in per_seed]),
+        "ross_full_delta": ci([s["ross_full_delta_bits"] for s in per_seed]),
+        "ksg_full_delta": ci([s["ksg_full_delta_bits"] for s in per_seed]),
         "per_seed": per_seed,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
