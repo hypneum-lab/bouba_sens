@@ -172,3 +172,54 @@ def test_full_probe_outputs_match_reference_functions() -> None:
     assert out["ross_full_delta_bits"] == ross
     assert out["ksg_full_delta_bits"] == ksg
     assert out["ross_full_post_bits"] - out["ross_full_pre_bits"] == ross
+
+
+# --- v0.7 PI decision 2026-10-24: both probe readouts --------------------
+
+
+def test_parser_probe_demod_default_and_choices() -> None:
+    assert runner.build_parser().parse_args([]).probe_demod == "soft"
+    args = runner.build_parser().parse_args(["--probe-demod", "both"])
+    assert args.probe_demod == "both"
+    with pytest.raises(SystemExit):
+        runner.build_parser().parse_args(["--probe-demod", "hard"])
+
+
+def test_both_readouts_share_one_run_and_keep_legacy_gumbel(
+    deterministic_torch: None,
+) -> None:
+    kw = {"train_batch": 4, "lesion_batch": 4, "probe_n": 32, "k_steps": 2, **_SMALL}
+    legacy = runner.capture_probe("gaussian", 7, 100, rng_seed=7, **kw)
+    labels, readouts = runner.capture_probe_readouts("gaussian", 7, 100, rng_seed=7, **kw)
+    assert set(readouts) == {"hard", "gumbel"}
+    np.testing.assert_array_equal(labels, legacy[2])
+    np.testing.assert_array_equal(readouts["gumbel"][0], legacy[0])
+    np.testing.assert_array_equal(readouts["gumbel"][1], legacy[1])
+    hard_pre, hard_post = readouts["hard"]
+    assert hard_pre.shape == hard_post.shape == legacy[0].shape
+    assert not np.array_equal(hard_pre, readouts["gumbel"][0])
+
+
+def test_hard_readout_is_deterministic_on_a_fixed_model() -> None:
+    loop = runner.build_loop("gaussian", 3, 100)
+    probe = loop.world.sample(batch_size=16, seed=1)
+    a = runner._full_fused(loop, probe, hard=True)
+    torch.rand(100)
+    b = runner._full_fused(loop, probe, hard=True)
+    assert torch.equal(a, b)
+
+
+def test_b2_fields_hard_is_primary_and_gumbel_is_suffixed() -> None:
+    rng = np.random.default_rng(1)
+    labels = np.repeat(np.arange(4), 32)
+    hard = (rng.normal(size=(128, 10)), rng.normal(size=(128, 10)))
+    gumbel = (rng.normal(size=(128, 10)), rng.normal(size=(128, 10)))
+    out = runner.b2_readout_fields({"hard": hard, "gumbel": gumbel}, labels)
+    ref_h = runner.full_probe_b2(*hard, labels)
+    ref_g = runner.full_probe_b2(*gumbel, labels)
+    assert out["primary_readout"] == "hard"
+    for key, val in ref_h.items():
+        assert out[key] == val
+        assert out[f"{key}_gumbel"] == ref_g[key]
+    legacy = runner.b2_readout_fields({"gumbel": gumbel}, labels)
+    assert legacy == {**ref_g, "primary_readout": "gumbel"}

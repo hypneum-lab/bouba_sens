@@ -73,13 +73,37 @@ def build_loop(world_name: str, seed: int, lock_after: int):
 
 
 @torch.no_grad()
-def _full_fused(loop, probe):
+def _full_fused(loop, probe, *, hard: bool = False):
+    """Full fused probe code; ``hard`` = argmax demodulation, no RNG use."""
     carriers = {m: loop.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
-    fused = loop.nerve.fuse(carriers)  # (B, K, d_hidden)
+    fused = loop.nerve.fuse(carriers, hard_demod=hard)  # (B, K, d_hidden)
     return fused.flatten(1).detach().cpu()  # (B, d_fused)
 
 
-def capture_probe(
+def capture_probe(*args, **kwargs):
+    """Legacy Gumbel readout: ``(pre, post, labels)`` (ADR-0019 E1.3).
+
+    See ``capture_probe_readouts`` for the arguments.
+    """
+    labels, readouts = _capture(*args, readouts=("gumbel",), **kwargs)
+    pre, post = readouts["gumbel"]
+    return pre, post, labels
+
+
+def capture_probe_readouts(*args, **kwargs):
+    """Both v0.7 B-2 readouts from one run: ``(labels, {"hard", "gumbel"})``.
+
+    PI decision 2026-10-24: the hard (argmax) readout is primary and the
+    Gumbel-sampled readout (ADR-0019) is a registered secondary analysis.
+    Both are captured on the same checkpoint and probe. The Gumbel
+    captures run first, exactly where the legacy runner takes them, and
+    the hard captures use no RNG, so the Gumbel readout and the training
+    trajectory are identical to ``capture_probe``.
+    """
+    return _capture(*args, readouts=("gumbel", "hard"), **kwargs)
+
+
+def _capture(
     world_name: str,
     seed: int,
     lock_after: int,
@@ -92,6 +116,7 @@ def capture_probe(
     probe_n: int | None = None,
     k_steps: int | None = None,
     rng_seed: int | None = None,
+    readouts: tuple[str, ...] = ("gumbel",),
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
@@ -119,7 +144,7 @@ def capture_probe(
     loop.pretrain(steps_train, batch_size=tb, seed=seed)
 
     probe = loop.world.sample(batch_size=pn, seed=seed - 99_999)
-    pre_full = _full_fused(loop, probe)
+    pre = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
     labels = probe.label.detach().cpu()
 
     lesion = LesionSpec(
@@ -129,8 +154,8 @@ def capture_probe(
         schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=k),
     )
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=lb, seed=seed, probe_size=pn)
-    post_full = _full_fused(loop, probe)
-    return pre_full.numpy(), post_full.numpy(), labels.numpy()
+    post = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
+    return labels.numpy(), {r: (pre[r].numpy(), post[r].numpy()) for r in readouts}
 
 
 def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict[str, float]:
@@ -154,6 +179,24 @@ def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict
         "ross_n_zero_distance_post": ross_n_zero_distance(post),
         "ksg_full_delta_bits": ksg,
     }
+
+
+def b2_readout_fields(readouts, labels: np.ndarray) -> dict:
+    """Per-seed B-2 fields: primary readout unsuffixed, Gumbel suffixed.
+
+    With both readouts the hard one is primary (v0.7, PI 2026-10-24) and
+    the Gumbel one is reported with a ``_gumbel`` suffix; it never
+    changes the primary label. With the Gumbel readout alone (legacy) it
+    fills the unsuffixed fields.
+    """
+    primary = "hard" if "hard" in readouts else "gumbel"
+    out = dict(full_probe_b2(*readouts[primary], labels))
+    if primary == "hard" and "gumbel" in readouts:
+        out.update(
+            {f"{k}_gumbel": v for k, v in full_probe_b2(*readouts["gumbel"], labels).items()}
+        )
+    out["primary_readout"] = primary
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -245,6 +288,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--k-steps", type=int, default=None, help="SNR ramp length (default steps-lesion; v0.7: 50)"
     )
+    ap.add_argument(
+        "--probe-demod",
+        choices=("soft", "both"),
+        default="soft",
+        help="soft = legacy Gumbel readout; both = v0.7 hard primary + Gumbel secondary",
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
     return ap
@@ -278,7 +327,7 @@ def main() -> None:
     d_pr_list, d_2nn_list = [], []
 
     for seed in resolve_seeds(args):
-        pre, post, labels = capture_probe(
+        labels, readouts = _capture(
             args.world,
             seed,
             args.lock_after,
@@ -290,7 +339,10 @@ def main() -> None:
             probe_n=args.probe_n,
             k_steps=args.k_steps,
             rng_seed=seed if args.seed_list is not None else None,
+            readouts=("gumbel", "hard") if args.probe_demod == "both" else ("gumbel",),
         )
+        # Legacy estimators run on the primary readout (hard under "both").
+        pre, post = readouts["hard" if args.probe_demod == "both" else "gumbel"]
         n_samples, d_fused = pre.shape
 
         # --- E1.1 dimensionality of the Me3 probe representation ---
@@ -332,7 +384,7 @@ def main() -> None:
         mine_full_delta = mf_post - mf_pre
 
         # Amendment v0.7: primary Ross and secondary KSG on the full probe.
-        full_b2 = full_probe_b2(pre, post, labels)
+        full_b2 = b2_readout_fields(readouts, labels)
 
         per_seed.append(
             {
@@ -381,6 +433,8 @@ def main() -> None:
         "lesion_batch": args.batch_size if args.lesion_batch is None else args.lesion_batch,
         "probe_n": args.batch_size if args.probe_n is None else args.probe_n,
         "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
+        "probe_demod": args.probe_demod,
+        "primary_readout": "hard" if args.probe_demod == "both" else "gumbel",
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
@@ -389,6 +443,14 @@ def main() -> None:
         "mine_full_delta": ci([s["mine_full_delta_bits"] for s in per_seed]),
         "ross_full_delta": ci([s["ross_full_delta_bits"] for s in per_seed]),
         "ksg_full_delta": ci([s["ksg_full_delta_bits"] for s in per_seed]),
+        **(
+            {
+                "ross_full_delta_gumbel": ci([s["ross_full_delta_bits_gumbel"] for s in per_seed]),
+                "ksg_full_delta_gumbel": ci([s["ksg_full_delta_bits_gumbel"] for s in per_seed]),
+            }
+            if args.probe_demod == "both"
+            else {}
+        ),
         "per_seed": per_seed,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
