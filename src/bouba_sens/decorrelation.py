@@ -45,6 +45,8 @@ GATE_SEED = 20_261_023
 GATE_ALPHA = 0.05
 PROBE_ROWS = 512
 V09_PROBE_FRACTION = 0.10  # last 10 % of frames held out (3.4, PI 2026-10-24)
+RECON_WEIGHT = 1.0  # mitigation arm (3.5, PI 2026-10-24): fixed, not tuned
+RECON_EPS = 1e-6
 
 
 class IndexedWorld(Protocol):
@@ -178,6 +180,64 @@ class DecorrelationSchedule:
         donors, n_self = self.index.draw(anchors, training_generator_seed(self.seed, step))
         self.n_self_donor += n_self
         return build_arm_sample(world, anchors, donors, self.arm)
+
+
+# --- mitigation arm: cross-sensor reconstruction (3.5) ------------------------
+
+
+class CrossSensorReconstruction(torch.nn.Module):
+    """Auxiliary cross-sensor reconstruction objective for Phase 1 (v0.9, 3.5).
+
+    Kleinman, Achille & Soatto (CVPR 2023) report that architectures
+    trained with cross-sensor reconstruction objectives are markedly more
+    resilient to critical periods. Here, for every modality m, a linear
+    decoder maps the mean of the other four modalities' encoder
+    representations (``core(input_proj(x))``, ``(B, d_hidden)``) to m's
+    input, standardised within the batch per feature; the loss is the
+    mean squared error averaged over features and modalities, added to
+    the classification loss with weight ``weight``.
+
+    Decoders are initialised from their own generator, so building the
+    module never touches the global torch RNG; with ``weight = 0`` the
+    training trajectory is bit-identical to no objective.
+    """
+
+    def __init__(
+        self,
+        modality_dims: Mapping[str, tuple[int, ...]],
+        *,
+        d_hidden: int = 128,
+        weight: float = RECON_WEIGHT,
+        seed: int = 0,
+    ) -> None:
+        super().__init__()
+        self.weight = float(weight)
+        gen = torch.Generator().manual_seed(seed)
+        bound = 1.0 / math.sqrt(d_hidden)
+        global_state = torch.get_rng_state()  # nn.Linear init draws from it
+        decoders: dict[str, torch.nn.Module] = {}
+        for m in MODALITIES:
+            out = int(math.prod(modality_dims[m]))
+            lin = torch.nn.Linear(d_hidden, out)
+            with torch.no_grad():
+                lin.weight.copy_((torch.rand(out, d_hidden, generator=gen) * 2 - 1) * bound)
+                lin.bias.copy_((torch.rand(out, generator=gen) * 2 - 1) * bound)
+            decoders[m] = lin
+        torch.set_rng_state(global_state)
+        self.decoders = torch.nn.ModuleDict(decoders)
+
+    def forward(self, loop: AdaptationLoop, sample: WorldSample) -> Tensor:
+        reps = {
+            m: loop.sensories[m].core(loop.sensories[m].input_proj(getattr(sample, m)))
+            for m in MODALITIES
+        }
+        terms = []
+        for m in MODALITIES:
+            others = torch.stack([reps[o] for o in MODALITIES if o != m]).mean(0)
+            x = getattr(sample, m).reshape(len(sample.label), -1)
+            target = (x - x.mean(0)) / (x.std(0, unbiased=False) + RECON_EPS)
+            terms.append(((self.decoders[m](others) - target) ** 2).mean())
+        return torch.stack(terms).mean()
 
 
 # --- within-class linear CKA (3.3) -----------------------------------------------
