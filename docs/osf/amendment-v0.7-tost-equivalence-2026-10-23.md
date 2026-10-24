@@ -551,7 +551,7 @@ draws per row):
 | μ = −0.02, SD 0.0749 | 0.987 | 0.013 | 0.000 | 40 |
 | μ = −0.04, SD 0.0749 | 0.364 | 0.634 | 0.000 | ≈ 345 |
 | μ = 0, SD 0.1166 | 0.988 | 0.012 (either direction) | 0.000 | 48 |
-| μ = −0.02, SD 0.1166 (planning case) | 0.806 (exact 0.8006) | 0.193 | 0.000 | 95 (exact) |
+| μ = −0.02, SD 0.1166 (planning case) | **0.8006** (exact; Monte Carlo 0.806, 20,000 draws, SE ≈ 0.003) | 0.193 | 0.000 | 95 (exact) |
 | μ = −0.04, SD 0.1166 | 0.215 | 0.778 | 0.000 | ≈ 845 |
 
 (μ = +0.02 / +0.04 give the mirror image. The remaining probability

@@ -127,3 +127,90 @@ def test_duplicate_seeds_rejected() -> None:
     vals = [{"seed": 1, "ross_full_delta_bits": 0.0}] * 2
     with pytest.raises(ValueError, match="duplicate"):
         an.analyse_e2(vals)
+
+
+# --- confirmatory entry point (Codex review of b6fda3f) -------------------
+
+ROSTER = list(range(1001, 1096))
+
+
+def _e2_rows(seeds, hard=0.0, gumbel=0.0, sd=0.01, readout="hard", seed=0):  # type: ignore[no-untyped-def]
+    rng = np.random.default_rng(seed)
+    return [
+        {
+            "seed": s,
+            "primary_readout": readout,
+            "ross_full_delta_bits": float(hard + rng.normal(0, sd)),
+            "ross_full_delta_bits_gumbel": float(gumbel + rng.normal(0, sd)),
+        }
+        for s in seeds
+    ]
+
+
+def _e1_rows(seeds):  # type: ignore[no-untyped-def]
+    return [
+        {"seed": s, "locks": {k: 0.0 + 0.001 * (i % 3) for k in an.LOCKS}, "nolock": 0.0}
+        for i, s in enumerate(seeds)
+    ]
+
+
+def test_confirmatory_accepts_full_roster() -> None:
+    out = an.analyse_confirmatory({"e1": _e1_rows(ROSTER), "e2": _e2_rows(ROSTER)})
+    assert out["B-2"]["E-2"]["n"] == 95
+    assert out["B-1"]["E-1"]["n"] == 95
+    assert out["roster"]["substitutions"] == []
+
+
+def test_confirmatory_rejects_partial_roster() -> None:
+    with pytest.raises(ValueError, match="roster"):
+        an.analyse_confirmatory({"e2": _e2_rows(ROSTER[:4])})
+    with pytest.raises(ValueError, match="roster"):
+        an.analyse_confirmatory({"e2": _e2_rows(ROSTER[:-1])})
+
+
+def test_confirmatory_rejects_pilot_and_unlisted_seeds() -> None:
+    seeds = [*ROSTER[:-1], 1101]  # a B-2 pilot seed
+    with pytest.raises(ValueError, match="roster"):
+        an.analyse_confirmatory({"e2": _e2_rows(seeds)})
+
+
+def test_confirmatory_rejects_gumbel_primary_or_missing_readout() -> None:
+    with pytest.raises(ValueError, match="hard"):
+        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="gumbel")})
+    rows = _e2_rows(ROSTER)
+    del rows[3]["ross_full_delta_bits_gumbel"]
+    with pytest.raises(ValueError, match="gumbel"):
+        an.analyse_confirmatory({"e2": rows})
+
+
+def test_reserve_substitutions_are_documented_and_in_order() -> None:
+    seeds = [s for s in ROSTER if s not in (1007, 1050)] + [1096, 1097]
+    subs = [
+        {"replaced": 1007, "by": 1096, "reason": "crash"},
+        {"replaced": 1050, "by": 1097, "reason": "NaN metric"},
+    ]
+    out = an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": subs})
+    assert out["B-2"]["E-2"]["n"] == 95
+    assert out["roster"]["substitutions"] == subs
+    with pytest.raises(ValueError, match="substitution"):  # undocumented
+        an.analyse_confirmatory({"e2": _e2_rows(seeds)})
+    bad = [dict(subs[0], by=1097), dict(subs[1], by=1096)]  # reserve out of order
+    with pytest.raises(ValueError, match="order"):
+        an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": bad})
+    noreason = [dict(subs[0], reason=""), subs[1]]
+    with pytest.raises(ValueError, match="reason"):
+        an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": noreason})
+
+
+def test_e2g_reported_alongside_without_label_and_disagreement_flagged() -> None:
+    rows = _e2_rows(ROSTER, hard=0.0, gumbel=0.08, sd=0.01)
+    out = an.analyse_confirmatory({"e2": rows})["B-2"]
+    assert out["E-2"]["label"] == "equivalent"
+    e2g = out["E-2g"]
+    assert "label" not in e2g and "label" not in e2g["bootstrap"]
+    assert e2g["n"] == 95 and e2g["bound"] == 0.05
+    assert e2g["ci90"][0] > 0.05
+    assert out["readout_disagreement"]["differs"] is True
+    same = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
+    assert same["readout_disagreement"]["differs"] is False
+    assert same["E-2"]["label"] == "equivalent"

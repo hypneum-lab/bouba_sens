@@ -241,27 +241,31 @@ _V07 = {
 
 @pytest.mark.parametrize(("preset", "world"), [("v07-e2", "studyforrest"), ("v07-e2b", "ccfilm")])
 def test_preset_sets_the_frozen_configuration(preset: str, world: str) -> None:
-    args = runner.build_parser().parse_args(["--preset", preset, "--seed-list", "1101"])
-    runner.apply_preset(args)
+    argv = ["--preset", preset, "--seed-list", "1101"]
+    args = runner.build_parser().parse_args(argv)
+    runner.apply_preset(args, argv)
     assert args.world == world
     for key, val in _V07.items():
         assert getattr(args, key) == val, key
 
 
 def test_preset_accepts_matching_and_refuses_conflicting_options() -> None:
-    ok = runner.build_parser().parse_args(["--preset", "v07-e2", "--train-batch", "16"])
-    runner.apply_preset(ok)
-    bad = runner.build_parser().parse_args(["--preset", "v07-e2", "--probe-n", "256"])
-    with pytest.raises(SystemExit, match="probe_n"):
-        runner.apply_preset(bad)
-    world = runner.build_parser().parse_args(["--preset", "v07-e2", "--world", "ccfilm"])
-    with pytest.raises(SystemExit, match="world"):
-        runner.apply_preset(world)
+    for argv, bad_key in [
+        (["--preset", "v07-e2", "--train-batch", "16"], None),
+        (["--preset", "v07-e2", "--probe-n", "256"], "probe_n"),
+        (["--preset", "v07-e2", "--world", "ccfilm"], "world"),
+    ]:
+        args = runner.build_parser().parse_args(argv)
+        if bad_key is None:
+            runner.apply_preset(args, argv)
+        else:
+            with pytest.raises(SystemExit, match=bad_key):
+                runner.apply_preset(args, argv)
 
 
 def test_no_preset_keeps_legacy_defaults() -> None:
     args = runner.build_parser().parse_args([])
-    runner.apply_preset(args)
+    runner.apply_preset(args, [])
     assert args.preset is None
     assert args.world == "gaussian"
     assert (args.train_batch, args.lesion_batch, args.probe_n, args.k_steps) == (None,) * 4
@@ -273,3 +277,35 @@ def test_preset_world_check_refuses_the_stub(monkeypatch: pytest.MonkeyPatch) ->
     with pytest.raises(SystemExit, match="StudyforrestRealWorld"):
         runner.check_world("studyforrest", seed=1101)
     runner.check_world("gaussian", seed=0)  # no requirement outside the presets' worlds
+
+
+# --- Codex review of b6fda3f ----------------------------------------------
+
+
+def test_legacy_path_skips_amendment_estimators() -> None:
+    rng = np.random.default_rng(0)
+    labels = np.zeros(512, dtype=int)
+    labels[0] = 1  # class counts 511 / 1: Ross would refuse
+    pre, post = rng.normal(size=(512, 8)), rng.normal(size=(512, 8))
+    legacy = runner.build_parser().parse_args([])
+    assert runner.amendment_b2_fields(legacy, {"gumbel": (pre, post)}, labels) == {}
+    both = runner.build_parser().parse_args(["--probe-demod", "both"])
+    rows = np.repeat(np.arange(4), 32)
+    out = runner.amendment_b2_fields(
+        both, {"hard": (pre[:128], post[:128]), "gumbel": (pre[:128], post[:128])}, rows
+    )
+    assert out["primary_readout"] == "hard" and "ross_full_delta_bits" in out
+
+
+def test_preset_refuses_explicit_option_equal_to_the_parser_default() -> None:
+    argv = ["--preset", "v07-e2", "--probe-demod", "soft"]
+    args = runner.build_parser().parse_args(argv)
+    with pytest.raises(SystemExit, match="probe_demod"):
+        runner.apply_preset(args, argv)
+    argv = ["--preset", "v07-e2", "--world", "gaussian"]
+    with pytest.raises(SystemExit, match="world"):
+        runner.apply_preset(runner.build_parser().parse_args(argv), argv)
+    argv = ["--preset", "v07-e2", "--steps-lesion", "100"]  # equal to the preset: fine
+    args = runner.build_parser().parse_args(argv)
+    runner.apply_preset(args, argv)
+    assert args.steps_lesion == 100

@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -327,16 +328,40 @@ _EXPECTED_WORLD = {
 }
 
 
-def apply_preset(args: argparse.Namespace) -> None:
-    """Fill the frozen v0.7 configuration; refuse an explicit conflicting option."""
+def _explicit_options(argv: list[str]) -> set[str]:
+    """Destinations the user actually typed (defaults suppressed)."""
+    ap = build_parser()
+    for action in ap._actions:
+        action.default = argparse.SUPPRESS
+    return set(vars(ap.parse_args(argv)))
+
+
+def apply_preset(args: argparse.Namespace, argv: list[str] | None = None) -> None:
+    """Fill the frozen v0.7 configuration; refuse any typed option that conflicts.
+
+    ``argv`` is the command line; an option typed by the user that differs
+    from the preset is refused even if it equals the parser default.
+    """
     if args.preset is None:
         return
-    defaults = build_parser().parse_args([])
+    explicit = _explicit_options(sys.argv[1:] if argv is None else argv)
     for key, val in PRESETS[args.preset].items():
         given = getattr(args, key)
-        if given not in (val, getattr(defaults, key)):
+        if key in explicit and given != val:
             raise SystemExit(f"--preset {args.preset} fixes {key}={val!r}; got {given!r}")
         setattr(args, key, val)
+
+
+def amendment_b2_fields(args: argparse.Namespace, readouts, labels: np.ndarray) -> dict:
+    """v0.7 full-probe B-2 fields, only on the amendment path (preset or both).
+
+    The legacy runner output (no preset, ``--probe-demod soft``) is left
+    unchanged, so legacy runs never reach the Ross estimator and its
+    minimum class size.
+    """
+    if args.preset is None and args.probe_demod != "both":
+        return {}
+    return b2_readout_fields(readouts, labels)
 
 
 def check_world(world_name: str, seed: int) -> None:
@@ -368,7 +393,7 @@ def configure_determinism(args: argparse.Namespace) -> None:
 
 def main() -> None:
     args = build_parser().parse_args()
-    apply_preset(args)
+    apply_preset(args, sys.argv[1:])
     configure_determinism(args)
     if args.preset is not None:
         check_world(args.world, seed=resolve_seeds(args)[0])
@@ -439,7 +464,7 @@ def main() -> None:
         mine_full_delta = mf_post - mf_pre
 
         # Amendment v0.7: primary Ross and secondary KSG on the full probe.
-        full_b2 = b2_readout_fields(readouts, labels)
+        full_b2 = amendment_b2_fields(args, readouts, labels)
 
         per_seed.append(
             {
@@ -463,9 +488,13 @@ def main() -> None:
             f"seed={seed} N={n_samples} d_fused={d_fused} "
             f"D_PR={d_pr:.2f} D_2NN={d_2nn:.2f} | "
             f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
-            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f} "
-            f"Ross={full_b2['ross_full_delta_bits']:+.4f} "
-            f"KSGfull={full_b2['ksg_full_delta_bits']:+.4f}",
+            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}"
+            + (
+                f" Ross={full_b2['ross_full_delta_bits']:+.4f}"
+                f" KSGfull={full_b2['ksg_full_delta_bits']:+.4f}"
+                if full_b2
+                else ""
+            ),
             flush=True,
         )
 
@@ -491,14 +520,21 @@ def main() -> None:
         "probe_demod": args.probe_demod,
         "preset": args.preset,
         "primary_readout": "hard" if args.probe_demod == "both" else "gumbel",
+        "amendment_b2": bool(per_seed and "ross_full_delta_bits" in per_seed[0]),
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
         "binning_delta": ci([s["binning_delta_bits"] for s in per_seed]),
         "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in per_seed]),
         "mine_full_delta": ci([s["mine_full_delta_bits"] for s in per_seed]),
-        "ross_full_delta": ci([s["ross_full_delta_bits"] for s in per_seed]),
-        "ksg_full_delta": ci([s["ksg_full_delta_bits"] for s in per_seed]),
+        **(
+            {
+                "ross_full_delta": ci([s["ross_full_delta_bits"] for s in per_seed]),
+                "ksg_full_delta": ci([s["ksg_full_delta_bits"] for s in per_seed]),
+            }
+            if per_seed and "ross_full_delta_bits" in per_seed[0]
+            else {}
+        ),
         **(
             {
                 "ross_full_delta_gumbel": ci([s["ross_full_delta_bits_gumbel"] for s in per_seed]),

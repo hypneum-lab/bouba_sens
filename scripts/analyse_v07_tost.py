@@ -6,7 +6,20 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
 
     {"e1": [{"seed": 1001, "locks": {"50": v, "75": v, "100": v,
              "125": v, "150": v}, "nolock": v}, ...],
-     "e2": [{"seed": 1001, "ross_full_delta_bits": v}, ...]}
+     "e2": [{"seed": 1001, "primary_readout": "hard",
+             "ross_full_delta_bits": v,
+             "ross_full_delta_bits_gumbel": v}, ...],
+     "substitutions": [{"replaced": 1007, "by": 1096, "reason": "crash"}]}
+
+``analyse_confirmatory`` is the only confirmatory entry point (used by
+``main``). It refuses any input that is not exactly the frozen roster
+1001-1095 after documented reserve substitutions (1096-1099, used in
+order, at most 4, each with a reason), and any B-2 record that is not
+from the hard primary readout or lacks the Gumbel secondary value.
+E-2g (Gumbel readout) is reported next to E-2 with the same statistics
+but no label of its own; a difference between the two readouts is
+reported and never changes the E-2 label. ``tost`` stays a generic,
+reusable function.
 
 Decision (frozen): TOST with two one-sided one-sample t-tests at
 alpha = 0.05, i.e. the 90 % two-sided CI inside +-bound; bounds 0.025
@@ -35,6 +48,8 @@ ALPHA = 0.05
 B1_BOUND = 0.025
 B2_BOUND = 0.05
 LOCKS: tuple[str, ...] = ("50", "75", "100", "125", "150")
+ROSTER: tuple[int, ...] = tuple(range(1001, 1096))  # N = 95 (section 8)
+RESERVE: tuple[int, ...] = (1096, 1097, 1098, 1099)
 N_BOOT = 10_000
 BOOT_SEED = 20261023
 
@@ -129,17 +144,99 @@ def analyse_e2(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     return tost([float(r["ross_full_delta_bits"]) for r in rows], B2_BOUND)
 
 
+def resolve_roster(substitutions: Sequence[dict[str, Any]]) -> list[int]:
+    """The 95 analysed seeds after documented reserve substitutions (section 8)."""
+    if len(substitutions) > len(RESERVE):
+        raise ValueError("more than 4 substitutions: the run halts (section 8)")
+    seeds = list(ROSTER)
+    replaced: set[int] = set()
+    for i, sub in enumerate(substitutions):
+        old, new = int(sub["replaced"]), int(sub["by"])
+        if not str(sub.get("reason", "")).strip():
+            raise ValueError(f"substitution of {old} has no reason")
+        if new != RESERVE[i]:
+            raise ValueError(
+                f"reserve seeds must be used in order: expected {RESERVE[i]}, got {new}"
+            )
+        if old not in ROSTER or old in replaced:
+            raise ValueError(f"substitution replaces {old}, not an unreplaced roster seed")
+        replaced.add(old)
+        seeds[seeds.index(old)] = new
+    return seeds
+
+
+def _check_roster(rows: Sequence[dict[str, Any]], expected: Sequence[int], what: str) -> None:
+    _unique_seeds(rows)
+    got = sorted(int(r["seed"]) for r in rows)
+    if got != sorted(expected):
+        missing = sorted(set(expected) - set(got))
+        extra = sorted(set(got) - set(expected))
+        raise ValueError(
+            f"{what}: seeds do not match the frozen roster after substitutions "
+            f"(missing {missing[:5]}{'...' if len(missing) > 5 else ''}, "
+            f"unexpected {extra[:5]}{'...' if len(extra) > 5 else ''}; "
+            "an undocumented reserve seed needs a substitution entry)"
+        )
+
+
+def _check_e2_provenance(rows: Sequence[dict[str, Any]]) -> None:
+    for r in rows:
+        if r.get("primary_readout") != "hard":
+            raise ValueError(f"seed {r['seed']}: primary_readout must be 'hard' (section 4.2)")
+        for key in ("ross_full_delta_bits", "ross_full_delta_bits_gumbel"):
+            if key not in r:
+                raise ValueError(f"seed {r['seed']}: missing {key} (gumbel readout E-2g)")
+
+
+def _unlabelled(res: dict[str, Any]) -> dict[str, Any]:
+    out = {k: v for k, v in res.items() if k != "label"}
+    out["bootstrap"] = {k: v for k, v in res["bootstrap"].items() if k != "label"}
+    out["wilcoxon"] = {k: v for k, v in res["wilcoxon"].items() if k != "equivalent"}
+    return out
+
+
+def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """E-2 (hard readout, decides) and E-2g (Gumbel readout, reported, no label)."""
+    e2 = analyse_e2(rows)
+    g = tost([float(r["ross_full_delta_bits_gumbel"]) for r in rows], B2_BOUND)
+    differs = classify(*g["ci90"], B2_BOUND) != e2["label"]
+    return {
+        "E-2": e2,
+        "E-2g": _unlabelled(g),
+        "readout_disagreement": {
+            "differs": differs,
+            "note": (
+                "descriptive: the Gumbel 90 % CI falls in a different section-9 "
+                "category than E-2; the E-2 label is unchanged"
+                if differs
+                else "descriptive: both readouts fall in the same section-9 category"
+            ),
+        },
+    }
+
+
+def analyse_confirmatory(data: dict[str, Any]) -> dict[str, Any]:
+    """Validated confirmatory analysis: frozen roster, hard-readout provenance."""
+    subs = list(data.get("substitutions", []))
+    expected = resolve_roster(subs)
+    result: dict[str, Any] = {"roster": {"n": len(expected), "substitutions": subs}}
+    if "e1" in data:
+        _check_roster(data["e1"], expected, "e1")
+        result["B-1"] = analyse_e1(data["e1"])
+    if "e2" in data:
+        _check_roster(data["e2"], expected, "e2")
+        _check_e2_provenance(data["e2"])
+        result["B-2"] = analyse_e2_with_secondary(data["e2"])
+    return result
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     data = json.loads(args.input.read_text())
-    result = {}
-    if "e1" in data:
-        result["B-1"] = analyse_e1(data["e1"])
-    if "e2" in data:
-        result["B-2"] = {"E-2": analyse_e2(data["e2"])}
+    result = analyse_confirmatory(data)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
