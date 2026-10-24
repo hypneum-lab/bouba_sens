@@ -23,6 +23,7 @@ from bouba_sens.sensory import MODALITIES, Modality, SensoryWML
 if TYPE_CHECKING:
     from track_p.multiplexer import GammaThetaMultiplexer
 
+    from bouba_sens.decorrelation import DecorrelationSchedule
     from bouba_sens.head import IntegrationHead
     from bouba_sens.lesion import LesionSpec
     from bouba_sens.world.base import WorldSample, WorldSimulator
@@ -107,18 +108,36 @@ class AdaptationLoop:
         loss = F.cross_entropy(logits, sample.label)
         return loss, logits
 
-    def pretrain(self, steps: int, *, batch_size: int = 32, seed: int = 0) -> Checkpoint:
+    def pretrain(
+        self,
+        steps: int,
+        *,
+        batch_size: int = 32,
+        seed: int = 0,
+        decorrelation: DecorrelationSchedule | None = None,
+    ) -> Checkpoint:
         """Phase 1: intact training on the world. Returns snapshot.
 
         Calls `mux.step()` once per iteration so any
         `constellation_lock_after` configured at mux construction
         can fire during Phase 1 (congenital vs late-acquired
         critical-period semantics, nerve-wml#4).
+
+        `decorrelation` (v0.9) swaps the batch source inside its window;
+        None keeps the original behaviour.
         """
         mux_step = getattr(self.mux, "step", None)
         nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
-            sample = self.world.sample(batch_size=batch_size, seed=seed + step)
+            if decorrelation is None:
+                sample = self.world.sample(batch_size=batch_size, seed=seed + step)
+            else:
+                sample = decorrelation.sample(
+                    self.world,  # type: ignore[arg-type]
+                    batch_size=batch_size,
+                    seed=seed + step,
+                    step=step,
+                )
             loss, _ = self._forward(sample)
             self.opt.zero_grad()
             loss.backward()  # type: ignore[no-untyped-call]

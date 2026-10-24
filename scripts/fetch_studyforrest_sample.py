@@ -176,8 +176,8 @@ def _build_labels_and_tactile(
     ie_id = np.zeros(n_frames, dtype=np.int64)
     ordered = sorted(scenes, key=lambda s: s[0])
     for k, (t, name, dn, ie) in enumerate(ordered):
-        f0 = int(round(t * TARGET_HZ))
-        f1 = int(round(ordered[k + 1][0] * TARGET_HZ)) if k + 1 < len(ordered) else n_frames
+        f0 = round(t * TARGET_HZ)
+        f1 = round(ordered[k + 1][0] * TARGET_HZ) if k + 1 < len(ordered) else n_frames
         f0 = max(0, min(f0, n_frames))
         f1 = max(0, min(f1, n_frames))
         if f1 <= f0:
@@ -203,9 +203,7 @@ def _build_labels_and_tactile(
     return labels, tactile, torch.from_numpy(scene_id)
 
 
-def _build_audio_proxy(
-    narration: list[tuple[float, float]], n_frames: int
-) -> torch.Tensor:
+def _build_audio_proxy(narration: list[tuple[float, float]], n_frames: int) -> torch.Tensor:
     """128-D annotation-derived narration proxy (NOT the soundtrack).
 
     Per-frame features from the REAL timed german_audio_description:
@@ -215,8 +213,8 @@ def _build_audio_proxy(
     on = np.zeros(n_frames, dtype=np.float32)
     into = np.zeros(n_frames, dtype=np.float32)
     for start, end in narration:
-        f0 = max(0, int(round(start * TARGET_HZ)))
-        f1 = min(n_frames, int(round(end * TARGET_HZ)))
+        f0 = max(0, round(start * TARGET_HZ))
+        f1 = min(n_frames, round(end * TARGET_HZ))
         for f in range(f0, f1):
             on[f] = 1.0
             into[f] = (f - f0) / max(1, f1 - f0)
@@ -305,9 +303,7 @@ def _build_gravity(moco_runs: list[np.ndarray], n_frames: int) -> torch.Tensor:
     return torch.from_numpy(up)
 
 
-def _try_openneuro_fetch(
-    out_dir: Path, duration_seconds: int
-) -> tuple[int, dict[str, str]] | None:
+def _try_openneuro_fetch(out_dir: Path, duration_seconds: int) -> tuple[int, dict[str, str]] | None:
     """Fetch real ds000113 channels from S3 and build the 6 tensors.
 
     Returns (n_frames, {key: url}) or None on any network failure.
@@ -334,8 +330,10 @@ def _try_openneuro_fetch(
             m_raw = _fetch_bytes(_S3_ROOT + _moco_key(run))
             urls[f"moco_run-{run:02d}.txt"] = _S3_ROOT + _moco_key(run)
             moco_runs.append(np.loadtxt(io.BytesIO(m_raw)))
-    except Exception as exc:  # noqa: BLE001
-        print(f"[fetch] OpenNeuro S3 fetch failed ({exc}); use --source surrogate.", file=sys.stderr)
+    except Exception as exc:
+        print(
+            f"[fetch] OpenNeuro S3 fetch failed ({exc}); use --source surrogate.", file=sys.stderr
+        )
         return None
 
     scenes = _parse_scenes(scenes_raw)
@@ -435,8 +433,14 @@ def main() -> None:
     if args.source == "openneuro":
         real = _try_openneuro_fetch(args.out, args.duration_seconds)
         if real is None:
-            print("[fetch] FATAL: --source openneuro failed and surrogate not requested.", file=sys.stderr)
-            print("[fetch]        re-run with --source surrogate for an offline (NON-scientific) cache.", file=sys.stderr)
+            print(
+                "[fetch] FATAL: --source openneuro failed and surrogate not requested.",
+                file=sys.stderr,
+            )
+            print(
+                "[fetch]        re-run with --source surrogate for an offline (NON-scientific) cache.",
+                file=sys.stderr,
+            )
             raise SystemExit(1)
         n, urls = real
         provenance = [

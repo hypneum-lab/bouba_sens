@@ -7,6 +7,9 @@ import pickle
 import subprocess
 from pathlib import Path
 
+# Not a multiple of 1/64 (the probe batch size), so it never equals a probe accuracy.
+_ME1_SENTINEL = 0.123
+
 
 def test_cli_version_still_works() -> None:
     result = subprocess.run(
@@ -348,6 +351,19 @@ def test_eval_run_emits_me1_probe_additive(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
+    # Pin the adaptation-curve observable: the 3-step training above is
+    # not bit-reproducible across processes, and a barely-trained net
+    # collapses to one class, so both observables otherwise land on the
+    # same k/N grid (e.g. 0.25) in ~8 % of runs. A sentinel curve value
+    # that is NOT a multiple of 1/64 makes ``me1`` unambiguous and cannot
+    # coincide with any probe accuracy.
+    report_path = lesion_dir / "report.pkl"
+    with report_path.open("rb") as fh:
+        report = pickle.load(fh)
+    report.accuracy_curve = [_ME1_SENTINEL]
+    with report_path.open("wb") as fh:
+        pickle.dump(report, fh)
+
     subprocess.run(
         [
             "uv",
@@ -381,12 +397,29 @@ def test_eval_run_emits_me1_probe_additive(tmp_path: Path) -> None:
     assert isinstance(body["me1_probe"], float)
     assert 0.0 <= body["me1_probe"] <= 1.0
 
-    # The two observables measure different things (adaptation-curve
-    # tail vs. frozen probe); in the general case they differ.
-    assert body["me1"] != body["me1_probe"], (
-        "me1 (adaptation curve tail) and me1_probe (frozen probe) should "
-        "be distinct floats in the general case"
-    )
+    # me1 is exactly the legacy report-derived value (tail of the curve).
+    assert body["me1"] == _ME1_SENTINEL
+
+    # me1_probe is the frozen-probe pass on the RELOADED model: it must
+    # equal an independent recomputation from the saved artefacts
+    # (bit-exact determinism, ADR-0007 Option 4) and lie on the 1/64 grid
+    # of query_accuracy's default batch, hence differ from the sentinel.
+    import torch
+    from omegaconf import OmegaConf
+
+    from bouba_sens.cli import _build_model_from_config, _compute_me1
+
+    cfg = OmegaConf.load(lesion_dir / "config.yaml")
+    mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)
+    state = torch.load(lesion_dir / "model.pt", weights_only=True)
+    mux.load_state_dict(state["mux"])
+    nerve.load_state_dict(state["nerve"])
+    head.load_state_dict(state["head"])
+    for m, sd in state["sensory"].items():
+        sensories[m].load_state_dict(sd)
+    expected = _compute_me1(mux, sensories, nerve, head, world_obj, seed=int(cfg["seed"]))
+    assert body["me1_probe"] == expected
+    assert body["me1"] != body["me1_probe"]
 
     # Other keys untouched — no regression on v0.3.0 eval_report shape.
     for key in ("me2", "me3_delta", "me6_max_abs", "me7", "me8", "me9"):

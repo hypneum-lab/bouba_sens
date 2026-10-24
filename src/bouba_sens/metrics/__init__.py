@@ -22,6 +22,7 @@ from bouba_sens.metrics.baselines import (
 )
 from bouba_sens.metrics.congenital import me7_congenital_gap
 from bouba_sens.metrics.mi_migration import me3_delta, me3_mi
+from bouba_sens.metrics.mi_ross import mi_ross_discrete_continuous
 from bouba_sens.metrics.performance import me1_accuracy, me2_recovery_auc
 from bouba_sens.metrics.replication import me9_bootstrap
 from bouba_sens.metrics.subspace import (
@@ -78,6 +79,7 @@ __all__ = [
     "me7_congenital_gap",
     "me8_baselines",
     "me9_bootstrap",
+    "mi_ross_discrete_continuous",
     "random_rewire_nerve",
     "split_half_noise_floor",
     "subspace_shift",
