@@ -111,7 +111,10 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    enter the rule; k* and every PR are recorded on the OSF form before
    filing and reported in the paper. Implemented as
    `bouba_sens.metrics.subspace.select_k_from_pilot`, unit tests
-   `tests/unit/test_subspace_k_selection.py`. Context: the ADR-0019
+   `tests/unit/test_subspace_k_selection.py`. The plain (plug-in)
+   participation ratio was confirmed by the PI on 2026-10-24; the
+   finite-sample-corrected ratio of Chun et al. (§9) is reported
+   alongside only and never changes k*. Context: the ADR-0019
    Me3 probe had a participation ratio of 11.7 (two-NN 12.4), which
    motivated the earlier fixed k = 12 (`K_DEFAULT`, kept only as the
    code default until k* is fixed). Below, k denotes k*.
@@ -171,9 +174,10 @@ both 256-row split halves of Z_pre.
   defined at all 7 levels. The Page test, the magnitude guard and S-2/S-3
   use complete blocks only, so both endpoint levels (ℓ = 25 and 175) are
   defined for every analysed seed.
-- **Protocol failure.** If fewer than 80 % of the N confirmatory seeds
-  are complete blocks (fewer than 16 of 20, or 24 of 30), the
-  experiment is reported as a protocol failure with no verdict.
+- **Protocol failure.** If fewer than **70 %** of the N confirmatory
+  seeds are complete blocks (fewer than 14 of 20, 21 of 30 or 28 of
+  40), the experiment is reported as a protocol failure with no
+  verdict. (Changed on 2026-10-24 from 80 %; rationale in §10.)
 - **Reporting.** The number of invalid cells and of undefined Y is
   reported per level ℓ, with denominators (N × 15 cells and N blocks
   per level). If exclusions differ across levels, the paper states that
@@ -184,16 +188,36 @@ come from an untrained network, so S would measure training from
 scratch, not lesion reorganisation.
 
 **Secondary metric (exploratory, closer to Sui et al.):** a
-parameter-subspace rotation. For every 2-D weight matrix of
-`CrossModalNerve` (the cross-modal interaction module), take principal
-angles between the top-k right singular subspaces at Phase-2 entry and
-Phase-2 end, with the same no-lesion control and median aggregation.
-k = min(k*, rank). The exact list of parameters is fixed in code before
-filing (§10).
+parameter-subspace rotation. **Parameter list (frozen 2026-10-24,
+`interaction_parameter_names`):** the shared codebook projection
+`codebook.codebook` (64 × 128) and the `fc1.weight` and `fc2.weight`
+matrices (128 × 128) of the 20 pairwise transducers of
+`CrossModalNerve`, 41 matrices in the nerve's own order; biases, the
+1-D gate vector and modules outside the nerve are excluded. For each
+matrix, S between the top-k right singular subspaces at Phase-2 entry
+and Phase-2 end (weights not centred; k = min(k*, rank at entry);
+`parameter_subspace_shifts`). A matrix that is bit-identical before and
+after received no update (under HARD gating a transducer fires only
+when its gate condition holds) and is reported as **inactive**, not as
+a shift of 0. Per arm: ΔS_param = S(lesion cell) − S(no-lesion
+control) per active matrix; the block value is the median over the
+cells and active matrices, reported with the number of active
+matrices; the codebook value is also reported on its own, since the
+codebook is updated at every step. Exploratory, no decision.
 
 ## 4. Conditions
 
 - World: `StudyforrestRealWorld` (4.5-modal real bridge), as in Q3/N12.
+- **Secondary world (exploratory, decided 2026-10-24): CC-film.**
+  `--world ccfilm` (`CCFilmWorld`: real audio and vision from a CC-BY
+  film, synthetic proprioception; ADR-0019 E1.3d), run only after the
+  confirmatory Studyforrest runs are complete, on the first 10
+  analysed confirmatory seeds (2001–2010, or their reserve
+  replacements), all 7 levels, same k*, protocol and analysis. Its
+  Page test and endpoint difference are reported descriptively with
+  their own exclusion counts; it supports no claim and never changes
+  the verdict. If the CC-film cache is absent on the filing host, the
+  arm is not run and this is stated. Rationale in §10.
 - `STEPS_TRAIN=200`, `STEPS_LESION=100`, batch 16, HARD gating, no
   codebook lock, no gating schedule.
 - **SNR schedule: changed versus the historical grids (ADR-0020).** The
@@ -286,7 +310,7 @@ analysis.
 The verdicts are exhaustive and mutually exclusive, evaluated in
 this order:
 
-- **Protocol failure:** fewer than 80 % complete blocks (§3.1). No
+- **Protocol failure:** fewer than 70 % complete blocks (§3.1). No
   verdict.
 - **Supported:** S-1 permutation p < 0.05 **and** the median over
   complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
@@ -354,16 +378,32 @@ outcomes are publishable.
   difference > guard g, with g = median S_split expressed in
   within-seed SD units; each seed block independently lost to rank
   exclusion with probability q, no replacement; protocol failure if
-  < 80 % complete blocks):
+  < 70 % complete blocks):
 
   | N | q | range | g = 0 | g = 0.25 | g = 0.5 | g = 1.0 | P(protocol failure) |
   |--:|--:|------:|------:|---------:|--------:|--------:|--------------------:|
   | 20 | 0 | 0.75 SD | 0.84 | 0.81 | 0.69 | 0.25 | 0.000 |
   | 20 | 0 | 1.0 SD | 0.97 | 0.96 | 0.90 | 0.50 | 0.000 |
   | 20 | 0 | 1.5 SD | 1.00 | 1.00 | 1.00 | 0.90 | 0.000 |
-  | 20 | 0.10 | 1.0 SD | 0.92 | 0.90 | 0.84 | 0.48 | 0.042 |
+  | 20 | 0.10 | 1.0 SD | 0.96 | 0.93 | 0.87 | 0.50 | 0.002 |
   | 30 | 0 | 1.0 SD | 1.00 | 0.99 | 0.94 | 0.51 | 0.000 |
-  | 30 | 0.10 | 1.0 SD | 0.97 | 0.96 | 0.91 | 0.49 | 0.024 |
+  | 30 | 0.10 | 1.0 SD | 0.99 | 0.98 | 0.93 | 0.50 | 0.000 |
+
+  (q = 0.10 rows regenerated on 2026-10-24 under the 70 % rule; the
+  q = 0 rows do not depend on the threshold.)
+
+  *At the planning exclusion rate of the fixed pilot* (q̂ = 0.149 at
+  0/10, trend ĝ + 0.70 SD, 20,000 draws, section "v0.8 complete rule at
+  q=0.149" of the script):
+
+  | Threshold | g | N = 20 | N = 25 | N = 30 | N = 35 | N = 40 |
+  |---|---|---:|---:|---:|---:|---:|
+  | 70 % | 0 | 0.72 | 0.80 | 0.87 | 0.91 | 0.94 |
+  | 70 % | 0.25 | 0.89 | 0.92 | 0.96 | 0.97 | 0.98 |
+  | 70 % | 0.5 | 0.93 | 0.94 | 0.97 | 0.98 | 0.99 |
+  | 80 % (earlier) | 0 | 0.62 | 0.69 | 0.75 | 0.79 | 0.82 |
+  | 80 % (earlier) | 0.25 | 0.76 | 0.80 | 0.83 | 0.84 | 0.86 |
+  | 80 % (earlier) | 0.5 | 0.79 | 0.82 | 0.84 | 0.85 | 0.86 |
 
   These numbers are **conditional on the simulation model**: a linear
   trend, Gaussian noise, a guard g treated as a fixed known constant,
@@ -371,8 +411,9 @@ outcomes are publishable.
   is verified. The guard dominates: when g is as large as the expected
   endpoint difference, P(Supported) is about 0.5 whatever N. Exclusions
   also cap the attainable power: with a per-block exclusion probability
-  of 0.20, the protocol-failure probability stays near 0.4 even at
-  N = 40, so 0.80 unconditional power is not reachable.
+  of 0.20, the protocol-failure probability is 0.087 / 0.061 / 0.043 at
+  N = 20 / 30 / 40 under the 70 % rule (0.370 / 0.393 / 0.407 under the
+  earlier 80 % rule, which made 0.80 unconditional power unreachable).
 
   *Drafted rule for N.* From the 10 pilot seeds: σ̂ =
   residual SD of Y from the two-way ANOVA without replication (seed ×
@@ -384,9 +425,9 @@ outcomes are publishable.
   (Clopper–Pearson) one-sided **80 % upper bound** of the pilot
   incomplete-block fraction, not the point estimate: 0/5 incomplete
   gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077; with the fixed
-  10-seed pilot, q̂ = 0.149 at 0/10. A large q̂ makes the target
-  unreachable (q = 0.20 already gives a 0.41 protocol-failure
-  probability at N = 40); because the pilot size is fixed, the
+  10-seed pilot, q̂ = 0.149 at 0/10. A large q̂ can still make the
+  target unreachable (q̂ = 0.275 gives a protocol-failure probability of
+  about 0.29 at every N ≤ 40 under the 70 % rule); because the pilot size is fixed, the
   Clopper–Pearson bound keeps its nominal coverage (no data-dependent
   extension). N is the smallest N ≥ 20 for which
   the simulated P(Supported), **minus two Monte-Carlo SEs**, is ≥ 0.80,
@@ -432,7 +473,10 @@ outcomes are publishable.
       lock), `capture_block` per block with the seed mapping of §3
       item 11, world-class check, aggregation and Page test end to end;
       S-2 to S-5 analyses; secondary parameter-subspace metric (after
-      Open decision 3).
+      the parameter list of §3.1); CC-film exploratory arm (§4).
+- [x] Secondary-metric parameter list and per-matrix shift implemented
+      (`interaction_parameter_names`, `parameter_subspace_shifts`, unit
+      tests `tests/unit/test_subspace_parameters.py`).
 - [x] Pilot rule for k (§3 item 3, PI decision 2026-10-24) implemented
       with unit tests (`select_k_from_pilot`,
       `tests/unit/test_subspace_k_selection.py`: definition, equal
@@ -477,12 +521,66 @@ seeds, 2101–2110, never extended (§7). Pre-registration id **N19**,
 verdict ADR **ADR-0022**, amendment v0.8, as proposed in the header
 (proposed — PI confirms at filing).
 
-Still open (not covered by the 2026-10-24 decisions):
+Decided on 2026-10-24 (second PI round, "if you find better, do it"):
+each item below gives the decision, the rationale and what changed.
 
-1. Rank-exclusion thresholds: 12 of 15 cells per block and 80 %
-   complete blocks (drafted).
-2. N: 20 (drafted minimum) vs a larger N from the pilot, by the drafted
-   rule of §7 or another rule the PI states on the form.
-3. Parameter list for the secondary metric (which `CrossModalNerve`
-   weights count as the interaction layer).
-4. Whether to also run the CC-film bridge as a secondary world.
+1. **Rank-exclusion thresholds.**
+   - *12 of 15 valid cells per block: kept.* A block can lose up to
+     three cells (for example the three SNR levels of one lesioned
+     modality) and its median still rests on at least 12 cells of the
+     15, so at least four of the five lesioned modalities are
+     represented. A stricter rule would discard blocks for a single
+     modality's collapse; a looser one (for example 9 of 15) would let a
+     block's median rest on as few as three modalities. Unchanged.
+   - *Protocol-failure threshold: changed from 80 % to 70 % complete
+     blocks.* Under the planning exclusion rate of the fixed pilot
+     (q̂ = 0.149 at 0/10), the 80 % rule alone fails the run with
+     probability 0.167 / 0.149 / 0.131 at N = 20 / 30 / 40 and caps the
+     complete-rule power below 0.86 even at N = 40 (P(Supported) at a
+     trend of ĝ + 0.70 SD: 0.62–0.82 for g = 0 and 0.76–0.86 for
+     g = 0.25, N = 20–40). With 70 % the failure probability is
+     0.021 / 0.009 / 0.004, and the same targets give 0.72–0.94 and
+     0.89–0.98 (table in §7). The analysis uses complete blocks only, so a lower
+     threshold does not change any test's validity; the threshold
+     protects against level-dependent selection, which is still
+     reported per level (§3.1). 70 % keeps a clear majority of seeds.
+     The threshold is fixed before any data (`V08_COMPLETE_MIN` in
+     `scripts/power_prereg_2026_10.py`, section "v0.8
+     protocol-failure threshold").
+2. **N: rule kept (N ≥ 20, smallest N whose simulated P(Supported)
+   minus two Monte-Carlo SEs is ≥ 0.80, cap 40), now under the 70 %
+   threshold.** The rule is deterministic, uses pilot data only (σ̂,
+   ĝ, q̂) and is fixed before the confirmatory run; nothing in the
+   literature or the numbers favours a fixed N over it, because the
+   guard size, the within-seed SD and the exclusion rate are all
+   unknown before the pilot. Illustration at q̂ = 0.149 with a trend of
+   ĝ + 0.70 SD: under 70 %, N = 30 (g = 0; 0.799 at N = 25) and N = 20
+   (g ≥ 0.25) reach 0.80 at the point estimate; under the earlier 80 %
+   rule, N = 40 was needed at g = 0 and N = 25 at g = 0.25. Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
+   cap N = 40, 280 Phase-1 and 4,480 Phase-2 runs. Changed: only the
+   threshold used inside the simulation.
+3. **Secondary-metric parameter list: fixed now, before data**
+   (§3.1, `interaction_parameter_names`, unit tests
+   `tests/unit/test_subspace_parameters.py`): the codebook projection
+   and the 40 transducer weight matrices; inactive (never-updated)
+   matrices reported as inactive, not as zero shift. Rationale: these
+   are the parameters through which modalities interact in
+   `CrossModalNerve`; the gate vector is 1-D (no subspace) and the
+   encoders and head are not cross-modal. Changed: the list was
+   "fixed in code before filing" and is now fixed and implemented.
+4. **CC-film as a secondary world: yes, exploratory, on 10 seeds**
+   (§4). Rationale: the Studyforrest audio channel that the lesion
+   targets is an annotation proxy, while CC-film audio is the real
+   signal (ADR-0019 E1.3d, v0.7 §4.2), so a same-direction trend on
+   CC-film would show that the result does not hinge on the proxy.
+   Ten seeds keep the cost at half of the N = 20 confirmatory run
+   (70 Phase-1 + 1,120 Phase-2 runs); the Page test alone has about
+   0.80 power at a trend of 1.0 within-seed SD at N = 10 (§7), so the
+   arm is descriptive, not confirmatory. Changed: from undecided to
+   this exploratory arm.
+
+No design decision remains open. Filing still needs the driver,
+the S-2 to S-5 analyses and the secondary metric in the driver, the
+pilot, N by the rule of §7, and the PI's confirmation of the proposed
+numbers.
+

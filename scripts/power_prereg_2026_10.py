@@ -287,19 +287,24 @@ def n_needed(fn, target: float, n_lo: int, n_hi: int) -> int | None:
     return n_hi
 
 
-def v08_rule(n, effect, guard, q_loss, sims, rng, levels=7, sd_seed=1.0):
+V08_COMPLETE_MIN = 0.70  # protocol-failure threshold (PI 2026-10-24; was 0.80)
+
+
+def v08_rule(
+    n, effect, guard, q_loss, sims, rng, levels=7, sd_seed=1.0, threshold=V08_COMPLETE_MIN
+):
     """v0.8 complete rule: Page + magnitude guard, rank-excluded blocks.
 
     Each seed block is independently rank-excluded with probability
     `q_loss` (no replacement). The run is a protocol failure if fewer
-    than 80 % of the N blocks are complete. Units: within-seed SD.
+    than `threshold` (70 %) of the N blocks are complete. Units: within-seed SD.
     Returns P(Supported), P(Page alone among valid runs), P(protocol fail).
     """
     trend = np.linspace(0.0, effect, levels)
     y = trend + rng.normal(0, 1, (sims, n, levels)) + rng.normal(0, sd_seed, (sims, n, 1))
     keep = rng.random((sims, n)) >= q_loss
     n_keep = keep.sum(1)
-    fail = n_keep < math.ceil(0.8 * n)
+    fail = n_keep < math.ceil(threshold * n)
     supported = np.zeros(sims, bool)
     page_ok = np.zeros(sims, bool)
     for k in np.unique(n_keep[~fail]):
@@ -500,7 +505,7 @@ def main() -> int:
 
     print("\n== COMPLETE RULE v0.8: Supported = Page p<.05 AND median endpoint diff > guard")
     print("   guard in within-seed SD units; q = per-block rank-exclusion probability;")
-    print("   protocol failure if <80% of blocks complete (no replacement)")
+    print("   protocol failure if <70% of blocks complete (no replacement)")
     for n in (20, 30):
         for q in (0.0, 0.05, 0.10):
             for eff in (0.75, 1.0, 1.5):
@@ -532,7 +537,58 @@ def main() -> int:
         print(f"  N={n}: P(A+ and C+)={pw:.4f} (MC SE {se:.4f}, lower={pw - 2 * se:.4f})")
 
     v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, len(seeds), sd2, sd2u)
+    v08_threshold_and_v09_secondary(args)
     return 0
+
+
+def v08_threshold_and_v09_secondary(args) -> None:
+    """PI decisions 2026-10-24 (own generator: earlier tables are unchanged)."""
+    rng = np.random.default_rng(20261024)
+    sims = max(args.sims // 5, 2000)
+    print("\n== v0.8 protocol-failure threshold: P(fail) exact binomial, by q and N")
+    for thr in (0.70, 0.80):
+        for q in (0.077, 0.149, 0.275):
+            row = [stats.binom.cdf(math.ceil(thr * n) - 1, n, 1 - q) for n in (20, 30, 40)]
+            print(
+                f"  threshold={thr:.2f} q={q:.3f}: "
+                + " ".join(f"N={n}:{p:.3f}" for n, p in zip((20, 30, 40), row, strict=True))
+            )
+    print(f"\n== v0.8 complete rule at q=0.149 (0/10 pilot), trend g+0.70 SD, {sims} draws")
+    for thr in (0.70, 0.80):
+        for g in (0.0, 0.25, 0.5):
+            out = []
+            for n in (20, 25, 30, 35, 40):
+                sup, _, fail = v08_rule(n, g + 0.70, g, 0.149, sims, rng, threshold=thr)
+                out.append(f"N={n}:{sup:.3f}(fail {fail:.3f})")
+            print(f"  threshold={thr:.2f} g={g}: " + " ".join(out))
+    print("\n== v0.9 secondary arms: exact noncentral-t power, planning SD of D 0.0605")
+    for r in (0.0, 0.5):
+        sd_c = 0.0605 * math.sqrt(2 * (1 - r))
+        for n in (20, 32, 40):
+            mit = [_t_power_one_sided(e, sd_c, n) for e in (0.05, 0.025, 0.0125)]
+            lock = [_t_power_two_sided(e, sd_c, n, ALPHA / 3) for e in (0.05, 0.025)]
+            print(
+                f"  corr={r} N={n}: mitigation M=.05/.025/.0125 one-sided "
+                + "/".join(f"{x:.2f}" for x in mit)
+                + "; lock contrast .05/.025 two-sided at alpha/3 "
+                + "/".join(f"{x:.2f}" for x in lock)
+            )
+        for e in (0.025, 0.0125):
+            n_req = next(n for n in range(3, 5000) if _t_power_one_sided(e, sd_c, n) >= 0.80)
+            print(f"  corr={r}: N for 0.80 at mitigation M={e}: {n_req}")
+
+
+def _t_power_one_sided(delta: float, sd: float, n: int, alpha: float = ALPHA) -> float:
+    df = n - 1
+    nc = delta / (sd / math.sqrt(n))
+    return float(1 - stats.nct.cdf(stats.t.ppf(1 - alpha, df), df, nc))
+
+
+def _t_power_two_sided(delta: float, sd: float, n: int, alpha: float) -> float:
+    df = n - 1
+    nc = delta / (sd / math.sqrt(n))
+    c = stats.t.ppf(1 - alpha / 2, df)
+    return float(1 - stats.nct.cdf(c, df, nc) + stats.nct.cdf(-c, df, nc))
 
 
 def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> None:
