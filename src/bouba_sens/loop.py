@@ -23,7 +23,7 @@ from bouba_sens.sensory import MODALITIES, Modality, SensoryWML
 if TYPE_CHECKING:
     from track_p.multiplexer import GammaThetaMultiplexer
 
-    from bouba_sens.decorrelation import DecorrelationSchedule
+    from bouba_sens.decorrelation import CrossSensorReconstruction, DecorrelationSchedule
     from bouba_sens.head import IntegrationHead
     from bouba_sens.lesion import LesionSpec
     from bouba_sens.world.base import WorldSample, WorldSimulator
@@ -115,6 +115,7 @@ class AdaptationLoop:
         batch_size: int = 32,
         seed: int = 0,
         decorrelation: DecorrelationSchedule | None = None,
+        reconstruction: CrossSensorReconstruction | None = None,
     ) -> Checkpoint:
         """Phase 1: intact training on the world. Returns snapshot.
 
@@ -125,7 +126,17 @@ class AdaptationLoop:
 
         `decorrelation` (v0.9) swaps the batch source inside its window;
         None keeps the original behaviour.
+
+        `reconstruction` (v0.9 mitigation arm) adds its weighted
+        cross-sensor reconstruction loss at every step; its decoders join
+        the optimiser once (same Adam settings). None keeps the original
+        behaviour.
         """
+        if reconstruction is not None:
+            registered = getattr(self, "_aux_modules", [])
+            if not any(r is reconstruction for r in registered):
+                self.opt.add_param_group({"params": list(reconstruction.parameters())})
+                self._aux_modules = [*registered, reconstruction]
         mux_step = getattr(self.mux, "step", None)
         nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
@@ -139,6 +150,8 @@ class AdaptationLoop:
                     step=step,
                 )
             loss, _ = self._forward(sample)
+            if reconstruction is not None:
+                loss = loss + reconstruction.weight * reconstruction(self, sample)
             self.opt.zero_grad()
             loss.backward()  # type: ignore[no-untyped-call]
             self.opt.step()

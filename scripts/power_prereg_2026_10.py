@@ -1,0 +1,698 @@
+#!/usr/bin/env python3
+"""Power analysis for the 2026-10-23 draft pre-registrations.
+
+Supports the three DRAFT OSF amendments (not yet filed):
+
+* `docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md` (B-1/B-2 TOST)
+* `docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md` (Page trend)
+* `docs/osf/amendment-v0.9-decorrelation-window-2026-10-23.md`
+
+Reads only data already committed to the repo:
+
+* B-1: `reports/v0.5_amedi_curve_multiseed_10seed_final.json`
+  (10 seeds x 5 LOCK_AFTER, per-seed grid-median Me7, Q3/Q3+).
+* B-2: per-seed Me3 delta tables of ADR-0019
+  (`docs/adr/0019-b2-dimensional-mine-criterion.md`), copied below
+  verbatim because the per-seed JSONs are not tracked.
+
+No training, no new data. The unit of analysis is the seed.
+
+Sections 3-4 have no pilot data (the metrics do not exist yet); they
+report power as a function of a standardised effect size, plus a
+planning SD borrowed from the B-1 Me7 spread for accuracy deltas.
+
+Two kinds of output:
+
+* "component-test power only": power of one test in isolation (the
+  original tables of the drafts);
+* "complete decision rule": Monte-Carlo probability of each
+  pre-registered verdict, simulating the full rule (conjunctions,
+  magnitude guards, fixed-sequence gates, correlated outcomes,
+  quantisation, rank exclusions and the protocol-failure rule).
+
+`page_perm_pvalue` is the reference implementation of the
+pre-registered Page test (within-block permutation, mid-ranks). The
+complete-rule simulations use its permutation critical value
+(`page_perm_crit`, no-tie calibration) rather than the asymptotic test.
+
+Usage:
+    python scripts/power_prereg_2026_10.py [--sims 100000]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+
+import numpy as np
+from scipy import integrate, stats
+
+ALPHA = 0.05
+B1_BOUND = 0.05  # OSF Q6JYN B-1 threshold (frozen)
+B2_BOUND = 0.10  # OSF Q6JYN B-2 threshold, bits (frozen)
+# v0.7 equivalence bounds decided by the PI on 2026-10-23: half-threshold.
+V07_B1_BOUND = B1_BOUND / 2  # +-0.025 accuracy units
+V07_B2_BOUND = B2_BOUND / 2  # +-0.05 bit
+# v0.7 sample size (PI decision, 2026-10-23, second round): the smallest N
+# whose exact E-2 TOST power reaches 0.80 in the planning case
+# (mu = +-0.02 bit, SD = UCL80 of the largest ADR-0019 SD); see
+# `tost_power_exact` and the "v0.7 N selection" section.
+V07_N = 95
+
+# ADR-0019 per-seed B-2 = MI_post - MI_pre (bits), 5 seeds each.
+B2_TABLES: dict[str, list[float]] = {
+    "gaussian_kraskov_1d (E1.3)": [-0.073, 0.033, 0.000, -0.082, -0.034],
+    "gaussian_mine_full (E1.3)": [-0.016, -0.007, 0.011, -0.171, -0.008],
+    "gaussian_kraskov_full (E1.3b)": [-0.077, 0.000, 0.000, -0.063, 0.080],
+    "gaussian_mine_full (E1.3b)": [-0.003, 0.012, -0.008, 0.120, 0.032],
+    "studyforrest_kraskov_1d (E1.3c)": [0.0, -0.0049, 0.0, 0.0, 0.0],
+    "ccfilm_kraskov_1d (E1.3d)": [-0.0800, 0.0000, -0.0274, 0.0069, -0.0579],
+    "ccfilm_mine_full (E1.3d)": [-0.019, -0.024, 0.013, 0.013, 0.0042],
+}
+
+
+def tost_power_mc(mu: float, sd: float, n: int, bound: float, sims: int, rng) -> float:
+    """Monte-Carlo power of a one-sample TOST (bounds +-bound, alpha)."""
+    x = rng.normal(mu, sd, size=(sims, n))
+    m = x.mean(1)
+    se = x.std(1, ddof=1) / math.sqrt(n)
+    tc = stats.t.ppf(1 - ALPHA, n - 1)
+    return float(np.mean(((m + bound) / se > tc) & ((bound - m) / se > tc)))
+
+
+def tost_power_exact(mu: float, sd: float, n: int, bound: float) -> float:
+    """Exact power of a one-sample TOST (bounds +-bound, alpha), normal data.
+
+    Conditions on the sample SD s ((n-1) s^2 / sd^2 ~ chi2(n-1)): the TOST
+    passes iff |mean - 0| stays inside +-(bound - t_crit s / sqrt(n)).
+    """
+    df = n - 1
+    tc = stats.t.ppf(1 - ALPHA, df)
+    se = sd / math.sqrt(n)
+
+    def f(s: float) -> float:
+        h = bound - tc * s / math.sqrt(n)
+        if h <= 0:
+            return 0.0
+        p = stats.norm.cdf((h - mu) / se) - stats.norm.cdf((-h - mu) / se)
+        return p * stats.chi2.pdf(df * s * s / sd**2, df) * 2 * df * s / sd**2
+
+    s_max = bound * math.sqrt(n) / tc  # beyond this h <= 0
+    return float(integrate.quad(f, 0.0, s_max, limit=200)[0])
+
+
+def iut_power_mc(mu: np.ndarray, cov: np.ndarray, n: int, bound: float, sims: int, rng) -> float:
+    """Power of the intersection-union test: TOST must pass in every condition."""
+    x = rng.multivariate_normal(mu, cov, size=(sims, n))  # (sims, n, k)
+    m = x.mean(1)
+    se = x.std(1, ddof=1) / math.sqrt(n)
+    tc = stats.t.ppf(1 - ALPHA, n - 1)
+    ok = ((m + bound) / se > tc) & ((bound - m) / se > tc)
+    return float(np.mean(ok.all(axis=1)))
+
+
+def n_normal_approx(mu: float, sd: float, bound: float, power: float) -> int:
+    """Large-sample normal-approximation N for TOST."""
+    za = stats.norm.ppf(1 - ALPHA)
+    if abs(mu) < 1e-12:
+        zb = stats.norm.ppf(1 - (1 - power) / 2)
+        return math.ceil(((za + zb) * sd / bound) ** 2)
+    zb = stats.norm.ppf(power)
+    return math.ceil(((za + zb) * sd / (bound - abs(mu))) ** 2)
+
+
+def sd_ucl(sd: float, n: int, level: float = 0.80) -> float:
+    """One-sided upper confidence limit of an SD (conservative planning value)."""
+    df = n - 1
+    return sd * math.sqrt(df / stats.chi2.ppf(1 - level, df))
+
+
+def page_power_mc(levels: int, n: int, effect: float, sd_seed: float, sims: int, rng) -> float:
+    """Power of a one-sided Page L test (blocks = seeds).
+
+    Linear trend whose total range across the ordered levels is `effect`
+    within-seed SDs; seeds add a random intercept of SD `sd_seed`. A
+    predicted decreasing trend is tested by reversing the column order,
+    so the same power applies.
+    """
+    x = np.linspace(0.0, effect, levels)
+    hits = 0
+    for _ in range(sims):
+        data = x + rng.normal(0, 1, (n, levels)) + rng.normal(0, sd_seed, (n, 1))
+        hits += stats.page_trend_test(data, method="asymptotic").pvalue < ALPHA
+    return hits / sims
+
+
+def t_one_sided_power_mc(mu: float, sd: float, n: int, sims: int, rng) -> float:
+    x = rng.normal(mu, sd, size=(sims, n))
+    t = x.mean(1) / (x.std(1, ddof=1) / math.sqrt(n))
+    return float(np.mean(t > stats.t.ppf(1 - ALPHA, n - 1)))
+
+
+# --------------------------------------------------------------------------
+# Complete decision rules
+# --------------------------------------------------------------------------
+
+# Interval-based verdict classes (shared by v0.7 and the v0.9 magnitude axis).
+EQUIV, BEYOND_POS, BEYOND_NEG, POS_UNRES, NEG_UNRES, INCONCL = range(6)
+CLASS_NAMES = ("equiv", "beyond+", "beyond-", "pos-unres", "neg-unres", "inconcl")
+
+
+def ci90(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Two-sided 90 % t CI of the mean along the last axis."""
+    n = x.shape[-1]
+    m = x.mean(-1)
+    se = x.std(-1, ddof=1) / math.sqrt(n)
+    tc = stats.t.ppf(1 - ALPHA, n - 1)
+    return m - tc * se, m + tc * se
+
+
+def classify(lo: np.ndarray, hi: np.ndarray, bound: float) -> np.ndarray:
+    """Exhaustive partition of the 90 % CI [lo, hi] against {-b, 0, +b}."""
+    out = np.full(lo.shape, INCONCL)
+    out[(lo > -bound) & (hi < bound)] = EQUIV
+    out[lo >= bound] = BEYOND_POS
+    out[hi <= -bound] = BEYOND_NEG
+    out[(lo > 0) & (lo < bound) & (hi >= bound)] = POS_UNRES
+    out[(hi < 0) & (hi > -bound) & (lo <= -bound)] = NEG_UNRES
+    return out
+
+
+def class_probs(codes: np.ndarray) -> str:
+    return " ".join(f"{n}={np.mean(codes == i):.3f}" for i, n in enumerate(CLASS_NAMES))
+
+
+def page_l(data: np.ndarray) -> np.ndarray:
+    """Page's L for increasing order; blocks on axis -2, levels on axis -1."""
+    ranks = stats.rankdata(data, axis=-1)  # mid-ranks for ties
+    weights = np.arange(1, data.shape[-1] + 1)
+    return (ranks * weights).sum(axis=(-2, -1))
+
+
+def page_asym_p(data: np.ndarray) -> np.ndarray:
+    """One-sided (increasing) asymptotic Page p-value, vectorised over sims."""
+    n, m = data.shape[-2], data.shape[-1]
+    mean = n * m * (m + 1) ** 2 / 4
+    var = n * m**2 * (m + 1) * (m**2 - 1) / 144
+    return stats.norm.sf((page_l(data) - mean) / math.sqrt(var))
+
+
+_PAGE_CRIT: dict[tuple[int, int], float] = {}
+
+
+def page_perm_crit(n: int, m: int, draws: int = 200_000) -> float:
+    """Permutation critical value of Page's L (no ties), one-sided alpha.
+
+    Smallest c with P0(L >= c) <= alpha under within-block exchangeability,
+    estimated from `draws` random rank permutations (fixed generator), so
+    that power simulations use the registered permutation calibration
+    rather than the asymptotic normal approximation.
+    """
+    key = (n, m)
+    if key not in _PAGE_CRIT:
+        g = np.random.default_rng(20261023 + 1000 * n + m)
+        weights = np.arange(1, m + 1)
+        lvals = np.zeros(draws)
+        for start in range(0, draws, 20_000):
+            k = min(20_000, draws - start)
+            ranks = g.random((k, n, m)).argsort(-1).argsort(-1) + 1
+            lvals[start : start + k] = (ranks * weights).sum(axis=(-2, -1))
+        lv, counts = np.unique(lvals, return_counts=True)
+        tail = np.cumsum(counts[::-1])[::-1] / draws  # P(L >= lv)
+        _PAGE_CRIT[key] = float(lv[np.argmax(tail <= ALPHA)])
+    return _PAGE_CRIT[key]
+
+
+def page_perm_reject(data: np.ndarray) -> np.ndarray:
+    """Vectorised one-sided (increasing) Page rejection at the permutation critical value."""
+    return page_l(data) >= page_perm_crit(data.shape[-2], data.shape[-1])
+
+
+def page_perm_pvalue(data: np.ndarray, n_perm: int, rng) -> float:
+    """Pre-registered Page test: within-block permutation of mid-ranks.
+
+    p = (1 + #{L_perm >= L_obs}) / (1 + n_perm), one-sided increasing.
+    For a decreasing hypothesis pass `data[:, ::-1]`.
+    """
+    ranks = stats.rankdata(data, axis=-1)
+    n, m = ranks.shape
+    weights = np.arange(1, m + 1)
+    l_obs = float((ranks * weights).sum())
+    keys = rng.random((n_perm, n, m))
+    perm = np.take_along_axis(np.broadcast_to(ranks, keys.shape), keys.argsort(-1), -1)
+    l_perm = (perm * weights).sum(axis=(-2, -1))
+    return float((1 + np.sum(l_perm >= l_obs - 1e-9)) / (1 + n_perm))
+
+
+def v07_b1_rule(mu, cov, n, sims, rng, quantum=0.00625, bound=B1_BOUND):
+    """E-1 verdict classes and the fixed-sequence E-1 -> E-1b claim."""
+    x = rng.multivariate_normal(mu, cov, size=(sims, n))  # (sims, n, 5)
+    x = np.round(x / quantum) * quantum  # grid medians are quantised
+    lo, hi = ci90(x.mean(-1))
+    e1 = classify(lo, hi, bound)
+    lo_l, hi_l = ci90(np.moveaxis(x, -1, -2))  # (sims, 5)
+    e1b = (e1 == EQUIV) & ((lo_l > -bound) & (hi_l < bound)).all(-1)
+    return e1, e1b
+
+
+def tost_power_chunked(mu: float, sd: float, n: int, bound: float, sims: int, rng) -> float:
+    """`tost_power_mc` in chunks, for large N."""
+    chunk = max(1, min(sims, 4_000_000 // n))
+    hits = 0
+    for start in range(0, sims, chunk):
+        hits += tost_power_mc(mu, sd, n, bound, min(chunk, sims - start), rng) * min(
+            chunk, sims - start
+        )
+    return hits / sims
+
+
+def n_needed(fn, target: float, n_lo: int, n_hi: int) -> int | None:
+    """Smallest N in [n_lo, n_hi] with fn(N) >= target, by bisection.
+
+    Assumes power is non-decreasing in N (true up to Monte-Carlo noise).
+    Returns None if fn(n_hi) < target.
+    """
+    if fn(n_hi) < target:
+        return None
+    if fn(n_lo) >= target:
+        return n_lo
+    while n_hi - n_lo > 1:
+        mid = (n_lo + n_hi) // 2
+        if fn(mid) >= target:
+            n_hi = mid
+        else:
+            n_lo = mid
+    return n_hi
+
+
+V08_COMPLETE_MIN = 0.70  # protocol-failure threshold (PI 2026-10-24; was 0.80)
+
+
+def v08_rule(
+    n, effect, guard, q_loss, sims, rng, levels=7, sd_seed=1.0, threshold=V08_COMPLETE_MIN
+):
+    """v0.8 complete rule: Page + magnitude guard, rank-excluded blocks.
+
+    Each seed block is independently rank-excluded with probability
+    `q_loss` (no replacement). The run is a protocol failure if fewer
+    than `threshold` (70 %) of the N blocks are complete. Units: within-seed SD.
+    Returns P(Supported), P(Page alone among valid runs), P(protocol fail).
+    """
+    trend = np.linspace(0.0, effect, levels)
+    y = trend + rng.normal(0, 1, (sims, n, levels)) + rng.normal(0, sd_seed, (sims, n, 1))
+    keep = rng.random((sims, n)) >= q_loss
+    n_keep = keep.sum(1)
+    fail = n_keep < math.ceil(threshold * n)
+    supported = np.zeros(sims, bool)
+    page_ok = np.zeros(sims, bool)
+    for k in np.unique(n_keep[~fail]):
+        idx = np.where((n_keep == k) & ~fail)[0]
+        yk = np.stack([y[i][keep[i]] for i in idx])  # (len, k, levels)
+        rej = page_perm_reject(yk)
+        guard_ok = np.median(yk[..., -1] - yk[..., 0], axis=-1) > guard
+        page_ok[idx] = rej
+        supported[idx] = rej & guard_ok
+    return supported.mean(), page_ok.mean(), fail.mean()
+
+
+def v09_rule(n, mu0, profile, sd, rho, sims, rng, quantum=1 / 512):
+    """v0.9 complete rule on the three axes, correlated onsets.
+
+    D(s, o) = mu_o + u_s + e_so, var(u) = rho sd^2, var(e) = (1-rho) sd^2,
+    quantised to 1/512 (difference of two accuracies on a 512 probe).
+    """
+    if profile == "linear":
+        mu = mu0 * np.array([1.0, 0.75, 0.5, 0.25, 0.0])
+    else:  # "early": only onset 0 affected
+        mu = mu0 * np.array([1.0, 0.0, 0.0, 0.0, 0.0])
+    d = (
+        mu
+        + rng.normal(0, sd * math.sqrt(rho), (sims, n, 1))
+        + rng.normal(0, sd * math.sqrt(1 - rho), (sims, n, 5))
+    )
+    d = np.round(d / quantum) * quantum
+    d0 = d[..., 0]
+    t = d0.mean(-1) / (d0.std(-1, ddof=1) / math.sqrt(n))
+    harm = t > stats.t.ppf(1 - ALPHA, n - 1)  # D-1
+    timing = page_perm_reject(d[..., ::-1])  # D-2, decreasing, permutation-calibrated
+    lo, hi = ci90(d0)
+    mag = classify(lo, hi, B1_BOUND)
+    return {
+        "D-1": harm.mean(),
+        "D-2": timing.mean(),
+        "headline D-1&D-2": (harm & timing).mean(),
+        "  ...& mag>=SESOI": (harm & timing & (mag == BEYOND_POS)).mean(),
+        "old D-1&mean>=.05": (harm & (d0.mean(-1) >= B1_BOUND)).mean(),
+        "mag>=SESOI": (mag == BEYOND_POS).mean(),
+        "mag negligible": (mag == EQUIV).mean(),
+        "mag unresolved": ((mag != BEYOND_POS) & (mag != EQUIV)).mean(),
+    }
+
+
+def smallest_n(fn, target: float, n_min: int = 3, n_max: int = 200) -> int | None:
+    for n in range(n_min, n_max + 1):
+        if fn(n) >= target:
+            return n
+    return None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--repo", type=Path, default=Path("."))
+    ap.add_argument("--sims", type=int, default=100_000)
+    ap.add_argument("--seed", type=int, default=20261023)
+    args = ap.parse_args()
+    rng = np.random.default_rng(args.seed)
+
+    rep = json.loads(
+        (args.repo / "reports/v0.5_amedi_curve_multiseed_10seed_final.json").read_text()
+    )
+    locks = [50, 75, 100, 125, 150]
+    seeds = rep["all_seeds"]
+    y = np.array([[rep["matrix"][str(s)][str(la)] for la in locks] for s in seeds])
+
+    print(
+        f"== B-1 (Me7), 10 seeds x 5 LOCK_AFTER, bound +-{B1_BOUND:.3f} [component-test power only]"
+    )
+    for j, la in enumerate(locks):
+        print(f"  LOCK={la:>3}: mean={y[:, j].mean():+.4f} sd={y[:, j].std(ddof=1):.4f}")
+    seed_mean = y.mean(1)
+    mu1, sd1 = float(seed_mean.mean()), float(seed_mean.std(ddof=1))
+    print(f"  per-seed mean over LOCK: mean={mu1:+.4f} sd={sd1:.4f}")
+    # Observed-data TOST on the existing 10 seeds (descriptive only).
+    se = sd1 / math.sqrt(len(seeds))
+    p_lo = 1 - stats.t.cdf((mu1 + B1_BOUND) / se, len(seeds) - 1)
+    p_hi = 1 - stats.t.cdf((B1_BOUND - mu1) / se, len(seeds) - 1)
+    print(f"  descriptive TOST on existing 10 seeds: p_lower={p_lo:.2e} p_upper={p_hi:.2e}")
+
+    sd_max_lock = float(y.std(0, ddof=1).max())
+    cov = np.cov(y, rowvar=False)
+    for label, mu, sd in [
+        ("primary, mu=0", 0.0, sd1),
+        ("primary, mu=observed", mu1, sd1),
+        ("primary, mu=0, sd=max per-LOCK sd", 0.0, sd_max_lock),
+        ("primary, mu=observed, sd=UCL80", mu1, sd_ucl(sd1, len(seeds))),
+    ]:
+        for target in (0.80, 0.90):
+            n = smallest_n(
+                lambda k, mu=mu, sd=sd: tost_power_mc(mu, sd, k, B1_BOUND, args.sims // 5, rng),
+                target,
+            )
+            print(
+                f"  [{label}] sd={sd:.4f} power>={target:.0%}: N_mc={n} "
+                f"N_normal={n_normal_approx(mu, sd, B1_BOUND, target)}"
+            )
+    for label, mu in [("IUT 5 LOCKs, mu=0", np.zeros(5)), ("IUT 5 LOCKs, mu=observed", y.mean(0))]:
+        for target in (0.80, 0.90):
+            n = smallest_n(
+                lambda k, mu=mu: iut_power_mc(mu, cov, k, B1_BOUND, args.sims // 20, rng), target, 5
+            )
+            print(f"  [{label}] power>={target:.0%}: N_mc={n}")
+    for n in (10, 20, 30):
+        print(
+            f"  power at N={n}: primary(mu=obs)={tost_power_mc(mu1, sd1, n, B1_BOUND, args.sims, rng):.3f} "
+            f"IUT(mu=obs)={iut_power_mc(y.mean(0), cov, n, B1_BOUND, args.sims // 10, rng):.3f}"
+        )
+
+    print(f"\n== B-2 (Me3 delta, bits), bound +-{B2_BOUND:.2f} [component-test power only]")
+    sds = {}
+    for k, v in B2_TABLES.items():
+        a = np.array(v)
+        sds[k] = float(a.std(ddof=1))
+        print(f"  {k:34s} mean={a.mean():+.4f} sd={sds[k]:.4f}")
+    worst = max(sds, key=sds.get)
+    sd2 = sds[worst]
+    print(f"  planning sd = max over tables = {sd2:.4f} ({worst})")
+    sd2u = sd_ucl(sd2, 5)
+    print(f"  planning sd UCL80 (df=4) = {sd2u:.4f}")
+    for sd_label, sd in (("sd", sd2), ("sd_UCL80", sd2u)):
+        for mu in (0.0, -0.04):
+            for target in (0.80, 0.90):
+                n = smallest_n(
+                    lambda k, mu=mu, sd=sd: tost_power_mc(mu, sd, k, B2_BOUND, args.sims // 5, rng),
+                    target,
+                )
+                print(
+                    f"  [{sd_label}, mu={mu:+.2f}] power>={target:.0%}: N_mc={n} "
+                    f"N_normal={n_normal_approx(mu, sd, B2_BOUND, target)}"
+                )
+    for n in (10, 20):
+        print(
+            f"  power at N={n}: mu=0,sd={tost_power_mc(0.0, sd2, n, B2_BOUND, args.sims, rng):.3f} "
+            f"mu=-0.04,sd_UCL80={tost_power_mc(-0.04, sd2u, n, B2_BOUND, args.sims, rng):.3f}"
+        )
+
+    print(
+        "\n== Page trend test power (one-sided, alpha=0.05), no pilot data"
+        " [component-test power only]"
+    )
+    page_sims = max(args.sims // 50, 500)
+    for levels, label in ((7, "v0.8 LOCK_AFTER grid"), (5, "v0.9 onset grid")):
+        for n in (10, 20, 30):
+            row = []
+            for eff in (0.5, 1.0, 1.5):
+                row.append(
+                    f"range={eff}sd:{page_power_mc(levels, n, eff, 1.0, page_sims, rng):.2f}"
+                )
+            print(f"  {label} k={levels} N={n}: " + " ".join(row))
+
+    print(
+        "\n== v0.9 decorrelation deficit D(onset=0), SESOI 0.05 accuracy"
+        " [component-test power only]"
+    )
+    sd_d = sd_max_lock
+    sd_du = sd_ucl(sd_max_lock, len(seeds))
+    for sd_label, sd in (("sd=max per-LOCK Me7 sd", sd_d), ("sd_UCL80", sd_du)):
+        for n in (10, 20):
+            print(
+                f"  [{sd_label}={sd:.4f}] N={n}: "
+                f"one-sided t (mu=0.05) power={t_one_sided_power_mc(0.05, sd, n, args.sims, rng):.3f} "
+                f"TOST+-0.05 (mu=0) power={tost_power_mc(0.0, sd, n, B1_BOUND, args.sims, rng):.3f}"
+            )
+
+    # ---------------------------------------------------------------
+    # Complete decision rules
+    # ---------------------------------------------------------------
+    rs = max(args.sims // 5, 2000)  # sims per scenario
+    print("\n== COMPLETE RULE v0.7 E-1 (+ fixed-sequence E-1b), quantised Me7")
+    print("   classes from the 90% CI vs +-0.05: " + ", ".join(CLASS_NAMES))
+    infl = (sd_ucl(sd1, len(seeds)) / sd1) ** 2
+    for label, mu, cv in [
+        ("mu=observed per-LOCK, cov=observed", y.mean(0), cov),
+        ("mu=0, cov=observed", np.zeros(5), cov),
+        ("mu=observed per-LOCK, cov x UCL80 inflation", y.mean(0), cov * infl),
+    ]:
+        for n in (20, 30):
+            e1, e1b = v07_b1_rule(mu, cv, n, rs, rng)
+            print(f"  [{label}] N={n}: {class_probs(e1)} | E-1b claim={e1b.mean():.3f}")
+
+    print("\n== COMPLETE RULE v0.7 E-2 (normal model, planning SDs from other configs)")
+    for sd in (sd2, sd2u):
+        for mu in (0.0, -0.04, 0.04):
+            for n in (20, 25, 30):
+                x = rng.normal(mu, sd, (rs, n))
+                lo, hi = ci90(x)
+                codes = classify(lo, hi, B2_BOUND)
+                print(f"  [sd={sd:.4f} mu={mu:+.2f}] N={n}: {class_probs(codes)}")
+
+    print("\n== v0.8 Page: range giving 80% component power (k=7, sd_seed=1)")
+    for n in (20, 30):
+        for eff in (0.6, 0.65, 0.7, 0.75):
+            pw = v08_rule(n, eff, -np.inf, 0.0, rs, rng)[1]
+            print(f"  N={n} range={eff:.2f}sd: Page power={pw:.3f}")
+
+    print("\n== COMPLETE RULE v0.8: Supported = Page p<.05 AND median endpoint diff > guard")
+    print("   guard in within-seed SD units; q = per-block rank-exclusion probability;")
+    print("   protocol failure if <70% of blocks complete (no replacement)")
+    for n in (20, 30):
+        for q in (0.0, 0.05, 0.10):
+            for eff in (0.75, 1.0, 1.5):
+                row = []
+                for g in (0.0, 0.25, 0.5, 1.0):
+                    sup, _, fail = v08_rule(n, eff, g, q, rs, rng)
+                    row.append(f"g={g}:{sup:.2f}")
+                print(
+                    f"  N={n} q={q:.2f} range={eff}sd: " + " ".join(row) + f" | P(fail)={fail:.3f}"
+                )
+
+    print("\n== COMPLETE RULE v0.9 (three axes; D quantised to 1/512)")
+    sd9 = sd_ucl(sd_max_lock, len(seeds))  # planning SD UCL80 = 0.0605
+    for n in (20, 30):
+        for sd in (sd9,):
+            for rho in (0.0, 0.5):
+                for profile in ("linear", "early"):
+                    for mu0 in (0.0, 0.05, 0.075, 0.10):
+                        r = v09_rule(n, mu0, profile, sd, rho, rs, rng)
+                        txt = " ".join(f"{k.strip()}={v:.3f}" for k, v in r.items())
+                        print(f"  N={n} sd={sd:.4f} rho={rho} {profile:6s} mu0={mu0:.3f}: {txt}")
+
+    print("\n== v0.9 N selection: early profile, mu0=0.05, rho=0 (conservative), sd=0.0605")
+    print("   permutation-calibrated Page; select N with estimate - 2 MC SE >= 0.80")
+    for n in (30, 31, 32, 33, 34):
+        sims = 100_000
+        pw = v09_rule(n, 0.05, "early", sd9, 0.0, sims, rng)["headline D-1&D-2"]
+        se = math.sqrt(pw * (1 - pw) / sims)
+        print(f"  N={n}: P(A+ and C+)={pw:.4f} (MC SE {se:.4f}, lower={pw - 2 * se:.4f})")
+
+    v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, len(seeds), sd2, sd2u)
+    v08_threshold_and_v09_secondary(args)
+    return 0
+
+
+def v08_threshold_and_v09_secondary(args) -> None:
+    """PI decisions 2026-10-24 (own generator: earlier tables are unchanged)."""
+    rng = np.random.default_rng(20261024)
+    sims = max(args.sims // 5, 2000)
+    print("\n== v0.8 protocol-failure threshold: P(fail) exact binomial, by q and N")
+    for thr in (0.70, 0.80):
+        for q in (0.077, 0.149, 0.275):
+            row = [stats.binom.cdf(math.ceil(thr * n) - 1, n, 1 - q) for n in (20, 30, 40)]
+            print(
+                f"  threshold={thr:.2f} q={q:.3f}: "
+                + " ".join(f"N={n}:{p:.3f}" for n, p in zip((20, 30, 40), row, strict=True))
+            )
+    print(f"\n== v0.8 complete rule at q=0.149 (0/10 pilot), trend g+0.70 SD, {sims} draws")
+    for thr in (0.70, 0.80):
+        for g in (0.0, 0.25, 0.5):
+            out = []
+            for n in (20, 25, 30, 35, 40):
+                sup, _, fail = v08_rule(n, g + 0.70, g, 0.149, sims, rng, threshold=thr)
+                out.append(f"N={n}:{sup:.3f}(fail {fail:.3f})")
+            print(f"  threshold={thr:.2f} g={g}: " + " ".join(out))
+    print("\n== v0.9 secondary arms: exact noncentral-t power, planning SD of D 0.0605")
+    for r in (0.0, 0.5):
+        sd_c = 0.0605 * math.sqrt(2 * (1 - r))
+        for n in (20, 32, 40):
+            mit = [_t_power_one_sided(e, sd_c, n) for e in (0.05, 0.025, 0.0125)]
+            lock = [_t_power_two_sided(e, sd_c, n, ALPHA / 3) for e in (0.05, 0.025)]
+            print(
+                f"  corr={r} N={n}: mitigation M=.05/.025/.0125 one-sided "
+                + "/".join(f"{x:.2f}" for x in mit)
+                + "; lock contrast .05/.025 two-sided at alpha/3 "
+                + "/".join(f"{x:.2f}" for x in lock)
+            )
+        for e in (0.025, 0.0125):
+            n_req = next(n for n in range(3, 5000) if _t_power_one_sided(e, sd_c, n) >= 0.80)
+            print(f"  corr={r}: N for 0.80 at mitigation M={e}: {n_req}")
+
+
+def _t_power_one_sided(delta: float, sd: float, n: int, alpha: float = ALPHA) -> float:
+    df = n - 1
+    nc = delta / (sd / math.sqrt(n))
+    return float(1 - stats.nct.cdf(stats.t.ppf(1 - alpha, df), df, nc))
+
+
+def _t_power_two_sided(delta: float, sd: float, n: int, alpha: float) -> float:
+    df = n - 1
+    nc = delta / (sd / math.sqrt(n))
+    c = stats.t.ppf(1 - alpha / 2, df)
+    return float(1 - stats.nct.cdf(c, df, nc) + stats.nct.cdf(-c, df, nc))
+
+
+def v07_half_bounds(args, y, cov, sd1, mu1, sd_max_lock, n_seeds, sd2, sd2u) -> None:
+    """v0.7 at the PI-decided bounds (+-half-threshold) and N = 30.
+
+    Uses its own generator so that every earlier table (including the
+    v0.7 tables at +-threshold, kept for reference, and the v0.8/v0.9
+    tables quoted in their drafts) is reproduced bit for bit.
+    """
+    rng = np.random.default_rng(args.seed + 707)
+    b1, b2, n0 = V07_B1_BOUND, V07_B2_BOUND, V07_N
+    sims = args.sims
+    rs = max(args.sims // 5, 2000)
+    print(f"\n== v0.7 DECIDED: bounds +-{b1:.3f} (B-1) / +-{b2:.2f} bit (B-2), N={n0}")
+    se = sd1 / math.sqrt(n_seeds)
+    p_lo = 1 - stats.t.cdf((mu1 + b1) / se, n_seeds - 1)
+    p_hi = 1 - stats.t.cdf((b1 - mu1) / se, n_seeds - 1)
+    print(f"  descriptive TOST +-{b1} on existing 10 seeds: p_lower={p_lo:.2e} p_upper={p_hi:.2e}")
+
+    print("  -- B-1 E-1 component TOST [component-test power only]")
+    sd1u = sd_ucl(sd1, n_seeds)
+    for label, mu, sd in [
+        ("mu=0, sd=obs", 0.0, sd1),
+        ("mu=observed, sd=obs", mu1, sd1),
+        ("mu=observed, sd=UCL80", mu1, sd1u),
+        ("mu=0, sd=max per-LOCK sd", 0.0, sd_max_lock),
+    ]:
+        pw = tost_power_mc(mu, sd, n0, b1, sims, rng)
+        n80 = n_needed(
+            lambda k, mu=mu, sd=sd: tost_power_chunked(mu, sd, k, b1, sims // 5, rng), 0.80, 3, 2000
+        )
+        print(
+            f"  [{label}] sd={sd:.4f} power@N={n0}={pw:.3f} N80_mc={n80} "
+            f"N80_normal={n_normal_approx(mu, sd, b1, 0.80)}"
+        )
+
+    print("  -- B-1 complete rule (quantised; 90% CI classes; E-1 -> E-1b sequence)")
+    infl = (sd1u / sd1) ** 2
+    rs_n = max(rs // 10, 2000)
+    for label, mu, cv in [
+        ("mu=observed per-LOCK, cov=observed", y.mean(0), cov),
+        ("mu=0, cov=observed", np.zeros(5), cov),
+        ("mu=observed per-LOCK, cov x UCL80 inflation", y.mean(0), cov * infl),
+    ]:
+        e1, e1b = v07_b1_rule(mu, cv, n0, rs, rng, bound=b1)
+        print(f"  [{label}] N={n0}: {class_probs(e1)} | E-1b claim={e1b.mean():.3f}")
+        n_e1 = n_needed(
+            lambda k, mu=mu, cv=cv: float(
+                np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[0] == EQUIV)
+            ),
+            0.80,
+            3,
+            400,
+        )
+        n_e1b = n_needed(
+            lambda k, mu=mu, cv=cv: float(np.mean(v07_b1_rule(mu, cv, k, rs_n, rng, bound=b1)[1])),
+            0.80,
+            3,
+            400,
+        )
+        print(f"     N for 0.80: E-1 equivalent={n_e1} | E-1 and E-1b={n_e1b} (None = > 400)")
+
+    print("  -- B-2 complete rule (normal model; planning SDs from OTHER estimators)")
+    for sd in (sd2, sd2u):
+        for mu in (0.0, -0.02, -0.04):
+            x = rng.normal(mu, sd, (rs, n0))
+            lo, hi = ci90(x)
+            codes = classify(lo, hi, b2)
+            n80 = n_needed(
+                lambda k, mu=mu, sd=sd: tost_power_chunked(mu, sd, k, b2, sims // 5, rng),
+                0.80,
+                3,
+                4000,
+            )
+            print(
+                f"  [sd={sd:.4f} mu={mu:+.2f}] N={n0}: {class_probs(codes)} | "
+                f"N80_mc={n80} N80_normal={n_normal_approx(mu, sd, b2, 0.80)}"
+            )
+    print("  -- v0.7 N selection: E-2 planning case mu=-0.02, sd=UCL80, exact TOST power")
+    for n in range(90, 101):
+        print(f"  N={n}: exact power={tost_power_exact(-0.02, sd2u, n, b2):.5f}")
+    n_sel = next(n for n in range(3, 2000) if tost_power_exact(-0.02, sd2u, n, b2) >= 0.80)
+    pw_mc = tost_power_chunked(-0.02, sd2u, n_sel, b2, 400_000, rng)
+    se_mc = math.sqrt(pw_mc * (1 - pw_mc) / 400_000)
+    print(f"  selected N={n_sel} (V07_N={n0}); MC check 400k draws: {pw_mc:.4f} (SE {se_mc:.4f})")
+    for target in (0.80,):
+        for mu in (0.0, -0.02):
+            sd_max = sd_for_power(mu, n0, b2, target, sims, rng)
+            print(
+                f"  largest SD giving P(equiv)>={target:.2f} at N={n0}, mu={mu:+.2f}: {sd_max:.4f}"
+            )
+
+
+def sd_for_power(mu: float, n: int, bound: float, target: float, sims: int, rng) -> float:
+    """Largest per-seed SD at which TOST power at N reaches `target` (bisection)."""
+    lo, hi = 1e-4, bound * 4
+    for _ in range(30):
+        mid = (lo + hi) / 2
+        if tost_power_mc(mu, mid, n, bound, sims, rng) >= target:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

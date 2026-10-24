@@ -1,0 +1,586 @@
+# OSF pre-registration amendment — bouba_sens v0.8 (subspace shift vs LOCK_AFTER)
+
+**Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
+**Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN` (unchanged by this draft)
+**Previous amendment on file:** `amendment-v0.6-sprint10-17.md`
+**Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`
+**Amendment tag on file:** `bouba_sens/v0.8-subspace-shift` (to be created at filing)
+**Draft date:** 2026-10-23
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4).
+**Pre-registration id:** **N19** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0022** (proposed — PI confirms at filing)
+
+> **Filing note.** This is the machine-readable draft. Nothing in this
+> file has been run. The metric, probe capture, control arm, rank rules,
+> aggregation and Page test are merged with unit tests (PRs #10 and #13:
+> `metrics/subspace.py`, `subspace_protocol.py`,
+> `metrics/subspace_aggregate.py`, `metrics/page_trend.py`). Still
+> missing: the driver that trains the Phase-1 checkpoints and calls
+> `capture_block` for every (seed, lock) block, the S-2 to S-5 analyses
+> and the secondary parameter-subspace metric (§9). All of it is frozen
+> (commit hash on the OSF form) before any confirmatory seed runs. Pilot
+> seeds (§7) may run before filing.
+
+---
+
+## 1. What is being amended
+
+The amendment adds **one new outcome metric**, a representation
+subspace shift after late lesion, and **one new confirmatory
+hypothesis**: the shift shows an increasing ordered trend with the
+critical-period lock time `LOCK_AFTER` (higher levels tend to have
+higher within-seed ranks). The test does not establish strict
+monotonicity (§6). No existing threshold, metric or
+verdict changes.
+
+This is **not** a rescue of the retracted §5.5 claim. §5.5 claimed a
+*peaked* (inverted-U) dose-response of the *performance* gap Me7. Here
+the outcome is a *geometric* quantity, the prediction is an
+*increasing ordered trend*, not a peak,
+and Me7 plays no role in the decision. The ADR-0019 retraction stands
+whatever the outcome.
+
+## 2. Motivation
+
+Sui, Tan, Zhang, Khan, Hu & Chen, "Do More Modalities Always Help? A
+Geometric Perspective on Missing-Modality Robustness" (arXiv:2610.04792,
+v2 revised 2026-10-13; the arXiv comment reads "NeurIPS 2026 Main
+Conference"), report that multimodal training induces structured
+rotations of principal parameter subspaces, mainly in cross-modal
+interaction layers. These rotations go with larger representation harm
+when a modality is missing at inference. In bouba_sens, `LOCK_AFTER` is
+the step at which the cross-modal constellation (the interaction
+component) is frozen during full-modality Phase 1 training. A later
+lock leaves the interaction component plastic for longer under
+multimodal training. Sui et al. would therefore predict stronger
+cross-modal dependency and a larger representational reorganisation
+when one modality is later lesioned.
+
+Two lessons from Q3/Q3+ shape the design:
+
+- A Jonckheere-type test was the wrong instrument for a peaked
+  hypothesis (critic v2, ADR-0019). Here the hypothesis is an
+  increasing ordered trend, and the test is a repeated-measures ordered
+  trend test.
+- A single seed was misleading. The design uses 20 seeds as blocks.
+
+The direction is derived by analogy: Sui et al. study parameter
+subspaces in other architectures, and bouba_sens has not been tested.
+
+The primary metric S is not Sui et al.'s quantity and is not a
+replication of it. Sui et al. use the mean principal angle (in degrees)
+between **weight** singular subspaces as their diagnostic. S is the
+normalised chordal (squared sine) distance between **representation**
+subspaces, the top-k principal directions of the fused codes (§3). The
+secondary parameter-subspace metric of §3 is the closer analogue of
+their measurement.
+A significant trend in the opposite direction is reported as an
+exploratory contrary finding (§6).
+
+## 3. Metric definition (pre-registered)
+
+For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
+
+1. **Probe.** A fixed clean probe X of N = 512 samples, drawn as in
+   `AdaptationLoop.lesion_phase` (`world.sample(512, seed = s − 99_999)`).
+   The probe is decoupled from the training batch size, which stays 16.
+2. **Codes.** Z_pre ∈ ℝ^{512×896}: full fused representation
+   (`probe_pool="full"`) of X through the Phase-1 checkpoint at Phase-2
+   entry. Z_post: the same probe, presented clean on all channels,
+   through the network after the 100-step lesion phase. Both are already
+   captured as `pre_lesion_codes` / `post_lesion_codes`.
+   **Hard-demodulation probe rule (PI decision 2026-10-23).** Both
+   captures use deterministic argmax demodulation of the carriers
+   (`demodulate(hard=True)`, one-hot code distribution into the
+   codebook), not the Gumbel-softmax sampling used in training. The
+   same checkpoint therefore always yields bit-identical codes, with no
+   random draw in the subspace measurement. Training and lesion-phase
+   steps are unchanged; only the two probe captures use the hard path
+   (`probe_demod="hard"`).
+3. **Subspaces.** Column-centre each matrix. V_pre, V_post ∈ ℝ^{896×k}
+   are the top-k right singular vectors, i.e. the top-k principal
+   directions in feature space. **k is fixed on the pilot (PI decision
+   2026-10-24)** by this deterministic rule, frozen before any
+   confirmatory seed: for every pilot block (s, ℓ) with s in 2101–2110,
+   compute the plug-in participation ratio PR = (Σ λ)² / Σ λ² of the
+   centred covariance of its Z_pre (hard-demodulated, 512 × 896);
+   k* = the median of these PRs (mean of the two middle values for an
+   even count), rounded half up, clamped to [1, 255] (255 = the centred
+   rank bound of a 256-row split half). Non-finite Z_pre is a technical
+   failure, as in §3.1, and is not silently dropped. Only pilot data
+   enter the rule; k* and every PR are recorded on the OSF form before
+   filing and reported in the paper. Implemented as
+   `bouba_sens.metrics.subspace.select_k_from_pilot`, unit tests
+   `tests/unit/test_subspace_k_selection.py`. The plain (plug-in)
+   participation ratio was confirmed by the PI on 2026-10-24; the
+   finite-sample-corrected ratio of Chun et al. (§9) is reported
+   alongside only and never changes k*. Context: the ADR-0019
+   Me3 probe had a participation ratio of 11.7 (two-NN 12.4), which
+   motivated the earlier fixed k = 12 (`K_DEFAULT`, kept only as the
+   code default until k* is fixed). Below, k denotes k*.
+4. **Principal angles.** θ₁…θ_k = arccos of the singular values of
+   V_preᵀ V_post.
+5. **Shift.** S(c) = (1/k) Σᵢ sin² θᵢ = 1 − ‖V_preᵀ V_post‖²_F / k ∈
+   [0, 1]. This is the normalised squared projection (chordal) distance
+   on the Grassmannian Gr(k, 896).
+6. **Training-drift control.** C(s, ℓ) is S computed for the *same*
+   Phase-1 checkpoint after 100 Phase-2 steps with **no lesion** (all
+   channels clean, same replay settings, same data seeds). This is arm
+   (a) "intact" of the design spec. It removes the shift that continued
+   training alone produces.
+7. **Lesion-specific shift.** ΔS(c) = S(c) − C(s, ℓ).
+8. **Per-block outcome.** Y(s, ℓ) = median of ΔS over the 15 T2 cells of
+   (s, ℓ) (5 lesioned modalities × 3 SNR levels).
+9. **Sampling-noise floor.** S_split(s, ℓ) is S between the top-k
+   subspaces of two disjoint random halves (256 / 256, split seed = s)
+   of Z_pre. It is shared by the 15 cells of (s, ℓ), reported, and used
+   in the magnitude guard (§6).
+10. **Rank guard and exclusion rules** (§3.1).
+11. **Seed mapping (frozen; implemented by `capture_block`).** For
+    seed s and lock ℓ: the Phase-1 checkpoint is trained with seed s
+    and `LOCK_AFTER` = ℓ (batch 16, 200 steps). Every Phase-2 arm of
+    the block (the no-lesion control and the 15 cells) restores that
+    checkpoint into a fresh loop and uses one Phase-2 seed, s, for the
+    probe (`world.sample(512, seed = s − 99_999)`) and for the fresh and
+    replay batches, and re-seeds the global torch RNG with s before the
+    arm, so lesion noise draws are common to the 16 arms. The 7 blocks
+    of a seed share the same Phase-2 seed and probe; only the
+    checkpoint (ℓ) differs. `run_grid.sh`, which gives every cell its
+    own seed (seed × 10 000 + cell count), is not used for v0.8.
+
+### 3.1 Rank guard, exclusion denominators and incomplete blocks
+
+A matrix *passes the rank check* if its column-centred numerical rank
+is at least k. The numerical rank is 0 if the largest singular value of
+the centred matrix is 0 (a zero or constant code); otherwise it is the
+number of singular values ≥ 1e-6 × the largest (which is then > 0).
+Unit tests cover zero and constant-code fixtures (rank 0, check
+failed). The check
+applies to every matrix that enters S: Z_pre (one per (s, ℓ)), Z_post
+(one per cell), the no-lesion control's end matrix (one per (s, ℓ)) and
+both 256-row split halves of Z_pre.
+
+- **Non-finite codes** (NaN/inf in any matrix) or a crash are
+  *technical failures*: the whole seed is replaced from the reserve
+  list (§7). Everything else below is an *outcome-dependent exclusion*
+  and is **never** replaced, because rank deficiency is a property of
+  the trained network, not of the infrastructure.
+- **Cell validity.** A T2 cell c is valid if Z_pre, Z_post(c), the
+  control matrix of its (s, ℓ) and both split halves pass. If Z_pre or
+  the control fails, all 15 cells of that (s, ℓ) are invalid.
+- **Block value.** Y(s, ℓ) is defined only if at least 12 of its 15
+  cells are valid; it is then the median over the valid cells.
+- **Complete seed block.** A seed is a complete block if Y(s, ℓ) is
+  defined at all 7 levels. The Page test, the magnitude guard and S-2/S-3
+  use complete blocks only, so both endpoint levels (ℓ = 25 and 175) are
+  defined for every analysed seed.
+- **Protocol failure.** If fewer than **70 %** of the N confirmatory
+  seeds are complete blocks (fewer than 14 of 20, 21 of 30 or 28 of
+  40), the experiment is reported as a protocol failure with no
+  verdict. (Changed on 2026-10-24 from 80 %; rationale in §10.)
+- **Reporting.** The number of invalid cells and of undefined Y is
+  reported per level ℓ, with denominators (N × 15 cells and N blocks
+  per level). If exclusions differ across levels, the paper states that
+  the selection of complete blocks may itself depend on ℓ.
+
+T1 cells are excluded from the primary metric: their pre-lesion codes
+come from an untrained network, so S would measure training from
+scratch, not lesion reorganisation.
+
+**Secondary metric (exploratory, closer to Sui et al.):** a
+parameter-subspace rotation. **Parameter list (frozen 2026-10-24,
+`interaction_parameter_names`):** the shared codebook projection
+`codebook.codebook` (64 × 128) and the `fc1.weight` and `fc2.weight`
+matrices (128 × 128) of the 20 pairwise transducers of
+`CrossModalNerve`, 41 matrices in the nerve's own order; biases, the
+1-D gate vector and modules outside the nerve are excluded. For each
+matrix, S between the top-k right singular subspaces at Phase-2 entry
+and Phase-2 end (weights not centred; k = min(k*, rank at entry);
+`parameter_subspace_shifts`). A matrix that is bit-identical before and
+after received no update (under HARD gating a transducer fires only
+when its gate condition holds) and is reported as **inactive**, not as
+a shift of 0. Per arm: ΔS_param = S(lesion cell) − S(no-lesion
+control) per active matrix; the block value is the median over the
+cells and active matrices, reported with the number of active
+matrices; the codebook value is also reported on its own, since the
+codebook is updated at every step. Exploratory, no decision.
+
+## 4. Conditions
+
+- World: `StudyforrestRealWorld` (4.5-modal real bridge), as in Q3/N12.
+- **Secondary world (exploratory, decided 2026-10-24): CC-film.**
+  `--world ccfilm` (`CCFilmWorld`: real audio and vision from a CC-BY
+  film, synthetic proprioception; ADR-0019 E1.3d), run only after the
+  confirmatory Studyforrest runs are complete, on the first 10
+  analysed confirmatory seeds (2001–2010, or their reserve
+  replacements), all 7 levels, same k*, protocol and analysis. Its
+  Page test and endpoint difference are reported descriptively with
+  their own exclusion counts; it supports no claim and never changes
+  the verdict. If the CC-film cache is absent on the filing host, the
+  arm is not run and this is stated. Rationale in §10.
+- `STEPS_TRAIN=200`, `STEPS_LESION=100`, batch 16, HARD gating, no
+  codebook lock, no gating schedule.
+- **SNR schedule: changed versus the historical grids (ADR-0020).** The
+  historical grids ran `m2_snr_schedule` with `k_steps` = 5000 over 100
+  lesion steps and only reached 19.21 / 19.41 / 19.80 dB for the
+  nominal floors −20 / −10 / +10 dB (ADR-0020, PR #14). Here every
+  lesion run uses SNR(t) = max(floor, 20 + (floor − 20) · min(1, t / k)),
+  t = 0 … 99, with **`k_steps` = 50** (the floor is reached at step
+  t = k, 0-indexed, and is held until the last lesion step, so
+  `k_steps` = N reaches the floor at step N, N ≤ 99). The floors −20.00 / −10.00 / +10.00 dB are reached at
+  step 50 and held to step 99; mean SNR over the 100 steps is −9.80 /
+  −2.35 / +12.55 dB. The three SNR levels f in the cell definition (§3)
+  are therefore distinct severities, which they were not historically.
+  Consequence: cell values are not comparable with the historical
+  grids. Code: `capture_block` defaults to `k_steps` = 50 (constant
+  `subspace_protocol.K_STEPS`), and `run_grid.sh` forwards `K_STEPS`
+  to `--k-steps` if a grid is ever run for this amendment. The CLI and
+  `m2_snr_schedule` defaults are unchanged.
+- **World check.** `--world studyforrest` falls back, without an
+  error, to a 2-modal stub when the real cache is absent
+  (`cli.py:54-63`); the driver records the world class and a run on the
+  stub is a technical failure.
+- **LOCK_AFTER ℓ ∈ {25, 50, 75, 100, 125, 150, 175}** (7 ordered
+  levels). All are below `STEPS_TRAIN`, so every T2 cell enters Phase 2
+  with a frozen constellation, and only the time of freezing varies.
+- Reference condition outside the trend test: LOCK_AFTER unset (never
+  locked). It is reported descriptively.
+- Per seed: 7 Phase-1 checkpoints, 7 × 15 T2 lesion runs, 7 no-lesion
+  control runs.
+
+## 5. Hypotheses
+
+| Id | Statement | Test |
+|----|-----------|------|
+| **S-1** (primary) | Y(s, ℓ) shows an increasing ordered trend in ℓ | Page's L trend test, one-sided (increasing), blocks = seeds, 7 ordered treatments, α = 0.05 |
+| S-2 (exploratory) | Lesion-specific reorganisation exists: mean over seeds of Ȳ(s) = mean_ℓ Y(s, ℓ) is > 0 | one-sample t-test, one-sided; nominal p, no decision |
+| S-3 (exploratory) | Per-seed rank association | per-seed Spearman ρ(ℓ, Y); Wilcoxon signed-rank on ρ > 0, one-sided; nominal p, no decision |
+| S-4 (exploratory) | ΔS tracks performance harm | Spearman between cell ΔS and the cell's T2 Me1 drop; no decision |
+| S-5 (exploratory) | Parameter-subspace rotation shows the same trend | same Page test on the secondary metric; no decision |
+
+Only S-1, with its magnitude guard, is confirmatory. S-2 to S-5 are
+exploratory: they are reported with nominal p-values, labelled
+exploratory, and cannot support a claim on their own or replace S-1.
+
+**Page test, frozen method.** L = Σ_ℓ j(ℓ) · R_ℓ, where R_ℓ is the sum
+over complete blocks of the within-seed rank of Y(s, ℓ) among the 7
+levels, j(ℓ) = 1…7 in increasing ℓ, and ties get mid-ranks. The p-value
+is a **within-block permutation** test: the 7 ranks of each seed are
+permuted independently, 100 000 permutations, generator seed 20261023,
+p = (1 + #{L_perm ≥ L_obs}) / (1 + 100 000). Validity rests on the null
+hypothesis that, within each seed, the 7 values are exchangeable
+across levels (no level effect); seeds are independent blocks. Under
+that assumption the test is exact up to Monte Carlo error and valid with
+ties.
+
+*What a significant L shows.* A small p-value shows that higher levels
+tend to receive higher within-seed ranks. It does not show that every
+adjacent step increases: a profile rising over six levels and falling
+at the last can still give a very small p. Claims are therefore worded
+as an "increasing ordered trend", never as "monotone". To describe the
+shape, the paper reports (no decision) the median over seeds of each
+adjacent difference Y(s, ℓ_{j+1}) − Y(s, ℓ_j) with its 90 % bootstrap
+CI. Reference implementation:
+`page_perm_pvalue` in `scripts/power_prereg_2026_10.py`. The
+asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
+p-values are reported alongside; the permutation p-value decides.
+
+Sensitivity analyses (reported, no decision): k ∈ {⌊k*/2 + 0.5⌋, 2k*}
+(at least 1, at most 255; {6, 24} if k* = 12); nominal-floor (−20 dB, reached)
+cells only; per lesioned modality. Also k ∈ {k* − 4, k* + 4} (at least 1; descriptive;
+exploratory): plug-in empirical singular vectors leak out of the
+population subspace, with a bias that grows for directions of smaller
+singular value (Song, Yang & Ma, "Bias-Corrected Subspace Intersection:
+Minimax-Optimal Shared Subspace Estimation in Multi-View Data",
+arXiv:2609.05617, a different estimation problem, cited for the bias
+mechanism only). Directions near the k* cutoff are the most
+affected, so S could vary with ℓ through spectrum changes alone. The
+S_split floor (§3, item 9) partly controls for this.
+
+*Subspace stability (reported, no decision).* For every Z_pre and Z_post
+the eigengap ratio λ_k* / λ_(k*+1) of the centred covariance is reported per
+cell (arXiv:2609.05617 motivates this report; descriptive). A
+ratio below 1.1 marks a top-k* subspace that is unstable to small
+perturbations; the share of such matrices is reported per level, and
+the S-1 test is repeated on blocks without them as a sensitivity
+analysis.
+
+## 6. Decision criteria (pre-stated)
+
+The verdicts are exhaustive and mutually exclusive, evaluated in
+this order:
+
+- **Protocol failure:** fewer than 70 % complete blocks (§3.1). No
+  verdict.
+- **Supported:** S-1 permutation p < 0.05 **and** the median over
+  complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
+  over the complete blocks and all 7 levels. **Magnitude guard (PI
+  decision 2026-10-24: median S_split, as drafted).** This is a
+  **heuristic guard**, not a calibrated noise test and not a SESOI: the half-sample
+  pre/pre distance is not the sampling distribution of the full-sample,
+  control-subtracted endpoint contrast. The guard is part of one
+  conjunctive rule; the Page p-value alone is not advertised as a
+  separate finding.
+- **Detectable but sub-floor:** S-1 p < 0.05, magnitude guard fails.
+  Reported as "an increasing ordered trend was detected, but its
+  endpoint size does not exceed the heuristic half-sample threshold"; no
+  substantive geometric claim.
+- **Not demonstrated:** S-1 p ≥ 0.05. Reported as "an increasing
+  ordered trend of the subspace shift with LOCK_AFTER was not demonstrated at N"; this
+  is not evidence that no trend exists.
+
+Independently of the verdict, the mirrored (decreasing) Page test is
+reported as an exploratory result. If its p < 0.05, the paper calls it
+an exploratory contrary trend; the confirmatory direction was
+increasing.
+
+Paper consequence: if Supported, the paper may state a pre-registered
+increasing ordered trend of a geometric quantity with lock timing,
+above a heuristic magnitude threshold. It is a new result, not a
+B-1 rescue: §5.5 stays retracted and Me7 is not re-interpreted. All
+outcomes are publishable.
+
+## 7. Seeds, power and stopping rule
+
+- **Pilot seeds (PI decision 2026-10-24): exactly 10, 2101–2110,
+  fixed before the pilot runs; never extended.** They are used to
+  validate the pipeline, fix k* (§3 item 3), check the rank guard and
+  estimate the within-seed SD of Y, the median S_split and the
+  exclusion rate. Order: k* is computed from the pilot Z_pre first,
+  then every pilot quantity that depends on k (rank checks, S, S_split,
+  Y) is computed with k*. Pilot data are excluded from every
+  confirmatory test.
+- **Confirmatory seeds:** the first N of 2001, 2002, …, 2040 in order
+  (N = 20: 2001–2020), disjoint from every seed used so far (0–4,
+  Q3/Q3+, N12) and from the v0.7 / v0.9 drafts. **Reserve:** the four
+  seeds that follow the last confirmatory seed (N = 20: 2021–2024), for
+  technical replacement only.
+- **Power (no pilot data yet).** `scripts/power_prereg_2026_10.py`,
+  one-sided Page test (asymptotic for the component table; the
+  complete-rule table uses the permutation critical value,
+  `page_perm_crit`), 7 levels, linear trend
+  with a seed random intercept of 1 SD. Results are in units of the
+  within-seed SD of Y.
+
+  *Component-test power only* (Page test alone):
+
+  | N | range 0.5 SD | range 1.0 SD | range 1.5 SD |
+  |--:|-------------:|-------------:|-------------:|
+  | 10 | 0.36 | 0.80 | 0.98 |
+  | 20 | 0.58 | 0.98 | 1.00 |
+  | 30 | 0.72 | 1.00 | 1.00 |
+
+  For the Page test alone, N = 20 reaches 0.80 at a total trend of about
+  **0.70 within-seed SD** (0.75 at 0.65 SD, 0.81 at 0.70 SD); N = 30
+  reaches it at about 0.60 SD.
+
+  *Complete rule* (P(Supported): Page p < 0.05 **and** median endpoint
+  difference > guard g, with g = median S_split expressed in
+  within-seed SD units; each seed block independently lost to rank
+  exclusion with probability q, no replacement; protocol failure if
+  < 70 % complete blocks):
+
+  | N | q | range | g = 0 | g = 0.25 | g = 0.5 | g = 1.0 | P(protocol failure) |
+  |--:|--:|------:|------:|---------:|--------:|--------:|--------------------:|
+  | 20 | 0 | 0.75 SD | 0.84 | 0.81 | 0.69 | 0.25 | 0.000 |
+  | 20 | 0 | 1.0 SD | 0.97 | 0.96 | 0.90 | 0.50 | 0.000 |
+  | 20 | 0 | 1.5 SD | 1.00 | 1.00 | 1.00 | 0.90 | 0.000 |
+  | 20 | 0.10 | 1.0 SD | 0.96 | 0.93 | 0.87 | 0.50 | 0.002 |
+  | 30 | 0 | 1.0 SD | 1.00 | 0.99 | 0.94 | 0.51 | 0.000 |
+  | 30 | 0.10 | 1.0 SD | 0.99 | 0.98 | 0.93 | 0.50 | 0.000 |
+
+  (q = 0.10 rows regenerated on 2026-10-24 under the 70 % rule; the
+  q = 0 rows do not depend on the threshold.)
+
+  *At the planning exclusion rate of the fixed pilot* (q̂ = 0.149 at
+  0/10, trend ĝ + 0.70 SD, 20,000 draws, section "v0.8 complete rule at
+  q=0.149" of the script):
+
+  | Threshold | g | N = 20 | N = 25 | N = 30 | N = 35 | N = 40 |
+  |---|---|---:|---:|---:|---:|---:|
+  | 70 % | 0 | 0.72 | 0.80 | 0.87 | 0.91 | 0.94 |
+  | 70 % | 0.25 | 0.89 | 0.92 | 0.96 | 0.97 | 0.98 |
+  | 70 % | 0.5 | 0.93 | 0.94 | 0.97 | 0.98 | 0.99 |
+  | 80 % (earlier) | 0 | 0.62 | 0.69 | 0.75 | 0.79 | 0.82 |
+  | 80 % (earlier) | 0.25 | 0.76 | 0.80 | 0.83 | 0.84 | 0.86 |
+  | 80 % (earlier) | 0.5 | 0.79 | 0.82 | 0.84 | 0.85 | 0.86 |
+
+  These numbers are **conditional on the simulation model**: a linear
+  trend, Gaussian noise, a guard g treated as a fixed known constant,
+  and rank exclusions independent of the outcome and of ℓ. None of these
+  is verified. The guard dominates: when g is as large as the expected
+  endpoint difference, P(Supported) is about 0.5 whatever N. Exclusions
+  also cap the attainable power: with a per-block exclusion probability
+  of 0.20, the protocol-failure probability is 0.087 / 0.061 / 0.043 at
+  N = 20 / 30 / 40 under the 70 % rule (0.370 / 0.393 / 0.407 under the
+  earlier 80 % rule, which made 0.80 unconditional power unreachable).
+
+  *Drafted rule for N.* From the 10 pilot seeds: σ̂ =
+  residual SD of Y from the two-way ANOVA without replication (seed ×
+  level) fitted on the **complete** pilot blocks only (df = (n_c − 1) ×
+  6 for n_c complete blocks; at least 3 complete blocks are needed;
+  with fewer, the pilot is **not** extended and the amendment is not
+  filed as drafted), inflated to its one-sided UCL80 (χ², same df); ĝ = pilot
+  median S_split / σ̂. The planning exclusion rate q̂ is the exact
+  (Clopper–Pearson) one-sided **80 % upper bound** of the pilot
+  incomplete-block fraction, not the point estimate: 0/5 incomplete
+  gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077; with the fixed
+  10-seed pilot, q̂ = 0.149 at 0/10. A large q̂ can still make the
+  target unreachable (q̂ = 0.275 gives a protocol-failure probability of
+  about 0.29 at every N ≤ 40 under the 70 % rule); because the pilot size is fixed, the
+  Clopper–Pearson bound keeps its nominal coverage (no data-dependent
+  extension). N is the smallest N ≥ 20 for which
+  the simulated P(Supported), **minus two Monte-Carlo SEs**, is ≥ 0.80,
+  with at least 100 000 draws per candidate, the permutation-calibrated
+  Page test and a total trend of ĝ + 0.70 SD units.
+  If no N ≤ 40 qualifies (for example because q̂ is large), the
+  amendment is not filed as drafted: the PI either files N = 40 with its
+  computed power stated on the form as below target, or revises the
+  rank rule before filing (k* is fixed by the rule of §3 item 3 and is
+  not tuned to reach power). N is fixed on the OSF form; it is never
+  below 20.
+- **Fixed-N design.** There is no interim look at outcomes and no
+  optional stopping. A technical failure (crash, non-finite codes,
+  missing capture) is replaced from the reserve list in order, blind to
+  the outcome. Rank exclusions are not replaced (§3.1). If more than 4
+  replacements are needed, the run halts and a deviation note is filed.
+  Extending N after an inconclusive result needs a new amendment filed
+  before the new data.
+- **Runtime.** Per seed: 7 Phase-1 runs (200 steps), 7 × 15 = 105 T2
+  lesion runs and 7 no-lesion control runs (100 steps each, probe 512),
+  plus 112 × 3 SVDs of 512 × 896 or 256 × 896 matrices. At N = 20 this
+  is 2,240 Phase-2 runs and 140 Phase-1 runs (3,360 / 210 at N = 30).
+  No timing exists for probe-512 captures; the pilot measures the
+  runtime per seed on the filing host, and the estimate is recorded on
+  the OSF form.
+
+## 8. What is NOT being amended
+
+- Thresholds 0.05 / 0.10 / 0.02 and every existing metric.
+- ADR-0019 verdicts and the §5.5 FINAL text.
+- The Q3/N12 LOCK_AFTER grid {50, …, 150}. This amendment adds levels
+  25 and 175 for its own outcome only.
+
+## 9. Pre-registration fidelity checklist
+
+- [ ] Filed on OSF by the PI before any confirmatory seed (2001–2044) is run.
+- [x] Metric code + unit tests merged (PR #10,
+      `tests/unit/test_metrics_subspace.py`: S = 0 for identical
+      subspaces, S = 1 for orthogonal subspaces, invariance to basis
+      rotation, rank 0 for zero/constant codes). Commit hash recorded on
+      the OSF form at filing.
+- [ ] Driver merged with unit tests: Phase-1 checkpoints per (seed,
+      lock), `capture_block` per block with the seed mapping of §3
+      item 11, world-class check, aggregation and Page test end to end;
+      S-2 to S-5 analyses; secondary parameter-subspace metric (after
+      the parameter list of §3.1); CC-film exploratory arm (§4).
+- [x] Secondary-metric parameter list and per-matrix shift implemented
+      (`interaction_parameter_names`, `parameter_subspace_shifts`, unit
+      tests `tests/unit/test_subspace_parameters.py`).
+- [x] Pilot rule for k (§3 item 3, PI decision 2026-10-24) implemented
+      with unit tests (`select_k_from_pilot`,
+      `tests/unit/test_subspace_k_selection.py`: definition, equal
+      spectrum, invariances, zero codes, round half up, even-count
+      median, order-free, clamps, non-finite refused).
+- [ ] k* computed on the 10 pilot seeds and recorded on the form with
+      every pilot PR. Descriptive alongside it (does not change k*): the
+      finite-sample-corrected participation ratio of Chun, Canatar,
+      Chung & Lee, "Estimating Dimensionality of Neural Representations
+      from Finite Samples" (arXiv:2509.26560), on the same pilot codes,
+      next to the ADR-0019 value 11.7.
+- [x] Probe-size parameter (512, decoupled from batch 16), hard
+      demodulation and the no-lesion control arm implemented (PR #13,
+      `lesion_phase(probe_size, probe_seed, probe_demod)`,
+      `subspace_protocol.capture_block`, default `k_steps` = 50).
+- [x] Rank checks of §3.1 implemented with unit tests (rank-deficient
+      control invalidates its 15 cells; 12-of-15 rule; complete-block
+      selection; seed roster with reserve replacement), and the Page
+      permutation test implemented (`metrics/page_trend.py`, PR #13).
+- [ ] Pilot (exactly 10 seeds, 2101–2110) within-seed SD of Y, median
+      S_split, rank-exclusion rate and runtime recorded on the form; N
+      fixed on the form.
+- [x] No threshold or existing-metric change.
+- [x] Hypothesis is an increasing ordered trend; no peaked-shape test.
+- [x] Seeds disjoint from all previous and sibling-draft seeds.
+
+## 10. Open decisions (PI, before filing)
+
+Every item below must be resolved, and the text edited to a single
+protocol, before filing. This draft is not fileable while any item is
+open; the metric code, the pilot and a regenerated power analysis for
+the final configuration are also filing prerequisites.
+
+Decided by the PI on 2026-10-23 and applied above (no longer open):
+hard-demodulation probe captures (§3 item 2); SNR ramp `k_steps` = 50
+(§4, ADR-0020).
+
+Decided by the PI on 2026-10-24 and applied above (no longer open):
+magnitude guard = median S_split, a heuristic guard (§6); k re-estimated
+on the pilot by the frozen rule of §3 item 3 (k*); pilot fixed at 10
+seeds, 2101–2110, never extended (§7). Pre-registration id **N19**,
+verdict ADR **ADR-0022**, amendment v0.8, as proposed in the header
+(proposed — PI confirms at filing).
+
+Decided on 2026-10-24 (second PI round, "if you find better, do it"):
+each item below gives the decision, the rationale and what changed.
+
+1. **Rank-exclusion thresholds.**
+   - *12 of 15 valid cells per block: kept.* A block can lose up to
+     three cells (for example the three SNR levels of one lesioned
+     modality) and its median still rests on at least 12 cells of the
+     15, so at least four of the five lesioned modalities are
+     represented. A stricter rule would discard blocks for a single
+     modality's collapse; a looser one (for example 9 of 15) would let a
+     block's median rest on as few as three modalities. Unchanged.
+   - *Protocol-failure threshold: changed from 80 % to 70 % complete
+     blocks.* Under the planning exclusion rate of the fixed pilot
+     (q̂ = 0.149 at 0/10), the 80 % rule alone fails the run with
+     probability 0.167 / 0.149 / 0.131 at N = 20 / 30 / 40 and caps the
+     complete-rule power below 0.86 even at N = 40 (P(Supported) at a
+     trend of ĝ + 0.70 SD: 0.62–0.82 for g = 0 and 0.76–0.86 for
+     g = 0.25, N = 20–40). With 70 % the failure probability is
+     0.021 / 0.009 / 0.004, and the same targets give 0.72–0.94 and
+     0.89–0.98 (table in §7). The analysis uses complete blocks only, so a lower
+     threshold does not change any test's validity; the threshold
+     protects against level-dependent selection, which is still
+     reported per level (§3.1). 70 % keeps a clear majority of seeds.
+     The threshold is fixed before any data (`V08_COMPLETE_MIN` in
+     `scripts/power_prereg_2026_10.py`, section "v0.8
+     protocol-failure threshold").
+2. **N: rule kept (N ≥ 20, smallest N whose simulated P(Supported)
+   minus two Monte-Carlo SEs is ≥ 0.80, cap 40), now under the 70 %
+   threshold.** The rule is deterministic, uses pilot data only (σ̂,
+   ĝ, q̂) and is fixed before the confirmatory run; nothing in the
+   literature or the numbers favours a fixed N over it, because the
+   guard size, the within-seed SD and the exclusion rate are all
+   unknown before the pilot. Illustration at q̂ = 0.149 with a trend of
+   ĝ + 0.70 SD: under 70 %, N = 30 (g = 0; 0.799 at N = 25) and N = 20
+   (g ≥ 0.25) reach 0.80 at the point estimate; under the earlier 80 %
+   rule, N = 40 was needed at g = 0 and N = 25 at g = 0.25. Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
+   cap N = 40, 280 Phase-1 and 4,480 Phase-2 runs. Changed: only the
+   threshold used inside the simulation.
+3. **Secondary-metric parameter list: fixed now, before data**
+   (§3.1, `interaction_parameter_names`, unit tests
+   `tests/unit/test_subspace_parameters.py`): the codebook projection
+   and the 40 transducer weight matrices; inactive (never-updated)
+   matrices reported as inactive, not as zero shift. Rationale: these
+   are the parameters through which modalities interact in
+   `CrossModalNerve`; the gate vector is 1-D (no subspace) and the
+   encoders and head are not cross-modal. Changed: the list was
+   "fixed in code before filing" and is now fixed and implemented.
+4. **CC-film as a secondary world: yes, exploratory, on 10 seeds**
+   (§4). Rationale: the Studyforrest audio channel that the lesion
+   targets is an annotation proxy, while CC-film audio is the real
+   signal (ADR-0019 E1.3d, v0.7 §4.2), so a same-direction trend on
+   CC-film would show that the result does not hinge on the proxy.
+   Ten seeds keep the cost at half of the N = 20 confirmatory run
+   (70 Phase-1 + 1,120 Phase-2 runs); the Page test alone has about
+   0.80 power at a trend of 1.0 within-seed SD at N = 10 (§7), so the
+   arm is descriptive, not confirmatory. Changed: from undecided to
+   this exploratory arm.
+
+No design decision remains open. Filing still needs the driver,
+the S-2 to S-5 analyses and the secondary metric in the driver, the
+pilot, N by the rule of §7, and the PI's confirmation of the proposed
+numbers.
+

@@ -77,6 +77,15 @@ locked. Honest scope ; no overselling.
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
 - OSF registration : `10.17605/OSF.IO/Q6JYN`, amendment v0.6
+- Draft OSF amendments v0.7–v0.9 (2026-10-23), **DRAFT — not yet filed
+  on OSF (to be filed by the PI)**: TOST equivalence for B-1/B-2
+  (`docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`),
+  subspace shift vs `LOCK_AFTER`
+  (`docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md`),
+  decorrelation-window lesion
+  (`docs/osf/amendment-v0.9-decorrelation-window-2026-10-23.md`).
+  None alters Q6JYN or ADR-0019; power analysis in
+  `scripts/power_prereg_2026_10.py`.
 - Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
 
 ## Headline findings (v0.5.5)

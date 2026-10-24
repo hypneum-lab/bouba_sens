@@ -29,6 +29,11 @@ CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 # HARD during Phase 1 (0..200), GUMBEL during Phase 2 (200..300) for T2 cells.
 GATING_SCHEDULE="${GATING_SCHEDULE:-}"
 GATING_TARGET="${GATING_TARGET:-}"
+# ADR-0020 / amendments v0.7-v0.8: M2 SNR ramp length, forwarded as
+# --k-steps to every lesion cell (frozen at 50 for the v0.7 and v0.8
+# confirmatory grids). Empty = CLI default (5000), as in the historical
+# grids, whose floors only reached 19.21 / 19.41 / 19.80 dB.
+K_STEPS="${K_STEPS:-}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -111,6 +116,7 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
                 [[ -n "${GATING_TARGET}" ]] && lesion_args+=(--transducer-gating-target "${GATING_TARGET}")
+                [[ -n "${K_STEPS}" ]] && lesion_args+=(--k-steps "${K_STEPS}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"

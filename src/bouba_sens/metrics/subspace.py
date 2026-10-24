@@ -25,12 +25,16 @@ outcome-dependent exclusion, never replaced).
 from __future__ import annotations
 
 import math
+import statistics
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 import torch
 from torch import Tensor
 
 K_DEFAULT = 12
 RANK_RTOL = 1e-6
+K_SELECTION_MAX = 255  # a 256-row split half has centred rank <= 255
 
 
 class SubspaceRankError(ValueError):
@@ -159,3 +163,106 @@ def eigengap_ratio(z: Tensor, k: int = K_DEFAULT) -> float:
     if ev.numel() == k or float(ev[k]) == 0.0:
         return math.inf
     return float(ev[k - 1] / ev[k])
+
+
+def participation_ratio(z: Tensor) -> float:
+    """Participation ratio (sum lambda)^2 / sum lambda^2 of the centred covariance.
+
+    Plug-in estimator, as in ADR-0019 E1.1 (11.7 on the Me3 probe). Zero or
+    constant codes give 0.0; non-finite codes raise ``ValueError``.
+    """
+    zc = _centred(z)
+    if zc.shape[0] < 2:
+        return 0.0
+    lam = torch.linalg.svdvals(zc) ** 2 / (zc.shape[0] - 1)
+    total = float(lam.sum())
+    if total == 0.0:
+        return 0.0
+    return total**2 / float((lam**2).sum())
+
+
+@dataclass(frozen=True)
+class KSelection:
+    """Result of the pilot rule for k (v0.8 section 3 item 3)."""
+
+    k: int
+    median_pr: float
+    prs: tuple[float, ...]
+    n_matrices: int
+
+
+def select_k_from_pilot(z_pres: Sequence[Tensor]) -> KSelection:
+    """k for the confirmatory run, from the pilot Z_pre matrices only.
+
+    Rule (PI decision 2026-10-24): the participation ratio of every pilot
+    Z_pre (one per pilot (seed, lock) block), its median (mean of the two
+    middle values for an even count), rounded half up, clamped to
+    [1, ``K_SELECTION_MAX``]. Deterministic and independent of the order
+    of the matrices. Non-finite codes raise ``ValueError`` (technical
+    failure; the matrix is not silently dropped).
+    """
+    if len(z_pres) == 0:
+        raise ValueError("select_k_from_pilot needs at least one pilot matrix")
+    prs = tuple(participation_ratio(z) for z in z_pres)
+    med = float(statistics.median(prs))
+    return KSelection(k_from_median_pr(med), med, prs, len(prs))
+
+
+def k_from_median_pr(median_pr: float) -> int:
+    """Round half up (11.5 -> 12, not banker's rounding) and clamp to [1, 255]."""
+    return min(max(math.floor(median_pr + 0.5), 1), K_SELECTION_MAX)
+
+
+# --- v0.8 secondary metric: parameter-subspace rotation (section 3.1) -------
+
+
+def interaction_parameter_names(nerve: torch.nn.Module) -> list[str]:
+    """Frozen list of the cross-modal interaction matrices of ``CrossModalNerve``.
+
+    ``codebook.codebook`` (the shared code-to-hidden projection), then
+    ``fc1.weight`` and ``fc2.weight`` of the 20 pairwise transducers in
+    the nerve's own order. Biases, the 1-D gate vector and non-nerve
+    modules are excluded (amendment v0.8, PI decision 2026-10-24).
+    """
+    names = ["codebook.codebook"]
+    for key in nerve.transducers:  # type: ignore[union-attr]
+        names += [f"transducers.{key}.fc1.weight", f"transducers.{key}.fc2.weight"]
+    return names
+
+
+def _top_right_singular(w: Tensor, k: int) -> Tensor:
+    w64 = _as_finite_f64(w)
+    _, s, vh = torch.linalg.svd(w64, full_matrices=False)
+    rank = _rank_from_svals(s)
+    if rank < k:
+        raise SubspaceRankError(f"numerical rank {rank} < k={k}")
+    v: Tensor = vh[:k].T.contiguous()
+    return v
+
+
+def parameter_subspace_shifts(
+    before: dict[str, Tensor], after: dict[str, Tensor], names: Sequence[str], k: int
+) -> dict[str, float | None]:
+    """S between the top-k right singular subspaces of each weight matrix.
+
+    Weights are not centred (a weight matrix is not a sample of codes);
+    k is ``min(k, rank)`` of the matrix at Phase-2 entry. A matrix that is
+    bit-identical before and after received no update (e.g. a transducer
+    that never fired under HARD gating) and is reported as ``None``
+    (inactive), not as a shift of 0.
+    """
+    _check_k(k)
+    out: dict[str, float | None] = {}
+    for name in names:
+        w0, w1 = before[name], after[name]
+        if torch.equal(w0, w1):
+            out[name] = None
+            continue
+        kk = min(k, _rank_from_svals(torch.linalg.svdvals(_as_finite_f64(w0))))
+        if kk < 1:
+            out[name] = None
+            continue
+        out[name] = subspace_shift_from_bases(
+            _top_right_singular(w0, kk), _top_right_singular(w1, kk)
+        )
+    return out
