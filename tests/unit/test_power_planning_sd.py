@@ -74,3 +74,8 @@ def test_selection_counterexample_is_controlled_by_the_safeguard() -> None:
     )
     assert ind["complete_only"] <= 0.05 + 3 * se
     assert ind["safeguarded"] <= ind["complete_only"] + 1e-12
+    lev = power.v08_rule_selection(
+        40, 0.0, 0.0, 0.149, sims, np.random.default_rng(3), exclusion="level"
+    )
+    assert lev["safeguarded"] <= 0.05 + 3 * se
+    assert 0.80 < lev["kept_fraction"] < 0.90  # same per-seed incompleteness q

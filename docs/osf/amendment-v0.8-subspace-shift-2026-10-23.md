@@ -171,9 +171,41 @@ both 256-row split halves of Z_pre.
 - **Block value.** Y(s, ℓ) is defined only if at least 12 of its 15
   cells are valid; it is then the median over the valid cells.
 - **Complete seed block.** A seed is a complete block if Y(s, ℓ) is
-  defined at all 7 levels. The Page test, the magnitude guard and S-2/S-3
-  use complete blocks only, so both endpoint levels (ℓ = 25 and 175) are
-  defined for every analysed seed.
+  defined at all 7 levels. The primary analysis (Page test, magnitude
+  guard) and S-2/S-3 use complete blocks, so both endpoint levels
+  (ℓ = 25 and 175) are defined for every analysed seed.
+- **Selection and exchangeability (added 2026-10-24 after the Codex
+  round-2 review).** Rank exclusions are outcome-dependent: whether a
+  block is complete can depend on the same codes that determine Y.
+  Conditioning on completion can therefore break the within-block
+  exchangeability that the Page permutation test assumes, and the
+  complete-block analysis alone is **not** guaranteed to keep its
+  nominal error rate. Example (Codex): N = 40, 7 i.i.d. levels, no
+  trend, a block kept only if its endpoint difference exceeds its null
+  14.9th percentile (about 85 % kept, above the 70 % threshold): 27 %
+  of runs would be "Supported" (20,000 draws; 4.7 % with exclusions
+  independent of the outcome).
+- **Selection safeguard (frozen).** A second, adversarial analysis on
+  **all N blocks** is required for "Supported": every undefined Y(s, ℓ)
+  is imputed against the hypothesis, at the highest within-block ranks
+  for ℓ ≤ 100 and at the lowest for ℓ > 100 (imputed values on the same
+  side tie, mid-ranks), and the Page permutation test is run on this
+  matrix; for its guard, a block whose endpoint Y(s, 25) or Y(s, 175) is
+  undefined has an endpoint contrast of −∞. "Supported" needs the Page
+  test and the guard to pass in **both** analyses (§6). With no
+  excluded block the two analyses coincide. Implemented as
+  `adversarial_matrix`, `adversarial_endpoint_contrast` and `verdict`
+  in `metrics/subspace_aggregate.py`; the example above is a unit test
+  (`tests/unit/test_power_planning_sd.py`): with the safeguard the
+  false-positive rate is 1.6 % (20,000 draws), and the test requires it
+  to stay within the nominal 5 % plus a stated tolerance of 1
+  percentage point (plus 3 Monte-Carlo SEs). Alternatives considered:
+  (a) a test of whether exclusion depends on level or arm cannot detect
+  this failure, because the selection acts on whole blocks through the
+  outcome, not through ℓ; (c) inverse-probability weighting needs a
+  model of the exclusion probability that cannot be estimated from
+  the few excluded blocks. The adversarial bound needs no model, and
+  costs nothing when nothing is excluded.
 - **Protocol failure.** If fewer than **70 %** of the N confirmatory
   seeds are complete blocks (fewer than 14 of 20, 21 of 30 or 28 of
   40), the experiment is reported as a protocol failure with no
@@ -312,7 +344,10 @@ this order:
 
 - **Protocol failure:** fewer than 70 % complete blocks (§3.1). No
   verdict.
-- **Supported:** S-1 permutation p < 0.05 **and** the median over
+- **Supported:** S-1 permutation p < 0.05 on the complete blocks
+  **and** on the adversarially imputed full set (§3.1, selection
+  safeguard), **and** the guard passes in both analyses (on the full
+  set an undefined endpoint counts as −∞): the median over
   complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
   over the complete blocks and all 7 levels. **Magnitude guard (PI
   decision 2026-10-24: median S_split, as drafted).** This is a
@@ -321,7 +356,13 @@ this order:
   control-subtracted endpoint contrast. The guard is part of one
   conjunctive rule; the Page p-value alone is not advertised as a
   separate finding.
-- **Detectable but sub-floor:** S-1 p < 0.05, magnitude guard fails.
+- **Not robust to exclusions (added 2026-10-24):** S-1 p < 0.05 on
+  the complete blocks, but the Page test on the adversarially imputed
+  full set (§3.1, selection safeguard) has p ≥ 0.05. Reported as "an
+  increasing ordered trend among complete blocks that does not survive
+  an adversarial treatment of the excluded blocks"; no claim.
+- **Detectable but sub-floor:** S-1 p < 0.05 in both analyses, but the
+  magnitude guard fails in at least one of them.
   Reported as "an increasing ordered trend was detected, but its
   endpoint size does not exceed the heuristic half-sample threshold"; no
   substantive geometric claim.
@@ -405,6 +446,37 @@ outcomes are publishable.
   | 80 % (earlier) | 0.25 | 0.76 | 0.80 | 0.83 | 0.84 | 0.86 |
   | 80 % (earlier) | 0.5 | 0.79 | 0.82 | 0.84 | 0.85 | 0.86 |
 
+  *With the selection safeguard (§3.1; Codex round 2, 2026-10-24).*
+  `v08_rule_selection` in the script (section "v0.8 selection
+  safeguard", 20,000 draws per cell, q = 0.149) compares the complete-
+  block rule alone with the safeguarded rule under three exclusion
+  models, all with about 85 % of seeds complete: **level** (each
+  (s, ℓ) value undefined independently, so a seed is usually
+  incomplete at one level; the rank checks act per (s, ℓ) matrix),
+  **seed** (whole seed lost independently, pessimistic; `independent` in
+  the script) and **outcome**
+  (whole seed lost when its endpoint difference is below its null
+  14.9th percentile, Codex's counterexample).
+
+  | Exclusion | trend, g | N = 20 | N = 30 | N = 40 |
+  |---|---|---:|---:|---:|
+  | level | null (0, 0) | 0.047 / 0.019 | 0.047 / 0.017 | 0.046 / 0.014 |
+  | level | 0.70, 0 | 0.72 / 0.61 | 0.87 / 0.77 | 0.94 / 0.87 |
+  | level | 0.95, 0.25 | 0.89 / 0.83 | 0.96 / 0.93 | 0.98 / 0.97 |
+  | seed | null | 0.047 / 0.006 | 0.051 / 0.003 | 0.047 / 0.001 |
+  | seed | 0.70, 0 | 0.72 / 0.27 | 0.87 / 0.32 | 0.94 / 0.37 |
+  | seed | 0.95, 0.25 | 0.88 / 0.47 | 0.96 / 0.58 | 0.98 / 0.67 |
+  | outcome | null | 0.170 / 0.027 | 0.222 / 0.018 | 0.270 / 0.017 |
+  | outcome | 0.70, 0 | 0.89 / 0.70 | 0.97 / 0.83 | 0.99 / 0.91 |
+
+  (complete-block rule alone / safeguarded rule.) The safeguard keeps
+  the false-positive rate below 5 % in all three models, including the
+  outcome-dependent one where the complete-block rule alone reaches
+  17–27 %. Its cost is small when exclusions are isolated levels and
+  large when whole seeds are lost, because a wholly lost seed is then
+  counted as a fully reversed block. With no exclusion it costs
+  nothing.
+
   These numbers are **conditional on the simulation model**: a linear
   trend, Gaussian noise, a guard g treated as a fixed known constant,
   and rank exclusions independent of the outcome and of ℓ. None of these
@@ -430,9 +502,14 @@ outcomes are publishable.
   about 0.29 at every N ≤ 40 under the 70 % rule); because the pilot size is fixed, the
   Clopper–Pearson bound keeps its nominal coverage (no data-dependent
   extension). N is the smallest N ≥ 20 for which
-  the simulated P(Supported), **minus two Monte-Carlo SEs**, is ≥ 0.80,
+  the simulated P(Supported) **of the safeguarded rule**
+  (`v08_rule_selection`), **minus two Monte-Carlo SEs**, is ≥ 0.80,
   with at least 100 000 draws per candidate, the permutation-calibrated
-  Page test and a total trend of ĝ + 0.70 SD units.
+  Page test and a total trend of ĝ + 0.70 SD units. Exclusion model
+  for planning (frozen, from the pilot pattern): **level** if no pilot
+  seed has Y undefined at more than one level, **seed** otherwise
+  (outcome-dependent selection cannot be estimated from a pilot and is
+  covered by the safeguard, not by N).
   If no N ≤ 40 qualifies (for example because q̂ is large), the
   amendment is not filed as drafted: the PI either files N = 40 with its
   computed power stated on the form as below target, or revises the
@@ -540,10 +617,16 @@ each item below gives the decision, the rationale and what changed.
      trend of ĝ + 0.70 SD: 0.62–0.82 for g = 0 and 0.76–0.86 for
      g = 0.25, N = 20–40). With 70 % the failure probability is
      0.021 / 0.009 / 0.004, and the same targets give 0.72–0.94 and
-     0.89–0.98 (table in §7). The analysis uses complete blocks only, so a lower
-     threshold does not change any test's validity; the threshold
-     protects against level-dependent selection, which is still
-     reported per level (§3.1). 70 % keeps a clear majority of seeds.
+     0.89–0.98 (table in §7). *Correction (Codex round 2,
+     2026-10-24):* an earlier version of this item said that a lower
+     threshold does not change any test's validity because the
+     analysis uses complete blocks. That is withdrawn: rank exclusions
+     are outcome-dependent, so selecting complete blocks can bias the
+     Page test whatever the threshold (§3.1). The threshold only bounds
+     how many blocks may be lost; validity under outcome-dependent
+     selection is now protected by the adversarial safeguard of §3.1,
+     required for "Supported" (§6). 70 % keeps a clear majority of
+     seeds.
      The threshold is fixed before any data (`V08_COMPLETE_MIN` in
      `scripts/power_prereg_2026_10.py`, section "v0.8
      protocol-failure threshold").
@@ -554,9 +637,12 @@ each item below gives the decision, the rationale and what changed.
    literature or the numbers favours a fixed N over it, because the
    guard size, the within-seed SD and the exclusion rate are all
    unknown before the pilot. Illustration at q̂ = 0.149 with a trend of
-   ĝ + 0.70 SD: under 70 %, N = 30 (g = 0; 0.799 at N = 25) and N = 20
-   (g ≥ 0.25) reach 0.80 at the point estimate; under the earlier 80 %
-   rule, N = 40 was needed at g = 0 and N = 25 at g = 0.25. Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
+   ĝ + 0.70 SD, complete-block rule alone: under 70 %, N = 30 (g = 0;
+   0.799 at N = 25) and N = 20 (g ≥ 0.25) reach 0.80 at the point
+   estimate; under the earlier 80 % rule, N = 40 was needed at g = 0
+   and N = 25 at g = 0.25. With the selection safeguard now required
+   (§3.1) and the level exclusion model, about N = 35 is needed at g = 0
+   (0.77 at N = 30, 0.87 at N = 40) and N = 20 at g = 0.25 (0.83). Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
    cap N = 40, 280 Phase-1 and 4,480 Phase-2 runs. Changed: only the
    threshold used inside the simulation.
 3. **Secondary-metric parameter list: fixed now, before data**
