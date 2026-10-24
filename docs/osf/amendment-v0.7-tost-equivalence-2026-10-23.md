@@ -103,7 +103,8 @@ in true-MI units.
 | **E-1** | μ₁ = mean of the per-seed E-1 value (above) | μ₁ ≤ −0.025 or μ₁ ≥ +0.025 | −0.025 < μ₁ < +0.025 | primary |
 | E-1b | μ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|μ₁(ℓ)\| ≥ 0.025 | all five inside ±0.025 (IUT) | confirmatory, step 2 of a fixed sequence |
 | E-1c | μ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.025 | \|μ\| < 0.025 | confirmatory, step 3 of a fixed sequence |
-| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator (Ross 2014, k = 3) | μ₂ ≤ −0.05 or μ₂ ≥ +0.05 | −0.05 < μ₂ < +0.05 | primary |
+| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator (Ross 2014, k = 3), hard-demodulated probe | μ₂ ≤ −0.05 or μ₂ ≥ +0.05 | −0.05 < μ₂ < +0.05 | primary |
+| E-2g | same quantity and estimator, Gumbel-sampled probe readout (ADR-0019) | — | — | registered secondary, reported alongside E-2, no decision |
 | E-2b | same quantity, secondary estimators (full-probe KSG, MINE, 1-D KSG) and the CC-film bridge | — | — | exploratory, no decision |
 
 **Multiplicity.** E-1 and E-2 are two separate claims about two separate
@@ -115,8 +116,10 @@ equivalence. This controls the family-wise error rate of the
 equivalence claims at 0.05. E-1b is an intersection-union test: the
 claim "equivalent at every tested LOCK_AFTER" needs all five TOSTs to
 pass, and the IUT exemption covers that conjunction only; a single
-lock's TOST is not advertised as a separate finding. E-2b is
-exploratory and supports no claim.
+lock's TOST is not advertised as a separate finding. E-2g is a
+registered secondary analysis: it is specified here, always reported
+next to E-2, and never changes the E-2 label. E-2b is exploratory and
+supports no claim.
 
 ## 4. Protocol
 
@@ -184,6 +187,18 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   `--batch-size` sets all three (default 512, as in the ADR-0019 E1.3
   runs); confirmatory runs pass `--train-batch 16 --lesion-batch 16
   --probe-n 512` (§4.3 item 2). See Open decision 1.
+- **Probe demodulation (PI decision 2026-10-24, "both").** Z_pre and
+  Z_post are captured twice on the same checkpoint and the same 512
+  probe rows: (i) **hard** argmax demodulation
+  (`nerve.fuse(hard_demod=True)`, deterministic, no RNG use, as in
+  v0.8), the **primary** readout for E-2; (ii) **Gumbel-softmax**
+  sampling, as in the ADR-0019 E1 runner, the registered secondary
+  readout E-2g. The Gumbel captures are taken where the legacy runner
+  takes them and the hard captures draw no random numbers, so the
+  training trajectory and the Gumbel readout are identical to a
+  legacy run. The runner option is `--probe-demod both` (§4.3
+  item 8). The primary/secondary split is the drafting reading of the
+  PI's "both" and is confirmed by the PI before filing.
 - **World check:** as in §4.1, the run log must show
   `StudyforrestRealWorld` (or the CC-film world for E-2b); a silent
   fallback to the stub is a technical failure.
@@ -273,6 +288,9 @@ below the list):
    the script does not forward it. Defaults of the CLI and of
    `m2_snr_schedule` are not changed by this amendment (follow-up in
    ADR-0020).
+8. A `--probe-demod both` option in the E1 runner capturing the hard
+   (primary) and Gumbel (E-2g) probe readouts of §4.2 from one run
+   (added after the PI decision of 2026-10-24).
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
@@ -303,12 +321,16 @@ recorded on the form at filing).**
   Still to write: the collector that builds its input from the grid
   aggregates (`invariants.b1.median_me7` per seed and lock) and the E1
   runner outputs.
-
-Probe capture in the E1 runner uses the training-time demodulation
-(Gumbel-softmax sampling from the global torch RNG), so Z_pre and Z_post
-carry sampling noise; v0.8 uses hard (argmax) demodulation for its probe
-captures. Which one E-2 uses is Open decision 4; the runner is not
-changed until it is decided.
+- Item 8 (probe demodulation, decided 2026-10-24): `--probe-demod
+  both` in the E1 runner captures the hard (primary) and Gumbel
+  (secondary, E-2g) readouts from one run (`capture_probe_readouts`);
+  per-seed outputs `ross_full_delta_bits` / `ksg_full_delta_bits` are
+  the hard readout and the same keys with suffix `_gumbel` are E-2g;
+  the JSON records `primary_readout`. The default `--probe-demod soft`
+  keeps the legacy Gumbel-only output. Unit tests in
+  `tests/unit/test_e1_runner_v07.py` check that the Gumbel readout and
+  training under `both` equal the legacy run bit for bit and that the
+  hard capture is deterministic.
 
 **Implementation verification of the primary estimator (pre-filing,
 pass/fail).** The new function must pass all of the following before
@@ -405,6 +427,12 @@ informativeness of each component is stated there.
   Wilcoxon-based TOST. The data are quantised and may be non-normal. If
   parametric and non-parametric verdicts disagree, both are reported and
   the disagreement is stated in the paper.
+- E-2g (registered secondary): the same TOST, CIs and p-values as E-2,
+  computed on the Gumbel-readout ΔMI-hat of the same 95 seeds, reported
+  in the same table as E-2. It carries no label of its own and does not
+  change the E-2 label; a disagreement between E-2 and E-2g is stated
+  in the paper. The pilot records the per-seed SD of both readouts;
+  the E-2 power is computed on the hard readout.
 - Descriptive only: per-modality Me7 at floor SNR, per ℓ; per-seed D
   for B-2; E-2b estimators.
 - Descriptive only, estimator noise (after Knopov & Shvai,
@@ -663,6 +691,12 @@ primary estimator = Ross (2014) mixed discrete–continuous k-NN, k = 3,
 with full-probe KSG and MINE secondary; SNR ramp `k_steps` = 50 for B-1
 and B-2 (ADR-0020).
 
+Decided by the PI on 2026-10-24 (no longer open): B-2 probe
+demodulation, "both": hard argmax readout primary (E-2), Gumbel-sampled
+readout as registered secondary E-2g (§3, §4.2, §6). The
+primary/secondary split is the drafting reading of "both"; the PI
+confirms it before filing.
+
 1. B-2 batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8) vs
    512 / 512 / 512 (the ADR-0019 E1.3 runs).
 2. B-2 primary world: Studyforrest (drafted; same bridge as B-1, but the
@@ -670,8 +704,3 @@ and B-2 (ADR-0020).
    the real signal).
 3. Pre-registration id (N-id) and final amendment number. The numbering
    v0.7/v0.8/v0.9 assumes the drafts are filed in that order.
-4. B-2 probe demodulation: Gumbel-softmax sampling, as in the ADR-0019
-   E1 runner (Z_pre and Z_post then carry sampling noise that enters
-   the per-seed ΔMI-hat), vs hard argmax demodulation, as decided for
-   v0.8 (deterministic codes; `nerve.fuse(hard_demod=True)`, one line
-   in the runner once decided).
