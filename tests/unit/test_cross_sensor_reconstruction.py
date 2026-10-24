@@ -33,7 +33,8 @@ def test_registered_weight_is_one() -> None:
     assert RECON_WEIGHT == 1.0
 
 
-def test_zero_weight_is_bit_identical_to_no_objective() -> None:
+def test_zero_weight_is_bit_identical_to_no_objective(deterministic_torch: None) -> None:
+    # Linux x86 lstsq differs by ~1 ulp between identical calls (conftest).
     torch.manual_seed(0)
     a = _build_loop(n_classes=4)
     ref = a.pretrain(steps=4, batch_size=8, seed=0)
