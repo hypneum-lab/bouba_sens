@@ -85,12 +85,13 @@ main-grid trend.
 
 The Studyforrest world samples **contiguous** windows of its time
 series (`StudyforrestRealWorld.sample`), so a training batch of 16 is
-16 consecutive samples. Donors are drawn from the **whole dataset**,
-not from a batch-sized pool, so a same-label donor always exists:
+16 consecutive samples. Donors are drawn from the **whole training
+split** (every frame except the held-out probe frames of §3.4), not
+from a batch-sized pool, so a same-label donor always exists:
 
 - For training sample i at Phase-1 step t, with dataset index k_i and
   label y_i, a donor index is drawn uniformly from
-  {j : label_j = y_i, j ≠ k_i} over all dataset rows. Donors are drawn
+  {j : label_j = y_i, j ≠ k_i} over all training-split rows. Donors are drawn
   with replacement across samples, modalities and steps. If a class had
   a single row, the sample would be its own donor; this is logged and
   counted (not expected: every class has many rows).
@@ -132,7 +133,8 @@ are identical and only the cross-modal pairing differs.
 
 - **Check sample.** On each pilot seed, 512 anchor rows are drawn as 32
   contiguous windows of 16 (`world.sample(16, seed = s + 3·10⁶ + r)`,
-  r = 0…31), to cover several labels.
+  r = 0…31), to cover several labels; all anchors lie in the training
+  split (§3.4).
 - **Draws.** For b = 1…200, the donor rule of §3.1 is applied to the
   anchors with generator seed 10⁹ + 7·10⁸ + 1000 · s + b, producing one
   joint-arm sample (one donor per anchor, all modalities) and one
@@ -165,12 +167,30 @@ are identical and only the cross-modal pairing differs.
 
 ### 3.4 Outcome: fusion gain and deficit
 
+**Held-out probe frames (PI decision 2026-10-24).** The world is built
+with `StudyforrestRealWorld(..., probe_fraction = 0.10)`
+(`V09_PROBE_FRACTION`): the last ⌈0.10 · n⌉ frames of the cache (900
+of 9,000) are reserved for the probe. Every training-side draw uses
+only the first n_train frames: Phase-1 batches of every arm, donor
+pools (§3.1), and the manipulation-check anchors (§3.3). Training
+windows lie wholly inside the training split (no window straddles the
+boundary and none wraps around the end of the cache), and a batch
+larger than the training split is refused. Unit tests
+(`tests/unit/test_studyforrest_probe_split.py`) check that no Phase-1
+arm ever gathers a probe row. With `probe_fraction` = 0 (the default)
+the world behaves exactly as before, so no other analysis changes.
+Residual: frames are a time series, so the first probe frames are
+temporally adjacent to the last training frames; no gap is inserted.
+
 At the end of Phase 1 (no lesion), on one clean probe of 512 rows,
-`world.sample(512, seed = s + 2·10⁶)`, identical for all arms:
+a contiguous window inside the probe frames,
+`world.probe_sample_with_indices(512, seed = s + 2·10⁶)`, identical for
+all arms:
 
 - acc_all: plain accuracy with all channels present.
-- acc_m: `query_accuracy(m, batch_size = 512, seed = s + 2·10⁶)`, the
-  accuracy when only modality m carries signal (same probe rows).
+- acc_m: the accuracy on the same 512 probe rows when only modality m
+  carries signal (the other four zeroed, as in `query_accuracy`;
+  `decorrelation.fusion_gain`).
 - **Fusion gain** FG = acc_all − max_m acc_m. Plain (unweighted)
   accuracy is used; the probe is the same for all arms of a seed, so
   class imbalance in the probe is common to both terms of a contrast.
@@ -187,20 +207,14 @@ deficit. To separate the two readings, FG and D are also computed at
 the end of Phase 1 on 512 rows drawn from the Phase-1 training
 samples (dataset indices recorded by the scheduler) in addition to the
 held-out probe above, and the train-side and held-out D are reported
-side by side per onset. The held-out probe is the one defined above.
-*Finding (2026-10-24, code inspection):* it is **not held out**.
-`StudyforrestRealWorld` has no train/test split: training batches and
-the probe are contiguous windows drawn from the same frame pool
-(`world/studyforrest.py`, `sample`). For a 9,000-frame cache and
-windows of 16, a given frame is in at least one Phase-1 batch with
-probability about 1 − (1 − 16/9000)^T, i.e. about 0.36 for T = 250
-and 0.55 for T = 450 steps, so roughly a third to a half of the probe
-rows were seen in training, more at later onsets. As drafted, the
-train-vs-probe comparison therefore cannot separate the two readings;
-Open decision 10 chooses between a held-out frame range and dropping
-the comparison. A deficit that appears only on the held-out side would
-fit overfitting of re-learned cross-modal cues; one on both sides would
-fit reduced fusion itself. This is not tested.
+side by side per onset. The held-out probe is the one defined above: before the PI decision
+of 2026-10-24 the world had no train/test split and about 36–55 % of
+the probe rows were seen in training (9,000 frames, windows of 16,
+T = 250–450 steps); the held-out frame range removes that overlap, so
+the comparison can separate the two readings. A deficit that appears
+only on the held-out side would fit overfitting of re-learned
+cross-modal cues; one on both sides would fit reduced fusion itself.
+This is not tested.
 
 Positive D means the decorrelation window reduced fusion gain at the
 end of the run, relative to a run that saw the same resampled inputs
@@ -500,9 +514,13 @@ decorrelation window itself is not claimed as a new intervention (§2).
       path unchanged). Commit hash recorded on the form at filing.
 - [ ] Driver for the arms and grids merged with unit tests; learning
       rate confirmed constant at 1e-3 in it (no override, no scheduler,
-      no optimiser reset); train-side fusion-gain output implemented;
-      the §3.4 probe overlap with training rows resolved (Open
-      decision 10).
+      no optimiser reset); world built with `probe_fraction = 0.10`;
+      train-side fusion-gain output implemented.
+- [x] Held-out probe frames (§3.4, PI decision 2026-10-24):
+      `StudyforrestRealWorld(probe_fraction=...)`, held-out
+      `fusion_gain`, unit tests
+      `tests/unit/test_studyforrest_probe_split.py` (no training draw,
+      donor or check anchor touches a probe frame; default unchanged).
 - [x] Fusion-gain probe and CKA check implemented as specified (§3.3,
       §3.4), with unit tests (CKA = 1 for identical features, zero
       denominators skipped, translation invariance, label-swap gate),
@@ -524,6 +542,9 @@ configuration are also filing prerequisites.
 
 Decided by the PI on 2026-10-23 and applied above (no longer open):
 SNR ramp `k_steps` = 50 for the D-4 lesion phase (§4, ADR-0020).
+
+Decided by the PI on 2026-10-24 (no longer open): §3.4 probe overlap,
+resolved by holding out the last 10 % of frames (§3.1, §3.3, §3.4).
 
 1. Correspondence with Kleinman et al. (2023): confirm that within-class
    cross-modal resampling is an acceptable analogue of their
@@ -558,9 +579,3 @@ SNR ramp `k_steps` = 50 for the D-4 lesion phase (§4, ADR-0020).
    least favourable df = 4 (ρ = 1; multiplier √(4 / χ²₀.₂₀,₄) = 1.558)
    applied to the marginal σ̂) and regenerate N with it at the pilot;
    N = 32 above uses the borrowed SD 0.0605, not a pilot bound.
-10. §3.4 probe overlap: the fusion-gain probe is drawn from the same
-   frame pool as training (about 36–55 % of its rows seen). Either
-   reserve a held-out frame range (for example the last 10 % of
-   frames, excluded from training, donors and the CKA check; code
-   change in the world) or drop the train-vs-probe comparison and call
-   the probe "fixed probe", not "held-out".
