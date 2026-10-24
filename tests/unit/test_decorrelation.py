@@ -542,27 +542,6 @@ class _StatefulWorld(StudyforrestRealWorld):
         return super().sample_with_indices(batch_size, seed)
 
 
-@pytest.fixture
-def deterministic_torch():  # type: ignore[no-untyped-def]
-    """Pin torch to deterministic kernels for bit-identical A/B comparisons.
-
-    On Linux x86 the default CPU ``torch.linalg.lstsq`` (LAPACK gelsy, called
-    by ``GammaThetaMultiplexer.demodulate`` on every ``CrossModalNerve.fuse``)
-    returns results that differ by ~1 ulp (3e-7) between two calls on
-    identical input, depending on heap/buffer state; Adam then amplifies that
-    into different weights. It is identical-code noise, not a loop change:
-    ``AdaptationLoop`` vs. its replica diverge even when the replica is run
-    twice. ``use_deterministic_algorithms`` removes it (checked with 1 and 8
-    threads); arm64 never showed it.
-    """
-    prev = torch.are_deterministic_algorithms_enabled()
-    torch.use_deterministic_algorithms(True)
-    try:
-        yield
-    finally:
-        torch.use_deterministic_algorithms(prev)
-
-
 def _main_replica_vs_loop(
     real_dir: Path, inject: Callable[[AdaptationLoop], None] | None = None
 ) -> tuple[dict[str, object], dict[str, object]]:
