@@ -6,7 +6,7 @@
 **Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.8-subspace-shift-2026-10-23.md`
 **Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
-**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), draft PR #14 on `docs/adr-snr-floor-audit`. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this

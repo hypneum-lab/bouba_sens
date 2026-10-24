@@ -6,7 +6,7 @@
 **Sibling drafts (same date, filed independently):** `amendment-v0.8-subspace-shift-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`
 **Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
-**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), draft PR #14 on `docs/adr-snr-floor-audit`. This draft corrects the SNR schedule (§4.1, §4.2).
+**Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4.1, §4.2).
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series; see Open decisions)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 
@@ -158,11 +158,17 @@ run of §4.1:
   three-level SNR factor. The equivalence bounds (±0.025) are unchanged
   because they derive from the frozen threshold, not from data.
   Estimates are not comparable cell by cell with the historical grids.
-- **Code status:** `bouba-sens lesion` already has `--k-steps`
-  (`cli.py:268`), but `run_grid.sh` does not forward it. A `K_STEPS`
-  environment pass-through (→ `--k-steps`) must be added to
-  `run_grid.sh` before filing (§4.3 item 7); this draft does not make
-  that change. Code defaults stay as they are.
+- **Code status:** `bouba-sens lesion` has `--k-steps` (`cli.py:267`),
+  and `run_grid.sh` now forwards a `K_STEPS` environment variable to
+  it (§4.3 item 7, done). Confirmatory grids run with `K_STEPS=50`.
+  Code defaults stay as they are: with `K_STEPS` unset the command line
+  of the historical grids is unchanged.
+- **World check.** `--world studyforrest` loads `StudyforrestRealWorld`
+  only if `BOUBA_SENS_STUDYFORREST_DATA` points to a cache containing
+  `tactile.pt`; otherwise `_build_world` falls back, without an error, to
+  the 2-modal stub (`cli.py:54-63`). The pilot and every confirmatory
+  run record the world class in their logs; a run on the stub is a
+  technical failure (§8).
 
 ### 4.2 B-2 (E-2, E-2b)
 
@@ -171,12 +177,16 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
 - World: `--world studyforrest` (primary), `--world ccfilm` (E-2b).
 - LOCK_AFTER = 100, HARD gating, `steps_train = 200`,
   `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2) except for the SNR
-  schedule: `snr_init` = 0 dB, floor −20 dB, `k_steps` = 50, so −20.00 dB is reached at step 50 and held to step 99 (mean SNR −14.90 dB). **This differs from ADR-0019 E1**, whose runner sets k = `steps_lesion` = 100 and reaches only −19.80 dB at the last step (`e1_b2_dimensional_mine.py:98`; ADR-0020). It needs a `--k-steps` option in the runner (§4.3 item 6).
+  schedule: `snr_init` = 0 dB, floor −20 dB, `k_steps` = 50, so −20.00 dB is reached at step 50 and held to step 99 (mean SNR −14.90 dB). **This differs from ADR-0019 E1**, whose runner sets k = `steps_lesion` = 100 and reaches only −19.80 dB at the last step (`capture_probe` in `e1_b2_dimensional_mine.py`; ADR-0020). The runner's `--k-steps 50` option sets it (§4.3 item 6).
 - **Batch sizes, frozen separately:** Phase-1 training batch **16**,
   Phase-2 lesion batch **16**, probe **N = 512** (`world.sample(512,
-  seed = s − 99_999)`). These match B-1 and v0.8. The current runner
-  uses one `--batch-size` for all three (default 512, as in the
-  ADR-0019 E1.3 runs); see §4.3 and Open decision 1.
+  seed = s − 99_999)`). These match B-1 and v0.8. The runner's legacy
+  `--batch-size` sets all three (default 512, as in the ADR-0019 E1.3
+  runs); confirmatory runs pass `--train-batch 16 --lesion-batch 16
+  --probe-n 512` (§4.3 item 2). See Open decision 1.
+- **World check:** as in §4.1, the run log must show
+  `StudyforrestRealWorld` (or the CC-film world for E-2b); a silent
+  fallback to the stub is a technical failure.
 - **Primary estimator: mixed discrete–continuous k-NN MI estimator**
   of Ross (2014), *Mutual information between discrete and continuous
   data sets*, PLoS ONE 9(2): e87357, doi:10.1371/journal.pone.0087357
@@ -236,11 +246,12 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
 
 ### 4.3 Required pre-filing code tasks (B-2)
 
-The E1 runner (`scripts/spikes/e1_b2_dimensional_mine.py`) does not yet
-implement §4.2. Its Kraskov path (line 210) runs on the **1-D
-mean-pooled scalar**, its `--batch-size` sets training, lesion and probe
-size together, and `--seeds` takes a count. The following changes are
-authorised, and only these:
+When this draft was written, the E1 runner
+(`scripts/spikes/e1_b2_dimensional_mine.py`) did not implement §4.2: its
+Kraskov path ran on the **1-D mean-pooled scalar**, its `--batch-size`
+set training, lesion and probe size together, and `--seeds` took a
+count. The following changes are authorised, and only these (status
+below the list):
 
 1. `--seed-list` (explicit seeds) replacing the seed count.
 2. Three separate options `--train-batch`, `--lesion-batch`,
@@ -265,6 +276,39 @@ authorised, and only these:
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
+
+**Implementation status (2026-10-24, branch of this draft; hashes are
+recorded on the form at filing).**
+
+- Item 3: `bouba_sens.metrics.mi_ross.mi_ross_discrete_continuous`
+  (merged, PR #11). The pass/fail verification below is implemented as
+  `tests/unit/test_mi_ross.py` (brute-force agreement and invariances to
+  1e-10, 1-D known-MI test with 200 replicates per a) and passes.
+- Items 1, 2, 4, 6: `--seed-list` (each listed seed re-seeds the global
+  torch RNG with s, so a seed's result does not depend on the seeds run
+  before it), `--train-batch` / `--lesion-batch` / `--probe-n`,
+  `--k-steps`, and the outputs `ross_full_delta_bits` and
+  `ksg_full_delta_bits` (function `full_probe_b2`). The legacy options
+  and outputs are unchanged. Unit tests: `tests/unit/test_e1_runner_v07.py`.
+- Item 5: calibration harness `scripts/calibrate_mi_known_signal.py`
+  (design below, unit tests `tests/unit/test_calibrate_mi_known_signal.py`).
+  Not yet run; it is run on the frozen code before filing and its table
+  is recorded on the form. Exactly balanced classes (128 rows each)
+  are used for "4 equiprobable classes".
+- Item 7: `K_STEPS` pass-through in `run_grid.sh`, unit test
+  `tests/unit/test_run_grid_k_steps.py`.
+- Analysis: `scripts/analyse_v07_tost.py` implements §6 and §9 (TOST,
+  six labels, E-1 → E-1b → E-1c fixed sequence, reported bootstrap and
+  Wilcoxon TOSTs), unit tests `tests/unit/test_analyse_v07_tost.py`.
+  Still to write: the collector that builds its input from the grid
+  aggregates (`invariants.b1.median_me7` per seed and lock) and the E1
+  runner outputs.
+
+Probe capture in the E1 runner uses the training-time demodulation
+(Gumbel-softmax sampling from the global torch RNG), so Z_pre and Z_post
+carry sampling noise; v0.8 uses hard (argmax) demodulation for its probe
+captures. Which one E-2 uses is Open decision 4; the runner is not
+changed until it is decided.
 
 **Implementation verification of the primary estimator (pre-filing,
 pass/fail).** The new function must pass all of the following before
@@ -598,7 +642,8 @@ which concerned a different estimand. All outcomes are publishable.
       form; N = 95 on the form.
 - [x] No threshold change.
 - [x] No metric-math change.
-- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged, effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
+- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
+- [ ] World class (`StudyforrestRealWorld`) confirmed in the pilot logs (§4.1).
 - [x] Bounds derived from frozen thresholds (half of each), not from data.
 - [x] Seeds disjoint from all previously used seeds.
 - [x] Verdicts to be recorded in a new ADR; ADR-0019 untouched.
@@ -615,7 +660,8 @@ Decided by the PI on 2026-10-23 and applied above (no longer open):
 N = 95 (second-round decision: 0.80 power for E-2 in the planning
 case); bounds ±half-threshold (±0.025 / ±0.05 bit), symmetric; B-2
 primary estimator = Ross (2014) mixed discrete–continuous k-NN, k = 3,
-with full-probe KSG and MINE secondary.
+with full-probe KSG and MINE secondary; SNR ramp `k_steps` = 50 for B-1
+and B-2 (ADR-0020).
 
 1. B-2 batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8) vs
    512 / 512 / 512 (the ADR-0019 E1.3 runs).
@@ -624,3 +670,8 @@ with full-probe KSG and MINE secondary.
    the real signal).
 3. Pre-registration id (N-id) and final amendment number. The numbering
    v0.7/v0.8/v0.9 assumes the drafts are filed in that order.
+4. B-2 probe demodulation: Gumbel-softmax sampling, as in the ADR-0019
+   E1 runner (Z_pre and Z_post then carry sampling noise that enters
+   the per-seed ΔMI-hat), vs hard argmax demodulation, as decided for
+   v0.8 (deterministic codes; `nerve.fuse(hard_demod=True)`, one line
+   in the runner once decided).
