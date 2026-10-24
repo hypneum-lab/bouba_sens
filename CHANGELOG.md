@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Ross (2014) mixed discrete-continuous k-NN MI estimator**
+  (`src/bouba_sens/metrics/mi_ross.py`): `mi_ross_discrete_continuous`
+  (bits), `_nats` helper, duplicate counter. Primary B-2 estimator of the
+  v0.7 amendment draft; not yet wired into the E1 runner.
 - **Configurable Me3 probe — full representation `(B, 896)` default**
   (`src/bouba_sens/loop.py`, `src/bouba_sens/metrics/mi_migration.py`).
   The Me3 sonde pooling is now configurable; the default is the full
