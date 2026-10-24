@@ -294,9 +294,61 @@ def build_parser() -> argparse.ArgumentParser:
         default="soft",
         help="soft = legacy Gumbel readout; both = v0.7 hard primary + Gumbel secondary",
     )
+    ap.add_argument(
+        "--preset",
+        choices=("v07-e2", "v07-e2b"),
+        default=None,
+        help="frozen v0.7 configuration (E-2: studyforrest, E-2b: ccfilm)",
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
     return ap
+
+
+_V07_FROZEN = {
+    "lock_after": 100,
+    "steps_train": 200,
+    "steps_lesion": 100,
+    "train_batch": 16,
+    "lesion_batch": 16,
+    "probe_n": 512,
+    "k_steps": 50,
+    "probe_demod": "both",
+}
+PRESETS = {
+    # Amendment v0.7, PI decisions 2026-10-23/24: E-2 on Studyforrest,
+    # E-2b on the CC-film bridge, same frozen configuration otherwise.
+    "v07-e2": {"world": "studyforrest", **_V07_FROZEN},
+    "v07-e2b": {"world": "ccfilm", **_V07_FROZEN},
+}
+_EXPECTED_WORLD = {
+    "studyforrest": "StudyforrestRealWorld",
+    "ccfilm": "CCFilmWorld",
+}
+
+
+def apply_preset(args: argparse.Namespace) -> None:
+    """Fill the frozen v0.7 configuration; refuse an explicit conflicting option."""
+    if args.preset is None:
+        return
+    defaults = build_parser().parse_args([])
+    for key, val in PRESETS[args.preset].items():
+        given = getattr(args, key)
+        if given not in (val, getattr(defaults, key)):
+            raise SystemExit(f"--preset {args.preset} fixes {key}={val!r}; got {given!r}")
+        setattr(args, key, val)
+
+
+def check_world(world_name: str, seed: int) -> None:
+    """Refuse a silent fallback (e.g. the 2-modal Studyforrest stub)."""
+    from bouba_sens.cli import _build_world
+
+    expected = _EXPECTED_WORLD.get(world_name.lower().strip())
+    if expected is None:
+        return
+    got = type(_build_world(world_name, seed)).__name__
+    if got != expected:
+        raise SystemExit(f"--world {world_name} built {got}, expected {expected}")
 
 
 def resolve_seeds(args: argparse.Namespace) -> list[int]:
@@ -316,7 +368,10 @@ def configure_determinism(args: argparse.Namespace) -> None:
 
 def main() -> None:
     args = build_parser().parse_args()
+    apply_preset(args)
     configure_determinism(args)
+    if args.preset is not None:
+        check_world(args.world, seed=resolve_seeds(args)[0])
 
     from nerve_wml.methodology import mi_kraskov_ksg_continuous
 
@@ -434,6 +489,7 @@ def main() -> None:
         "probe_n": args.batch_size if args.probe_n is None else args.probe_n,
         "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
         "probe_demod": args.probe_demod,
+        "preset": args.preset,
         "primary_readout": "hard" if args.probe_demod == "both" else "gumbel",
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),

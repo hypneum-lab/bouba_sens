@@ -223,3 +223,53 @@ def test_b2_fields_hard_is_primary_and_gumbel_is_suffixed() -> None:
         assert out[f"{key}_gumbel"] == ref_g[key]
     legacy = runner.b2_readout_fields({"gumbel": gumbel}, labels)
     assert legacy == {**ref_g, "primary_readout": "gumbel"}
+
+
+# --- v0.7 PI decisions 2026-10-24: confirmatory presets ------------------
+
+_V07 = {
+    "lock_after": 100,
+    "steps_train": 200,
+    "steps_lesion": 100,
+    "train_batch": 16,
+    "lesion_batch": 16,
+    "probe_n": 512,
+    "k_steps": 50,
+    "probe_demod": "both",
+}
+
+
+@pytest.mark.parametrize(("preset", "world"), [("v07-e2", "studyforrest"), ("v07-e2b", "ccfilm")])
+def test_preset_sets_the_frozen_configuration(preset: str, world: str) -> None:
+    args = runner.build_parser().parse_args(["--preset", preset, "--seed-list", "1101"])
+    runner.apply_preset(args)
+    assert args.world == world
+    for key, val in _V07.items():
+        assert getattr(args, key) == val, key
+
+
+def test_preset_accepts_matching_and_refuses_conflicting_options() -> None:
+    ok = runner.build_parser().parse_args(["--preset", "v07-e2", "--train-batch", "16"])
+    runner.apply_preset(ok)
+    bad = runner.build_parser().parse_args(["--preset", "v07-e2", "--probe-n", "256"])
+    with pytest.raises(SystemExit, match="probe_n"):
+        runner.apply_preset(bad)
+    world = runner.build_parser().parse_args(["--preset", "v07-e2", "--world", "ccfilm"])
+    with pytest.raises(SystemExit, match="world"):
+        runner.apply_preset(world)
+
+
+def test_no_preset_keeps_legacy_defaults() -> None:
+    args = runner.build_parser().parse_args([])
+    runner.apply_preset(args)
+    assert args.preset is None
+    assert args.world == "gaussian"
+    assert (args.train_batch, args.lesion_batch, args.probe_n, args.k_steps) == (None,) * 4
+    assert args.probe_demod == "soft"
+
+
+def test_preset_world_check_refuses_the_stub(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_DATA", raising=False)
+    with pytest.raises(SystemExit, match="StudyforrestRealWorld"):
+        runner.check_world("studyforrest", seed=1101)
+    runner.check_world("gaussian", seed=0)  # no requirement outside the presets' worlds
