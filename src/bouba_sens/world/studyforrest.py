@@ -20,6 +20,7 @@ Sprint 9+ (see ADR-0007).
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import torch
@@ -104,7 +105,19 @@ class StudyforrestRealWorld:
     SensoryWML + encoders + nerve need no change.
     """
 
-    def __init__(self, *, seed: int = 0, data_dir: Path) -> None:
+    def __init__(self, *, seed: int = 0, data_dir: Path, probe_fraction: float = 0.0) -> None:
+        """Load the cache; ``probe_fraction`` > 0 holds out the last frames.
+
+        Amendment v0.9 (section 3.4) reserves the last
+        ``ceil(probe_fraction * n)`` frames for the fusion-gain probe.
+        Training draws (``sample``, ``sample_with_indices``,
+        ``dataset_labels`` for donor pools) then use only the first
+        ``n_train`` frames, windows never straddle the boundary, and
+        ``probe_sample_with_indices`` serves windows inside the probe
+        frames. The default 0.0 keeps the legacy behaviour unchanged.
+        """
+        if not 0.0 <= probe_fraction < 1.0:
+            raise ValueError(f"probe_fraction must be in [0, 1); got {probe_fraction}")
         dir_path = Path(data_dir)
         self._seed = seed
         self._audio = torch.load(dir_path / "audio.pt")
@@ -118,6 +131,10 @@ class StudyforrestRealWorld:
         self._labels = torch.load(dir_path / "labels.pt").long()
         self._n = self._labels.shape[0]
         self._mode = "real5"
+        self.n_probe = math.ceil(probe_fraction * self._n) if probe_fraction > 0 else 0
+        self.n_train = self._n - self.n_probe
+        if self.n_probe and self.n_train < 1:
+            raise ValueError(f"probe_fraction {probe_fraction} leaves no training frame")
 
     @property
     def mode(self) -> str:
@@ -128,15 +145,42 @@ class StudyforrestRealWorld:
 
     @property
     def dataset_labels(self) -> torch.Tensor:
-        """Labels of every dataset row (donor pools for v0.9 decorrelation)."""
-        labels: torch.Tensor = self._labels
+        """Labels of the training rows (donor pools for v0.9 decorrelation).
+
+        Every row without a held-out probe; the first ``n_train`` rows
+        with one, so donor indices never point into the probe frames.
+        """
+        labels: torch.Tensor = self._labels[: self.n_train]
         return labels
 
     def sample_with_indices(self, batch_size: int, seed: int) -> tuple[WorldSample, torch.Tensor]:
         """Same batch as `sample`, plus the dataset row index of each sample."""
         gen = torch.Generator().manual_seed(seed)
-        start = int(torch.randint(0, max(1, self._n - batch_size), (1,), generator=gen).item())
-        idx = torch.arange(start, start + batch_size) % self._n
+        if not self.n_probe:
+            start = int(torch.randint(0, max(1, self._n - batch_size), (1,), generator=gen).item())
+            idx = torch.arange(start, start + batch_size) % self._n
+            return self.gather(idx), idx
+        if batch_size > self.n_train:
+            raise ValueError(
+                f"batch_size {batch_size} exceeds the training split ({self.n_train} frames)"
+            )
+        start = int(torch.randint(0, self.n_train - batch_size + 1, (1,), generator=gen).item())
+        idx = torch.arange(start, start + batch_size)
+        return self.gather(idx), idx
+
+    def probe_sample_with_indices(
+        self, batch_size: int, seed: int
+    ) -> tuple[WorldSample, torch.Tensor]:
+        """Contiguous window inside the held-out probe frames (v0.9, 3.4)."""
+        if not self.n_probe:
+            raise ValueError("this world has no held-out probe (probe_fraction = 0)")
+        if batch_size > self.n_probe:
+            raise ValueError(
+                f"batch_size {batch_size} exceeds the probe split ({self.n_probe} frames)"
+            )
+        gen = torch.Generator().manual_seed(seed)
+        offset = int(torch.randint(0, self.n_probe - batch_size + 1, (1,), generator=gen).item())
+        idx = torch.arange(self.n_train + offset, self.n_train + offset + batch_size)
         return self.gather(idx), idx
 
     def gather(self, idx: torch.Tensor) -> WorldSample:

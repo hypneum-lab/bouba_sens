@@ -44,6 +44,7 @@ GATE_N_PERM = 10_000
 GATE_SEED = 20_261_023
 GATE_ALPHA = 0.05
 PROBE_ROWS = 512
+V09_PROBE_FRACTION = 0.10  # last 10 % of frames held out (3.4, PI 2026-10-24)
 
 
 class IndexedWorld(Protocol):
@@ -376,9 +377,36 @@ class FusionGain:
     fusion_gain: float
 
 
+def _accuracy(loop: AdaptationLoop, sample: WorldSample) -> float:
+    with torch.no_grad():
+        _, logits = loop._forward(sample)
+    return float((logits.argmax(-1) == sample.label).float().mean().item())
+
+
 def fusion_gain(loop: AdaptationLoop, *, train_seed: int) -> FusionGain:
-    """FG = acc_all - max_m acc_m on the clean probe ``seed = s + 2e6`` (512 rows)."""
+    """FG = acc_all - max_m acc_m on the clean probe ``seed = s + 2e6`` (512 rows).
+
+    When the world holds out probe frames (``n_probe`` > 0, v0.9
+    section 3.4) the probe window is drawn from those frames and every
+    single-modality accuracy is computed on that same window, with the
+    other four modalities zeroed as in ``AdaptationLoop.query_accuracy``.
+    Otherwise the legacy path is used unchanged.
+    """
     probe_seed = train_seed + 2 * 10**6
+    if getattr(loop.world, "n_probe", 0):
+        sample, _ = loop.world.probe_sample_with_indices(PROBE_ROWS, probe_seed)  # type: ignore[attr-defined]
+        acc_all = _accuracy(loop, sample)
+        held: dict[str, float] = {}
+        for m in MODALITIES:
+            masked = replace(
+                sample,
+                **{
+                    k: (getattr(sample, k) if k == m else torch.zeros_like(getattr(sample, k)))
+                    for k in MODALITIES
+                },
+            )
+            held[m] = _accuracy(loop, masked)
+        return FusionGain(acc_all, held, acc_all - max(held.values()))
     sample = loop.world.sample(batch_size=PROBE_ROWS, seed=probe_seed)
     with torch.no_grad():
         _, logits = loop._forward(sample)
