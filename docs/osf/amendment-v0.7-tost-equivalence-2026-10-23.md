@@ -330,6 +330,11 @@ recorded on the form at filing).**
 - Analysis: `scripts/analyse_v07_tost.py` implements §6 and §9 (TOST,
   six labels, E-1 → E-1b → E-1c fixed sequence, reported bootstrap and
   Wilcoxon TOSTs), unit tests `tests/unit/test_analyse_v07_tost.py`.
+  Its only confirmatory entry point, `analyse_confirmatory`, refuses
+  any input that is not exactly the roster of §8 after documented
+  reserve substitutions (in order, at most 4, each with a reason) and
+  any B-2 record that is not from the hard primary readout or lacks
+  the Gumbel value; it reports E-2g next to E-2 without a label (§6).
   Still to write: the collector that builds its input from the grid
   aggregates (`invariants.b1.median_me7` per seed and lock) and the E1
   runner outputs.
