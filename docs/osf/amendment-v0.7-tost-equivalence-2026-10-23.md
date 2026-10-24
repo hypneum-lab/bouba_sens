@@ -7,7 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4.1, §4.2).
-**Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series; see Open decisions)
+**Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0021** (proposed — PI confirms at filing)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
@@ -177,7 +178,11 @@ run of §4.1:
 
 ADR-0019 E1 protocol, with the configuration frozen as follows:
 
-- World: `--world studyforrest` (primary), `--world ccfilm` (E-2b).
+- World (PI decision 2026-10-24): `--world studyforrest` (primary,
+  E-2), `--world ccfilm` (secondary, E-2b). Under a preset the runner
+  builds the world once before any seed and stops if the class is not
+  `StudyforrestRealWorld` (or `CCFilmWorld` for E-2b), so a silent
+  fallback to the 2-modal stub cannot reach the results.
 - LOCK_AFTER = 100, HARD gating, `steps_train = 200`,
   `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2) except for the SNR
   schedule: `snr_init` = 0 dB, floor −20 dB, `k_steps` = 50, so −20.00 dB is reached at step 50 and held to step 99 (mean SNR −14.90 dB). **This differs from ADR-0019 E1**, whose runner sets k = `steps_lesion` = 100 and reaches only −19.80 dB at the last step (`capture_probe` in `e1_b2_dimensional_mine.py`; ADR-0020). The runner's `--k-steps 50` option sets it (§4.3 item 6).
@@ -186,7 +191,10 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   seed = s − 99_999)`). These match B-1 and v0.8. The runner's legacy
   `--batch-size` sets all three (default 512, as in the ADR-0019 E1.3
   runs); confirmatory runs pass `--train-batch 16 --lesion-batch 16
-  --probe-n 512` (§4.3 item 2). See Open decision 1.
+  --probe-n 512` (§4.3 item 2), set together with the rest of the
+  frozen configuration by `--preset v07-e2` (E-2) or `--preset v07-e2b`
+  (CC-film, E-2b), which refuse any conflicting option (PI decision
+  2026-10-24).
 - **Probe demodulation (PI decision 2026-10-24, "both").** Z_pre and
   Z_post are captured twice on the same checkpoint and the same 512
   probe rows: (i) **hard** argmax demodulation
@@ -291,6 +299,10 @@ below the list):
 8. A `--probe-demod both` option in the E1 runner capturing the hard
    (primary) and Gumbel (E-2g) probe readouts of §4.2 from one run
    (added after the PI decision of 2026-10-24).
+9. Presets `--preset v07-e2` / `v07-e2b` that set the frozen
+   configuration of §4.2 (world, lock, steps, batch sizes, `k_steps`,
+   probe readouts), refuse a conflicting option and check the world
+   class before any seed (added after the PI decisions of 2026-10-24).
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
@@ -331,6 +343,10 @@ recorded on the form at filing).**
   `tests/unit/test_e1_runner_v07.py` check that the Gumbel readout and
   training under `both` equal the legacy run bit for bit and that the
   hard capture is deterministic.
+- Item 9 (presets and world check): `apply_preset` / `check_world` in
+  the E1 runner, unit tests in `tests/unit/test_e1_runner_v07.py`
+  (frozen values set, conflicting option refused, stub world refused,
+  legacy defaults unchanged without a preset).
 
 **Implementation verification of the primary estimator (pre-filing,
 pass/fail).** The new function must pass all of the following before
@@ -696,10 +712,12 @@ demodulation, "both": hard argmax readout primary (E-2), Gumbel-sampled
 readout as registered secondary E-2g (§3, §4.2, §6); the
 primary/secondary split was confirmed by the PI the same day.
 
-1. B-2 batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8) vs
-   512 / 512 / 512 (the ADR-0019 E1.3 runs).
-2. B-2 primary world: Studyforrest (drafted; same bridge as B-1, but the
-   lesioned audio channel is an annotation proxy) vs CC-film (audio is
-   the real signal).
-3. Pre-registration id (N-id) and final amendment number. The numbering
-   v0.7/v0.8/v0.9 assumes the drafts are filed in that order.
+Decided by the PI on 2026-10-24 (no longer open): B-2 batch sizes
+16 / 16 / 512 (train / lesion / probe), as drafted (§4.2); B-2 primary
+world Studyforrest, CC-film as E-2b (§4.2). Pre-registration id and
+amendment number: **N18**, verdict ADR **ADR-0021**, amendment v0.7, as
+proposed in the header (proposed — PI confirms at filing).
+
+No design decision remains open. Filing still needs the prerequisites
+stated above (§4.3 code tasks, calibration, pilot, regenerated E-2
+power) and the PI's confirmation of the proposed numbers.
