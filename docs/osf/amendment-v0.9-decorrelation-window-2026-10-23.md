@@ -7,7 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
-**Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
+**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
 > file has been run. The donor scheduler, the three arms, the CKA
@@ -289,7 +290,7 @@ budget**, with the remaining recovery confound stated.
 | D-2b | The same decreasing ordered trend at fixed budget T = 450 | as D-2 | secondary, gated (§6) |
 | D-3 | Persistence: mean D(s, 0) at R = 400 > 0 | one-sample t, one-sided | secondary, gated (§6) |
 | D-4 | Effect on later lesion: after a standard T2 lesion phase (100 steps, floor SNR reached at step 50 with `k_steps` = 50, each modality; §4, ADR-0020) applied to the o = 0, R = 200 decor and joint runs, the post-lesion Me1 differs | descriptive | exploratory |
-| D-5 | Representation geometry: S between decor and joint end-of-Phase-1 codes (v0.8 metric, k = 12) | descriptive | exploratory |
+| D-5 | Representation geometry: S between decor and joint end-of-Phase-1 codes (v0.8 metric at k = 12, descriptive; not tied to the v0.8 pilot k*) | descriptive | exploratory |
 
 **SESOI = 0.05 accuracy units.** D is an accuracy difference, like Me7,
 and 0.05 is the benchmark's registered smallest meaningful accuracy gap
@@ -461,14 +462,21 @@ publishable.
   model D(s, o) = μ_o + u_s + e_so by ANOVA without replication;
   σ̂_e² = MS_residual (df = 16), σ̂_u² = max(0, (MS_seed − MS_residual)
   / 5), σ̂² = σ̂_u² + σ̂_e² (the marginal SD the planning model needs).
-  Its planning value is the 80th percentile of σ̂ over 2 000 parametric
-  bootstrap replicates of 5 seeds drawn from the fitted model (seed
-  20261023), which accounts for the seed correlation that an ordinary
-  χ² limit ignores. With ρ = 0 (above), N is the smallest N ≥ 20 for
+  **Planning value (PI decision 2026-10-24): the conservative χ² UCL80
+  with the least favourable df = 4**, σ̂_plan = σ̂ · √(4 / χ²₀.₂₀,₄) =
+  1.558 · σ̂ (`sd_ucl(σ̂, 5)` in `scripts/power_prereg_2026_10.py`).
+  df = 4 is the df of 5 independent seed values, the least favourable
+  case (ρ = 1, all variation between seeds). Under a Satterthwaite
+  approximation the effective df of σ̂² lies between 4 and 16, so the
+  df = 4 multiplier is the largest and the bound is approximately
+  conservative for any ρ ∈ [0, 1]. The earlier 80th percentile of a
+  parametric bootstrap was not: the round-4 review simulated its
+  coverage at 74 % / 66 % / 61 % for ρ = 0.25 / 0.5 / 1. With ρ = 0 (above), N is the smallest N ≥ 20 for
   which the simulated P(A+ and C+) at μ₀ = 0.05 under the "early"
   profile, **minus two Monte-Carlo SEs**, is ≥ 0.80, using at least
   100 000 draws per candidate N and the permutation-calibrated Page
-  test. With the planning SD 0.0605 this gives **N = 32** (estimates
+  test. With the borrowed planning SD 0.0605 (not a pilot bound) this
+  gives **N = 32** (estimates
   0.788 / 0.801 / 0.809 at N = 30 / 31 / 32; lower bounds 0.786 /
   0.799 / 0.807; `scripts/power_prereg_2026_10.py`).
   If no N ≤ 40 qualifies, the amendment is not filed as drafted: the PI
@@ -527,8 +535,8 @@ decorrelation window itself is not claimed as a new intervention (§2).
       PR #12.
 - [ ] Manipulation check passed on pilot seeds and recorded on the form,
       with Δ_K, its permutation p-value, K_joint and K_decor.
-- [ ] Pilot variance components of D, bootstrap planning SD and runtime
-      recorded; N fixed on the form.
+- [ ] Pilot variance components of D, χ² UCL80 planning SD (df = 4,
+      × 1.558) and runtime recorded; N fixed on the form.
 - [x] No threshold or existing-metric change.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
 
@@ -546,36 +554,21 @@ SNR ramp `k_steps` = 50 for the D-4 lesion phase (§4, ADR-0020).
 Decided by the PI on 2026-10-24 (no longer open): §3.4 probe overlap,
 resolved by holding out the last 10 % of frames (§3.1, §3.3, §3.4).
 
-1. Correspondence with Kleinman et al. (2023): confirm that within-class
-   cross-modal resampling is an acceptable analogue of their
-   correlated-signal disturbance, or switch to their exact manipulation
-   after reading the paper.
-2. Window width w = 50 and recovery R = 200 (drafted) vs a second width.
-   Each added width multiplies compute.
-3. Fixed-budget grid: keep (drafted; 6 extra runs per seed, reported as
-   a replication at fixed budget) or drop. Either way, every positive
-   claim is limited to "the deficit varies across the specified
-   training schedules"; separate identification of onset, budget and recovery
-   effects would need a further design (e.g. a factorial over recovery
-   length), not drafted.
-4. Primary comparator: joint-resampling control (drafted) vs the plain
-   control. With the plain control, the deficit also contains the
-   effect of losing within-batch temporal contiguity, and the attribution
-   must be narrowed to "resampling with decorrelation".
-5. Manipulation-check gate: the matched joint-vs-decor permutation test
-   (drafted), optionally plus a minimum Δ_K fixed before the pilot.
-6. Whether the onset grid should also include LOCK_AFTER regimes (a
-   cross with v0.8). Not drafted, to keep the family small.
-7. Optional mitigation arm (cross-modal reconstruction objective, which
-   Kleinman et al. report reduces critical-period sensitivity). Not
-   drafted.
-8. Pre-registration id (N-id) and final amendment number.
-9. Planning SD for N (§7). The 80th percentile of the parametric
-   bootstrap of σ̂ is not a calibrated 80 % upper confidence bound:
-   the Codex round-4 review simulated its coverage at 74 % / 66 % /
-   61 % for ρ = 0.25 / 0.5 / 1. Choose a calibrated bound (for example
-   a bootstrap bound whose level is tuned by simulation to 80 %
-   coverage over ρ ∈ [0, 1], or the conservative χ² UCL80 with the
-   least favourable df = 4 (ρ = 1; multiplier √(4 / χ²₀.₂₀,₄) = 1.558)
-   applied to the marginal σ̂) and regenerate N with it at the pilot;
-   N = 32 above uses the borrowed SD 0.0605, not a pilot bound.
+Decided by the PI on 2026-10-24 (no longer open): the design is kept as
+drafted, with the held-out probe as the only change: within-class
+cross-modal resampling as the analogue of the Kleinman et al.
+disturbance (§2, §3.1); w = 50 and R = 200, no second width (§4);
+fixed-budget grid kept, reported as a replication at fixed budget,
+with every positive claim limited to "the deficit varies across the
+specified training schedules"; joint-resampling control as primary
+comparator (§3.2); the matched joint-vs-decor permutation gate with no
+added minimum Δ_K (§3.3); no LOCK_AFTER cross and no mitigation arm
+(not drafted). Planning SD for N = the conservative χ² UCL80 with
+df = 4 (× 1.558, §7). Pre-registration id **N20**, verdict ADR
+**ADR-0023**, amendment v0.9, as proposed in the header (proposed — PI
+confirms at filing).
+
+No design decision remains open. Filing still needs the prerequisites
+stated above (driver, train-side fusion gain, D-4 / D-5 analyses,
+pilot with the manipulation check, regenerated N) and the PI's
+confirmation of the proposed numbers.
