@@ -27,13 +27,12 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 from pathlib import Path
 
 import numpy as np
 import torch
 
-from bouba_sens.metrics.mi_migration import me3_delta, me3_delta_mine, me3_mi
+from bouba_sens.metrics.mi_migration import me3_delta, me3_delta_mine
 
 MODALITIES = ("audio", "vision", "tactile", "gravity", "force")
 TIMINGS = ("T2",)
@@ -88,7 +87,7 @@ def _delta_binning(pre: np.ndarray, post: np.ndarray, labels: np.ndarray, bins: 
     def mi_one(x_col: np.ndarray, y: np.ndarray) -> float:
         xb = np.digitize(x_col, np.histogram_bin_edges(x_col, bins=bins)[1:-1])
         joint = np.zeros((bins + 1, int(y.max()) + 1))
-        for xi, yi in zip(xb, y.astype(int)):
+        for xi, yi in zip(xb, y.astype(int), strict=False):
             joint[xi, yi] += 1
         p = joint / joint.sum()
         px = p.sum(1, keepdims=True)
@@ -151,17 +150,31 @@ def main() -> None:
             print(f"  [seed {seed}] MINE failed: {exc}", flush=True)
 
         # Bootstrap CIs (Kraskov + binning; MINE too costly to bootstrap fully)
-        k_m, k_lo, k_hi = bootstrap_ci(
-            lambda a, b, c: me3_delta(torch.from_numpy(a), torch.from_numpy(b), torch.from_numpy(c)),
-            pre, post, lab, n_boot=args.n_boot, seed=seed,
+        _k_m, k_lo, k_hi = bootstrap_ci(
+            lambda a, b, c: me3_delta(
+                torch.from_numpy(a), torch.from_numpy(b), torch.from_numpy(c)
+            ),
+            pre,
+            post,
+            lab,
+            n_boot=args.n_boot,
+            seed=seed,
         )
-        b_m, b_lo, b_hi = bootstrap_ci(_delta_binning, pre, post, lab, n_boot=args.n_boot, seed=seed)
+        _b_m, b_lo, b_hi = bootstrap_ci(
+            _delta_binning, pre, post, lab, n_boot=args.n_boot, seed=seed
+        )
 
         row = {
-            "seed": seed, "n": n, "d": d,
-            "kraskov_delta": krask, "kraskov_ci_lo": k_lo, "kraskov_ci_hi": k_hi,
+            "seed": seed,
+            "n": n,
+            "d": d,
+            "kraskov_delta": krask,
+            "kraskov_ci_lo": k_lo,
+            "kraskov_ci_hi": k_hi,
             "mine_delta": mine,
-            "binning_delta": binn, "binning_ci_lo": b_lo, "binning_ci_hi": b_hi,
+            "binning_delta": binn,
+            "binning_ci_lo": b_lo,
+            "binning_ci_hi": b_hi,
         }
         rows.append(row)
         print(

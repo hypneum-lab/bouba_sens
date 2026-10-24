@@ -59,14 +59,16 @@ def mel_to_hz(m: np.ndarray) -> np.ndarray:
     return 700.0 * (10.0 ** (m / 2595.0) - 1.0)
 
 
-def mel_filterbank(n_mels: int, n_fft: int, sr: int, fmin: float = 0.0,
-                   fmax: float | None = None) -> np.ndarray:
+def mel_filterbank(
+    n_mels: int, n_fft: int, sr: int, fmin: float = 0.0, fmax: float | None = None
+) -> np.ndarray:
     """(n_mels, n_fft//2+1) triangular mel filter-bank."""
     fmax = fmax if fmax is not None else sr / 2.0
     n_bins = n_fft // 2 + 1
     fft_freqs = np.linspace(0, sr / 2.0, n_bins)
-    mel_pts = np.linspace(hz_to_mel(np.array([fmin]))[0],
-                          hz_to_mel(np.array([fmax]))[0], n_mels + 2)
+    mel_pts = np.linspace(
+        hz_to_mel(np.array([fmin]))[0], hz_to_mel(np.array([fmax]))[0], n_mels + 2
+    )
     hz_pts = mel_to_hz(mel_pts)
     fb = np.zeros((n_mels, n_bins), dtype=np.float64)
     for m in range(1, n_mels + 1):
@@ -82,8 +84,7 @@ def compute_mel(wav: np.ndarray, sr: int, n_frames: int) -> np.ndarray:
     # STFT window sized so we get a dense time axis we can pool to n_frames.
     n_fft = 1024
     hop = 256
-    _f, _t, zxx = stft(wav, fs=sr, nperseg=n_fft, noverlap=n_fft - hop,
-                       boundary=None, padded=False)
+    _f, _t, zxx = stft(wav, fs=sr, nperseg=n_fft, noverlap=n_fft - hop, boundary=None, padded=False)
     power = np.abs(zxx) ** 2  # (n_bins, n_stft_frames)
     fb = mel_filterbank(N_MELS, n_fft, sr)  # (N_MELS, n_bins)
     mel = fb @ power  # (N_MELS, n_stft_frames)
@@ -94,7 +95,7 @@ def compute_mel(wav: np.ndarray, sr: int, n_frames: int) -> np.ndarray:
     out = np.zeros((n_frames, N_MELS), dtype=np.float32)
     for i in range(n_frames):
         a, b = edges[i], max(edges[i] + 1, edges[i + 1])
-        out[i] = log_mel[:, a:min(b, n_t)].mean(axis=1)
+        out[i] = log_mel[:, a : min(b, n_t)].mean(axis=1)
     # Per-band standardise (zero-mean unit-var) — keeps the contract f32.
     out = (out - out.mean(0, keepdims=True)) / (out.std(0, keepdims=True) + 1e-6)
     return out.astype(np.float32)
@@ -116,11 +117,16 @@ def frame_to_grid(img: Image.Image) -> np.ndarray:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", type=Path, default=Path("data/ccfilm_real"))
-    ap.add_argument("--max-seconds", type=float, default=300.0,
-                    help="trim the film to this many seconds (cache size cap)")
+    ap.add_argument(
+        "--max-seconds",
+        type=float,
+        default=300.0,
+        help="trim the film to this many seconds (cache size cap)",
+    )
     ap.add_argument("--keep-tmp", action="store_true")
-    ap.add_argument("--mp4", type=Path, default=None,
-                    help="reuse a pre-downloaded film instead of fetching")
+    ap.add_argument(
+        "--mp4", type=Path, default=None, help="reuse a pre-downloaded film instead of fetching"
+    )
     args = ap.parse_args()
 
     tmp = Path(tempfile.mkdtemp(prefix="ccfilm_"))
@@ -128,7 +134,7 @@ def main() -> None:
 
     if args.mp4 is not None:
         mp4 = args.mp4
-        print(f"reusing {mp4} ({mp4.stat().st_size/1e6:.1f} MB)", flush=True)
+        print(f"reusing {mp4} ({mp4.stat().st_size / 1e6:.1f} MB)", flush=True)
     else:
         mp4 = tmp / "film.mp4"
         print(f"downloading {FILM_URL} ...", flush=True)
@@ -136,27 +142,49 @@ def main() -> None:
         req = urllib.request.Request(FILM_URL, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req) as resp, mp4.open("wb") as fh:
             shutil.copyfileobj(resp, fh)
-        print(f"  -> {mp4.stat().st_size/1e6:.1f} MB", flush=True)
+        print(f"  -> {mp4.stat().st_size / 1e6:.1f} MB", flush=True)
 
     # --- audio: mp4 -> mono 16k wav ---
     wav_path = tmp / "audio.wav"
     subprocess.run(
-        [FFMPEG, "-y", "-i", str(mp4), "-t", str(args.max_seconds),
-         "-ac", "1", "-ar", str(SR), str(wav_path)],
-        check=True, capture_output=True,
+        [
+            FFMPEG,
+            "-y",
+            "-i",
+            str(mp4),
+            "-t",
+            str(args.max_seconds),
+            "-ac",
+            "1",
+            "-ar",
+            str(SR),
+            str(wav_path),
+        ],
+        check=True,
+        capture_output=True,
     )
     wav, sr = sf.read(wav_path)
     if wav.ndim > 1:
         wav = wav.mean(axis=1)
-    print(f"audio: {wav.shape[0]} samples @ {sr} Hz ({wav.shape[0]/sr:.1f}s)", flush=True)
+    print(f"audio: {wav.shape[0]} samples @ {sr} Hz ({wav.shape[0] / sr:.1f}s)", flush=True)
 
     # --- frames: mp4 -> png at FPS ---
     frame_dir = tmp / "frames"
     frame_dir.mkdir()
     subprocess.run(
-        [FFMPEG, "-y", "-i", str(mp4), "-t", str(args.max_seconds),
-         "-vf", f"fps={FPS}", str(frame_dir / "%05d.png")],
-        check=True, capture_output=True,
+        [
+            FFMPEG,
+            "-y",
+            "-i",
+            str(mp4),
+            "-t",
+            str(args.max_seconds),
+            "-vf",
+            f"fps={FPS}",
+            str(frame_dir / "%05d.png"),
+        ],
+        check=True,
+        capture_output=True,
     )
     frame_files = sorted(frame_dir.glob("*.png"))
     print(f"frames: {len(frame_files)} @ {FPS} fps", flush=True)
@@ -185,12 +213,18 @@ def main() -> None:
     flux[1:] = np.abs(audio_energy[1:] - audio_energy[:-1])
     rng = np.random.default_rng(0)
     base = (flux - flux.mean()) / (flux.std() + 1e-6)
-    tactile = (base[:, None] * rng.standard_normal((1, TACTILE_DIM))
-               + 0.1 * rng.standard_normal((n_frames, TACTILE_DIM))).astype(np.float32)
-    gravity = (base[:, None] * rng.standard_normal((1, GRAVITY_DIM))
-               + 0.1 * rng.standard_normal((n_frames, GRAVITY_DIM))).astype(np.float32)
-    force = (base[:, None] * rng.standard_normal((1, FORCE_DIM))
-             + 0.1 * rng.standard_normal((n_frames, FORCE_DIM))).astype(np.float32)
+    tactile = (
+        base[:, None] * rng.standard_normal((1, TACTILE_DIM))
+        + 0.1 * rng.standard_normal((n_frames, TACTILE_DIM))
+    ).astype(np.float32)
+    gravity = (
+        base[:, None] * rng.standard_normal((1, GRAVITY_DIM))
+        + 0.1 * rng.standard_normal((n_frames, GRAVITY_DIM))
+    ).astype(np.float32)
+    force = (
+        base[:, None] * rng.standard_normal((1, FORCE_DIM))
+        + 0.1 * rng.standard_normal((n_frames, FORCE_DIM))
+    ).astype(np.float32)
 
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
@@ -216,7 +250,7 @@ def main() -> None:
         "",
         f"- Source film: {FILM_URL}",
         "- License: CC-BY 3.0 (Big Buck Bunny, Blender Foundation 2008)",
-        f"- N frames: {n_frames} @ {FPS} fps  ({n_frames/FPS:.0f}s of film)",
+        f"- N frames: {n_frames} @ {FPS} fps  ({n_frames / FPS:.0f}s of film)",
         f"- Audio: mono {SR} Hz, mel-{N_MELS} (scipy STFT n_fft=1024 hop=256, "
         "HTK mel bank from scratch)",
         f"- Label classes populated: {n_classes}",
