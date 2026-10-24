@@ -88,7 +88,7 @@ def test_all_arms_share_probe_labels_and_z_pre() -> None:
     assert torch.equal(b.probe_labels, expected)
 
 
-def test_block_is_reproducible() -> None:
+def test_block_is_reproducible(deterministic_torch: None) -> None:
     ckpt = _make_loop().pretrain(steps=3, batch_size=4, seed=0)
     a = _block(ckpt)
     b = _block(ckpt)
