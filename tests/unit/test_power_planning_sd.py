@@ -79,3 +79,33 @@ def test_selection_counterexample_is_controlled_by_the_safeguard() -> None:
     )
     assert lev["safeguarded"] <= 0.05 + 3 * se
     assert 0.80 < lev["kept_fraction"] < 0.90  # same per-seed incompleteness q
+
+
+@pytest.mark.parametrize("mode", ["adversarial", "block_local"])
+def test_codex_interior_deletion_selection_is_controlled(mode: str) -> None:
+    """Codex round 3: selection that deletes one interior value where the
+    earlier fixed-direction imputation would have raised L."""
+    import numpy as np
+
+    sims = 4000
+    out = power.v08_interior_deletion_null(40, sims, np.random.default_rng(5), mode=mode)
+    se = math.sqrt(0.05 * 0.95 / sims)
+    assert out["complete_only"] > 0.05 + 3 * se  # the selection does bias the naive analysis
+    assert out["safeguarded"] <= 0.05 + SAFEGUARD_TOLERANCE + 3 * se
+
+
+def test_simulator_calibration_matches_the_registered_test() -> None:
+    """Tie-free data: the simulator's critical value and the registered
+    mid-rank permutation test (page_trend) take the same decision."""
+    import numpy as np
+
+    from bouba_sens.metrics.page_trend import page_permutation_test
+
+    rng = np.random.default_rng(6)
+    agree = 0
+    for _ in range(60):
+        x = rng.normal(size=(20, 7)) + np.linspace(0, rng.uniform(0, 0.5), 7)
+        sim = bool(power.page_perm_reject(x[None])[0])
+        reg = page_permutation_test(x, n_perm=20_000).p_value < 0.05
+        agree += sim == reg
+    assert agree >= 58  # borderline cases may differ by Monte-Carlo error

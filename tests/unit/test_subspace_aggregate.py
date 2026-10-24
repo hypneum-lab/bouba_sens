@@ -18,11 +18,11 @@ from bouba_sens.metrics.subspace_aggregate import (
     RunHaltedError,
     SeedRoster,
     TechnicalFailureError,
-    adversarial_endpoint_contrast,
-    adversarial_matrix,
     aggregate,
     evaluate_block,
     verdict,
+    worst_case_endpoint_contrast,
+    worst_case_page_test,
 )
 from bouba_sens.sensory import MODALITIES
 from bouba_sens.subspace_protocol import SNR_FLOORS, BlockCodes
@@ -299,24 +299,24 @@ def _verdict_agg(endpoint_gain: float, s_split: float = 0.1, drop: int = 0):
 
 def test_verdict_protocol_failure_has_priority() -> None:
     agg = _verdict_agg(1.0, drop=7)
-    assert verdict(agg, p_value=0.001, p_value_adversarial=0.001) == "protocol_failure"
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "protocol_failure"
 
 
 def test_verdict_supported() -> None:
-    assert verdict(_verdict_agg(0.5), p_value=0.049, p_value_adversarial=0.049) == "supported"
+    assert verdict(_verdict_agg(0.5), p_value=0.049, p_value_worst_case=0.049) == "supported"
 
 
 def test_verdict_detectable_but_sub_floor() -> None:
     agg = _verdict_agg(0.05)
-    assert verdict(agg, p_value=0.001, p_value_adversarial=0.001) == "detectable_sub_floor"
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "detectable_sub_floor"
     # strict inequality: contrast equal to the floor does not pass the guard
     agg = _verdict_agg(0.5, s_split=0.5)
-    assert verdict(agg, p_value=0.001, p_value_adversarial=0.001) == "detectable_sub_floor"
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "detectable_sub_floor"
 
 
 def test_verdict_not_demonstrated() -> None:
     agg = _verdict_agg(0.5)
-    assert verdict(agg, p_value=0.05, p_value_adversarial=0.001) == "not_demonstrated"
+    assert verdict(agg, p_value=0.05, p_value_worst_case=0.001) == "not_demonstrated"
 
 
 # ------------------------------------------- selection safeguard (Codex round 2)
@@ -330,34 +330,29 @@ def test_aggregate_keeps_every_block_for_the_sensitivity_analysis() -> None:
     assert np.array_equal(agg.y_all[2:], agg.y)
 
 
-def test_adversarial_imputation_works_against_an_increasing_trend() -> None:
-    agg = aggregate(
-        _grid(20, undefined={0: [25, 50, 75, 100], 1: [125, 150, 175]}), n_confirmatory=20
-    )
-    imp = adversarial_matrix(agg)
-    assert imp.shape == (20, 7)
-    assert np.all(np.isfinite(imp))  # the Page test works on finite ranks
-    # low levels missing -> tied highest ranks; high levels missing -> tied lowest
-    assert len(set(imp[0, :4])) == 1 and imp[0, 0] > imp[0, 4:].max()
-    assert len(set(imp[1, 4:])) == 1 and imp[1, 6] < imp[1, :4].min()
-    assert np.array_equal(imp[0, 4:], agg.y_all[0, 4:])  # observed values unchanged
-    assert np.array_equal(imp[2:], agg.y)
-    assert adversarial_endpoint_contrast(agg) <= float(np.median(agg.y[:, 6] - agg.y[:, 0]))
+def test_worst_case_p_value_uses_every_block_and_is_conservative() -> None:
+    agg = aggregate(_grid(20, undefined={0: [100], 1: [125, 150]}), n_confirmatory=20)
+    res = worst_case_page_test(agg, n_perm=2_000)
+    assert res.n_blocks == 20  # incomplete blocks are not dropped
+    full = aggregate(_grid(20), n_confirmatory=20)
+    assert res.l_obs <= worst_case_page_test(full, n_perm=2_000).l_obs
 
 
 def test_no_exclusion_makes_both_analyses_identical() -> None:
+    from bouba_sens.metrics.page_trend import page_l
+
     agg = aggregate(_grid(20), n_confirmatory=20)
-    assert np.array_equal(adversarial_matrix(agg), agg.y)
+    assert worst_case_page_test(agg, n_perm=1_000).l_obs == page_l(agg.y)
 
 
 def test_verdict_requires_robustness_to_excluded_blocks() -> None:
     agg = _verdict_agg(0.5, drop=3)
-    assert verdict(agg, p_value=0.001, p_value_adversarial=0.2) == "not_robust_to_exclusions"
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.2) == "not_robust_to_exclusions"
     with pytest.raises(TypeError):
         verdict(agg, p_value=0.001)  # type: ignore[call-arg]
 
 
-def test_adversarial_guard_counts_excluded_endpoints_as_minus_infinity() -> None:
+def test_worst_case_guard_counts_excluded_endpoints_as_minus_infinity() -> None:
     # 9 of 20 blocks lose the 175 level: the adversarial median endpoint
     # contrast still passes (11 finite > floor) but 11 losses would fail it.
     agg = aggregate(
@@ -367,7 +362,7 @@ def test_adversarial_guard_counts_excluded_endpoints_as_minus_infinity() -> None
         ],
         n_confirmatory=20,
     )
-    assert adversarial_endpoint_contrast(agg) > 0.1
+    assert worst_case_endpoint_contrast(agg) > 0.1
     agg = aggregate(
         [
             replace(r, s_split=None if r.y is None else 0.1)
@@ -375,4 +370,4 @@ def test_adversarial_guard_counts_excluded_endpoints_as_minus_infinity() -> None
         ],
         n_confirmatory=20,
     )
-    assert adversarial_endpoint_contrast(agg) == -np.inf
+    assert worst_case_endpoint_contrast(agg) == -np.inf

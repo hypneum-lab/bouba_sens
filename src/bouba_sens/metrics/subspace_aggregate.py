@@ -19,11 +19,12 @@ denominators, and flags a protocol failure below 70 % complete blocks
 (PI decision 2026-10-24; was 80 %). It also keeps every block (``y_all``,
 NaN where ``Y`` is undefined) for the selection safeguard: rank
 exclusions are outcome-dependent, so an analysis of complete blocks
-alone can be biased (Codex round-2 counterexample). ``adversarial_matrix``
-imputes every undefined ``Y`` against the increasing hypothesis (+inf
-at locks <= 100, -inf above), and ``verdict`` requires the Page test and
-the magnitude guard to pass on both the complete blocks and the
-adversarially imputed full set.
+alone can be biased (Codex rounds 2-3). ``worst_case_page_test`` runs
+the Page test on all blocks, each undefined ``Y`` completed in the way
+that minimises its block's Page contribution (conservative under any
+exclusion mechanism), and ``verdict`` requires the Page test and the
+magnitude guard to pass on both the complete blocks and the worst-case
+analysis.
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import torch
 
+from bouba_sens.metrics.page_trend import N_PERM, PERM_SEED, PageResult, page_worst_case_test
 from bouba_sens.metrics.subspace import (
     K_DEFAULT,
     SubspaceRankError,
@@ -49,7 +51,6 @@ LOCKS: tuple[int, ...] = (25, 50, 75, 100, 125, 150, 175)
 N_CELLS = 15  # 5 lesioned modalities x 3 SNR levels
 MIN_VALID_CELLS = 12
 MIN_COMPLETE_FRACTION = 0.7  # applied in integer form: 10 * complete >= 7 * N
-ADVERSARIAL_SPLIT_LOCK = 100  # undefined Y at lock <= 100 -> +inf, above -> -inf
 MAX_TECHNICAL_REPLACEMENTS = 4
 
 
@@ -229,32 +230,19 @@ def aggregate(
     )
 
 
-def adversarial_matrix(agg: AggregateResult) -> np.ndarray:
-    """Every block, undefined ``Y`` imputed against an increasing trend.
+def worst_case_page_test(
+    agg: AggregateResult, *, n_perm: int = N_PERM, seed: int = PERM_SEED
+) -> PageResult:
+    """Selection safeguard: Page test on all N blocks with worst-case completion.
 
-    Within each block, undefined values at locks <= ``ADVERSARIAL_SPLIT_LOCK``
-    take the highest ranks and those above it the lowest ranks; imputed
-    values on the same side tie (mid-ranks in the Page test). They are
-    written as finite numbers (block maximum + 1 and block minimum - 1;
-    1 and -1 for a block with no defined value) so that the Page test,
-    which works on ranks, accepts the matrix. Observed values are
-    unchanged; with no exclusion this equals ``agg.y``.
+    Every undefined ``Y`` is completed in the way that minimises its
+    block's Page contribution (``page_trend.page_worst_case_test``), so
+    the p-value is conservative whatever the exclusion mechanism.
     """
-    imp = agg.y_all.copy()
-    high = np.array([lk <= ADVERSARIAL_SPLIT_LOCK for lk in agg.locks])
-    for row in imp:
-        miss = np.isnan(row)
-        if not miss.any():
-            continue
-        obs = row[~miss]
-        top = float(obs.max()) + 1.0 if obs.size else 1.0
-        bottom = float(obs.min()) - 1.0 if obs.size else -1.0
-        row[miss & high] = top
-        row[miss & ~high] = bottom
-    return imp
+    return page_worst_case_test(agg.y_all, n_perm=n_perm, seed=seed)
 
 
-def adversarial_endpoint_contrast(agg: AggregateResult) -> float:
+def worst_case_endpoint_contrast(agg: AggregateResult) -> float:
     """Median over all blocks of ``Y(175) - Y(25)`` on the imputed matrix.
 
     An undefined endpoint makes the block's contrast -inf.
@@ -307,29 +295,30 @@ class SeedRoster:
 
 
 def verdict(
-    agg: AggregateResult, *, p_value: float, p_value_adversarial: float, alpha: float = 0.05
+    agg: AggregateResult, *, p_value: float, p_value_worst_case: float, alpha: float = 0.05
 ) -> str:
     """Ordered decision rule of section 6, with the selection safeguard.
 
     ``p_value`` is the Page permutation p-value on the complete blocks,
-    ``p_value_adversarial`` the same test on ``adversarial_matrix(agg)``
-    (all blocks). Returns ``protocol_failure``, ``not_demonstrated``
-    (complete-block Page fails), ``not_robust_to_exclusions`` (complete
-    blocks reject, the adversarial analysis does not), ``supported``
+    ``p_value_worst_case`` that of ``worst_case_page_test(agg)`` (all
+    blocks, worst-case completion). Returns ``protocol_failure``,
+    ``not_demonstrated`` (complete-block Page fails),
+    ``not_robust_to_exclusions`` (complete blocks reject, the worst-case
+    analysis does not), ``supported``
     (both Page tests and both guards pass) or ``detectable_sub_floor``.
     The magnitude guard is the (heuristic) strict inequality: median
     endpoint contrast greater than the median ``S_split`` over complete
-    blocks and all levels; on the imputed set an undefined endpoint
-    counts as -inf.
+    blocks and all levels; in the worst-case analysis an undefined
+    endpoint counts as -inf.
     """
     if agg.protocol_failure:
         return "protocol_failure"
     if not p_value < alpha:
         return "not_demonstrated"
-    if not p_value_adversarial < alpha:
+    if not p_value_worst_case < alpha:
         return "not_robust_to_exclusions"
     lo, hi = agg.locks.index(min(agg.locks)), agg.locks.index(max(agg.locks))
     contrast = float(np.median(agg.y[:, hi] - agg.y[:, lo]))
     floor = float(np.median(agg.s_split))
-    guard_ok = contrast > floor and adversarial_endpoint_contrast(agg) > floor
+    guard_ok = contrast > floor and worst_case_endpoint_contrast(agg) > floor
     return "supported" if guard_ok else "detectable_sub_floor"

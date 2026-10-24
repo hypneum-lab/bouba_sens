@@ -317,7 +317,13 @@ def v08_rule(
     return supported.mean(), page_ok.mean(), fail.mean()
 
 
-V08_ADV_HIGH_LEVELS = 4  # locks 25..100 (first 4 levels) imputed high, 125..175 low
+def _worst_case_l(y: np.ndarray, miss: np.ndarray) -> np.ndarray:
+    """Sum over blocks of the worst-case completion (registered safeguard)."""
+    from bouba_sens.metrics.page_trend import worst_case_block_l
+
+    sims, n, levels = y.shape
+    x = np.where(miss, np.nan, y).reshape(-1, levels)
+    return worst_case_block_l(x).reshape(sims, n).sum(-1)
 
 
 def v08_rule_selection(
@@ -343,10 +349,12 @@ def v08_rule_selection(
     endpoint difference falls below its null q-quantile, sqrt(2) * z_q:
     outcome-dependent selection keeping about 1 - q of the blocks under
     the null). Returns the P(Supported) of the complete-block rule
-    alone and of the safeguarded rule (also Page + guard on the full set
-    with excluded blocks imputed adversarially: first levels tied high,
-    last levels tied low, endpoint contrast -inf), plus P(fail) and the
-    kept fraction. Units: within-seed SD.
+    alone and of the safeguarded rule (also Page + guard on the full set:
+    every missing value completed in the way that minimises its block's
+    Page contribution, compared with the strict-rank permutation critical
+    value, i.e. the registered calibration for tie-free data; endpoint
+    contrast -inf if an endpoint is missing), plus P(fail) and the kept
+    fraction. Units: within-seed SD.
     """
     trend = np.linspace(0.0, effect, levels)
     y = trend + rng.normal(0, 1, (sims, n, levels)) + rng.normal(0, sd_seed, (sims, n, 1))
@@ -370,9 +378,7 @@ def v08_rule_selection(
         yk = np.stack([y[i][keep[i]] for i in idx])
         rej = page_perm_reject(yk)
         comp[idx] = rej & (np.median(yk[..., -1] - yk[..., 0], axis=-1) > guard)
-    adv = np.where(np.arange(levels) < V08_ADV_HIGH_LEVELS, 1e6, -1e6)
-    ya = np.where(miss, adv, y)
-    rej_a = page_perm_reject(ya)
+    rej_a = _worst_case_l(y, miss) >= page_perm_crit(n, levels)
     end_ok = ~(miss[..., 0] | miss[..., -1])
     guard_a = np.median(np.where(end_ok, endpoint, -np.inf), axis=-1) > guard
     safe = comp & rej_a & guard_a
@@ -382,6 +388,61 @@ def v08_rule_selection(
         "fail": float(fail.mean()),
         "kept_fraction": float(keep.mean()),
     }
+
+
+def v08_interior_deletion_null(n, sims, rng, *, mode, levels=7, n_drop=6, q_block=0.15):
+    """Codex round-3 selection scenarios under the null (no trend, guard 0).
+
+    For each block, find the interior level whose deletion would most raise
+    the earlier fixed-direction imputation (first 4 levels high, last 3
+    low). "adversarial": among blocks where it would, the `n_drop` with the
+    lowest L lose that value. "block_local": every block where it would and
+    whose L is below the null `q_block` quantile of a block's L loses it.
+    Returns P(Supported) of the complete-block rule and of the safeguarded
+    (worst-case) rule.
+    """
+    from bouba_sens.metrics.page_trend import worst_case_block_l
+
+    w = np.arange(1, levels + 1)
+    y = rng.normal(0, 1, (sims, n, levels))
+    ranks = y.argsort(-1).argsort(-1) + 1
+    l_block = (ranks * w).sum(-1)
+    high = np.arange(levels) < 4
+    gains = np.full((sims, n, levels), -np.inf)
+    for j in range(1, levels - 1):
+        imp = y.copy()
+        imp[..., j] = np.where(high[j], 1e6, -1e6)
+        gains[..., j] = ((imp.argsort(-1).argsort(-1) + 1) * w).sum(-1) - l_block
+    best_j = gains.argmax(-1)
+    best_g = gains.max(-1)
+    cand = best_g > 0
+    if mode == "adversarial":
+        score = np.where(cand, l_block, np.iinfo(np.int64).max)
+        pick = np.zeros((sims, n), bool)
+        idx = np.argsort(score, axis=1, kind="stable")[:, :n_drop]
+        np.put_along_axis(pick, idx, True, axis=1)
+        pick &= cand
+    elif mode == "block_local":
+        null_l = (np.random.default_rng(0).random((200_000, levels)).argsort(-1) + 1) @ w
+        pick = cand & (l_block < np.quantile(null_l, q_block))
+    else:
+        raise ValueError(f"unknown mode {mode!r}")
+    miss = np.zeros_like(y, dtype=bool)
+    np.put_along_axis(miss, best_j[..., None], pick[..., None], axis=-1)
+    keep = ~miss.any(-1)
+    n_keep = keep.sum(1)
+    fail = n_keep < math.ceil(V08_COMPLETE_MIN * n)
+    comp = np.zeros(sims, bool)
+    for k in np.unique(n_keep[~fail]):
+        ids = np.where((n_keep == k) & ~fail)[0]
+        yk = np.stack([y[i][keep[i]] for i in ids])
+        comp[ids] = page_perm_reject(yk) & (np.median(yk[..., -1] - yk[..., 0], axis=-1) > 0)
+    x = np.where(miss, np.nan, y).reshape(-1, levels)
+    l_wc = worst_case_block_l(x).reshape(sims, n).sum(-1)
+    end_ok = ~(miss[..., 0] | miss[..., -1])
+    guard_wc = np.median(np.where(end_ok, y[..., -1] - y[..., 0], -np.inf), axis=-1) > 0
+    safe = comp & (l_wc >= page_perm_crit(n, levels)) & guard_wc
+    return {"complete_only": float(comp.mean()), "safeguarded": float(safe.mean())}
 
 
 def v09_rule(n, mu0, profile, sd, rho, sims, rng, quantum=1 / 512):
@@ -615,6 +676,12 @@ def v08_selection_safeguard(args) -> None:
     sims = max(args.sims // 5, 2000)
     print(f"\n== v0.8 selection safeguard, q=0.149, {sims} draws per row")
     print("   P(Supported): complete-block rule alone vs safeguarded rule (P fail, kept)")
+    for mode in ("adversarial", "block_local"):
+        r = v08_interior_deletion_null(40, sims, rng, mode=mode)
+        print(
+            f"  Codex round-3 null, {mode}, N=40: complete-only {r['complete_only']:.4f}"
+            f" / safeguarded {r['safeguarded']:.4f}"
+        )
     for exclusion in ("level", "independent", "outcome"):
         for eff, g in ((0.0, 0.0), (0.70, 0.0), (0.95, 0.25), (1.20, 0.5)):
             out = []
