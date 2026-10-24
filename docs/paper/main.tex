@@ -41,13 +41,19 @@ measuring three invariants of cross-modal plasticity --- B-1
 (informational migration under lesion, Me3 delta), and B-3
 (perceptive/proprioceptive structural asymmetry, bouba/kiki) ---
 across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
-real MIT-BIH ECG) and a real biological bridge (Studyforrest,
-OpenNeuro ds000113; real force, gravity, and tactile/label
-channels, annotation-derived audio and vision proxies).
+real MIT-BIH ECG) and \textbf{two real bridges with opposite
+real/synthetic modality splits}. The Studyforrest bridge (OpenNeuro
+ds000113) carries real force, gravity, and tactile/label channels,
+while audio and vision are annotation-derived proxies. The CC-film
+bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio (log-mel),
+vision (frames), and labels (shot-cuts) are real perceptual signal,
+while tactile, gravity, and force are synthetic (a film has no
+proprioception).
 Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
 registration \texttt{10.17605/OSF.IO/Q6JYN} before the evaluation
 campaign. Across 9 grids (150 cells each, 5 seeds $\times$ 5
-modalities $\times$ 2 timings $\times$ 3 SNRs) and 19 ADRs, we
+modalities $\times$ 2 timings $\times$ 3 SNR labels; the three SNR
+labels were near-replicates, see ADR-0020) and 19 ADRs, we
 report: (i) B-3 passes on magnitude only (median max off-diagonal
 $= 0.109$--$0.125$, $5.5$--$6.3\times$ threshold, 5/5 seeds); a
 null-model partition control places the pre-registered
@@ -61,8 +67,15 @@ the canonical seed and yields a 10-seed sign-test $p=0.62$
 (chance); pre-registered subgroup replication on $N=10$ new seeds
 fails at Bonferroni $\alpha=0.025$ (ADR-0019) --- B-1 is below
 the noise floor; (iii) B-2 does not exceed threshold under any
-configuration, and Kraskov vs.\ MINE agree within 0.1\,bit on
-the null (ADR-0019). An earlier version of this paper
+configuration (ADR-0019). The earlier ``Kraskov and MINE agree at
+zero'' reading is withdrawn as an independent agreement, because the
+1-D mean-pooled probe pinned MINE to exactly $0.000$ on every seed;
+re-estimating with Kraskov, adaptive binning, and MINE on the full
+896-D probe, with a measured effective dimension $D \approx 12$
+replacing the ``probe batch $\geq 128$'' heuristic by an
+estimator-aware $N \gtrsim f(D)$ criterion, no estimator crosses
+$+0.10$ on any seed on the Gaussian reference or on either real
+bridge (Section~\ref{sec:limitations-e1e2}). An earlier version of this paper
 claimed that a frozen mux with hard transducer gating is the
 minimal configuration that qualitatively reproduces the Amedi
 T1/T2 asymmetry; that claim rested on the single-seed B-1 pattern
@@ -104,9 +117,13 @@ reproduces both properties simultaneously.
 pre-registered quantitative invariants (Table~\ref{tab:invariants})
 and runs them against a frozen 9-grid evaluation campaign
 (150 cells each, 5 seeds $\times$ 5 modalities $\times$ 2
-timings $\times$ 3 SNRs). All three thresholds are frozen by the
+timings $\times$ 3 SNR labels). All three thresholds are frozen by the
 OSF pre-registration \texttt{10.17605/OSF.IO/Q6JYN} and are not
-revisited in this paper.
+revisited in this paper. A post-hoc audit (ADR-0020, draft) found that
+under the default schedule the three SNR labels reached only
+$19.21 / 19.41 / 19.80$\,dB at the last lesion step, so the SNR factor
+provided almost no manipulation and no robustness-across-SNR claim is
+made anywhere in this paper.
 
 \begin{table}[t]
   \centering
@@ -184,6 +201,50 @@ $\theta$-replay FIFO buffer (see \texttt{src/bouba\_sens/loop.py}).
     \bottomrule
   \end{tabular}
 \end{table}
+
+\subsection{The CC-film real-AV bridge}
+\label{sec:ccfilm}
+
+The Studyforrest bridge (Section~\ref{sec:limitations-e1e2}(d)) has
+real proprioceptive channels but annotation-derived audio and vision
+proxies, because the Forrest Gump soundtrack and movie are
+copyrighted and absent from OpenNeuro. The CC-film bridge
+(\texttt{--world ccfilm}) closes this gap from the other side. The
+source is Big Buck Bunny (Blender Foundation 2008, CC-BY 3.0,
+\texttt{BigBuckBunny\_320x180.mp4}), fetched from
+\texttt{download.blender.org} and trimmed to 300\,s, i.e.\ 600 frames
+at 2\,fps (\texttt{scripts/extract\_ccfilm\_features.py}).
+
+\begin{table}[ht]
+  \centering
+  \caption{Channel provenance of the CC-film bridge.}
+  \label{tab:ccfilm-provenance}
+  \begin{tabular}{lll}
+    \toprule
+    Modality & Construction & Real? \\
+    \midrule
+    audio $(N,128)$ & 128-D log-mel of the soundtrack & \textbf{Real} \\
+    vision $(N,16,16)$ & $16\times 16$ mean-intensity grid of decoded frames & \textbf{Real} \\
+    labels $(N)$ & frame-difference shot-cut energy, quartile-quantised to 4 classes & \textbf{Real} \\
+    tactile & RNG-seeded stream modulated by audio energy flux & Synthetic \\
+    gravity & same construction (3-D) & Synthetic \\
+    force & same construction (6-D) & Synthetic \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The log-mel features use a \texttt{scipy} STFT ($n_{\mathrm{fft}} =
+1024$, hop $256$, mono 16\,kHz) through an HTK mel filter-bank
+written from scratch (no \texttt{torchaudio} or \texttt{librosa}),
+pooled onto the frame grid and standardised per band. Vision is the
+per-frame mean-intensity patch grid normalised to $[0,1]$. The
+labels are quartile-quantised into four evenly populated classes
+(150 frames each). A film carries no proprioception, so
+tactile, gravity, and force are explicitly synthetic (seeded, and
+audio-flux-modulated for temporal coherence); they are not measured
+signal. The world loads as \texttt{CCFilmWorld} (mode
+\texttt{real\_av}, verified in the run logs, not the mock stub).
+Results are reported in Section~\ref{sec:limitations-e1e2}(e).
 
 \subsection{The six-metric world-complexity audit}
 \label{sec:audit}
@@ -430,7 +491,7 @@ further confirming its architectural-invariant status.
 
 The B-1 dose-response curve was tested across 20 seeds $\times$ 5
 \texttt{LOCK\_AFTER} values $\times$ 5 modalities $\times$ 3 SNR
-conditions (1500 cells $\times$ 5 \texttt{LOCK} = 7500 cells total,
+labels (near-replicates; ADR-0020) (1500 cells $\times$ 5 \texttt{LOCK} = 7500 cells total,
 see Appendix~C). The non-monotone signature originally reported in
 a single-seed run (v0.5.0 §5.5) \textbf{does not robustly reproduce}:
 pooled across 150 measurements per \texttt{LOCK\_AFTER}, the quadratic
@@ -696,9 +757,221 @@ $\sim 0.1$ bit} that B-2 does not exceed the $0.10$ threshold at
 this grid, and Kraskov's per-seed variance is commensurate with
 its per-seed mean. The benchmark cannot distinguish
 ``weak but real B-2 signal below threshold'' from ``null B-2 plus
-estimator noise'' with 5 seeds and a 1-D mean-pooled probe. A
+estimator noise'' with 5 seeds and a 1-D mean-pooled probe. The
 higher-dimensional probe (full $(B, d_{\mathrm{fused}})$ without
-mean-pooling) is declared follow-up for paper v0.2 (Sprint 18).
+mean-pooling) declared as follow-up here was executed in Sprint 18
+and is reported in Section~\ref{sec:limitations-e1e2}, which also
+corrects the reading above.
+
+\subsection{E1/E2 follow-up: dimensional criterion, full-probe MINE, and two real bridges}
+\label{sec:limitations-e1e2}
+
+The Sprint 18 follow-up was executed (ADR-0019,
+\texttt{scripts/spikes/e1\_b2\_dimensional\_mine.py}). It corrects the
+reading of the previous subsection in two ways.
+
+\paragraph{(a) ``MINE agrees with Kraskov at $\approx 0$'' is not an
+independent agreement.} The MINE column of
+Table~\ref{tab:kraskov-mine} is $0.000$ on every seed because the 1-D
+mean-pooled probe pins the Donsker-Varadhan critic to its floor. This
+is a property of the probe shape, not evidence about the network. The
+genuine cross-estimator statement is that Kraskov, adaptive binning,
+and MINE on the full $(B, d_{\mathrm{fused}})$ probe all bracket zero.
+
+\paragraph{(b) The ``probe batch $\geq 128$'' recommendation is
+retired in favour of $N \gtrsim f(D)$.} The Me3 probe has ambient
+dimension $d_{\mathrm{fused}} = K \cdot d_{\mathrm{hidden}} = 896$ but
+a measured effective dimension $D \approx 12$ (participation ratio
+$11.67$, two-NN intrinsic dimension $12.38$, 5 seeds, $N = 512$,
+LOCK\_AFTER$=100$ with hard gating). Sample complexity of MI
+estimators scales with this intrinsic dimension, so the fixed
+``$\geq 128$'' heuristic is replaced by an estimator-aware bound:
+report $D$ alongside every MI estimate, and treat any $N \lesssim
+10^3$ for the Me3 probe as resolving sign, not magnitude. Plug-in
+binning requires $N \gg (\#\mathrm{bins})^D$ and is therefore usable
+only on a low-dimensional summary of the probe.
+
+Re-estimating B-2 $= \mathrm{MI}_{\mathrm{post}} -
+\mathrm{MI}_{\mathrm{pre}}$ at $N = 512$ on the Gaussian world, with
+1000-resample bootstrap 95\,\% confidence intervals:
+
+\begin{table}[ht]
+  \centering
+  \caption{B-2 re-estimated on the Gaussian world (5 seeds, $N=512$).}
+  \label{tab:e1-gaussian}
+  \begin{tabular}{llr}
+    \toprule
+    Estimator (probe) & mean (bits) & 95\,\% CI \\
+    \midrule
+    Kraskov $k$-NN (1-D)   & $-0.031$ & $[-0.069, +0.005]$ \\
+    Adaptive binning (1-D) & $-0.016$ & $[-0.041, +0.008]$ \\
+    MINE (1-D mean-pool)   & $0.000$  & $[0.000, 0.000]$ \\
+    MINE (full 896-D probe) & $-0.038$ & $[-0.105, +0.002]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Feeding MINE the full-dimensional probe, i.e.\ the hypothesis that
+migration is present but the 1-D probe hides it, does not surface a
+positive B-2 (mean $-0.038$, CI brackets zero). The B-2 verdict stays
+Null, now without the spurious MINE-1-D agreement and with the richer
+probe explicitly ruled out as a rescue.
+
+\paragraph{(c) Independent full-probe replication.}
+A second runner (\texttt{scripts/spikes/e1\_b2\_full\_sonde.py},
+Gaussian world, 5 seeds, 100 lesion steps, 200 bootstrap resamples,
+$N = 240$ per seed) applies all three estimators to the full 896-D
+probe:
+
+\begin{table}[ht]
+  \centering
+  \caption{All three estimators on the full 896-D probe.}
+  \label{tab:e1-fullsonde}
+  \begin{tabular}{rrrrr}
+    \toprule
+    seed & $N$ & Kraskov & MINE (full) & binning (full) \\
+    \midrule
+    0 & 240 & $-0.077$ & $-0.003$ & $-10.72$ \\
+    1 & 240 & $0.000$  & $+0.012$ & $-24.77$ \\
+    2 & 240 & $0.000$  & $-0.008$ & $-12.06$ \\
+    3 & 240 & $-0.063$ & $\mathbf{+0.120}$ & $-8.36$ \\
+    4 & 240 & $+0.080$ & $+0.032$ & $-3.40$ \\
+    \midrule
+    \textbf{mean} & & $\mathbf{-0.012}$ & $\mathbf{+0.031}$ & $\mathbf{-11.86}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+MINE on the full probe is no longer pinned to $0$: it varies per seed
+($-0.008$ to $+0.120$), confirming that the exact $0.000$ of the 1-D
+mean-pool was a probe-shape artefact. Only seed 3 ($+0.120$) crosses
+$+0.10$ (1/5 seeds); the MINE-full mean is $+0.031$ and the verdict
+stays Null. Adaptive binning collapses on the 896-D probe ($-3$ to
+$-25$ bits), as the $N \gg (\#\mathrm{bins})^D$ argument predicts.
+
+\emph{Caveat.} The Gaussian runs above were executed first because the
+Studyforrest cache was initially unavailable. The methodological
+findings (probe-shape artefact, $D \approx 12$, $N \gtrsim f(D)$,
+full-probe MINE) are world-agnostic; the Gaussian magnitudes are kept
+as the synthetic-world reference.
+
+\paragraph{(d) Real-bridge promotion: Studyforrest, OpenNeuro
+ds000113.} The Studyforrest cache was provisioned from OpenNeuro
+ds000113 over the public S3 REST API
+(\texttt{scripts/fetch\_studyforrest\_sample.py --source openneuro},
+9000 frames at 10\,Hz). Channel provenance is mixed and is labelled
+verbatim in the cache manifest: force (cardiac pulse-ox and
+respiration physio, 500\,Hz), gravity (head-motion
+\texttt{*\_bold\_moco.txt} rotation regressors), and tactile and
+labels (\texttt{scenes.csv} scene, day/night, and interior/exterior
+annotation) are real ds000113 signal, whereas audio and vision are
+annotation-derived proxies (narration timing and scene-cut structure)
+because the soundtrack and movie are copyrighted and absent from
+OpenNeuro. The run uses \texttt{StudyforrestRealWorld} (mode
+\texttt{real5}, verified, not the mock stub). B-2 with $N = 512$, 5
+seeds, 500-resample bootstrap 95\,\% CIs, and effective dimension $D
+\approx 12.5$ (participation ratio $12.9$, two-NN $12.5$):
+
+\begin{table}[ht]
+  \centering
+  \caption{B-2 on the Studyforrest real bridge versus the Gaussian reference.}
+  \label{tab:e1-studyforrest}
+  \begin{tabular}{llll}
+    \toprule
+    Estimator (probe) & Gaussian mean & Real-bridge mean & Real 95\,\% CI \\
+    \midrule
+    Kraskov $k$-NN (1-D)    & $-0.031$ & $-0.001$ & $[-0.0029, +0.000]$ \\
+    Adaptive binning (1-D)  & $-0.016$ & $-0.0024$ & $[-0.0072, +0.000]$ \\
+    MINE (1-D mean-pool)    & $0.000$  & $-2.0\times 10^{-7}$ & $[-6.6\times 10^{-7}, +8.3\times 10^{-8}]$ \\
+    MINE (full 896-D probe) & $-0.038$ & $-1.9\times 10^{-5}$ & $[-5.7\times 10^{-5}, -1.8\times 10^{-9}]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+All values are in bits. The real-bridge verdict is identical to the
+Gaussian one: B-2 Null. Every estimator's interval brackets zero or
+sits at its edge (the full-probe MINE interval's upper bound is
+$-1.8\times 10^{-9}$, a negative value), and no estimator crosses
+$+0.10$ on any of the 5 seeds. The magnitudes are smaller than the
+Gaussian ones; since the lesioned audio channel is an annotation
+proxy, there is even less audio-specific information to migrate, but
+the qualitative null is the same. This is a real bridge for
+force, gravity, tactile, and labels and a documented proxy for audio
+and vision; it is not a full perceptual-stimulus replication.
+
+\paragraph{(e) CC-film real-AV bridge.} The proxy limitation of (d) is
+closed from the other side by the bridge defined in
+Section~\ref{sec:ccfilm}, where audio and vision are the real
+perceptual signal. B-2 with $N = 512$, 5 seeds, 500-resample
+bootstrap, effective dimension $D_{\mathrm{PR}} \approx 7.6$ and
+two-NN $\approx 13.1$ (means of the per-seed values below):
+
+\begin{table}[ht]
+  \centering
+  \caption{B-2 per seed on the CC-film bridge (bits).}
+  \label{tab:ccfilm-perseed}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    seed & $D_{\mathrm{PR}}$ & $D_{\mathrm{2NN}}$ & Kraskov & binning & MINE full \\
+    \midrule
+    0 & 13.02 & 12.53 & $-0.0800$ & $-0.0691$ & $-1.9\times 10^{-2}$ \\
+    1 & 2.82  & 14.29 & $+0.0000$ & $+0.0144$ & $-2.4\times 10^{-2}$ \\
+    2 & 13.44 & 13.20 & $-0.0274$ & $+0.0022$ & $+1.3\times 10^{-2}$ \\
+    3 & 2.72  & 12.32 & $+0.0069$ & $+0.0420$ & $+1.3\times 10^{-2}$ \\
+    4 & 6.06  & 13.05 & $-0.0579$ & $+0.0416$ & $+4.2\times 10^{-3}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+MINE on the 1-D mean-pool is $0$ on all five seeds and is omitted from
+the table.
+
+\begin{table}[ht]
+  \centering
+  \caption{B-2 on the CC-film real-AV bridge (5 seeds, $N=512$).}
+  \label{tab:ccfilm-b2}
+  \begin{tabular}{llr}
+    \toprule
+    Estimator (probe) & mean (bits) & 95\,\% CI \\
+    \midrule
+    Kraskov $k$-NN (1-D)    & $-0.0317$ & $[-0.0633, -0.0020]$ \\
+    Adaptive binning (1-D)  & $+0.0062$ & $[-0.0327, +0.0363]$ \\
+    MINE (1-D mean-pool)    & $0.0000$  & $[0.0000, 0.0000]$ \\
+    MINE (full $N\times d$ probe) & $-0.0027$ & $[-0.0159, +0.0110]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The verdict is B-2 Null a third time, now under real perceptual
+stimuli. No estimator reaches the $+0.10$ threshold; MINE-1-D is
+pinned at the Donsker-Varadhan floor; full-probe MINE is null
+($-0.003$); binning brackets zero. The only interval excluding zero is
+Kraskov's, and it does so on the negative side ($-0.032$): MI does not
+increase after the lesion.
+
+\emph{Scope: a different trade-off, not a Studyforrest replacement.}
+CC-film gains the perceptual core that the Studyforrest bridge lacked
+(real audio and vision, not annotation proxies) but loses the
+Studyforrest biological anchoring entirely (no subject, physio, or
+head motion) and has synthetic proprioception, the exact inverse of
+(d). Read together, (d) contributes real proprioception and biological
+grounding with proxy audio-visual input, while (e) contributes real
+audio-visual input with synthetic proprioception. B-2 is Null on both
+bridges and on the Gaussian reference world, so the null does not
+depend on which half of the modality set carries real signal.
+
+\paragraph{Qualification: SNR (ADR-0020).} The E1/E2 spike runners do
+not use the three-label SNR factor of the 150-cell grids. According to
+the ADR-0020 audit, \texttt{e1\_b2\_dimensional\_mine.py} applies a
+single lesion ramp from $0$\,dB toward $-20$\,dB that reaches
+$-19.80$\,dB at step 99, and \texttt{e1\_b2\_full\_sonde.py} uses a
+40-step ramp whose nominal floors are $0.0 / 0.1 / 0.3$\,dB. The
+statements above therefore concern one schedule per run; they do not
+establish robustness across SNR, and the 19.21 / 19.41 / 19.80\,dB
+near-identity of the three grid SNR labels (ADR-0020) means that the
+Section~\ref{sec:results} grid results carry no SNR-robustness claim
+either. Likewise, ``robust to which half of the modality set is real''
+refers to modality provenance, not to lesion severity.
 
 % ==================================================================
 
