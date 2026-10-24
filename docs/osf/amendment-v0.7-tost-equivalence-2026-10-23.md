@@ -197,8 +197,8 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   takes them and the hard captures draw no random numbers, so the
   training trajectory and the Gumbel readout are identical to a
   legacy run. The runner option is `--probe-demod both` (§4.3
-  item 8). The primary/secondary split is the drafting reading of the
-  PI's "both" and is confirmed by the PI before filing.
+  item 8). The primary/secondary split was confirmed by the PI on
+  2026-10-24.
 - **World check:** as in §4.1, the run log must show
   `StudyforrestRealWorld` (or the CC-film world for E-2b); a silent
   fallback to the stub is a technical failure.
@@ -693,9 +693,8 @@ and B-2 (ADR-0020).
 
 Decided by the PI on 2026-10-24 (no longer open): B-2 probe
 demodulation, "both": hard argmax readout primary (E-2), Gumbel-sampled
-readout as registered secondary E-2g (§3, §4.2, §6). The
-primary/secondary split is the drafting reading of "both"; the PI
-confirms it before filing.
+readout as registered secondary E-2g (§3, §4.2, §6); the
+primary/secondary split was confirmed by the PI the same day.
 
 1. B-2 batch sizes: 16 / 16 / 512 (drafted, matches B-1 and v0.8) vs
    512 / 512 / 512 (the ADR-0019 E1.3 runs).
