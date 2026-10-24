@@ -69,8 +69,7 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
         data_dir = Path(raw_dir) if raw_dir else Path("data/ccfilm_real")
         if not (data_dir / "audio.pt").exists():
             raise typer.BadParameter(
-                f"ccfilm cache missing at {data_dir}; run "
-                "scripts/extract_ccfilm_features.py first"
+                f"ccfilm cache missing at {data_dir}; run scripts/extract_ccfilm_features.py first"
             )
         from bouba_sens.world.ccfilm import CCFilmWorld
 

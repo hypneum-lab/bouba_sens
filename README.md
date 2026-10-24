@@ -6,7 +6,7 @@
 `bouba_sens` studies how a 5-modality agent (audio, vision, tactile, gravity,
 force) reorganises itself when one sensory channel is lost or degraded —
 inspired by the cross-modal cortical recruitment observed in congenital and
-late blindness (Amedi 2007, Merabet 2010, Heimler 2020).
+late blindness (Amedi 2007, Merabet 2010, Heimler & Amedi 2020).
 
 ## Three testable invariants
 
@@ -30,18 +30,18 @@ flagged as the wrong test for a non-monotone (peaked) hypothesis ;
 fixing that and adding 5 more seeds collapsed the qualitative
 +0.0125 Sprint 10 peak to noise.
 
-**TMLR benchmarks-track submission is BLOCKED** until §5.5 is
-reformulated. Three reformulation drafts (A / B / C, conditional on
-N12 outcome) are at `docs/paper/§5.5-reformulation-draft.md`.
-Decision-of-record : ADR-0019.
+**TMLR benchmarks-track submission is BLOCKED.** The §5.5
+reformulation (Version C, full retract —
+`docs/paper/§5.5-reformulation-FINAL.md`) has landed in the
+manuscript; the remaining gates are the critic review and the
+N≥30 confirmatory decision. Decision-of-record : ADR-0019.
 
-**N12 targeted subgroup replication (RUNNING).** Pooled-v2 analysis
-surfaced two candidate subgroups for replication — **tactile-floor**
-and **force-plus10** — at sub-threshold but consistent positive
-shifts. N12 sweep (N=20 seeds, focused on those subgroups) is
-running tonight on `root@kx6tm-23`, ETA ~07:30 morning. The N12
-result picks which §5.5 reformulation draft (A / B / C) becomes the
-paper text.
+**N12 targeted subgroup replication (DONE — LOST 0/2).** Pooled-v2
+analysis surfaced two candidate subgroups — **tactile-floor** and
+**force-plus10** — at sub-threshold but consistent positive shifts.
+The pre-registered N12 replication on N=10 new seeds failed at
+Bonferroni α=0.025 for both (ADR-0019), which selected the full
+retract (Version C).
 
 **Multi-seed-first-class lesson promoted portfolio-wide.** The Q3
 collapse from a 5-seed qualitative claim to a 10-seed null is the
@@ -55,7 +55,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS** (5–6× threshold, architectural invariant — unchanged) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS on magnitude** (5–6× threshold — unchanged) ; the "architectural property" reading is withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -95,16 +95,21 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
 
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
-| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** every configuration, architectural invariant |
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** on magnitude in every configuration ; magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
 
-**F1 — B-3 is an architectural invariant.** The perceptive /
-proprioceptive asymmetry passes at 5–6× threshold across every
-grid, every world, every seed, and is insensitive to every
-plasticity control tested (LOCK_AFTER, transducer gating mode,
-Gumbel tau, codebook freeze, HARD → GUMBEL phase transition).
-B-3 is anchored as the empirical foundation of
+**F1 — B-3 passes on magnitude only.** The Me6 asymmetry
+magnitude passes at 5–6× threshold across every grid, every
+world, every seed, and is insensitive to every plasticity control
+tested (LOCK_AFTER, transducer gating mode, Gumbel tau, codebook
+freeze, HARD → GUMBEL phase transition). The earlier reading of
+B-3 as an *architectural* perceptive/proprioceptive property is
+**withdrawn** (paper §3.3, §4.4–4.5; ADR-0014, ADR-0015): a
+null-model partition control puts the pre-registered partition at
+the 44–72th percentile of random 3+2 alternatives, and the
+magnitude behaves as a per-modality entropy proxy. The B-3
+magnitude result is anchored as the empirical foundation of
 [`dream-of-kiki/docs/specs/2026-05-20-biophysical-stratification.md`](https://github.com/hypneum-lab/dream-of-kiki/blob/main/docs/specs/2026-05-20-biophysical-stratification.md)
 §4 (embodied sensorimotor grounding stratum). The B-1 Retract
 (ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
@@ -195,13 +200,14 @@ diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ## Priority references
 
 1. Amedi et al. 2007 — Shape conveyed by visual-to-auditory sensory substitution activates LOC (Nat Neurosci).
-2. Heimler & Amedi 2020 — Revisiting adaptive and maladaptive effects of crossmodal plasticity (Neuroscience).
+2. Heimler & Amedi 2020 — Are critical periods reversible in the adult brain? Insights on cortical specializations based on sensory deprivation studies (Neurosci. Biobehav. Rev.).
 3. Röder et al. 2021 — Sensitive periods for functional specialization (PNAS).
-4. Alper & Averbuch-Elor 2023 — Kiki or Bouba? Sound symbolism in VLMs (NeurIPS).
+4. Alper & Averbuch-Elor 2023 — Kiki or Bouba? Sound Symbolism in Vision-and-Language Models (NeurIPS).
 5. Girdhar et al. 2023 — ImageBind: One Embedding Space (CVPR).
 6. Ma et al. 2022 — Are Multimodal Transformers Robust to Missing Modality? (CVPR).
-7. Liang et al. 2022 — MultiBench (NeurIPS D&B).
+7. Liang et al. 2021 — MultiBench (NeurIPS D&B).
 8. Keller & Mrsic-Flogel 2018 — Predictive Processing: A Canonical Cortical Computation (Neuron).
+9. Kleinman, Achille & Soatto 2023 — Critical Learning Periods for Multisensory Integration in Deep Networks (CVPR).
 
 ## License
 
