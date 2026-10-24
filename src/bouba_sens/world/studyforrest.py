@@ -124,11 +124,25 @@ class StudyforrestRealWorld:
         return self._mode
 
     def sample(self, batch_size: int, seed: int) -> WorldSample:
+        return self.sample_with_indices(batch_size, seed)[0]
+
+    @property
+    def dataset_labels(self) -> torch.Tensor:
+        """Labels of every dataset row (donor pools for v0.9 decorrelation)."""
+        labels: torch.Tensor = self._labels
+        return labels
+
+    def sample_with_indices(self, batch_size: int, seed: int) -> tuple[WorldSample, torch.Tensor]:
+        """Same batch as `sample`, plus the dataset row index of each sample."""
         gen = torch.Generator().manual_seed(seed)
         start = int(torch.randint(0, max(1, self._n - batch_size), (1,), generator=gen).item())
         idx = torch.arange(start, start + batch_size) % self._n
+        return self.gather(idx), idx
+
+    def gather(self, idx: torch.Tensor) -> WorldSample:
+        """Rows `idx` of the dataset as a `WorldSample`."""
         return WorldSample(
-            z=torch.zeros(batch_size, 1),
+            z=torch.zeros(len(idx), 1),
             audio=self._audio[idx],
             vision=self._vision[idx],
             tactile=self._tactile[idx],
