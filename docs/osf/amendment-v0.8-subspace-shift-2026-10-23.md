@@ -551,6 +551,13 @@ outcomes are publishable.
       item 11, world-class check, aggregation and Page test end to end;
       S-2 to S-5 analyses; secondary parameter-subspace metric (after
       the parameter list of §3.1); CC-film exploratory arm (§4).
+- [x] Selection safeguard (§3.1, §6; Codex round 2) implemented with
+      unit tests: `adversarial_matrix`, `adversarial_endpoint_contrast`,
+      `verdict(..., p_value_adversarial=...)`, protocol failure at 70 %
+      in code (`tests/unit/test_subspace_aggregate.py`), and the
+      outcome-dependent counterexample
+      (`tests/unit/test_power_planning_sd.py`). The driver runs the
+      Page permutation test on both matrices.
 - [x] Secondary-metric parameter list and per-matrix shift implemented
       (`interaction_parameter_names`, `parameter_subspace_shifts`, unit
       tests `tests/unit/test_subspace_parameters.py`).
