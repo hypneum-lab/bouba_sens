@@ -254,8 +254,20 @@ def resolve_seeds(args: argparse.Namespace) -> list[int]:
     return list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
 
 
+def configure_determinism(args: argparse.Namespace) -> None:
+    """Pin deterministic kernels on the confirmatory ``--seed-list`` path.
+
+    On Linux x86 the default CPU ``torch.linalg.lstsq`` can differ by
+    ~1 ulp between calls on identical input, so a listed seed would not
+    reproduce bit for bit. The legacy ``--seeds`` path is left unchanged.
+    """
+    if args.seed_list is not None:
+        torch.use_deterministic_algorithms(True)
+
+
 def main() -> None:
     args = build_parser().parse_args()
+    configure_determinism(args)
 
     from nerve_wml.methodology import mi_kraskov_ksg_continuous
 

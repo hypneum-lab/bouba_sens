@@ -132,7 +132,24 @@ def test_k_steps_reaches_the_lesion_schedule(monkeypatch: pytest.MonkeyPatch) ->
     assert set(seen) == {_SMALL["steps_lesion"]}  # legacy: k = steps_lesion
 
 
-def test_seed_lists_reproduce_independently_of_list_order() -> None:
+def test_seed_list_path_pins_deterministic_kernels() -> None:
+    prev = torch.are_deterministic_algorithms_enabled()
+    try:
+        torch.use_deterministic_algorithms(False)
+        runner.configure_determinism(runner.build_parser().parse_args([]))
+        assert not torch.are_deterministic_algorithms_enabled()
+        args = runner.build_parser().parse_args(["--seed-list", "1101"])
+        runner.configure_determinism(args)
+        assert torch.are_deterministic_algorithms_enabled()
+    finally:
+        torch.use_deterministic_algorithms(prev)
+
+
+def test_seed_lists_reproduce_independently_of_list_order(
+    deterministic_torch: None,
+) -> None:
+    # Linux LAPACK lstsq can differ by ~1 ulp between calls;
+    # the fixture forces deterministic kernels (see conftest).
     kw = {"train_batch": 4, "lesion_batch": 4, "probe_n": 32, "k_steps": 2, **_SMALL}
     alone = runner.capture_probe("gaussian", 7, 100, rng_seed=7, **kw)
     runner.capture_probe("gaussian", 5, 100, rng_seed=5, **kw)  # consume global RNG
