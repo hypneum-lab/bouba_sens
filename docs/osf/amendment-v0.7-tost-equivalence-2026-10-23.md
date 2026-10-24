@@ -604,7 +604,7 @@ on the OSF form.
   and B-2. They are disjoint from every seed used so far: the default
   grid seeds 0–4, Q3/Q3+ {0, 17, 42, 73, 101, 7, 23, 31, 53, 89} and
   N12 {3, 11, 19, 29, 37, 41, 47, 59, 67, 79}, and from the v0.8
-  (2001–2044, pilots from 2101) and v0.9 (3001–3044, pilots 3101–3105)
+  (2001–2044, pilots 2101–2110) and v0.9 (3001–3044, pilots 3101–3105)
   seed pools.
 - **Reserve seeds (technical replacement only):** 1096–1099, used in
   order. They do not overlap the pilot seeds.

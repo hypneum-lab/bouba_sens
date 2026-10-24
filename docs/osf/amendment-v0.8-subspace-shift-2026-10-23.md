@@ -7,7 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.8-subspace-shift` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4).
-**Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
+**Pre-registration id:** **N19** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0022** (proposed — PI confirms at filing)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
 > file has been run. The metric, probe capture, control arm, rank rules,
@@ -98,9 +99,22 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    (`probe_demod="hard"`).
 3. **Subspaces.** Column-centre each matrix. V_pre, V_post ∈ ℝ^{896×k}
    are the top-k right singular vectors, i.e. the top-k principal
-   directions in feature space, with **k = 12**. This is the effective
-   dimension of the Me3 probe measured in ADR-0019 (participation ratio
-   11.7, two-NN 12.4).
+   directions in feature space. **k is fixed on the pilot (PI decision
+   2026-10-24)** by this deterministic rule, frozen before any
+   confirmatory seed: for every pilot block (s, ℓ) with s in 2101–2110,
+   compute the plug-in participation ratio PR = (Σ λ)² / Σ λ² of the
+   centred covariance of its Z_pre (hard-demodulated, 512 × 896);
+   k* = the median of these PRs (mean of the two middle values for an
+   even count), rounded half up, clamped to [1, 255] (255 = the centred
+   rank bound of a 256-row split half). Non-finite Z_pre is a technical
+   failure, as in §3.1, and is not silently dropped. Only pilot data
+   enter the rule; k* and every PR are recorded on the OSF form before
+   filing and reported in the paper. Implemented as
+   `bouba_sens.metrics.subspace.select_k_from_pilot`, unit tests
+   `tests/unit/test_subspace_k_selection.py`. Context: the ADR-0019
+   Me3 probe had a participation ratio of 11.7 (two-NN 12.4), which
+   motivated the earlier fixed k = 12 (`K_DEFAULT`, kept only as the
+   code default until k* is fixed). Below, k denotes k*.
 4. **Principal angles.** θ₁…θ_k = arccos of the singular values of
    V_preᵀ V_post.
 5. **Shift.** S(c) = (1/k) Σᵢ sin² θᵢ = 1 − ‖V_preᵀ V_post‖²_F / k ∈
@@ -174,7 +188,7 @@ parameter-subspace rotation. For every 2-D weight matrix of
 `CrossModalNerve` (the cross-modal interaction module), take principal
 angles between the top-k right singular subspaces at Phase-2 entry and
 Phase-2 end, with the same no-lesion control and median aggregation.
-k = min(12, rank). The exact list of parameters is fixed in code before
+k = min(k*, rank). The exact list of parameters is fixed in code before
 filing (§10).
 
 ## 4. Conditions
@@ -247,21 +261,22 @@ CI. Reference implementation:
 asymptotic and (if there are no ties) exact `scipy.stats.page_trend_test`
 p-values are reported alongside; the permutation p-value decides.
 
-Sensitivity analyses (reported, no decision): k ∈ {6, 24}; nominal-floor (−20 dB, reached)
-cells only; per lesioned modality. Also k ∈ {8, 16} (descriptive;
+Sensitivity analyses (reported, no decision): k ∈ {⌊k*/2 + 0.5⌋, 2k*}
+(at least 1, at most 255; {6, 24} if k* = 12); nominal-floor (−20 dB, reached)
+cells only; per lesioned modality. Also k ∈ {k* − 4, k* + 4} (at least 1; descriptive;
 exploratory): plug-in empirical singular vectors leak out of the
 population subspace, with a bias that grows for directions of smaller
 singular value (Song, Yang & Ma, "Bias-Corrected Subspace Intersection:
 Minimax-Optimal Shared Subspace Estimation in Multi-View Data",
 arXiv:2609.05617, a different estimation problem, cited for the bias
-mechanism only). Directions near the k = 12 cutoff are the most
+mechanism only). Directions near the k* cutoff are the most
 affected, so S could vary with ℓ through spectrum changes alone. The
 S_split floor (§3, item 9) partly controls for this.
 
 *Subspace stability (reported, no decision).* For every Z_pre and Z_post
-the eigengap ratio λ₁₂ / λ₁₃ of the centred covariance is reported per
+the eigengap ratio λ_k* / λ_(k*+1) of the centred covariance is reported per
 cell (arXiv:2609.05617 motivates this report; descriptive). A
-ratio below 1.1 marks a top-12 subspace that is unstable to small
+ratio below 1.1 marks a top-k* subspace that is unstable to small
 perturbations; the share of such matrices is reported per level, and
 the S-1 test is repeated on blocks without them as a sensitivity
 analysis.
@@ -275,8 +290,9 @@ this order:
   verdict.
 - **Supported:** S-1 permutation p < 0.05 **and** the median over
   complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
-  over the complete blocks and all 7 levels. This is a **heuristic
-  magnitude threshold**, not a calibrated noise test: the half-sample
+  over the complete blocks and all 7 levels. **Magnitude guard (PI
+  decision 2026-10-24: median S_split, as drafted).** This is a
+  **heuristic guard**, not a calibrated noise test and not a SESOI: the half-sample
   pre/pre distance is not the sampling distribution of the full-sample,
   control-subtracted endpoint contrast. The guard is part of one
   conjunctive rule; the Page p-value alone is not advertised as a
@@ -302,10 +318,14 @@ outcomes are publishable.
 
 ## 7. Seeds, power and stopping rule
 
-- **Pilot seeds:** 2101–2105, extendable in order (2106, 2107, …) under
-  the rule of the power paragraph below. They are used to validate the pipeline,
-  check the rank guard and estimate the within-seed SD of Y. Pilot data
-  are excluded from every confirmatory test.
+- **Pilot seeds (PI decision 2026-10-24): exactly 10, 2101–2110,
+  fixed before the pilot runs; never extended.** They are used to
+  validate the pipeline, fix k* (§3 item 3), check the rank guard and
+  estimate the within-seed SD of Y, the median S_split and the
+  exclusion rate. Order: k* is computed from the pilot Z_pre first,
+  then every pilot quantity that depends on k (rank checks, S, S_split,
+  Y) is computed with k*. Pilot data are excluded from every
+  confirmatory test.
 - **Confirmatory seeds:** the first N of 2001, 2002, …, 2040 in order
   (N = 20: 2001–2020), disjoint from every seed used so far (0–4,
   Q3/Q3+, N12) and from the v0.7 / v0.9 drafts. **Reserve:** the four
@@ -354,26 +374,29 @@ outcomes are publishable.
   of 0.20, the protocol-failure probability stays near 0.4 even at
   N = 40, so 0.80 unconditional power is not reachable.
 
-  *Drafted rule for N.* From the pilot seeds (§7, at least 5): σ̂ =
+  *Drafted rule for N.* From the 10 pilot seeds: σ̂ =
   residual SD of Y from the two-way ANOVA without replication (seed ×
   level) fitted on the **complete** pilot blocks only (df = (n_c − 1) ×
-  6 for n_c complete blocks; at least 3 complete blocks are needed,
-  otherwise the pilot is extended with seeds 2106, 2107, … until 3 are
-  complete), inflated to its one-sided UCL80 (χ², same df); ĝ = pilot
+  6 for n_c complete blocks; at least 3 complete blocks are needed;
+  with fewer, the pilot is **not** extended and the amendment is not
+  filed as drafted), inflated to its one-sided UCL80 (χ², same df); ĝ = pilot
   median S_split / σ̂. The planning exclusion rate q̂ is the exact
   (Clopper–Pearson) one-sided **80 % upper bound** of the pilot
   incomplete-block fraction, not the point estimate: 0/5 incomplete
-  gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077. Because a large
-  q̂ makes the target unreachable (q = 0.20 already gives a 0.41
-  protocol-failure probability at N = 40), the PI may extend the pilot
-  to tighten q̂ before computing N. N is the smallest N ≥ 20 for which
+  gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077; with the fixed
+  10-seed pilot, q̂ = 0.149 at 0/10. A large q̂ makes the target
+  unreachable (q = 0.20 already gives a 0.41 protocol-failure
+  probability at N = 40); because the pilot size is fixed, the
+  Clopper–Pearson bound keeps its nominal coverage (no data-dependent
+  extension). N is the smallest N ≥ 20 for which
   the simulated P(Supported), **minus two Monte-Carlo SEs**, is ≥ 0.80,
   with at least 100 000 draws per candidate, the permutation-calibrated
   Page test and a total trend of ĝ + 0.70 SD units.
   If no N ≤ 40 qualifies (for example because q̂ is large), the
   amendment is not filed as drafted: the PI either files N = 40 with its
   computed power stated on the form as below target, or revises the
-  rank rule or k before filing. N is fixed on the OSF form; it is never
+  rank rule before filing (k* is fixed by the rule of §3 item 3 and is
+  not tuned to reach power). N is fixed on the OSF form; it is never
   below 20.
 - **Fixed-N design.** There is no interim look at outcomes and no
   optional stopping. A technical failure (crash, non-finite codes,
@@ -409,15 +432,18 @@ outcomes are publishable.
       lock), `capture_block` per block with the seed mapping of §3
       item 11, world-class check, aggregation and Page test end to end;
       S-2 to S-5 analyses; secondary parameter-subspace metric (after
-      Open decision 5).
-- [ ] Pre-filing task (not done by this draft; no probe matrices Z_pre
-      are stored in the repo, only the ADR-0019 summary values):
-      recompute the participation ratio behind k = 12 (11.7 in
-      ADR-0019 E1.1) with the finite-sample-corrected estimator of Chun,
-      Canatar, Chung & Lee, "Estimating Dimensionality of Neural
-      Representations from Finite Samples" (arXiv:2509.26560), on the
-      pilot codes, and record it next to 11.7. Descriptive; it only
-      supports the justification of k and does not change the metric.
+      Open decision 3).
+- [x] Pilot rule for k (§3 item 3, PI decision 2026-10-24) implemented
+      with unit tests (`select_k_from_pilot`,
+      `tests/unit/test_subspace_k_selection.py`: definition, equal
+      spectrum, invariances, zero codes, round half up, even-count
+      median, order-free, clamps, non-finite refused).
+- [ ] k* computed on the 10 pilot seeds and recorded on the form with
+      every pilot PR. Descriptive alongside it (does not change k*): the
+      finite-sample-corrected participation ratio of Chun, Canatar,
+      Chung & Lee, "Estimating Dimensionality of Neural Representations
+      from Finite Samples" (arXiv:2509.26560), on the same pilot codes,
+      next to the ADR-0019 value 11.7.
 - [x] Probe-size parameter (512, decoupled from batch 16), hard
       demodulation and the no-lesion control arm implemented (PR #13,
       `lesion_phase(probe_size, probe_seed, probe_demod)`,
@@ -426,8 +452,9 @@ outcomes are publishable.
       control invalidates its 15 cells; 12-of-15 rule; complete-block
       selection; seed roster with reserve replacement), and the Page
       permutation test implemented (`metrics/page_trend.py`, PR #13).
-- [ ] Pilot within-seed SD of Y, median S_split, rank-exclusion rate and
-      runtime recorded on the form; N fixed on the form.
+- [ ] Pilot (exactly 10 seeds, 2101–2110) within-seed SD of Y, median
+      S_split, rank-exclusion rate and runtime recorded on the form; N
+      fixed on the form.
 - [x] No threshold or existing-metric change.
 - [x] Hypothesis is an increasing ordered trend; no peaked-shape test.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.
@@ -443,26 +470,19 @@ Decided by the PI on 2026-10-23 and applied above (no longer open):
 hard-demodulation probe captures (§3 item 2); SNR ramp `k_steps` = 50
 (§4, ADR-0020).
 
-1. Magnitude guard: median S_split (drafted) vs a fixed SESOI on ΔS
-   chosen after the pilot. The guard sets the power of the complete
-   rule (§7).
-2. Rank-exclusion thresholds: 12 of 15 cells per block and 80 %
+Decided by the PI on 2026-10-24 and applied above (no longer open):
+magnitude guard = median S_split, a heuristic guard (§6); k re-estimated
+on the pilot by the frozen rule of §3 item 3 (k*); pilot fixed at 10
+seeds, 2101–2110, never extended (§7). Pre-registration id **N19**,
+verdict ADR **ADR-0022**, amendment v0.8, as proposed in the header
+(proposed — PI confirms at filing).
+
+Still open (not covered by the 2026-10-24 decisions):
+
+1. Rank-exclusion thresholds: 12 of 15 cells per block and 80 %
    complete blocks (drafted).
-3. k = 12 (from ADR-0019 D_eff on gaussian/Studyforrest) vs
-   re-estimating D_eff on the pilot.
-4. N: 20 (drafted minimum) vs a larger N from the pilot, by the drafted
+2. N: 20 (drafted minimum) vs a larger N from the pilot, by the drafted
    rule of §7 or another rule the PI states on the form.
-5. Parameter list for the secondary metric (which `CrossModalNerve`
+3. Parameter list for the secondary metric (which `CrossModalNerve`
    weights count as the interaction layer).
-6. Whether to also run the CC-film bridge as a secondary world.
-7. Pre-registration id (N-id) and final amendment number.
-8. Pilot size for the exclusion rate. Extending the pilot after seeing
-   its exclusions (§7) is data-dependent stopping, so the
-   Clopper–Pearson bound loses its nominal coverage. Either fix the
-   pilot size before it runs (for example 10 seeds, 2101–2110: q̂ =
-   0.149 at 0/10) or state a sequential rule. At the 5-seed pilot with
-   0/5 exclusions (q̂ = 0.275), P(protocol failure) at N = 40 is 0.810
-   (exact binomial: fewer than 32 of 40 complete blocks), so the
-   complete rule could not reach 0.80; at q̂ = 0.149 (0/10) it is
-   0.167 / 0.149 / 0.131 at N = 20 / 30 / 40, and at q̂ = 0.077 (0/20)
-   0.016 / 0.007 / 0.003.
+4. Whether to also run the CC-film bridge as a secondary world.
