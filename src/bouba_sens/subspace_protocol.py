@@ -31,6 +31,9 @@ PROBE_SIZE = 512
 TRAIN_BATCH_SIZE = 16
 STEPS_LESION = 100
 SNR_FLOORS: tuple[float, ...] = (-20.0, -10.0, 10.0)
+# Amendment v0.8 section 4 (ADR-0020, PI decision 2026-10-23): the M2 ramp
+# reaches each floor at lesion step 50 and holds it to step 99.
+K_STEPS = 50
 
 CellKey = tuple[Modality, float]  # (lesioned modality, SNR floor in dB)
 
@@ -61,7 +64,7 @@ def capture_block(
     probe_size: int = PROBE_SIZE,
     phase2_seed: int | None = None,
     snr_init: float = 20.0,
-    k_steps: int = 5000,
+    k_steps: int = K_STEPS,
 ) -> BlockCodes:
     """Run the control arm and every lesion cell of one (seed, lock) block.
 
