@@ -205,5 +205,9 @@ def select_k_from_pilot(z_pres: Sequence[Tensor]) -> KSelection:
         raise ValueError("select_k_from_pilot needs at least one pilot matrix")
     prs = tuple(participation_ratio(z) for z in z_pres)
     med = float(statistics.median(prs))
-    k = math.floor(med + 0.5)
-    return KSelection(min(max(k, 1), K_SELECTION_MAX), med, prs, len(prs))
+    return KSelection(k_from_median_pr(med), med, prs, len(prs))
+
+
+def k_from_median_pr(median_pr: float) -> int:
+    """Round half up (11.5 -> 12, not banker's rounding) and clamp to [1, 255]."""
+    return min(max(math.floor(median_pr + 0.5), 1), K_SELECTION_MAX)

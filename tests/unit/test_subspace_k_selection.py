@@ -11,6 +11,7 @@ import torch
 
 from bouba_sens.metrics.subspace import (
     K_SELECTION_MAX,
+    k_from_median_pr,
     participation_ratio,
     select_k_from_pilot,
 )
@@ -61,16 +62,27 @@ def _with_pr(target_rank: int) -> torch.Tensor:
     return _equal_variance(64, 40, target_rank)
 
 
-def test_k_is_rounded_median_half_up() -> None:
+def test_rounding_is_half_up_and_clamped() -> None:
+    # exact binary values: no float noise at the .5 boundary
+    assert k_from_median_pr(11.5) == 12
+    assert k_from_median_pr(10.5) == 11  # not banker's rounding to 10
+    assert k_from_median_pr(11.49) == 11
+    assert k_from_median_pr(0.0) == 1
+    assert k_from_median_pr(0.4) == 1
+    assert k_from_median_pr(1e6) == K_SELECTION_MAX
+
+
+def test_k_is_rounded_median_of_pilot_prs() -> None:
     sel = select_k_from_pilot([_with_pr(r) for r in (11, 12, 13)])
     assert sel.k == 12
     assert sel.median_pr == pytest.approx(12.0, rel=1e-9)
-    # even count: median = mean of the two middle values; 11.5 rounds up to 12
-    sel = select_k_from_pilot([_with_pr(r) for r in (9, 11, 12, 20)])
-    assert sel.median_pr == pytest.approx(11.5, rel=1e-9)
+    # even count: median = mean of the two middle values (11 + 13) / 2
+    sel = select_k_from_pilot([_with_pr(r) for r in (9, 11, 13, 20)])
+    assert sel.median_pr == pytest.approx(12.0, rel=1e-9)
     assert sel.k == 12
-    sel = select_k_from_pilot([_with_pr(r) for r in (10, 11)])
-    assert sel.k == 11  # 10.5 -> 11, not banker's rounding to 10
+    sel = select_k_from_pilot([_with_pr(r) for r in (6, 9)])
+    assert sel.median_pr == pytest.approx(7.5, rel=1e-9)
+    assert sel.k == k_from_median_pr(sel.median_pr)
 
 
 def test_k_selection_is_order_free_and_reports_inputs() -> None:
