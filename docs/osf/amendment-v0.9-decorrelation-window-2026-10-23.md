@@ -10,10 +10,14 @@
 **Pre-registration id:** to be assigned by the PI (next free N-id in the HYPNEUM-PLANS series)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
-> file has been run. The manipulation does not exist in the code base
-> yet; it must be implemented, unit-tested and frozen (commit hash on the
-> OSF form) before any confirmatory seed runs. Pilot seeds (§7) may run
-> before filing.
+> file has been run. The donor scheduler, the three arms, the CKA
+> manipulation check and the fusion-gain probe are merged with unit
+> tests (PR #12, `src/bouba_sens/decorrelation.py`, hook in
+> `AdaptationLoop.pretrain`). Still missing: the driver for the arms and
+> grids (with the learning-rate check of §4), the train-side fusion gain
+> of §3.4, and the D-4 / D-5 analyses (§9). All of it is frozen (commit
+> hash on the OSF form) before any confirmatory seed runs. Pilot seeds
+> (§7) may run before filing.
 
 ---
 
@@ -183,12 +187,20 @@ deficit. To separate the two readings, FG and D are also computed at
 the end of Phase 1 on 512 rows drawn from the Phase-1 training
 samples (dataset indices recorded by the scheduler) in addition to the
 held-out probe above, and the train-side and held-out D are reported
-side by side per onset. The held-out probe is the one defined above;
-whether its rows are disjoint from the training indices is checked in
-code before filing (code task, §9). A deficit that appears only on
-the held-out side would fit overfitting of re-learned cross-modal
-cues; one on both sides would fit reduced fusion itself. This is not
-tested.
+side by side per onset. The held-out probe is the one defined above.
+*Finding (2026-10-24, code inspection):* it is **not held out**.
+`StudyforrestRealWorld` has no train/test split: training batches and
+the probe are contiguous windows drawn from the same frame pool
+(`world/studyforrest.py`, `sample`). For a 9,000-frame cache and
+windows of 16, a given frame is in at least one Phase-1 batch with
+probability about 1 − (1 − 16/9000)^T, i.e. about 0.36 for T = 250
+and 0.55 for T = 450 steps, so roughly a third to a half of the probe
+rows were seen in training, more at later onsets. As drafted, the
+train-vs-probe comparison therefore cannot separate the two readings;
+Open decision 10 chooses between a held-out frame range and dropping
+the comparison. A deficit that appears only on the held-out side would
+fit overfitting of re-learned cross-modal cues; one on both sides would
+fit reduced fusion itself. This is not tested.
 
 Positive D means the decorrelation window reduced fusion gain at the
 end of the run, relative to a run that saw the same resampled inputs
@@ -233,9 +245,13 @@ with their cross-modal pairing intact.
   last lesion step (step 99); mean SNR over the 100 steps is −9.80 dB. The historical default
   (`k_steps` = 5000) only reached 19.21 dB at the last step (ADR-0020,
   PR #14), so D-4 is not comparable with historical lesion results. The
-  CLI already has `--k-steps`; `run_grid.sh` does not forward it, so the
-  D-4 driver must pass `--k-steps 50` explicitly (code task, not done by
-  this draft; code defaults unchanged).
+  D-4 driver passes `k_steps` = 50 explicitly (`--k-steps 50` on the
+  CLI; `run_grid.sh` forwards `K_STEPS` if a grid is used); code
+  defaults are unchanged.
+- **World check.** `--world studyforrest` falls back, without an
+  error, to a 2-modal stub when the real cache is absent
+  (`cli.py:54-63`); the driver records the world class and a run on the
+  stub is a technical failure.
 
 **What the two grids do and do not separate.** In the main grid,
 onset is crossed with a fixed recovery, but total training (250 → 450
@@ -466,28 +482,31 @@ publishable.
 
 - Thresholds 0.05 / 0.10 / 0.02, the M2 lesion, the T1/T2 arms and
   every existing metric.
+- ADR-0019 verdicts and the §5.5 FINAL text.
 
 **What is NOT claimed.** Results are conditional on the frozen
 constant learning rate (§4); no claim is made about other schedules,
 including a cyclic rate or a reset at the end of the window. The
 decorrelation window itself is not claimed as a new intervention (§2).
-- ADR-0019 verdicts and the §5.5 FINAL text.
 
 ## 9. Pre-registration fidelity checklist
 
 - [ ] Filed on OSF by the PI before any confirmatory seed (3001–3044) is run.
-- [ ] Decorrelation scheduler + unit tests merged, commit hash on the OSF
-      form. Required tests: labels unchanged; donor ≠ own dataset index;
-      donor label = sample label; joint arm shares the decor audio
-      donor; identity outside the window; deterministic given seed;
-      world exposes dataset indices.
-- [ ] Learning rate confirmed constant at 1e-3 in the v0.9 driver (no
-      override, no scheduler, no optimiser reset), and train-side
-      fusion-gain output implemented; train/held-out row disjointness
-      of the §3.4 probe checked (descriptive output only).
-- [ ] Fusion-gain probe and CKA check implemented as specified (§3.3,
+- [x] Decorrelation scheduler + unit tests merged (PR #12,
+      `tests/unit/test_decorrelation.py`: donor ≠ own dataset index;
+      donor label = sample label, label kept; joint arm shares the decor
+      audio donor; identity outside the window; per-step determinism
+      from the seed; world exposes dataset indices; default `pretrain`
+      path unchanged). Commit hash recorded on the form at filing.
+- [ ] Driver for the arms and grids merged with unit tests; learning
+      rate confirmed constant at 1e-3 in it (no override, no scheduler,
+      no optimiser reset); train-side fusion-gain output implemented;
+      the §3.4 probe overlap with training rows resolved (Open
+      decision 10).
+- [x] Fusion-gain probe and CKA check implemented as specified (§3.3,
       §3.4), with unit tests (CKA = 1 for identical features, zero
-      denominators skipped).
+      denominators skipped, translation invariance, label-swap gate),
+      PR #12.
 - [ ] Manipulation check passed on pilot seeds and recorded on the form,
       with Δ_K, its permutation p-value, K_joint and K_decor.
 - [ ] Pilot variance components of D, bootstrap planning SD and runtime
@@ -502,6 +521,9 @@ protocol, before filing. This draft is not fileable while any item is
 open; the scheduler, the fusion-gain and CKA code, the pilot (including
 the manipulation check) and a regenerated power analysis for the final
 configuration are also filing prerequisites.
+
+Decided by the PI on 2026-10-23 and applied above (no longer open):
+SNR ramp `k_steps` = 50 for the D-4 lesion phase (§4, ADR-0020).
 
 1. Correspondence with Kleinman et al. (2023): confirm that within-class
    cross-modal resampling is an acceptable analogue of their
@@ -527,4 +549,18 @@ configuration are also filing prerequisites.
    Kleinman et al. report reduces critical-period sensitivity). Not
    drafted.
 8. Pre-registration id (N-id) and final amendment number.
-9. SNR schedule `k_steps` = 50 for the D-4 lesion phase (drafted, ADR-0020) vs another N.
+9. Planning SD for N (§7). The 80th percentile of the parametric
+   bootstrap of σ̂ is not a calibrated 80 % upper confidence bound:
+   the Codex round-4 review simulated its coverage at 74 % / 66 % /
+   61 % for ρ = 0.25 / 0.5 / 1. Choose a calibrated bound (for example
+   a bootstrap bound whose level is tuned by simulation to 80 %
+   coverage over ρ ∈ [0, 1], or the conservative χ² UCL80 with the
+   least favourable df = 4 (ρ = 1; multiplier √(4 / χ²₀.₂₀,₄) = 1.558)
+   applied to the marginal σ̂) and regenerate N with it at the pilot;
+   N = 32 above uses the borrowed SD 0.0605, not a pilot bound.
+10. §3.4 probe overlap: the fusion-gain probe is drawn from the same
+   frame pool as training (about 36–55 % of its rows seen). Either
+   reserve a held-out frame range (for example the last 10 % of
+   frames, excluded from training, donors and the CKA check; code
+   change in the world) or drop the train-vs-probe comparison and call
+   the probe "fixed probe", not "held-out".
