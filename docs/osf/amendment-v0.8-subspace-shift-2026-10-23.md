@@ -198,8 +198,17 @@ both 256-row split halves of Z_pre.
   ranks 1–7; 100,000 permutations, seed 20261023). For the guard, a
   block whose endpoint Y(s, 25) or Y(s, 175) is undefined has an
   endpoint contrast of −∞. "Supported" needs the Page test and the
-  guard to pass in **both** analyses (§6). With no excluded block the
-  two analyses coincide.
+  guard to pass in **both** analyses (§6). With no excluded block and
+  no tied values the two analyses coincide. With observed ties they
+  need not: the registered complete-block test uses mid-ranks, while
+  the worst-case statistic breaks each tie group against the trend
+  (reversed ranks within the group). That choice minimises the
+  group's contribution, so it is at most the contribution of every
+  strict refinement of the ties, and hence at most the mid-rank
+  statistic (the average of those refinements). The safeguard is
+  therefore still conservative with ties; its reference is the
+  strict-rank (unconditional) null, not the mid-rank null conditional
+  on the observed tie pattern.
 
   *Why this is conservative under any exclusion mechanism.* Let L* be
   the Page statistic of the complete data that would have been
@@ -213,8 +222,8 @@ both 256-row split halves of Z_pre.
   P(L_wc ≥ c) ≤ P(L* ≥ c) ≤ α at the registered critical value. The
   only assumptions are this null and that a missing value is a removed
   value (Y is not altered by the exclusion process); ties in Y have
-  probability zero for continuous S and are broken against the trend
-  in any case.
+  probability zero for continuous S and, if they occur, are handled by
+  the refinement argument above.
 
   *Earlier version withdrawn.* The first safeguard (round 2) imputed
   missing values in a fixed direction (high for ℓ ≤ 100, low above).
