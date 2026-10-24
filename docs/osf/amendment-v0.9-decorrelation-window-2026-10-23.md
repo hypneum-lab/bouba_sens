@@ -221,6 +221,58 @@ Positive D means the decorrelation window reduced fusion gain at the
 end of the run, relative to a run that saw the same resampled inputs
 with their cross-modal pairing intact.
 
+### 3.5 Secondary arms (PI decision 2026-10-24)
+
+Both arms are **secondary**: they are run on every confirmatory seed,
+analysed with the pre-specified tests below and always reported, but
+they never change the primary axes A, B, C, the headline or the gated
+qualifiers of §6. Power (§7) is adequate only for large effects, which
+is why neither is confirmatory. Within-class cross-modal resampling
+(§3.1) stays the analogue of the Kleinman et al. disturbance in both.
+
+**(a) Mitigation arm: cross-sensor reconstruction (D-6).** Kleinman,
+Achille & Soatto (CVPR 2023, arXiv:2210.04643) report that
+architectures trained with cross-sensor reconstruction objectives are
+markedly more resilient to critical periods. *Mechanism tested.* The
+deficit is read as the network settling, during the decorrelated
+window, into modality-specific representations that later clean
+training does not re-integrate. An auxiliary objective that rewards
+each modality's encoder representation for predicting the other
+modalities keeps cross-modal predictive structure in the encoders
+throughout Phase 1; during the window it can only learn class-level
+structure (pairing is broken), but after the window it pushes the
+encoders back towards shared, mutually predictive features, so
+integration can be re-learned and the deficit should shrink.
+*Objective (frozen).* `CrossSensorReconstruction`
+(`src/bouba_sens/decorrelation.py`): for every modality m, a linear
+decoder maps the mean of the other four modalities' encoder
+representations `core(input_proj(x))` (128-d) to m's input, flattened
+and standardised within the batch per feature (ε = 1e-6); the loss is
+the mean squared error averaged over features and over the five
+modalities, added to the classification loss with weight **λ = 1.0**
+(`RECON_WEIGHT`, fixed, not tuned) at every Phase-1 step of the run
+(before, during and after the window). Decoders are initialised from
+their own generator (seed s) and join the same Adam optimiser (learning
+rate 1e-3, §4). With λ = 0 the training is bit-identical to no
+objective (unit test). *Cells.* o = 0, R = 200 (the main-grid onset-0
+cell), arms decor + reconstruction and joint + reconstruction: 2 runs
+per seed. *Estimand.* D_rec(s) = FG_joint+rec − FG_decor+rec, and the
+mitigation M(s) = D(s, 0) − D_rec(s); M > 0 means the objective reduced
+the deficit. Also reported: FG of both reconstruction arms, and D_rec
+itself.
+
+**(b) LOCK_AFTER cross (D-7).** The primary design runs without a
+constellation lock, because a lock would confound the window with a
+freeze (§4). The cross asks whether freezing the constellation inside
+or after the window changes the deficit. *Cells.* o = 0, R = 200, arms
+decor and joint, `LOCK_AFTER` = ℓ ∈ {25, 100, 175} (25 inside the window
+[0, 50); 100 and 175 in recovery; 25 and 175 are the v0.8 endpoint
+levels): 6 runs per seed. *Estimand.* D_ℓ(s) = FG_joint,ℓ − FG_decor,ℓ,
+and the contrast C_ℓ(s) = D_ℓ(s) − D(s, 0) against the unlocked
+onset-0 deficit of the same seed. Expected direction (not tested
+directionally): a lock inside the window freezes a constellation
+shaped under decorrelated input and may enlarge the deficit (C_25 > 0).
+
 ## 4. Conditions
 
 - World: `StudyforrestRealWorld` (4.5-modal real bridge; the real
@@ -251,7 +303,10 @@ with their cross-modal pairing intact.
 - **Persistence arm:** o = 0, R = 400 (decor and joint), which is the
   o = 0 cell of the fixed-budget grid.
 - Per seed: 15 main-grid runs, 2 persistence runs, 6 additional
-  fixed-budget runs (o = 50, 100, 150 × decor, joint): 23 Phase-1 runs.
+  fixed-budget runs (o = 50, 100, 150 × decor, joint): 23 Phase-1 runs
+  for the primary and gated analyses; plus the secondary arms of §3.5,
+  2 mitigation runs and 6 LOCK_AFTER runs (all o = 0, R = 200): **31
+  Phase-1 runs** in total.
 - **Lesion phase for D-4 (SNR schedule: changed versus the historical
   grids, ADR-0020).** The "standard T2 lesion phase" is 100 lesion steps
   with SNR(t) = max(−20, 20 − 40 · min(1, t / k)) and **`k_steps` = 50**.
@@ -290,6 +345,8 @@ budget**, with the remaining recovery confound stated.
 | D-2b | The same decreasing ordered trend at fixed budget T = 450 | as D-2 | secondary, gated (§6) |
 | D-3 | Persistence: mean D(s, 0) at R = 400 > 0 | one-sample t, one-sided | secondary, gated (§6) |
 | D-4 | Effect on later lesion: after a standard T2 lesion phase (100 steps, floor SNR reached at step 50 with `k_steps` = 50, each modality; §4, ADR-0020) applied to the o = 0, R = 200 decor and joint runs, the post-lesion Me1 differs | descriptive | exploratory |
+| D-6 | Mitigation: mean M(s) = D(s, 0) − D_rec(s) > 0 (§3.5 a) | one-sample t, one-sided, α = 0.05; 90 % CI reported | secondary, not gated, never changes the primary verdict |
+| D-7 | LOCK_AFTER cross: mean C_ℓ(s) = D_ℓ(s) − D(s, 0) ≠ 0 for ℓ ∈ {25, 100, 175} (§3.5 b) | three two-sided one-sample t, Holm over the three at α = 0.05; mean D_ℓ with 90 % CI reported | secondary, not gated, never changes the primary verdict |
 | D-5 | Representation geometry: S between decor and joint end-of-Phase-1 codes (v0.8 metric at k = 12, descriptive; not tied to the v0.8 pilot k*) | descriptive | exploratory |
 
 **SESOI = 0.05 accuracy units.** D is an accuracy difference, like Me7,
@@ -302,6 +359,10 @@ headline (both reject) is their conjunction, and neither component is
 advertised as a separate discovery outside the axes of §6. D-2b and D-3
 form a secondary family tested only if the headline holds (serial
 gatekeeping), with Holm's correction within the family at α = 0.05.
+D-6 and D-7 are two further secondary families, tested whatever the
+headline (D-6 one test at α = 0.05; D-7 Holm over its three contrasts);
+they are reported with their own wording and never change the primary
+axes, the headline or the gated qualifiers.
 D-4 and D-5 are exploratory and support no claim.
 
 ## 6. Decision criteria (pre-stated)
@@ -383,6 +444,16 @@ The mirrored (increasing) Page test is reported as exploratory.
   of 400 steps". Not rejected: "persistence beyond 200 recovery steps
   was not demonstrated". No claim of permanence beyond the tested
   horizon is made in any case.
+
+**Secondary arms (reported, never change the statements above).**
+D-6 rejects: "the cross-sensor reconstruction objective reduced the
+onset-0 deficit by [M, 90 % CI]". Not rejected: "a reduction of the
+deficit by the reconstruction objective was not demonstrated at N".
+D-7, for each ℓ whose Holm-adjusted test rejects: "with the
+constellation locked at step ℓ, the onset-0 deficit differed from the
+unlocked deficit by [C_ℓ, 90 % CI]"; otherwise "no difference from the
+unlocked deficit was demonstrated at ℓ". Neither is described as
+evidence for or against a critical period.
 
 **Error rates.** Axis A and C form a fixed sequence at α = 0.05. Each
 Axis B label is a one-sided α = 0.05 claim from the same CI; the
@@ -492,11 +563,32 @@ publishable.
   seed has all onsets. If more than 4 replacements are needed, the run
   halts and a deviation note is filed. Extending N needs a new amendment
   filed before the new data.
-- **Runtime.** Per seed: 23 Phase-1 runs of 250–450 steps (about 8,850
-  training steps at batch 16), 23 fusion-gain evaluations (6 accuracy
+- **Secondary arms (§3.5): component power only, exact noncentral t,
+  planning SD of D 0.0605** (`scripts/power_prereg_2026_10.py`, section
+  "v0.9 secondary arms"). The SD of a within-seed contrast is
+  0.0605 · √(2(1 − r)) for a correlation r between the two deficits of
+  a seed (r = 0: 0.0856; r = 0.5: 0.0605).
+
+  | Contrast | r | N = 20 | N = 32 | N = 40 |
+  |---|---|---:|---:|---:|
+  | D-6, M = 0.05 (full mitigation), one-sided | 0 / 0.5 | 0.81 / 0.97 | 0.94 / 1.00 | 0.98 / 1.00 |
+  | D-6, M = 0.025 (half), one-sided | 0 / 0.5 | 0.35 / 0.55 | 0.49 / 0.74 | 0.57 / 0.82 |
+  | D-6, M = 0.0125 (quarter), one-sided | 0 / 0.5 | 0.16 / 0.23 | 0.20 / 0.31 | 0.23 / 0.36 |
+  | D-7, C = 0.05, two-sided at α/3 (Holm, worst step) | 0 / 0.5 | 0.51 / 0.85 | 0.78 / 0.98 | 0.88 / 1.00 |
+  | D-7, C = 0.025, two-sided at α/3 | 0 / 0.5 | 0.12 / 0.25 | 0.21 / 0.43 | 0.27 / 0.55 |
+
+  0.80 power for a half mitigation needs N = 74 (r = 0) or 38
+  (r = 0.5), and N = 292 / 147 for a quarter. Only a full mitigation or
+  a lock contrast of the SESOI size is resolvable at the planned N, so
+  both arms are registered as secondary, not confirmatory; N is not
+  changed for them.
+- **Runtime.** Per seed: 31 Phase-1 runs (23 primary/gated + 8
+  secondary) of 250–450 steps (about 8,850 + 2,000 = 10,850 training
+  steps at batch 16; the secondary arms add about 23 %), 31 fusion-gain evaluations (6 accuracy
   calls on 512 rows each) and the D-4 lesion runs (2 arms × 5
-  modalities × 100 steps). At N = 20, about 177,000 Phase-1 steps,
-  roughly 590 B-1-cell equivalents of 300 steps. This is an estimate in
+  modalities × 100 steps). At N = 20, about 217,000 Phase-1 steps,
+  roughly 720 B-1-cell equivalents of 300 steps (at N = 32, about
+  347,000 steps). This is an estimate in
   steps, not time; the pilot measures wall-clock time on the filing
   host, recorded on the OSF form.
 
@@ -510,6 +602,9 @@ publishable.
 constant learning rate (§4); no claim is made about other schedules,
 including a cyclic rate or a reset at the end of the window. The
 decorrelation window itself is not claimed as a new intervention (§2).
+The reconstruction arm tests one fixed objective at one weight; a null
+D-6 is not evidence that cross-sensor objectives in general fail to
+mitigate.
 
 ## 9. Pre-registration fidelity checklist
 
@@ -524,6 +619,16 @@ decorrelation window itself is not claimed as a new intervention (§2).
       rate confirmed constant at 1e-3 in it (no override, no scheduler,
       no optimiser reset); world built with `probe_fraction = 0.10`;
       train-side fusion-gain output implemented.
+- [x] Mitigation objective (§3.5 a, PI decision 2026-10-24):
+      `CrossSensorReconstruction` and the optional `reconstruction`
+      argument of `AdaptationLoop.pretrain`, unit tests
+      `tests/unit/test_cross_sensor_reconstruction.py` (λ = 0 is
+      bit-identical to no objective, construction leaves the global RNG
+      untouched, decoders and encoders are trained, loss matches its
+      definition, decoders join the optimiser once).
+- [ ] Driver runs the 8 secondary cells per seed (§3.5: 2 mitigation,
+      6 LOCK_AFTER), with `constellation_lock_after` = ℓ set on the
+      multiplexer for the lock cells only.
 - [x] Held-out probe frames (§3.4, PI decision 2026-10-24):
       `StudyforrestRealWorld(probe_fraction=...)`, held-out
       `fusion_gain`, unit tests
@@ -555,15 +660,17 @@ Decided by the PI on 2026-10-24 (no longer open): §3.4 probe overlap,
 resolved by holding out the last 10 % of frames (§3.1, §3.3, §3.4).
 
 Decided by the PI on 2026-10-24 (no longer open): the design is kept as
-drafted, with the held-out probe as the only change: within-class
+drafted, with the held-out probe as the only change to the primary design: within-class
 cross-modal resampling as the analogue of the Kleinman et al.
 disturbance (§2, §3.1); w = 50 and R = 200, no second width (§4);
 fixed-budget grid kept, reported as a replication at fixed budget,
 with every positive claim limited to "the deficit varies across the
 specified training schedules"; joint-resampling control as primary
 comparator (§3.2); the matched joint-vs-decor permutation gate with no
-added minimum Δ_K (§3.3); no LOCK_AFTER cross and no mitigation arm
-(not drafted). Planning SD for N = the conservative χ² UCL80 with
+added minimum Δ_K (§3.3). Later the same day (second PI round): **add** the LOCK_AFTER
+cross and a mitigation arm (cross-sensor reconstruction), both as
+**secondary** analyses (§3.5, D-6 / D-7), because their power at the
+planned N is adequate only for large effects (§7). Planning SD for N = the conservative χ² UCL80 with
 df = 4 (× 1.558, §7). Pre-registration id **N20**, verdict ADR
 **ADR-0023**, amendment v0.9, as proposed in the header (proposed — PI
 confirms at filing).
