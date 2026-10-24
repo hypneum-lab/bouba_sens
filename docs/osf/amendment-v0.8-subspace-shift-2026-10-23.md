@@ -185,27 +185,64 @@ both 256-row split halves of Z_pre.
   14.9th percentile (about 85 % kept, above the 70 % threshold): 27 %
   of runs would be "Supported" (20,000 draws; 4.7 % with exclusions
   independent of the outcome).
-- **Selection safeguard (frozen).** A second, adversarial analysis on
-  **all N blocks** is required for "Supported": every undefined Y(s, ℓ)
-  is imputed against the hypothesis, at the highest within-block ranks
-  for ℓ ≤ 100 and at the lowest for ℓ > 100 (imputed values on the same
-  side tie, mid-ranks), and the Page permutation test is run on this
-  matrix; for its guard, a block whose endpoint Y(s, 25) or Y(s, 175) is
-  undefined has an endpoint contrast of −∞. "Supported" needs the Page
-  test and the guard to pass in **both** analyses (§6). With no
-  excluded block the two analyses coincide. Implemented as
-  `adversarial_matrix`, `adversarial_endpoint_contrast` and `verdict`
-  in `metrics/subspace_aggregate.py`; the example above is a unit test
-  (`tests/unit/test_power_planning_sd.py`): with the safeguard the
-  false-positive rate is 1.6 % (20,000 draws), and the test requires it
-  to stay within the nominal 5 % plus a stated tolerance of 1
-  percentage point (plus 3 Monte-Carlo SEs). Alternatives considered:
-  (a) a test of whether exclusion depends on level or arm cannot detect
-  this failure, because the selection acts on whole blocks through the
-  outcome, not through ℓ; (c) inverse-probability weighting needs a
-  model of the exclusion probability that cannot be estimated from
-  the few excluded blocks. The adversarial bound needs no model, and
-  costs nothing when nothing is excluded.
+- **Selection safeguard (frozen; exact worst case since Codex round 3,
+  2026-10-24).** A second analysis on **all N blocks** is required for
+  "Supported". For each block, the undefined values are completed in
+  the way that **minimises** the block's Page contribution Σ_j j·R_j,
+  over every strict ranking of the 7 levels that is consistent with
+  the order of the observed values (ties among observed values are
+  broken against the trend); a block with no defined value contributes
+  the fully reversed minimum 84. The worst-case statistic L_wc is the
+  sum of these minima, and its p-value is computed against the
+  registered complete-data null (each block a uniform permutation of
+  ranks 1–7; 100,000 permutations, seed 20261023). For the guard, a
+  block whose endpoint Y(s, 25) or Y(s, 175) is undefined has an
+  endpoint contrast of −∞. "Supported" needs the Page test and the
+  guard to pass in **both** analyses (§6). With no excluded block the
+  two analyses coincide.
+
+  *Why this is conservative under any exclusion mechanism.* Let L* be
+  the Page statistic of the complete data that would have been
+  observed without exclusions. Exclusion only removes values; it never
+  changes the observed ones. Each block's minimum is taken over a set
+  of completions that contains the true one, so L_wc ≤ L* for every
+  realisation, whatever rule decided which values were removed (even
+  one that looked at the data). Under the null of within-block
+  exchangeability of the complete data (the registered assumption),
+  L* has the registered permutation distribution, so
+  P(L_wc ≥ c) ≤ P(L* ≥ c) ≤ α at the registered critical value. The
+  only assumptions are this null and that a missing value is a removed
+  value (Y is not altered by the exclusion process); ties in Y have
+  probability zero for continuous S and are broken against the trend
+  in any case.
+
+  *Earlier version withdrawn.* The first safeguard (round 2) imputed
+  missing values in a fixed direction (high for ℓ ≤ 100, low above).
+  Codex showed that this is not a worst case: imputing one missing
+  interior value above the block maximum can raise a block's L by up
+  to 6, and a selection that exploits it kept 7.3 % false positives.
+
+  *Checks (unit tests).* The completion never exceeds the true L over
+  all 5,040 orders × every 1- and 2-missing pattern, and equals an
+  independent brute-force completion. Null false-positive rates at
+  N = 40 (20,000 draws, script section "v0.8 selection safeguard"),
+  complete blocks only → with the safeguard: Codex's outcome
+  counterexample 26.9 % → 1.0 %; Codex's adversarial interior-deletion
+  selection (the 6 lowest-L blocks among those where the old imputation
+  would gain) 44.2 % → 4.1 %; a block-local version (every block with
+  such a gain and L below the null 15th percentile) 35.9 % → 4.3 %. The tests require at most 5 % plus a
+  stated tolerance of 1 percentage point plus 3 Monte-Carlo SEs.
+  Implemented as `page_trend.worst_case_block_l` and
+  `page_worst_case_test`, `subspace_aggregate.worst_case_page_test`,
+  `worst_case_endpoint_contrast` and `verdict(...,
+  p_value_worst_case=...)`.
+
+  *Alternatives considered.* (a) A test of whether exclusion depends on
+  level or arm cannot detect this failure, because the selection acts
+  through the outcome. (c) Inverse-probability weighting needs a model
+  of the exclusion probability that cannot be estimated from the few
+  excluded blocks. The worst-case bound needs no model and costs
+  nothing when nothing is excluded.
 - **Protocol failure.** If fewer than **70 %** of the N confirmatory
   seeds are complete blocks (fewer than 14 of 20, 21 of 30 or 28 of
   40), the experiment is reported as a protocol failure with no
@@ -345,9 +382,9 @@ this order:
 - **Protocol failure:** fewer than 70 % complete blocks (§3.1). No
   verdict.
 - **Supported:** S-1 permutation p < 0.05 on the complete blocks
-  **and** on the adversarially imputed full set (§3.1, selection
-  safeguard), **and** the guard passes in both analyses (on the full
-  set an undefined endpoint counts as −∞): the median over
+  **and** the worst-case Page test on all blocks has p < 0.05 (§3.1,
+  selection safeguard), **and** the guard passes in both analyses (in
+  the worst-case analysis an undefined endpoint counts as −∞): the median over
   complete blocks of [Y(s, 175) − Y(s, 25)] exceeds the median S_split(s, ℓ)
   over the complete blocks and all 7 levels. **Magnitude guard (PI
   decision 2026-10-24: median S_split, as drafted).** This is a
@@ -357,10 +394,10 @@ this order:
   conjunctive rule; the Page p-value alone is not advertised as a
   separate finding.
 - **Not robust to exclusions (added 2026-10-24):** S-1 p < 0.05 on
-  the complete blocks, but the Page test on the adversarially imputed
-  full set (§3.1, selection safeguard) has p ≥ 0.05. Reported as "an
+  the complete blocks, but the worst-case Page test on all blocks
+  (§3.1, selection safeguard) has p ≥ 0.05. Reported as "an
   increasing ordered trend among complete blocks that does not survive
-  an adversarial treatment of the excluded blocks"; no claim.
+  a worst-case treatment of the excluded values"; no claim.
 - **Detectable but sub-floor:** S-1 p < 0.05 in both analyses, but the
   magnitude guard fails in at least one of them.
   Reported as "an increasing ordered trend was detected, but its
@@ -460,22 +497,28 @@ outcomes are publishable.
 
   | Exclusion | trend, g | N = 20 | N = 30 | N = 40 |
   |---|---|---:|---:|---:|
-  | level | null (0, 0) | 0.047 / 0.019 | 0.047 / 0.017 | 0.046 / 0.014 |
-  | level | 0.70, 0 | 0.72 / 0.61 | 0.87 / 0.77 | 0.94 / 0.87 |
-  | level | 0.95, 0.25 | 0.89 / 0.83 | 0.96 / 0.93 | 0.98 / 0.97 |
-  | seed | null | 0.047 / 0.006 | 0.051 / 0.003 | 0.047 / 0.001 |
-  | seed | 0.70, 0 | 0.72 / 0.27 | 0.87 / 0.32 | 0.94 / 0.37 |
-  | seed | 0.95, 0.25 | 0.88 / 0.47 | 0.96 / 0.58 | 0.98 / 0.67 |
-  | outcome | null | 0.170 / 0.027 | 0.222 / 0.018 | 0.270 / 0.017 |
-  | outcome | 0.70, 0 | 0.89 / 0.70 | 0.97 / 0.83 | 0.99 / 0.91 |
+  | level | null (0, 0) | 0.047 / 0.018 | 0.044 / 0.015 | 0.048 / 0.013 |
+  | level | 0.70, 0 | 0.73 / 0.61 | 0.87 / 0.76 | 0.94 / 0.86 |
+  | level | 0.95, 0.25 | 0.89 / 0.83 | 0.96 / 0.93 | 0.99 / 0.97 |
+  | seed | null | 0.047 / 0.004 | 0.050 / 0.002 | 0.052 / 0.001 |
+  | seed | 0.70, 0 | 0.73 / 0.20 | 0.87 / 0.22 | 0.94 / 0.24 |
+  | seed | 0.95, 0.25 | 0.89 / 0.37 | 0.96 / 0.44 | 0.99 / 0.50 |
+  | outcome | null | 0.169 / 0.019 | 0.226 / 0.013 | 0.269 / 0.010 |
+  | outcome | 0.70, 0 | 0.89 / 0.64 | 0.97 / 0.77 | 0.99 / 0.85 |
 
   (complete-block rule alone / safeguarded rule.) The safeguard keeps
   the false-positive rate below 5 % in all three models, including the
   outcome-dependent one where the complete-block rule alone reaches
   17–27 %. Its cost is small when exclusions are isolated levels and
-  large when whole seeds are lost, because a wholly lost seed is then
-  counted as a fully reversed block. With no exclusion it costs
-  nothing.
+  large when whole seeds are lost, because a wholly lost seed then
+  counts as a fully reversed block (L = 84). With no exclusion it costs
+  nothing. Calibration: the simulator compares L with the strict-rank
+  permutation critical value (`page_perm_crit`); for tie-free data this
+  is the registered mid-rank permutation test (`page_trend`), and the
+  worst-case completion uses strict ranks, so no tie arises (a unit
+  test checks that the two take the same decision on tie-free data).
+  The table was regenerated after the Codex round-3 fix (exact worst
+  case).
 
   These numbers are **conditional on the simulation model**: a linear
   trend, Gaussian noise, a guard g treated as a fixed known constant,
@@ -551,13 +594,16 @@ outcomes are publishable.
       item 11, world-class check, aggregation and Page test end to end;
       S-2 to S-5 analyses; secondary parameter-subspace metric (after
       the parameter list of §3.1); CC-film exploratory arm (§4).
-- [x] Selection safeguard (§3.1, §6; Codex round 2) implemented with
-      unit tests: `adversarial_matrix`, `adversarial_endpoint_contrast`,
-      `verdict(..., p_value_adversarial=...)`, protocol failure at 70 %
+- [x] Selection safeguard (§3.1, §6; Codex rounds 2–3) implemented with
+      unit tests: `worst_case_block_l`, `page_worst_case_test`,
+      `worst_case_page_test`, `worst_case_endpoint_contrast`,
+      `verdict(..., p_value_worst_case=...)`, protocol failure at 70 %
       in code (`tests/unit/test_subspace_aggregate.py`), and the
       outcome-dependent counterexample
-      (`tests/unit/test_power_planning_sd.py`). The driver runs the
-      Page permutation test on both matrices.
+      (`tests/unit/test_power_planning_sd.py`), with the exact
+      worst-case completion (`tests/unit/test_page_worst_case.py`). The
+      aggregation API requires both p-values (`verdict`); the driver
+      that computes them is pending (item above).
 - [x] Secondary-metric parameter list and per-matrix shift implemented
       (`interaction_parameter_names`, `parameter_subspace_shifts`, unit
       tests `tests/unit/test_subspace_parameters.py`).
@@ -631,7 +677,7 @@ each item below gives the decision, the rationale and what changed.
      are outcome-dependent, so selecting complete blocks can bias the
      Page test whatever the threshold (§3.1). The threshold only bounds
      how many blocks may be lost; validity under outcome-dependent
-     selection is now protected by the adversarial safeguard of §3.1,
+     selection is now protected by the worst-case safeguard of §3.1,
      required for "Supported" (§6). 70 % keeps a clear majority of
      seeds.
      The threshold is fixed before any data (`V08_COMPLETE_MIN` in
@@ -649,7 +695,7 @@ each item below gives the decision, the rationale and what changed.
    estimate; under the earlier 80 % rule, N = 40 was needed at g = 0
    and N = 25 at g = 0.25. With the selection safeguard now required
    (§3.1) and the level exclusion model, about N = 35 is needed at g = 0
-   (0.77 at N = 30, 0.87 at N = 40) and N = 20 at g = 0.25 (0.83). Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
+   (0.76 at N = 30, 0.86 at N = 40) and N = 20 at g = 0.25 (0.83). Cost: per seed 7 Phase-1 + 112 Phase-2 runs; at the
    cap N = 40, 280 Phase-1 and 4,480 Phase-2 runs. Changed: only the
    threshold used inside the simulation.
 3. **Secondary-metric parameter list: fixed now, before data**
