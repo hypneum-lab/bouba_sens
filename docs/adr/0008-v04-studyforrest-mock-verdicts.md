@@ -4,6 +4,18 @@
 **Date:** 2026-04-20
 **Sprint:** 7 (extended scope)
 
+## Requalification note (2026-10-25, PI decision; ADR-0021, issue #22)
+
+The B-3 values recorded below are unchanged. Their interpretation as
+an architectural property was already withdrawn (ADR-0014b, ADR-0015b);
+B-3 is now additionally requalified as **uncalibrated**: the 0.02
+threshold was never compared with a null, and an independent binomial
+null invalidates the reading of the bare exceedance of 0.02; no
+compatibility or rejection verdict is established before a paired
+calibration of the median (same probe for the five queries, shared
+seeds and worlds).
+Values stand; interpretation withdrawn.
+
 ## Context
 
 ADR-0005 closed Sprint 6 with B-3 PASS 3/3 on the synthetic cluster

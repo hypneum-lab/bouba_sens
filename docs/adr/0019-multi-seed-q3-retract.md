@@ -1,4 +1,9 @@
-# ADR-0019 — Multi-seed Q3 Retract of single-seed §5.5 dose-response signature
+# ADR-0019a — Multi-seed Q3 Retract of single-seed §5.5 dose-response signature
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0019 is shared
+> with `0019-b2-dimensional-mine-criterion.md` (ADR-0019b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Date:** 2026-05-11
 **Status:** ACCEPTED, retract in effect

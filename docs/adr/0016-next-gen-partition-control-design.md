@@ -1,4 +1,9 @@
-# ADR-0016 — Next-generation partition-control test design (3 candidates)
+# ADR-0016b — Next-generation partition-control test design (3 candidates)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0016 is shared
+> with `0016-finer-tau-codebook-freeze.md` (ADR-0016a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Proposed (Sprint 10 spec gateway)
 **Date:** 2026-04-24

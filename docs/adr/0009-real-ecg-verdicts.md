@@ -4,6 +4,18 @@
 **Date:** 2026-04-20 (original) ; **2026-04-22** (retraction note)
 **Sprint:** 7 (extended scope, post-Task-7.6b)
 
+## Requalification note (2026-10-25, PI decision; ADR-0021, issue #22)
+
+The B-3 values recorded below are unchanged. Their interpretation as
+an architectural property was already withdrawn (ADR-0014b, ADR-0015b);
+B-3 is now additionally requalified as **uncalibrated**: the 0.02
+threshold was never compared with a null, and an independent binomial
+null invalidates the reading of the bare exceedance of 0.02; no
+compatibility or rejection verdict is established before a paired
+calibration of the median (same probe for the five queries, shared
+seeds and worlds).
+Values stand; interpretation withdrawn.
+
 ## Retraction note (2026-04-22, expanded 2026-04-24)
 
 **Update 2026-04-24 :** the §Next steps re-runs landed (see

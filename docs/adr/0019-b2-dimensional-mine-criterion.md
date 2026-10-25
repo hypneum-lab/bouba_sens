@@ -1,4 +1,9 @@
-# ADR-0019 — B-2 re-run with MINE at dimensionally-justified N ; the "probe batch ≥128" recommendation is replaced by N ≳ f(D)
+# ADR-0019b — B-2 re-run with MINE at dimensionally-justified N ; the "probe batch ≥128" recommendation is replaced by N ≳ f(D)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0019 is shared
+> with `0019-multi-seed-q3-retract.md` (ADR-0019a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — revises the methodology recommendation from ADR-0017
 / paper §6.3. Supersedes the "probe batch ≥128" heuristic with a

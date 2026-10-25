@@ -226,6 +226,19 @@ the excess is more plausibly the over-dispersion of window-sampled
 accuracies than an asymmetry of performance. The choice of block length
 (and hence the mock verdict) is left to the PI.
 
+## Note on reproducibility (PR #39, v0.5.10)
+
+Both grids above were produced before `_seed_everything` landed in the
+CLI (PR #39, issue #35): the modality encoders and the integration head
+drew their initial weights from the unseeded global torch RNG. The
+grids are therefore reproducible in distribution across seeds, not
+byte for byte; a re-run on v0.5.10 or later will give different
+per-item outcomes. The paired null itself is deterministic given the
+saved outcomes (seed 25102026). The probe code of this ADR
+(`query_successes`, `per_query_successes.json`) merges cleanly with
+PR #39, which seeds the RNGs before the models are built and does not
+touch the probe.
+
 ## Results — real ECG world (ADR-0009): not recomputed
 
 Not run. The ECG grid needs the `data/studyforrest_real/` cache

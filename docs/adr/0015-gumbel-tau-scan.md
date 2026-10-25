@@ -1,4 +1,9 @@
-# ADR-0015 — Gumbel tau scan (Sprint 12)
+# ADR-0015a — Gumbel tau scan (Sprint 12)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0015 is shared
+> with `0015-partition-test-unreachability-lemma.md` (ADR-0015b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — tau has no monotone handle on B-1, hard gate irreducible
 **Date:** 2026-04-21 late evening

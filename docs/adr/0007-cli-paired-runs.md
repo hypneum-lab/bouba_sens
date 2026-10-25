@@ -1,4 +1,9 @@
-# ADR-0007 — CLI-level paired-run wiring (`eval --t1-ckpt/--t2-ckpt`)
+# ADR-0007b — CLI-level paired-run wiring (`eval --t1-ckpt/--t2-ckpt`)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0007 is shared
+> with `0007-biological-bridge-stub.md` (ADR-0007a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-20

@@ -1,4 +1,9 @@
-# ADR-0014 — Compound lock + gumbel transducer (Sprint 11)
+# ADR-0014a — Compound lock + gumbel transducer (Sprint 11)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0014 is shared
+> with `0014-b3-partition-control-verdict.md` (ADR-0014b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — compound hypothesis **falsified**, soft gating dilutes B-1 peak
 **Date:** 2026-04-21 late evening

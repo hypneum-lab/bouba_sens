@@ -1,6 +1,11 @@
 # OSF pre-registration amendment — bouba_sens v0.6 (Sprint 10–17)
 
-**Status:** Draft, ready to file
+> **Status note (2026-10-25, issue #20).** Drafted as an amendment to
+> the dream-of-kiki OSF registration but **never filed on OSF**. It
+> counts as a local, git-dated pre-registration only (first commit
+> `4eab231`, 2026-04-23).
+
+**Status:** Draft, never filed on OSF (local, git-dated pre-registration)
 **Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN`
 **Previous amendment:** `amendment-v0.5-studyforrest-5modal.md` (4.5-modal real bridge)
 **Amendment tag on file:** `bouba_sens/v0.6-sprint10-17`

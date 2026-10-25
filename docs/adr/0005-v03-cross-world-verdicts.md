@@ -1,4 +1,9 @@
-# ADR-0005 — v0.3 cross-world invariant verdicts
+# ADR-0005b — v0.3 cross-world invariant verdicts
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0005 is shared
+> with `0005-cross-world-replication.md` (ADR-0005a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-20
