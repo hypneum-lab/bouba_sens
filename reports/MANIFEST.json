@@ -1,4 +1,16 @@
 {
+  "pilots/v07_b2_pilot_derived.json": {
+    "sha256": "fcc4eaedbf18b967b0f69e4e5bdfc1b2178c6488b8dc1ec4d2369f6de0bef010",
+    "size": 1101
+  },
+  "pilots/v07_b2_pilot_seeds1101-1105.json": {
+    "sha256": "282f43607f5c70b093fc1121d6774bfd1958501eb82e9bfdc1adc002895c552d",
+    "size": 6364
+  },
+  "pilots/v09_manipulation_check_seeds3101-3105.json": {
+    "sha256": "cd50891cd22cc2efebb2ebfd298d737bd44c0a174c35b16bcc4b0489a02c633a",
+    "size": 630
+  },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",
     "size": 286

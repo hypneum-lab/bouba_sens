@@ -1,0 +1,52 @@
+{
+  "source": "reports/pilots/v07_b2_pilot_seeds1101-1105.json",
+  "N_fixed": 95,
+  "bound_bits": 0.05,
+  "primary_hard_ross": {
+    "per_seed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.0,
+    "sd": 0.0,
+    "degenerate": "every per-seed value is identical; the SD is 0, its UCL80 is 0 and the normal planning model of section 7 is undefined (any TOST on such data has a zero-width CI)"
+  },
+  "e2g_gumbel_ross_descriptive": {
+    "per_seed": [
+      0.0,
+      0.01405776783395244,
+      0.0,
+      0.035482614472608656,
+      0.0
+    ],
+    "mean": 0.00990807646131222,
+    "sd": 0.015538555840787125,
+    "sd_ucl80_df4": 0.024202472679633796,
+    "mu=+0.00": {
+      "exact_power_N95": 1.000000000000017,
+      "N_for_0.80": 4
+    },
+    "mu=-0.02": {
+      "exact_power_N95": 1.000000000000017,
+      "N_for_0.80": 6
+    },
+    "label_planning_case": "adequately powered"
+  },
+  "ross_zero_distance_points_hard_pre": [
+    512,
+    512,
+    512,
+    512,
+    512
+  ],
+  "ross_zero_distance_points_hard_post": [
+    512,
+    512,
+    512,
+    512,
+    512
+  ]
+}
