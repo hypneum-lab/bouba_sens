@@ -116,16 +116,64 @@ cells.
 
 None of these is a verdict on B-3: the PI reads the JSON and decides.
 
-## Results
+## Results (`reports/me6_paired_null.json`)
 
-Run on electron-server (Ubuntu 24.04, 8 cores, no GPU, Python 3.14.4,
-numpy 2.4.4, torch 2.11.0 CPU), branch `feat/me6-paired-null`, Gaussian
-world, `scripts/run_grid.sh` defaults (STEPS_TRAIN 200, STEPS_LESION 100,
-`Me1,Me2,Me3`), 150 cells run four at a time with the per-cell seeds of
-`run_grid.sh` (`seed * 10000 + count`). Output:
-`reports/me6_paired_null.json`. See the PR description and the JSON for
-the figures; the `params.complete` flag says whether all 30 trios were
-present when the file was written.
+Grid run on electron-server (Ubuntu 24.04, 8-core Xeon X5680 without
+AVX, no GPU, Python 3.14.4, numpy 2.4.4, torch 2.11.0 on CPU), commit
+`6ddf536` of `feat/me6-paired-null`, Gaussian world, `scripts/run_grid.sh`
+defaults (STEPS_TRAIN 200, STEPS_LESION 100, `Me1,Me2,Me3`, gating hard),
+150 cells run four at a time with the per-cell seeds of `run_grid.sh`
+(`seed * 10000 + count`), 2026-10-25 09:51–10:43 (52 min under heavy
+competing load; ~30 s per cell when the host is idle). 150/150 cells, 30
+complete trios, no failure. Paired null: B = 20 000, seed 25102026,
+5.6 s. Cross-check: `aggregate_grid.py` on the same grid gives
+`invariants.b3.median_me6_max_abs = 0.15625`, `cells_counted = 30`
+(PASS under the fixed rule) — identical to `median.observed`.
+
+### Verdict statistic (median over the 30 trios)
+
+| | observed | null mean | null median | P95 | P99 | P(null ≥ obs) | P(B-3 passes \| H0) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| paired sign-flip null | **0.1562** (20/128) | 0.1409 | 0.1406 | 0.1562 | 0.1562 | **0.1735** (p = 0.1735) | 1.0000 |
+| iid binomial reference (ADR-0021, p = 0.2541) | 0.1562 | 0.1409 | 0.1406 | 0.1562 | 0.1562 | 0.1452 | 1.0000 |
+
+The grand-mean accuracy of the 750 matrix entries is 0.254 (4-class
+chance 0.25). The pooled per-trio null has mean 0.1444, P95 0.2188,
+P99 0.2500.
+
+### Per-trio maxima
+
+Observed Me6 per trio ranges from 0.0312 (seed1_T1_floor) to 0.3750
+(seed1_T2_plus10); 20 of 30 lie in 0.109–0.1875. Each trio's own null
+has mean 0.138–0.157 and P99 0.2344–0.2812. Four trios have
+P(null ≥ obs) < 0.05: seed1_T1_minus10 (0.2188, 0.0487),
+seed1_T2_minus10 (0.2812, 0.0111), seed1_T2_plus10 (0.3750, 0.0001) and
+seed2_T1_plus10 (0.2344, 0.0462); seed4_T2_plus10 is at 0.0585. Under H0
+about 1.5 of 30 would be expected below 0.05. The pairs attaining the
+maximum differ from trio to trio (vision|gravity, tactile|force,
+audio|vision, …): no single pair carries the excess.
+
+### Reading (not a verdict — PI decision pending)
+
+- The grid-level B-3 median (0.1562) is **inside the body of the paired
+  null**, not in its upper tail: 17 % of null grids reach or exceed it.
+  Because the statistic moves in steps of 1/128, 0.1562 is also the
+  attained P95 and P99 value of the null; the observed value is one step
+  above the null median (0.1406).
+- The paired null and the iid reference are **numerically almost the
+  same** on this grid (means 0.1409 / 0.1409, P99 0.1562 / 0.1562, tail
+  0.17 / 0.15). This is what the design predicts for an iid-sampled
+  world where the two members of every pair come from different probes
+  (limit 3 below): the paired structure that survives is the shared
+  probe within a column, which the sign flip preserves and the iid
+  reference ignores, and its effect on the maximum is small here. The
+  equality does not transfer to the Studyforrest worlds (limit 1).
+- The fixed rule "median > 0.02" fires in **100 %** of paired-null
+  grids, as it did under the iid reference: on this grid the B-3 PASS
+  is what the rule returns under H0.
+- A minority of trios (three of the six seed-1 trios in particular) have
+  maxima in their own null's upper tail. Whether this is seed-1
+  structure or multiplicity (30 trios × 10 pairs) is not decided here.
 
 ## Known limits (to be weighed by the PI)
 
