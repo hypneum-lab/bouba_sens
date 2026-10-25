@@ -1,4 +1,8 @@
 {
+  "me6_null_calibration.json": {
+    "sha256": "48239ecc846d604ea5bec36530084a7f79b560365ad07c0df5a8cb7e0f6d8589",
+    "size": 76111
+  },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",
     "size": 286
