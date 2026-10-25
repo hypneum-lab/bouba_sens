@@ -384,6 +384,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="frozen v0.7 configuration (E-2: studyforrest, E-2b: ccfilm)",
     )
+    ap.add_argument(
+        "--osf-filed",
+        default="",
+        help="OSF DOI of the filed v0.7 amendment (needed for seeds 4001-4154)",
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
     return ap
@@ -463,8 +468,14 @@ def check_world(world_name: str, seed: int) -> None:
         raise SystemExit(f"--world {world_name} built {got}, expected {expected}")
 
 
+V07_CONFIRMATORY_POOL = range(4001, 4155)  # 4001-4150 + reserve 4151-4154
+
+
 def resolve_seeds(args: argparse.Namespace) -> list[int]:
-    return list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
+    seeds = list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
+    if any(s in V07_CONFIRMATORY_POOL for s in seeds) and not getattr(args, "osf_filed", ""):
+        raise SystemExit("seeds 4001-4154 are v0.7 confirmatory seeds: pass --osf-filed")
+    return seeds
 
 
 def configure_determinism(args: argparse.Namespace) -> None:

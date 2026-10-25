@@ -74,6 +74,39 @@ def _iter_cell_records(
         yield match.groupdict(), eval_report, per_query
 
 
+class WorldCheckError(ValueError):
+    """A grid output lacks the world class or was produced on another world."""
+
+
+def check_world(root: Path, expected: str) -> int:
+    """Refuse a grid unless every Phase-1 and cell output records ``expected``.
+
+    PI decision 2026-10-25: every B-1 grid output records the world class
+    (``metadata.json`` key ``world_class``, written by ``bouba-sens train``
+    and ``lesion``). A missing key, another class (for example the 2-modal
+    ``StudyforrestWorld`` stub) or a grid without outputs raises
+    ``WorldCheckError``. Returns the number of checked outputs.
+    """
+    checked = 0
+    for out_dir in sorted(root.iterdir()):
+        meta_path = out_dir / "metadata.json"
+        if not out_dir.is_dir() or not (
+            _CELL_RE.match(out_dir.name) or out_dir.name.startswith("phase1_")
+        ):
+            continue
+        if not meta_path.exists():
+            raise WorldCheckError(f"{out_dir.name}: no metadata.json")
+        got = json.loads(meta_path.read_text()).get("world_class")
+        if got is None:
+            raise WorldCheckError(f"{out_dir.name}: metadata.json has no world_class")
+        if got != expected:
+            raise WorldCheckError(f"{out_dir.name}: world_class {got}, expected {expected}")
+        checked += 1
+    if checked == 0:
+        raise WorldCheckError(f"no grid outputs under {root}")
+    return checked
+
+
 def _bootstrap_metric(values: list[float]) -> dict[str, float]:
     mean, lo, hi = me9_bootstrap(values)
     return {"mean": mean, "ci_low": lo, "ci_high": hi}
@@ -240,9 +273,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--require-world",
+        default=None,
+        help="refuse the grid unless every output records this world class "
+        "(v0.7: StudyforrestRealWorld)",
+    )
     args = parser.parse_args()
 
+    if args.require_world is not None:
+        check_world(args.root, args.require_world)
     result = aggregate(args.root)
+    if args.require_world is not None:
+        result["world_class"] = args.require_world
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2))
     print(f"aggregate: {len(result['cells'])} cells -> {args.out}")

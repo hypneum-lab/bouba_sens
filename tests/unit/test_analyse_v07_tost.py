@@ -201,17 +201,17 @@ def test_confirmatory_rejects_hard_primary_or_missing_readout() -> None:
 
 
 def test_reserve_substitutions_are_documented_and_in_order() -> None:
-    seeds = [s for s in ROSTER if s not in (1007, 1050)] + [1156, 1157]
+    seeds = [s for s in ROSTER if s not in (4007, 4050)] + [4151, 4152]
     subs = [
-        {"replaced": 1007, "by": 1156, "reason": "crash"},
-        {"replaced": 1050, "by": 1157, "reason": "NaN metric"},
+        {"replaced": 4007, "by": 4151, "reason": "crash"},
+        {"replaced": 4050, "by": 4152, "reason": "NaN metric"},
     ]
     out = _ac({"e2": _e2_rows(seeds), "substitutions": subs})
     assert out["B-2"]["E-2"]["n"] == 150
     assert out["roster"]["substitutions"] == subs
     with pytest.raises(ValueError, match="substitution"):  # undocumented
         _ac({"e2": _e2_rows(seeds)})
-    bad = [dict(subs[0], by=1157), dict(subs[1], by=1156)]  # reserve out of order
+    bad = [dict(subs[0], by=4152), dict(subs[1], by=4151)]  # reserve out of order
     with pytest.raises(ValueError, match="order"):
         _ac({"e2": _e2_rows(seeds), "substitutions": bad})
     noreason = [dict(subs[0], reason=""), subs[1]]
@@ -325,9 +325,9 @@ def test_e1_is_robust_with_mean_secondary() -> None:
     assert out["E-1b"]["per_lock"]["50"]["estimator"].startswith("Hodges-Lehmann")
 
 
-def test_roster_is_150_seeds_without_the_pilot_seeds() -> None:
-    assert len(an.ROSTER) == 150 and len(set(an.ROSTER)) == 150
-    assert not set(an.ROSTER) & {1101, 1102, 1103, 1104, 1105}
+def test_roster_is_the_contiguous_block_4001_4150() -> None:
+    assert tuple(range(4001, 4151)) == an.ROSTER and an.RESERVE == (4151, 4152, 4153, 4154)
+    assert not set(an.ROSTER) & {1101, 1102, 1103, 1104, 1105, 4201}
     assert not set(an.ROSTER) & set(an.RESERVE)
 
 
@@ -390,3 +390,45 @@ def test_structure_shares_must_be_finite_and_in_range() -> None:
     rows[2]["pre_top1_share"] = float("nan")
     with pytest.raises(ValueError, match="in \\[0, 1\\]"):
         _ac({"e2": rows})
+
+
+# --- PI decision 2026-10-25 (19:04): exact sign test sensitivity ---------
+
+
+def test_sign_ci_is_order_statistics_and_dual_to_its_p_values() -> None:
+    x = np.array([0.3, -0.1, 0.05, 0.2, 0.9, -0.4, 0.15, 0.0, 0.6, 0.25])
+    med, lo, hi = an.sign_ci(x, 0.90)
+    xs = np.sort(x)
+    cdf = stats.binom.cdf(np.arange(11), 10, 0.5)
+    c = max(c for c in range(1, 11) if cdf[c - 1] <= 0.05)
+    assert (med, lo, hi) == (float(np.median(x)), xs[c - 1], xs[10 - c])
+    rng = np.random.default_rng(17)
+    for _ in range(300):  # continuous and quantised data, ties at the bound included
+        n = int(rng.integers(8, 160))
+        y = rng.normal(rng.uniform(-0.06, 0.06), 0.04, n)
+        if rng.random() < 0.5:
+            y = np.round(y / 0.00625) * 0.00625
+        r = an.sign_tost(y, 0.025)
+        a, b = r["ci90"]
+        assert (r["p_lower"] <= 0.05) == (a > -0.025)
+        assert (r["p_upper"] <= 0.05) == (b < 0.025)
+
+
+def test_sign_ci_covers_the_median_of_a_skewed_law() -> None:
+    rng = np.random.default_rng(19)
+    hits = 0
+    for _ in range(400):
+        y = rng.exponential(1.0, size=40)  # median ln 2, strongly skewed
+        _, a, b = an.sign_ci(y, 0.90)
+        hits += a <= np.log(2) <= b
+    assert hits / 400 >= 0.87
+    with pytest.raises(ValueError, match="too small"):
+        an.sign_ci([0.1, 0.2, 0.3], 0.90)
+
+
+def test_sign_sensitivity_is_reported_for_e1_and_e2() -> None:
+    out = _ac({"e1": _e1_rows(ROSTER), "e2": _e2_rows(ROSTER)})
+    assert out["B-2"]["E-2 sign (sensitivity)"]["estimator"].startswith("median")
+    assert "sensitivity_label" in out["B-1"]["E-1 sign (sensitivity)"]
+    assert set(out["B-1"]["E-1b sign (sensitivity)"]) == set(an.LOCKS)
+    assert "E-1c sign (sensitivity)" in out["B-1"]

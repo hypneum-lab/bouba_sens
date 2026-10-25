@@ -406,3 +406,13 @@ def test_b2_fields_average_the_k_draws_and_add_the_switch() -> None:
         == runner.full_probe_b2(*single, labels)["ross_full_delta_bits"]
     )
     assert out["switch_post"] is False and 0 <= out["post_top1_share"] <= 1
+
+
+def test_v07_confirmatory_seeds_need_the_filing_reference() -> None:
+    args = runner.build_parser().parse_args(["--seed-list", "4001,4002"])
+    with pytest.raises(SystemExit, match="4001-4154"):
+        runner.resolve_seeds(args)
+    args = runner.build_parser().parse_args(["--seed-list", "4001", "--osf-filed", "doi"])
+    assert runner.resolve_seeds(args) == [4001]
+    args = runner.build_parser().parse_args(["--seed-list", "1101,1102"])
+    assert runner.resolve_seeds(args) == [1101, 1102]

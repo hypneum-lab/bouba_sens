@@ -45,6 +45,14 @@ if [[ -n "${SEEDS:-}" ]]; then
 else
     SEEDS=(0 1 2 3 4)
 fi
+# PI decision 2026-10-25: the v0.7 confirmatory seeds 4001-4150 and their
+# reserves 4151-4154 run only after filing (OSF_FILED=<OSF DOI>).
+for s in "${SEEDS[@]}"; do
+    if [[ "${s}" =~ ^[0-9]+$ ]] && (( s >= 4001 && s <= 4154 )) && [[ -z "${OSF_FILED:-}" ]]; then
+        echo "seed ${s} is a v0.7 confirmatory seed: set OSF_FILED=<OSF DOI> after filing" >&2
+        exit 2
+    fi
+done
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 

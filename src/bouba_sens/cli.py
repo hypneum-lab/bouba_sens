@@ -242,7 +242,16 @@ def train(
         pickle.dump(ckpt, f)
     with (out / "metadata.json").open("w") as f:
         json.dump(
-            {"phase": "pretrain", "steps": steps, "seed": seed, "version": __version__},
+            {
+                "phase": "pretrain",
+                "steps": steps,
+                "seed": seed,
+                "world": world,
+                # PI decision 2026-10-25: every grid output records the world
+                # class, so a silent fallback to the stub is visible.
+                "world_class": type(world_obj).__name__,
+                "version": __version__,
+            },
             f,
             indent=2,
         )
@@ -428,6 +437,10 @@ def lesion(
                 "snr_init": snr_init,
                 "snr_floor": snr_floor,
                 "k_steps": k_steps,
+                # Effective SNR (dB) at every lesion step (v0.7 section 4.1 check).
+                "snr_trajectory_db": [float(schedule(t)) for t in range(steps)],
+                "world": world,
+                "world_class": type(world_obj).__name__,
                 "version": __version__,
             },
             meta_out,

@@ -13,11 +13,11 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
              "pre_top1_share": v, "pre_between_class_share": v,
              "post_top1_share": v, "post_between_class_share": v,
              "probe_label_counts": {"0": 128, ...}}, ...],
-     "substitutions": [{"replaced": 1007, "by": 1156, "reason": "crash"}]}
+     "substitutions": [{"replaced": 4007, "by": 4151, "reason": "crash"}]}
 
 ``analyse_confirmatory`` is the only confirmatory entry point (used by
 ``main``). It refuses any input that is not exactly the frozen roster
-1001-1100 and 1106-1155 (N = 150) after documented reserve substitutions (1156-1159, used in
+4001-4150 (N = 150) after documented reserve substitutions (4151-4154, used in
 order, at most 4, each with a reason), and any B-2 record that is not
 from the Gumbel primary readout or lacks the hard-readout value (PI
 decision 2026-10-25, after the B-2 pilot). E-2h (hard readout,
@@ -57,10 +57,10 @@ ALPHA = 0.05
 B1_BOUND = 0.025
 B2_BOUND = 0.05
 LOCKS: tuple[str, ...] = ("50", "75", "100", "125", "150")
-# N = 150 (PI decision 2026-10-25, 13:32; section 8): 1001-1100 and
-# 1106-1155, skipping the B-2 pilot seeds 1101-1105; reserve 1156-1159.
-ROSTER: tuple[int, ...] = tuple(range(1001, 1101)) + tuple(range(1106, 1156))
-RESERVE: tuple[int, ...] = (1156, 1157, 1158, 1159)
+# N = 150 (PI decisions 2026-10-25, 13:32 and 19:04; section 8): a new
+# contiguous block 4001-4150, reserve 4151-4154, used nowhere else.
+ROSTER: tuple[int, ...] = tuple(range(4001, 4151))
+RESERVE: tuple[int, ...] = (4151, 4152, 4153, 4154)
 SWITCH_TOP1 = 0.25  # bouba_sens.readout (v0.7 section 4.2)
 SWITCH_BETWEEN = 0.10
 N_BOOT = 10_000
@@ -210,6 +210,62 @@ def hl_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
     }
 
 
+def sign_ci(values: Sequence[float], level: float) -> tuple[float, float, float]:
+    """Median and its distribution-free order-statistic CI (exact sign test).
+
+    CI = [x_(c), x_(n - c + 1)] of the sorted values, c the largest integer
+    with P(B <= c - 1) <= (1 - level) / 2, B ~ Binomial(n, 1/2). Coverage
+    >= ``level`` for any continuous distribution: no symmetry is assumed
+    (PI decision 2026-10-25, 19:04: registered sensitivity analysis).
+    """
+    x = np.sort(np.asarray(values, dtype=float))
+    n = x.size
+    a = (1 - level) / 2
+    cdf = stats.binom.cdf(np.arange(n + 1), n, 0.5)
+    c = int(np.searchsorted(cdf, a, side="right"))
+    if c < 1:
+        raise ValueError(f"n = {n} is too small for a {level:.0%} sign-test CI")
+    return float(np.median(x)), float(x[c - 1]), float(x[n - c])
+
+
+def sign_p(values: Sequence[float], theta: float, alternative: str) -> float:
+    """Exact sign-test p-value for H0: median = theta, dual to ``sign_ci``.
+
+    Same tie convention as ``signed_rank_p``: a value equal to theta never
+    counts as beyond it. ``greater``: T = #{x > theta}, p = P(B >= T);
+    ``less``: T = #{x >= theta}, p = P(B <= T).
+    """
+    x = np.asarray(values, dtype=float)
+    n = x.size
+    if alternative == "greater":
+        k = int((x > theta).sum())
+        return float(stats.binom.sf(k - 1, n, 0.5))
+    if alternative == "less":
+        k = int((x >= theta).sum())
+        return float(stats.binom.cdf(k, n, 0.5))
+    raise ValueError(f"unknown alternative {alternative!r}")
+
+
+def sign_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
+    """Registered sensitivity analysis: TOST on the median by the exact sign test."""
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 1 or x.size < 3 or not np.all(np.isfinite(x)):
+        raise ValueError("need >= 3 finite per-seed values")
+    med, lo, hi = sign_ci(x, 1 - 2 * ALPHA)
+    _, lo95, hi95 = sign_ci(x, 0.95)
+    return {
+        "n": int(x.size),
+        "bound": bound,
+        "estimator": "median (exact sign test)",
+        "median": med,
+        "ci90": [lo, hi],
+        "ci95": [lo95, hi95],
+        "p_lower": sign_p(x, -bound, "greater"),
+        "p_upper": sign_p(x, bound, "less"),
+        "sensitivity_label": classify(lo, hi, bound),
+    }
+
+
 def switch_analysis(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     """Registered secondary binary outcome (PI 2026-10-25): no label, no decision.
 
@@ -256,7 +312,10 @@ def analyse_e1(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     out: dict[str, Any] = {
         "E-1": hl_tost(e1_vals, B1_BOUND),
         "E-1 mean (secondary)": _unlabelled(tost(e1_vals, B1_BOUND)),
+        "E-1 sign (sensitivity)": sign_tost(e1_vals, B1_BOUND),
     }
+    out["E-1b sign (sensitivity)"] = {k: sign_tost(v, B1_BOUND) for k, v in per_lock.items()}
+    out["E-1c sign (sensitivity)"] = sign_tost([float(r["nolock"]) for r in rows], B1_BOUND)
     out["E-1b mean (secondary)"] = {k: _unlabelled(tost(v, B1_BOUND)) for k, v in per_lock.items()}
     out["E-1c mean (secondary)"] = _unlabelled(tost([float(r["nolock"]) for r in rows], B1_BOUND))
     if out["E-1"]["label"] != "equivalent":
@@ -371,6 +430,9 @@ def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     return {
         "E-2": e2,
         "E-2 mean (secondary)": _unlabelled(mean_based),
+        "E-2 sign (sensitivity)": sign_tost(
+            [float(r["ross_full_delta_bits"]) for r in rows], B2_BOUND
+        ),
         "E-2h": {k: v for k, v in h.items() if k != "label"},
         "switch": switch_analysis(rows),
         "readout_disagreement": {

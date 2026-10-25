@@ -54,3 +54,18 @@ def test_k_steps_unset_leaves_command_line_unchanged(tmp_path: Path) -> None:
     lesions = _run_grid(tmp_path)
     assert len(lesions) == 30
     assert all(_k_steps(c) is None for c in lesions)
+
+
+def test_v07_confirmatory_seeds_need_the_filing_reference(tmp_path: Path) -> None:
+    # PI decision 2026-10-25: seeds 4001-4154 run only after filing.
+    stub_dir = tmp_path / "a"
+    stub_dir.mkdir()
+    with pytest.raises(subprocess.CalledProcessError) as exc:
+        _run_grid(stub_dir, SEEDS="4001")
+    assert exc.value.returncode == 2
+    filed = tmp_path / "b"
+    filed.mkdir()
+    assert len(_run_grid(filed, SEEDS="4001", OSF_FILED="10.17605/OSF.IO/TEST")) == 30
+    other = tmp_path / "c"
+    other.mkdir()
+    assert len(_run_grid(other, SEEDS="4201")) == 30  # the SNR pilot seed
