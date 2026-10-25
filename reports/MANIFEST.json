@@ -1,4 +1,8 @@
 {
+  "me6_null_calibration.json": {
+    "sha256": "48239ecc846d604ea5bec36530084a7f79b560365ad07c0df5a8cb7e0f6d8589",
+    "size": 76111
+  },
   "pilots/v07_b2_pilot_derived.json": {
     "sha256": "fcc4eaedbf18b967b0f69e4e5bdfc1b2178c6488b8dc1ec4d2369f6de0bef010",
     "size": 1101
