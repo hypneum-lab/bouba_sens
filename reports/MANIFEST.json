@@ -3,6 +3,14 @@
     "sha256": "48239ecc846d604ea5bec36530084a7f79b560365ad07c0df5a8cb7e0f6d8589",
     "size": 76111
   },
+  "pilots/b1_timing_seed0_T2_audio_floor_metadata.json": {
+    "sha256": "8e27a8672754e402fa4356d4de4a4037e4f5ef1f57f8c30572e0f7193865ab4f",
+    "size": 174
+  },
+  "pilots/v07_b1_robust_power_n150.json": {
+    "sha256": "b3d08695f5188f374f7aacc63ab652536a42cac53e6d671a3cbb5bb620905b99",
+    "size": 639
+  },
   "pilots/v07_b2_pilot_derived.json": {
     "sha256": "1028510f44478f40867ddfd735aa912745a8f0df6e3b11d8d8fa31fa46b90d22",
     "size": 1325
@@ -18,6 +26,10 @@
   "pilots/v07_b2_pilot_r3_derived.json": {
     "sha256": "938a9b208b0e5d4fb720ef2b1394b95e90650b9a30ebd336bfa26b2e51e2142a",
     "size": 4176
+  },
+  "pilots/v07_b2_pilot_r3_derived_n150.json": {
+    "sha256": "dc2c11d948743cd048caf712dff640167311f152eeb0f13f5e507ba554b9d85f",
+    "size": 4282
   },
   "pilots/v07_b2_pilot_r3_seeds1101-1105.json": {
     "sha256": "f09211fe337d827799b273b719fdc9efea877c91072ee29fb5a32d1967957e26",

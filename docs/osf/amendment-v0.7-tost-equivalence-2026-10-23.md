@@ -7,14 +7,14 @@
 **Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4.1, §4.2).
-**Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0021** (proposed — PI confirms at filing)
-**PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
-**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). N stays 95; the power of the robust rule is recomputed from the pilot (round 3, same seeds). These changes are stated on the OSF form.
+**Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0022 / 0023 / 0024, ADR-0021 having been used by PR #19); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0022** (proposed — PI confirms at filing; ADR-0021 has since been used for the Me6 null calibration, PR #19, so the proposals shift to ADR-0022 / 0023 / 0024 for v0.7 / v0.8 / v0.9)
+**PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case; superseded by N = 150 on 2026-10-25, see below); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
+**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). The power of the robust rule is recomputed from the pilot (round 3, same seeds). **Third set (PI decisions 2026-10-25, 13:32, after round 3):** (vi) **N = 150** (robust-rule power target 0.80; §7, §8); (vii) E-1, E-1b and E-1c also use the robust TOST, with the mean-based t-TOST kept as a reported secondary analysis (§3, §6). These changes are stated on the OSF form.
 
 > **Filing note.** This is the machine-readable draft. Only the B-2
-> pilot (seeds 1101–1105, §4.3) has been run; no confirmatory seed has
-> been run. Confirmatory seeds (below) must not be run before
+> pilot (seeds 1101–1105, §4.3; rounds 1–3, `docs/osf/pilot-report-2026-10-25.md`)
+> has been run; no confirmatory seed has been run. Confirmatory seeds (below) must not be run before
 > the PI files this text on OSF. The pre-filing code tasks of §4.3 must
 > be merged and frozen first; the commit hash of the analysis code is
 > recorded on the OSF form at filing.
@@ -29,13 +29,16 @@ Retract, B-2 Null). This amendment adds **a confirmatory equivalence
 test** for the two invariants that ended null, so that a null can be
 reported as a bounded statement about a precisely defined estimand:
 
-- B-1: "the population mean of the E-1 estimand (§3) lies inside
-  ±0.025 (half the frozen 0.05 threshold); equivalence at α = 0.05 by
-  TOST, i.e. the 90 % two-sided CI lies inside the bounds";
-- B-2: "the population mean of an operational statistic, the
+- B-1: "the pseudo-median (centre of symmetry) of the per-seed E-1
+  value (§3) lies inside ±0.025 (half the frozen 0.05 threshold);
+  equivalence at α = 0.05 by the robust TOST, i.e. the 90 %
+  Hodges–Lehmann CI lies inside the bounds" (§6; the mean-based
+  t-TOST is reported as a secondary analysis);
+- B-2: "the pseudo-median of an operational statistic, the
   primary-estimator ΔMI on the fused code (§3), lies inside ±0.05 bit
   (half the frozen 0.10 bit threshold); equivalence at α = 0.05 by
-  TOST, i.e. the 90 % two-sided CI lies inside the bounds". This bounds
+  the robust TOST, i.e. the 90 % Hodges–Lehmann CI lies inside the
+  bounds". This bounds
   the estimated statistic only, not the true MI change and not the
   original surviving-channel B-2 invariant.
 
@@ -101,11 +104,12 @@ known-signal calibration of §4.3 is reported to describe how the
 estimator responds to known MI changes; it does not license a reading
 in true-MI units.
 
-| Id | Quantity (population mean over seeds) | H0 (to reject) | H1 (equivalence) | Status |
+| Id | Quantity (over seeds; pseudo-median = centre of symmetry) | H0 (to reject) | H1 (equivalence) | Status |
 |----|---------------------------------------|----------------|------------------|--------|
-| **E-1** | μ₁ = mean of the per-seed E-1 value (above) | μ₁ ≤ −0.025 or μ₁ ≥ +0.025 | −0.025 < μ₁ < +0.025 | primary |
-| E-1b | μ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|μ₁(ℓ)\| ≥ 0.025 | all five inside ±0.025 (IUT) | confirmatory, step 2 of a fixed sequence |
-| E-1c | μ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.025 | \|μ\| < 0.025 | confirmatory, step 3 of a fixed sequence |
+| **E-1** | θ₁ = pseudo-median of the per-seed E-1 value (above) | θ₁ ≤ −0.025 or θ₁ ≥ +0.025 | −0.025 < θ₁ < +0.025 | primary (robust TOST, §6) |
+| E-1b | θ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|θ₁(ℓ)\| ≥ 0.025 | all five inside ±0.025 (IUT) | confirmatory, step 2 of a fixed sequence (robust TOST) |
+| E-1c | θ at the no-lock default (LOCK_AFTER unset) | \|θ\| ≥ 0.025 | \|θ\| < 0.025 | confirmatory, step 3 of a fixed sequence (robust TOST) |
+| E-1 mean | the means of the same three steps | as above with means | as above with means | reported secondary, no label (the t-TOSTs of the earlier draft) |
 | **E-2** | θ₂ = pseudo-median (centre of symmetry) of the per-seed ΔMI, primary estimator (Ross 2014, k = 3) averaged over K = 8 Gumbel draws of the probe readout (ADR-0019), class-balanced probe (§4.2) | θ₂ ≤ −0.05 or θ₂ ≥ +0.05 | −0.05 < θ₂ < +0.05 | primary (robust TOST, §6) |
 | E-2 mean | μ₂ = mean of the same per-seed values | as E-2 with μ₂ | as E-2 with μ₂ | reported secondary, no label (the t-TOST of the earlier draft) |
 | E-2h | same quantity and estimator, hard (argmax) probe readout | — | — | descriptive, reported alongside E-2, no decision (input-independent in the pilot) |
@@ -534,13 +538,15 @@ informativeness of each component is stated there.
 
 - Unit of analysis: the seed. Cells within a seed are not treated as
   independent.
-- TOST, E-1 (and E-1b, E-1c): two one-sided one-sample t-tests at
-  α = 0.05 each. Equivalently, the **90 % two-sided CI** of the mean
-  lies inside the bounds. Report the 90 % CI (decision-relevant), the
-  95 % CI (descriptive), both one-sided p-values, the mean and the SD.
-- **Robust TOST, E-2 (PI decision 2026-10-25, 13:12).** The E-2 label
+- Mean-based TOST (reported secondary for E-1, E-1b, E-1c and E-2, no
+  label): two one-sided one-sample t-tests at α = 0.05 each, i.e. the
+  90 % two-sided t-interval of the mean inside the bounds; reported
+  with the 95 % CI, both one-sided p-values, the mean and the SD.
+- **Robust TOST, E-1, E-1b, E-1c and E-2 (PI decisions 2026-10-25,
+  13:12 for E-2 and 13:32 for B-1).** Each label
   is read from the **90 % distribution-free Hodges–Lehmann CI** of the
-  per-seed ΔMI-hat: the Hodges–Lehmann estimate is the median of the
+  per-seed values (E-1: the mean over the five locks; E-1b: each lock;
+  E-1c: no-lock; E-2: ΔMI-hat): the Hodges–Lehmann estimate is the median of the
   M = n(n + 1)/2 Walsh averages (x_i + x_j)/2, i ≤ j, and the CI is
   [W₍c₎, W₍M−c+1₎] of the sorted Walsh averages with c the largest
   integer such that P(T⁺ ≤ c − 1) ≤ 0.05 under the exact null law of
@@ -549,9 +555,22 @@ informativeness of each component is stated there.
   each. Its estimand is the pseudo-median (centre of symmetry); the
   CI has coverage ≥ 90 % for a continuous distribution symmetric about
   its centre. Reported: the estimate, the median, the 90 % and 95 %
-  CIs and both one-sided signed-rank p-values. Rationale: one pilot
-  seed (1105) showed a genuine class-separating reorganisation with a
-  ΔMI-hat about ten times the others, which dominates a mean and its SD.
+  CIs and both one-sided signed-rank p-values, computed from the same
+  exact law (`signed_rank_p`: T⁺ = number of Walsh averages above the
+  bound, ties at the bound counted one half), so that on untied data
+  both p < 0.05 exactly when the 90 % CI lies inside the bounds.
+  **Ties.** B-1 grid medians are quantised (steps of 0.00625), so Walsh
+  averages tie; the CI is still read from the order statistics and the
+  untied law is used, an approximation stated in the paper.
+  **Inferential limitation (registered).** The coverage guarantee needs
+  symmetry about the centre. A switch component (E-2s) makes the
+  per-seed ΔMI-hat skewed; the CI then targets the pseudo-median only
+  approximately, and the error rate at the bounds is not guaranteed to
+  be 0.05. Its size under the pilot planning law is reported in §7
+  (rejection frequency at θ = ±0.05) and quoted next to the E-2 label.
+  Rationale: one pilot seed (1105) showed a genuine class-separating
+  reorganisation with a ΔMI-hat about ten times the others, which
+  dominates a mean and its SD.
 - E-2 mean (reported secondary, no label): the t-TOST of the earlier
   draft on the same per-seed values, with its 90 % CI; a disagreement
   with the E-2 label is stated in the paper.
@@ -562,9 +581,9 @@ informativeness of each component is stated there.
   differs before and after the lesion). B-2 has one condition per
   world, so this pre/post contrast is the only within-design
   comparison; the CC-film E-2b proportion is reported descriptively.
-- Robustness (reported, not decision-relevant): the same TOST on a
-  10 000-resample percentile bootstrap of the mean, and a
-  Wilcoxon-based TOST. The data are quantised and may be non-normal. If
+- Robustness of the mean-based secondary (reported, not
+  decision-relevant): the same t-TOST on a 10 000-resample percentile
+  bootstrap of the mean, and SciPy's Wilcoxon-based TOST. The data are quantised and may be non-normal. If
   parametric and non-parametric verdicts disagree, both are reported and
   the disagreement is stated in the paper.
 - E-2h (descriptive): the same TOST, CIs and p-values as E-2,
@@ -601,7 +620,33 @@ for 0.80 is found by bisection on Monte-Carlo power (20,000 draws per N
 for single TOSTs, 2,000 per N for the B-1 complete rule), so it is
 approximate; the selected N itself uses exact TOST power.
 
-**Sample size: N = 95 (PI decision, 2026-10-23).** The PI set N to the
+**Sample size: N = 150 (PI decision 2026-10-25, 13:32, after pilot
+round 3; supersedes N = 95).** N is the value at which the robust E-2
+rule (§6) reaches the 0.80 power target under the pilot planning law of
+round 3 (pilot values resampled, deviations from their pseudo-median
+inflated by the df = 4 UCL80 factor 1.558, law shifted to pseudo-median
+μ; `scripts/pilots/derive_v07_pilot.py … 150`,
+`reports/pilots/v07_b2_pilot_r3_derived_n150.json`): on the grid
+95, 150, 200, … (2,000 draws per N) 150 is the first N with power
+≥ 0.80; with 20,000 draws at N = 150 the power is **0.904 (μ = 0) and
+0.905 (μ = −0.02)**, label "adequately powered". *Size at the bounds
+under the same (asymmetric) law:* P(Equivalent) = 0.0035 at θ = +0.05
+and 0.0028 at θ = −0.05, below α = 0.05 (§6, inferential
+limitation). The mean-based secondary at N = 150: exact t-TOST power
+2e-5, "low informativeness".
+*B-1 at N = 150, robust rule* (`scripts/pilots/derive_v07_b1_robust.py`,
+`reports/pilots/v07_b1_robust_power_n150.json`): planning law =
+the Q3/Q3+ 10 seeds × 5 locks resampled as 5-vectors, deviations from
+the per-lock pseudo-medians inflated by the df = 9 UCL80 factor 1.293,
+rounded to the 0.00625 quantum, 2,000 draws: P(E-1 equivalent) = 1.000
+and P(E-1 and E-1b) = **0.938** at the observed per-lock pseudo-medians
+(−0.0125, −0.0063, +0.0047, −0.0125, −0.0063) and 0.951 with every
+centre at 0. The per-lock pseudo-medians are closer to 0 than the
+per-lock means (−0.0181 at two locks), which is why E-1b is far better
+powered under the robust rule than under the mean rule below. E-1c has
+no planning data. These are the planning numbers stated on the form.
+
+*Earlier N (kept for the record).* **Sample size: N = 95 (PI decision, 2026-10-23; superseded).** The PI set N to the
 smallest value giving 0.80 power for E-2 in the planning case (below:
 μ = ±0.02 bit, SD 0.1166). Exact TOST power (normal data, conditioning
 on the sample SD; `tost_power_exact`) is 0.7968 at N = 94 and **0.8006
@@ -685,7 +730,7 @@ the primary ΔMI-hat ≤ 0.166 bit if μ = 0 and ≤ 0.117 bit if
 μ = ±0.02. A true |μ| of 0.04 bit (0.8 × the bound) is not resolvable
 as equivalence at this N.
 
-**Expected informativeness at N = 95 (stated on the OSF form).**
+**Expected informativeness at N = 95 (earlier draft, mean-based rules; superseded by the N = 150 robust numbers above).**
 
 - **E-1: high.** P(Equivalent) = 1.000 in every planning scenario of
   the complete rule.
@@ -735,7 +780,15 @@ N ≈ ((z₁₋α + z₁₋β/₂) · σ / δ)²; for μ ≠ 0, N ≈ ((z₁₋�
 (δ − |μ|))², with δ the bound (δ = 0.025 for B-1, 0.05 bit for B-2).
 It gives 94 for the planning case, against 95 from the exact power.
 
-**Runtime.** B-1 needs N × 6 grids × 30 cells: **17,100 lesion cells
+**Runtime at N = 150 (macM1, measured 2026-10-25).** One B-1 grid (a
+Phase-1 run and 30 lesion cells, Studyforrest, `K_STEPS=50`,
+`LOCK_AFTER=100`) took 182 s on macM1 (Apple M1 Max, CPU, one job,
+`nice 10`; timing run on seed 0, outside every pool,
+`reports/pilots/logs/b1_timing_seed0.log`). B-1 needs 150 × 6 grids =
+900 grids: about **45.5 h** sequentially. B-2 (K = 8 draws) took about
+22 s per seed in pilot round 3: about **0.9 h** for 150 seeds. Total
+about **46.5 h** of sequential compute on macM1 (less with parallel
+grids, if the host allows). *Earlier estimate (N = 95):* B-1 needs N × 6 grids × 30 cells: **17,100 lesion cells
 at N = 95**, excluding B-2. The last measured throughput (N12,
 `docs/milestones/n12-amedi-subgroup-replication-2026-05-11.md`: 1,500
 cells in 2 h 37 min, 24-core host, parallel-4) gives about **30 h**
@@ -747,16 +800,18 @@ on the OSF form.
 
 ## 8. Seeds and stopping rule
 
-- **Confirmatory seeds:** 1001–1095 (N = 95), the same list for B-1
-  and B-2. They are disjoint from every seed used so far: the default
+- **Confirmatory seeds (N = 150, PI decision 2026-10-25, 13:32):**
+  1001–1100 and 1106–1155, the same list for B-1 and B-2; the B-2
+  pilot seeds 1101–1105 are skipped (proposed by the drafter, PI
+  confirms at filing). They are disjoint from every seed used so far: the default
   grid seeds 0–4, Q3/Q3+ {0, 17, 42, 73, 101, 7, 23, 31, 53, 89} and
   N12 {3, 11, 19, 29, 37, 41, 47, 59, 67, 79}, and from the v0.8
   (2001–2044, pilots 2101–2110) and v0.9 (3001–3044, pilots 3101–3105)
   seed pools.
-- **Reserve seeds (technical replacement only):** 1096–1099, used in
+- **Reserve seeds (technical replacement only):** 1156–1159, used in
   order. They do not overlap the pilot seeds.
 - **B-2 pilot seeds:** 1101–1105 (§4.3), never confirmatory.
-- **Fixed-N design.** N = 95 is fixed on the OSF form. There is no interim
+- **Fixed-N design.** N = 150 is fixed on the OSF form. There is no interim
   look at outcomes and no optional stopping or extension. Every analysis
   runs once, after all N seeds have finished.
 - **Technical failure** (crash, NaN/inf metric, missing aggregate): the
@@ -781,9 +836,9 @@ increase for B-2. Every claim names the estimand of §3.
 | Equivalent | −δ < L and U < δ | "The [estimand] is bounded within ±δ (TOST, α = 0.05; 90 % CI inside the bounds) on N pre-registered new seeds." If 0 ∉ [L, U], add: "it is non-zero but smaller than half the registered effect size." |
 | Beyond bound, registered direction | L ≥ δ | "An effect of at least half the registered size (≥ δ), in the registered direction, on the [estimand]." Reported as a new pre-registered finding in a new ADR; this does not establish an effect of the full registered size. |
 | Beyond bound, reverse direction | U ≤ −δ | "A reverse effect of at least half the registered size (≥ δ) on the [estimand]." New ADR. |
-| Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches δ (half the registered size) is unresolved at N = 95." |
-| Reverse effect detected, size unresolved | L ≤ −δ < U < 0 | "A non-zero reverse effect; size relative to δ unresolved at N = 95." |
-| Inconclusive | L ≤ 0 ≤ U and (L ≤ −δ or U ≥ δ) | "Neither an effect nor its absence is established at N = 95." The expected-informativeness label of §7 is quoted. |
+| Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches δ (half the registered size) is unresolved at N = 150." |
+| Reverse effect detected, size unresolved | L ≤ −δ < U < 0 | "A non-zero reverse effect; size relative to δ unresolved at N = 150." |
+| Inconclusive | L ≤ 0 ≤ U and (L ≤ −δ or U ≥ δ) | "Neither an effect nor its absence is established at N = 150." The expected-informativeness label of §7 is quoted. |
 
 All labels are read from the same CI, so exactly one is reported per
 test. Each label rests on one-sided tests at α = 0.05; the probability
@@ -823,7 +878,7 @@ which concerned a different estimand. All outcomes are publishable.
 
 ## 11. Pre-registration fidelity checklist
 
-- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1099) is run.
+- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1100, 1106–1159) is run.
 - [ ] Pre-filing code tasks of §4.3 merged with unit tests; commit hashes
       of `run_grid.sh`, `aggregate_grid.py`, `analyse_amedi_quadratic.py`,
       the E1 runner, the calibration harness, the TOST analysis script
@@ -831,7 +886,11 @@ which concerned a different estimand. All outcomes are publishable.
 - [ ] Primary-estimator implementation verification (§4.3) passed;
       calibration table, B-2 pilot SD / runtime and the recomputed
       E-2 power with its informativeness label (§7) recorded on the
-      form; N = 95 on the form.
+      form; N = 150 on the form.
+- [ ] Post-pilot changes of 2026-10-25 stated on the OSF form as made
+      after the PI saw the pilot: round 1 → Gumbel primary and the
+      balanced probe; round 2 → K = 8 draws, robust E-2, E-2s; round 3
+      → N = 150 and the robust E-1, E-1b, E-1c.
 - [x] No threshold change.
 - [x] No metric-math change.
 - [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
@@ -868,8 +927,14 @@ readout may be added later as a declared secondary comparison.
 Decided by the PI on 2026-10-24 (no longer open): B-2 batch sizes
 16 / 16 / 512 (train / lesion / probe), as drafted (§4.2); B-2 primary
 world Studyforrest, CC-film as E-2b (§4.2). Pre-registration id and
-amendment number: **N18**, verdict ADR **ADR-0021**, amendment v0.7, as
-proposed in the header (proposed — PI confirms at filing).
+amendment number: **N18**, verdict ADR **ADR-0022** (shifted from
+ADR-0021, now used by PR #19), amendment v0.7, as proposed in the
+header (proposed — PI confirms at filing).
+
+Decided by the PI on 2026-10-25 after the pilot (disclosed, header):
+13:12 — K = 8 Gumbel draws (§4.2), robust E-2 with the mean t-TOST as
+a reported secondary (§6), registered secondary E-2s (§4.2, §6);
+13:32 — N = 150 (§7, §8) and the robust E-1, E-1b, E-1c (§6).
 
 No design decision remains open. Filing still needs the prerequisites
 stated above (§4.3 code tasks, calibration, pilot, regenerated E-2

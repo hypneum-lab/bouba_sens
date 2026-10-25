@@ -7,8 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
-**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing)
+**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0022 / 0023 / 0024, ADR-0021 having been used by PR #19); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0024** (proposed — PI confirms at filing)
 
 > **Design change of 2026-10-25 (disclosed).** The PI replaced the
 > tail held-out split by a class-stratified held-out probe (§3.4)
@@ -131,6 +131,12 @@ During Phase-1 steps t ∈ [o, o + w) (onset o, width w):
 - **Plain control (plain, descriptive).** No resampling at all.
 
 Outside the window, all arms are identical (same seeds, same batches).
+**Seeding (frozen, `v09_driver.run_cell`).** Before each Phase-1 run of
+seed s the global torch RNG is re-seeded with s and the network is built
+(module seeds s + 1 … s + 5 as in the B-2 runner), so all arms of a seed
+start from the same weights and draw the same Gumbel noise up to the
+window; batch t is `world.sample(16, seed = s + t)` and the donors of
+step t use the generator seed of §3.1.
 
 ### 3.3 Manipulation check (pre-registered, gates the experiment)
 
@@ -575,7 +581,10 @@ publishable.
   which the simulated P(A+ and C+) at μ₀ = 0.05 under the "early"
   profile, **minus two Monte-Carlo SEs**, is ≥ 0.80, using at least
   100 000 draws per candidate N and the permutation-calibrated Page
-  test. With the borrowed planning SD 0.0605 (not a pilot bound) this
+  test; for the pilot-based N the generator is
+  `numpy.random.default_rng(20261023 + 909)`, candidates N = 20, 21, …
+  run in order from one generator (`scripts/pilots/derive_v09_pilot.py`).
+  With the borrowed planning SD 0.0605 (not a pilot bound) this
   gives **N = 32** (estimates
   0.788 / 0.801 / 0.809 at N = 30 / 31 / 32; lower bounds 0.786 /
   0.799 / 0.807; `scripts/power_prereg_2026_10.py`).
@@ -715,7 +724,7 @@ cross and a mitigation arm (cross-sensor reconstruction), both as
 **secondary** analyses (§3.5, D-6 / D-7), because their power at the
 planned N is adequate only for large effects (§7). Planning SD for N = the conservative χ² UCL80 with
 df = 4 (× 1.558, §7). Pre-registration id **N20**, verdict ADR
-**ADR-0023**, amendment v0.9, as proposed in the header (proposed — PI
+**ADR-0024** (shifted from ADR-0023 on 2026-10-25), amendment v0.9, as proposed in the header (proposed — PI
 confirms at filing).
 
 No design decision remains open. Filing still needs the prerequisites

@@ -7,8 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.8-subspace-shift` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4).
-**Pre-registration id:** **N19** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0022** (proposed — PI confirms at filing)
+**Pre-registration id:** **N19** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0022 / 0023 / 0024, ADR-0021 having been used by PR #19); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing)
 
 > **Filing note.** This is the machine-readable draft. Nothing in this
 > file has been run. The metric, probe capture, control arm, rank rules,
@@ -113,8 +113,8 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    estimate: the PI's "average each network's estimate over K draws"
    is implemented here by averaging the **codes** over the 8 draws
    before S, the rank checks, S_split and k* are computed (averaging S
-   itself would need 8 rank-checked matrices per capture); the PI
-   confirms this reading at filing. A deterministic soft
+   itself would need 8 rank-checked matrices per capture); code
+   averaging was confirmed by the PI on 2026-10-25 (13:32). A deterministic soft
    (probability-based, non-sampled) readout may be added later as a
    declared secondary comparison; it is not part of this draft.
    Training and lesion-phase steps are unchanged.
@@ -158,8 +158,11 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    in the magnitude guard (§6).
 10. **Rank guard and exclusion rules** (§3.1).
 11. **Seed mapping (frozen; implemented by `capture_block`).** For
-    seed s and lock ℓ: the Phase-1 checkpoint is trained with seed s
-    and `LOCK_AFTER` = ℓ (batch 16, 200 steps). Every Phase-2 arm of
+    seed s and lock ℓ: the global torch RNG is re-seeded with s
+    immediately before the Phase-1 network is built (so initial weights
+    and Gumbel noise depend on s only), and the Phase-1 checkpoint is
+    trained with seed s and `LOCK_AFTER` = ℓ (batch 16, 200 steps;
+    `v08_driver.train_checkpoint`). Every Phase-2 arm of
     the block (the no-lesion control and the 15 cells) restores that
     checkpoint into a fresh loop and uses one Phase-2 seed, s, for the
     probe (`world.sample(512, seed = s − 99_999)`) and for the fresh and
@@ -565,8 +568,10 @@ outcomes are publishable.
   level) fitted on the **complete** pilot blocks only (df = (n_c − 1) ×
   6 for n_c complete blocks; at least 3 complete blocks are needed;
   with fewer, the pilot is **not** extended and the amendment is not
-  filed as drafted), inflated to its one-sided UCL80 (χ², same df); ĝ = pilot
-  median S_split / σ̂. The planning exclusion rate q̂ is the exact
+  filed as drafted), inflated to its one-sided UCL80 (χ², same df); ĝ =
+  median of S_split(s, ℓ) over the **complete** pilot blocks and all 7
+  levels, divided by the UCL80-inflated σ̂ (the same denominator as the
+  guard of §6; `v08_driver.pilot_quantities`). The planning exclusion rate q̂ is the exact
   (Clopper–Pearson) one-sided **80 % upper bound** of the pilot
   incomplete-block fraction, not the point estimate: 0/5 incomplete
   gives q̂ = 0.275, 0/10 gives 0.149, 0/20 gives 0.077; with the fixed
@@ -577,8 +582,11 @@ outcomes are publishable.
   extension). N is the smallest N ≥ 20 for which
   the simulated P(Supported) **of the safeguarded rule**
   (`v08_rule_selection`), **minus two Monte-Carlo SEs**, is ≥ 0.80,
-  with at least 100 000 draws per candidate, the permutation-calibrated
-  Page test and a total trend of ĝ + 0.70 SD units. Exclusion model
+  with exactly 100 000 draws per candidate, the permutation-calibrated
+  Page test, a total trend of ĝ + 0.70 SD units and the simulation
+  generator `numpy.random.default_rng(20261023 + 808)`, candidates
+  N = 20, 21, … run in order from one generator
+  (`scripts/pilots/derive_v08_pilot.py`). Exclusion model
   for planning (frozen, from the pilot pattern): **level** if no pilot
   seed has Y undefined at more than one level, **seed** otherwise
   (outcome-dependent selection cannot be estimated from a pilot and is
@@ -683,7 +691,7 @@ Decided by the PI on 2026-10-24 and applied above (no longer open):
 magnitude guard = median S_split, a heuristic guard (§6); k re-estimated
 on the pilot by the frozen rule of §3 item 3 (k*); pilot fixed at 10
 seeds, 2101–2110, never extended (§7). Pre-registration id **N19**,
-verdict ADR **ADR-0022**, amendment v0.8, as proposed in the header
+verdict ADR **ADR-0023** (shifted from ADR-0022 on 2026-10-25), amendment v0.8, as proposed in the header
 (proposed — PI confirms at filing).
 
 Decided on 2026-10-24 (second PI round, "if you find better, do it"):

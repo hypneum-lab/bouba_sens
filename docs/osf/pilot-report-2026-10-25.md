@@ -1,10 +1,26 @@
 # Pilot report — amendments v0.7 / v0.8 / v0.9 (2026-10-25)
 
-**Status:** pilot data only. Nothing here is confirmatory, and no
-pre-registered rule, bound, threshold or N was changed because of these
-results. Pilot data are excluded from every confirmatory test (v0.7 §4.3,
-v0.8 §7, v0.9 §7). No confirmatory seed (1001–1099, 2001–2044,
-3001–3044) was run, sampled or inspected.
+**Status:** pilot data only. Nothing here is confirmatory. Pilot data
+are excluded from every confirmatory test (v0.7 §4.3, v0.8 §7, v0.9
+§7). No confirmatory seed (v0.7 1001–1100 and 1106–1159, v0.8
+2001–2044, v0.9 3001–3044) was run, sampled or inspected.
+
+**Result-informed changes (disclosed).** The drafts are unfiled, and
+the PI changed them on 2026-10-25 **after seeing these pilot results**:
+the v0.7 readout, probe, number of Gumbel draws, primary statistic
+(robust TOST for E-1 and E-2), a new secondary outcome (E-2s) and N
+(95 → 150); the v0.8 probe readout (hard → Gumbel, K = 8 averaged
+codes); the v0.9 held-out probe (tail split → class-stratified). Each
+change is listed in the draft headers with its trigger. The sections
+below are in chronological order; earlier sections record what was
+true at the time and are kept as history.
+
+**Current position (2026-10-25, about 13:45).** v0.7 B-2 pilot: rounds
+1–3 done. v0.8: driver written (`bouba_sens.v08_driver`), Codex review
+round 1 done (FIX-FIRST, fixes applied), pilot not yet run. v0.9:
+manipulation check run under the old tail split; driver written,
+stratified probe implemented; the stratified-split check and the
+D-variance pilot not yet run.
 
 **Authorisation:** PI go, 2026-10-25 11:50 (run the pilots of the
 draft PR, branch `docs/osf-prereg-2026-10`).
@@ -214,6 +230,39 @@ not the spread of the non-switch seeds, limits the power. N stays 95.
 **E-2s in the pilot:** switch after the lesion on 1 of 5 seeds (1105),
 exact 95 % CI 0.005–0.716; 0 of 5 before the lesion.
 
+### N = 150 (PI decision 2026-10-25, 13:32) and the robust B-1 power
+
+The PI fixed N = 150 (robust power target 0.80) and moved E-1, E-1b and
+E-1c to the robust TOST too. Recomputed at commit `c40eeeb` on macM1
+(`reports/pilots/logs/v07_n150_derive.log`):
+
+| Quantity | Value | File |
+|---|---:|---|
+| B-2 robust power at N = 150, μ = 0 / −0.02 (20,000 draws) | 0.904 / 0.905, "adequately powered" | `v07_b2_pilot_r3_derived_n150.json` |
+| B-2 robust rule, P(Equivalent) at θ = +0.05 / −0.05 (size at the bounds, same law) | 0.0035 / 0.0028 | same |
+| B-2 mean rule (secondary), exact t-TOST power at N = 150 | 2e-5, "low informativeness" | same |
+| B-1 robust, P(E-1) / P(E-1 and E-1b) at the observed per-lock pseudo-medians, N = 150 (2,000 draws) | 1.000 / 0.938 | `v07_b1_robust_power_n150.json` |
+| B-1 robust, same with all centres 0 | 1.000 / 0.951 | same |
+
+B-1 planning data are the Q3/Q3+ 10 seeds (no new pilot), resampled as
+5-vectors with the df = 9 UCL80 inflation (1.293) and the 0.00625
+quantum.
+
+### v0.7 B-1 timing check (seed 0, outside every pool)
+
+`scripts/run_grid.sh` with `SEEDS=0 WORLD=studyforrest LOCK_AFTER=100
+K_STEPS=50` on macM1 (`reports/pilots/logs/run_b1_timing.sh`, log
+`b1_timing_seed0.log`, commit `aaf8448`): one grid (Phase 1 + 30 lesion
+cells) in 182 s. At N = 150 (900 grids) that is about 45.5 h; with B-2
+(about 0.9 h) about 46.5 h sequential on macM1. Cell metadata
+(`reports/pilots/b1_timing_seed0_T2_audio_floor_metadata.json`) records
+`snr_init` 20, `snr_floor` −20, `k_steps` 50, so the floor is reached
+at step 50 by the §4.1 formula; the grid outputs do not record the
+world class (the CLI falls back silently to the stub without the
+cache), which remains an open item for the v0.7 checklist. Seed 0 is a
+historical grid seed, not a pilot seed; whether it can stand in for
+the "pilot cell" of the checklist is for the PI to decide.
+
 ### Seed 1105 diagnosis (read-only, PI request 2026-10-25 12:45)
 
 Question: is the 1105 value (+0.646 bit, post-lesion participation
@@ -275,7 +324,7 @@ cell, but §4.3 says no B-1 pilot is needed and names no B-1 pilot seed;
 not run. (b) The known-signal calibration (§4.3 item 5) is a pre-filing
 task, not a pilot; not run here.
 
-## v0.8 — blocked
+## v0.8 — status at 11:00 (historical; superseded by the driver and the Gumbel readout)
 
 The pilot needs the driver that trains the Phase-1 checkpoints and
 calls `capture_block` for every (seed, lock) block (draft filing note;
@@ -295,7 +344,7 @@ reproduces this, `select_k_from_pilot` returns k* = 1 (clamp of a
 median PR of 0), every Z_pre fails the rank check of §3.1, no block is
 defined and the run is a protocol failure by construction.
 
-## v0.9 — manipulation check run, rest blocked
+## v0.9 — manipulation check under the tail split (11:00; historical split)
 
 **Command** (`reports/pilots/logs/run_v09.sh`, log
 `logs/v09_manipulation_check.log`):
@@ -305,6 +354,8 @@ BOUBA_SENS_STUDYFORREST_DATA=<cache> nice -n 10 uv run --frozen python -u \
   scripts/pilots/run_v09_manipulation_check.py \
   --out reports/pilots/v09_manipulation_check_seeds3101-3105.json \
   3101 3102 3103 3104 3105
+# to reproduce at a later commit, add --split tail (the default is now
+# the class-stratified split of the PI decision of 2026-10-25)
 ```
 
 `run_v09_manipulation_check.py` is a thin entry point (new in this
@@ -330,24 +381,32 @@ held-out frames, so finding 2 does not transfer directly, but the
 probe window is again one contiguous window (inside the 900 probe
 frames).
 
-## Decisions needed from the PI
+## Findings at 11:00 and how they were resolved
+
+The list below is the question list sent to the PI at 11:00; each item
+is followed by the decision taken.
 
 1. **v0.7 E-2 primary readout.** The hard readout makes E-2 vacuous
    (finding 1). Options include: keep the Gumbel readout as primary
    (as in ADR-0019), redefine the hard readout (for example the soft
    demodulation probabilities without sampling), or drop E-2. Any
-   change is a change to the draft before filing.
+   change is a change to the draft before filing. → *Decided 12:10:
+   Gumbel primary; later (13:12) K = 8 draws.*
 2. **v0.7 probe label coverage.** A single contiguous 512-frame window
    is single-label on 3 of 5 pilot seeds (finding 2). The probe
    definition, and the reading of the "fewer than k + 1 points per
    class" technical-failure rule (classes present vs all four classes),
-   need a decision before filing.
+   need a decision before filing. → *Decided 12:10: class-balanced
+   multi-window probe; the rule text unchanged.*
 3. **v0.8 hard probe.** Finding 3 implies a protocol failure by
    construction under the hard probe rule (PI decision 2026-10-23).
    This needs a decision before the driver is written and the pilot
-   run.
+   run. → *Decided 12:10: Gumbel readout; 13:12: K = 8 averaged codes
+   (confirmed 13:32).*
 4. **Drivers.** The v0.8 driver and the v0.9 arm / grid driver (with
    the train-side fusion gain) must be written, reviewed and merged
-   before those pilots can run.
+   before those pilots can run. → *Decided 12:16: written (commits
+   477502b, 8d2966a, 6a49b4a, 267d1a9), reviewed before the pilots.*
 5. **v0.7 B-1 pilot cell** for the SNR `metadata.json` check: which
-   seed, if any.
+   seed, if any. → *Open. A timing / SNR check was run on seed 0
+   (historical, outside every pool), see "v0.7 B-1 timing check".*

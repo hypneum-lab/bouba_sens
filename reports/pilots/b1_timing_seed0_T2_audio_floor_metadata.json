@@ -1,0 +1,11 @@
+{
+  "phase": "lesion",
+  "steps": 100,
+  "seed": 4,
+  "modality": "audio",
+  "timing": "T2",
+  "snr_init": 20.0,
+  "snr_floor": -20.0,
+  "k_steps": 50,
+  "version": "0.5.9"
+}
