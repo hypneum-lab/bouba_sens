@@ -1161,9 +1161,23 @@ curve, committed verbatim (force-added past the
 single \texttt{uv sync --all-extras} gives a complete Python 3.14
 environment from the pinned \texttt{uv.lock}. Every cell seeded by
 $(\mathrm{seed\_base} \times 10\,000 + \mathrm{cell\_count})$.
-Byte-identical \texttt{eval\_report.json} outputs on a fresh
-clone, modulo numerical determinism caveats listed in
-Appendix~\ref{app:sha}.
+Since v0.5.10 the CLI also seeds the global Python, NumPy and
+PyTorch generators and enables deterministic kernels before it
+builds any module, so two runs of the same cell give byte-identical
+\texttt{eval\_report.json} on one machine
+(\texttt{tests/unit/test\_cli\_determinism.py}); outputs may still
+differ across platforms (Appendix~\ref{app:sha}).
+
+\paragraph{Erratum (2026-10-25).} Earlier versions of this paragraph
+claimed byte-identical outputs on a fresh clone. That did not hold
+for releases up to v0.5.9: the modality encoders and the integration
+head were initialised from the unseeded global PyTorch generator, so
+two runs of a cell started from different weights (issue \#35).
+Every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
+was produced by that unseeded pipeline. Its numbers are reproducible
+in distribution across seeds, not byte for byte. A re-run of
+\texttt{scripts/reproduce\_paper\_v01.sh} with the seeded CLI is
+under way and will be reported in the next revision.
 \texttt{scripts/reproduce\_paper\_v01.sh} (Sprint 16) regenerates
 every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
 from the tagged repository; total compute budget

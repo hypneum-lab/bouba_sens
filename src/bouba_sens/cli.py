@@ -35,6 +35,26 @@ def _main() -> None:
     """bouba_sens — Cross-modal plasticity benchmark."""
 
 
+def _seed_everything(seed: int) -> None:
+    """Pin every RNG and torch kernel choice before a CLI run builds models.
+
+    The encoders and ``IntegrationHead`` draw their initial weights from the
+    global torch RNG, so an unseeded process gave a different model on every
+    run (issue #35). ``use_deterministic_algorithms`` also removes the ~1 ulp
+    run-to-run noise of CPU ``torch.linalg.lstsq`` on Linux x86 that Adam
+    amplifies (see ``tests/conftest.py::deterministic_torch``).
+    """
+    import random as _random
+
+    import numpy as _np
+    import torch as _torch
+
+    _random.seed(seed)
+    _np.random.seed(seed)
+    _torch.manual_seed(seed)
+    _torch.use_deterministic_algorithms(True, warn_only=True)
+
+
 def _build_world(name: str, seed: int) -> WorldSimulator:
     """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
     import os
@@ -194,6 +214,7 @@ def train(
     from bouba_sens.nerve import CrossModalNerve
     from bouba_sens.sensory import Modality, SensoryWML
 
+    _seed_everything(seed)
     world_obj = _build_world(world, seed)
     mux = GammaThetaMultiplexer(seed=seed, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
@@ -339,6 +360,7 @@ def lesion(
     from bouba_sens.nerve import CrossModalNerve
     from bouba_sens.sensory import Modality, SensoryWML
 
+    _seed_everything(seed)
     world_obj = _build_world(world, seed=0)
     mux = GammaThetaMultiplexer(seed=0, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {

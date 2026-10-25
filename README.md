@@ -214,7 +214,7 @@ Documentary corrections only ; no value, metric or threshold changed.
 # CI checks it out at tag v1.7.0 next to this clone
 git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
 uv sync --all-extras
-uv run bouba-sens version          # bouba_sens 0.5.9
+uv run bouba-sens version          # bouba_sens 0.5.10
 uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
 # Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
@@ -235,7 +235,7 @@ diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ```bash
 git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
 git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
-uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.9
+uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.10
 STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
 ```
 

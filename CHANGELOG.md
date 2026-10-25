@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] — 2026-10-25 (seeded CLI + reproducibility erratum)
+
+### Fixed
+
+- **CLI runs are now byte-reproducible** (#35). `bouba-sens train` and
+  `bouba-sens lesion` call `_seed_everything(seed)` before building any
+  module: Python `random`, NumPy and the global PyTorch generator are
+  seeded and `torch.use_deterministic_algorithms(True, warn_only=True)`
+  is enabled. Before this fix the modality encoders and the
+  `IntegrationHead` drew their initial weights from the unseeded global
+  PyTorch generator, so two identical runs of a cell started from
+  different weights (75 of 173 tensors differed after 20 steps,
+  max |Δ| 1.13) and gave different `eval_report.json`. The autouse
+  `_deterministic_seed` fixture hid this from the test suite; the new
+  `tests/unit/test_cli_determinism.py` runs train → lesion → eval twice
+  in subprocesses and compares the sha256 of `model.pt`,
+  `per_query_me1.json` and `eval_report.json`.
+
+### Erratum
+
+- Paper §Artefacts claimed byte-identical `eval_report.json` on a fresh
+  clone. That was false for every release up to v0.5.9, and every grid
+  cited in paper v0.1 came from the unseeded pipeline: the cited numbers
+  are reproducible in distribution across seeds, not byte for byte. The
+  paragraph now states the v0.5.10 guarantee and carries a dated
+  erratum; a re-run of `scripts/reproduce_paper_v01.sh` with the seeded
+  CLI is under way.
+
 ### Changed (documentation only — phase 0 "truth", 2026-10-25)
 
 - **"Pre-registered on OSF" withdrawn** from `CITATION.cff`, `README.md`,
