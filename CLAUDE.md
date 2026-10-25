@@ -11,8 +11,10 @@ plasticity phenomenon, developed under the **GENIAL framework** at
 tactile, gravity, force) reorganises itself when one channel is lost
 or degraded.
 
-Three pre-registered invariants (OSF `10.17605/OSF.IO/Q6JYN`,
-amendment v0.6):
+Three invariants pre-registered **locally** (git-dated design spec
+2026-04-20, commit `87f723f`; `docs/osf/` amendments v0.4–v0.6 were
+never filed on OSF — `10.17605/OSF.IO/Q6JYN` is dream-of-kiki H1–H4
+only, issue #20):
 
 - **B-1** — Congenital gap (lesion pre-training > lesion post-conv)
 - **B-2** — MI migration (post-lesion MI rise)
@@ -20,11 +22,14 @@ amendment v0.6):
 
 ## Status
 
-- **HEAD ≈ v0.5.9**, ~156 commits, 19 ADRs (0004–0019), 185+ tests.
-- **B-3 PASS on magnitude** at 5–6× threshold (anchors
-  `dream-of-kiki` Stratum 4). The "architectural property" reading
-  is withdrawn in the paper (entropy proxy, ADR-0014/0015) — do not
-  describe B-3 as an architectural invariant.
+- **HEAD ≈ v0.5.9**, ~156 commits, 27 ADR files (numbers 0001–0021,
+  seven shared, index `docs/adr/README.md`), 185+ tests.
+- **B-3 uncalibrated** (requalified 2026-10-25, ADR-0021, issue #22):
+  the 5–6× magnitude stands but the 0.02 threshold was never compared
+  with a null; no compatibility or rejection verdict before a paired
+  calibration of the median. The "architectural property" reading is
+  withdrawn (entropy proxy, ADR-0014/0015) — do not describe B-3 as
+  an architectural invariant, nor as a PASS.
 - **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation
   now **landed in the manuscript**; TMLR submission still **BLOCKED**
   by remaining gates (critic-review + N≥30 confirmatory decision).
@@ -50,9 +55,9 @@ amendment v0.6):
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
 | `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
-| `docs/adr/` | 19 ADRs (0004–0019) — decisions of record |
+| `docs/adr/` | ADRs 0001–0021 (27 files, index `README.md`) — decisions of record |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
-| `docs/osf/` | OSF pre-registration + amendments |
+| `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
 | `docs/milestones/` | Sprint closing notes |
 | `docs/superpowers/` | Plans / brainstorms |
 | `reports/` | Per-version aggregates, curves, MANIFEST |
@@ -85,8 +90,8 @@ uv run python -m bouba_sens.cli --help
   reported figure — the 4.5-modal Studyforrest Phase-2 bridge is the
   real anchor; 5 worlds are synthetic.
 - **Threshold-lock**: B-1 ≥ 0.05, B-2 ≥ 0.10, B-3 ≥ 0.02 — locked
-  by OSF before the campaign, unchanged across 19 ADRs. Do not
-  touch.
+  in git before the campaign (not on OSF), unchanged across all
+  ADRs. Do not touch.
 - **Critic before ship** (paper-submission gate): mandatory
   independent review prior to TMLR/NeurIPS submission. Validated by
   the Sprints 10/11 review catching 1 MAJOR contradiction.

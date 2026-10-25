@@ -1,6 +1,11 @@
 # OSF pre-registration amendment — bouba_sens v0.4
 
-**Status:** Draft, ready to file
+> **Status note (2026-10-25, issue #20).** Drafted as an amendment to
+> the dream-of-kiki OSF registration but **never filed on OSF**. It
+> counts as a local, git-dated pre-registration only (first commit
+> `579e981`, 2026-04-20).
+
+**Status:** Draft, never filed on OSF (local, git-dated pre-registration)
 **Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19)
 **Derived spec:** `bouba_sens` repo, branch `main`, tag `v0.3.0`
 **Amendment tag (on file):** `bouba_sens/v0.4-studyforrest-extension`

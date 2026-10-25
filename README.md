@@ -55,7 +55,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS on magnitude** (5–6× threshold — unchanged) ; the "architectural property" reading is withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **Uncalibrated** (requalified 2026-10-25, see F1 and Erratum) — the 5–6× magnitude is unchanged, but the 0.02 threshold was never compared with a null ; the "architectural property" reading was already withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -70,30 +70,32 @@ locked. Honest scope ; no overselling.
 ## Status
 
 **v0.5.9 — Paper v0.1 draft (TMLR submission blocked; see
-2026-05-11 update above).** Sprints 0–17 closed, 19 ADRs
-(0004–0019), 185+ tests. 9 grids (150 cells each) on the
+2026-05-11 update above).** Sprints 0–17 closed, 27 ADR files
+(numbers 0001–0021, seven numbers shared — index in
+`docs/adr/README.md`), 185+ tests. 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
-- OSF registration : `10.17605/OSF.IO/Q6JYN`, amendment v0.6
+- Pre-registration : **local, git-dated** — design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, 2026-04-20) ; amendments v0.4–v0.6 under `docs/osf/` (drafted as OSF amendments, **never filed on OSF**). No bouba_sens hypothesis is registered on OSF : `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only (issue #20, Erratum below).
 - Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
 
 ## Headline findings (v0.5.5)
 
-Thresholds locked by OSF before the campaign : B-1 ≥ 0.05,
-B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
+Thresholds locked in git before the campaign (design spec
+2026-04-20, commit `87f723f` ; not registered on OSF) : B-1 ≥ 0.05,
+B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all ADRs.
 
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
-| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** on magnitude in every configuration ; magnitude tracks per-modality entropy, not the partition (§4.4) |
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 above 0.02 | **Uncalibrated** — exceeds 0.02 in every configuration, but the bare exceedance is not interpretable before a paired null calibration (F1, ADR-0021) ; magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
 
-**F1 — B-3 passes on magnitude only.** The Me6 asymmetry
-magnitude passes at 5–6× threshold across every grid, every
-world, every seed, and is insensitive to every plasticity control
-tested (LOCK_AFTER, transducer gating mode, Gumbel tau, codebook
+**F1 — B-3 is an uncalibrated magnitude (requalified
+2026-10-25).** The Me6 asymmetry magnitude exceeds the 0.02
+threshold by 5–6× across every grid, every world, every seed, and
+is insensitive to every plasticity control tested (LOCK_AFTER, transducer gating mode, Gumbel tau, codebook
 freeze, HARD → GUMBEL phase transition). The earlier reading of
 B-3 as an *architectural* perceptive/proprioceptive property is
 **withdrawn** (paper §3.3, §4.4–4.5; ADR-0014, ADR-0015): a
@@ -105,6 +107,20 @@ magnitude result is anchored as the empirical foundation of
 §4 (embodied sensorimotor grounding stratum). The B-1 Retract
 (ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
 never B-1.
+
+*Requalification (2026-10-25, PI decision ; ADR-0021 ; Refs #22).*
+The 0.02 threshold was never compared with a null. Under an
+independent binomial null at the production probe size (n = 64),
+the median-of-30 Me6 is 0.13–0.16 (P99 0.15–0.19) : an independent
+binomial null invalidates the reading of the bare exceedance of
+0.02. The synthetic-world medians (0.141–0.148) lie inside that
+range ; mock (0.3125) and ECG (0.4453) exceed it, but the iid
+reference is not the null of their contiguous probes. No
+compatibility or rejection verdict on B-3 is established before a
+paired calibration of the median (same probe for the five queries,
+shared seeds and worlds). The values stand ; the interpretation is
+withdrawn, and the Stratum 4 anchoring above therefore rests on an
+uncalibrated statistic until that calibration is done.
 
 **F2 — B-1 does not survive multi-seed validation (ADR-0019
 FINAL Retract).** The single-seed +0.0125 peak (Sprint 10,
@@ -156,9 +172,38 @@ null is robust to which half of the modality set carries the true signal.
 The abstract is aligned to this per-channel provenance (no "real movie
 vision" overclaim).
 
-Full trail : `docs/adr/0004` through `0017`. Every verdict,
-retraction, and scope change is recorded inline with its grid
-commit.
+Full trail : `docs/adr/` (index in `docs/adr/README.md` ; ADR
+numbers 0005, 0007, 0014, 0015, 0016, 0017 and 0019 are each shared
+by two files, disambiguated as a/b). Every verdict, retraction, and
+scope change is recorded inline with its grid commit.
+
+## Erratum (phase 0 — truth, 2026-10-25)
+
+Documentary corrections only ; no value, metric or threshold changed.
+
+1. **"Pre-registered on OSF" withdrawn** (`CITATION.cff`, this README,
+   `.zenodo.json`, `CLAUDE.md`, `AGENTS.md`, `docs/paper/`). Root
+   cause : confusion with the dream-of-kiki registration
+   `10.17605/OSF.IO/Q6JYN` (2026-04-19), which covers H1–H4 of that
+   project only. B-1/B-2/B-3 are pre-registered **locally** (git-dated
+   spec, 2026-04-20) ; the `docs/osf/` amendments were never filed.
+   Issue #20.
+2. **B-3 requalified "uncalibrated"** (F1 above, paper §4.4,
+   `.zenodo.json`, ADR-0008/0009 notes). Root cause : a threshold
+   fixed without a calibrated null. Values unchanged. Issue #22,
+   ADR-0021.
+3. **Paper §4.4 "Key claim, load-bearing" removed** ; `.zenodo.json`
+   no longer carries the withdrawn "minimal configuration" claim.
+   Root cause : documentation written ahead of the results. Issue #21.
+4. **ADR numbering** : seven numbers shared by two files, now
+   disambiguated a/b with a complete index ; ADR-0006 and tags
+   `v0.4.0` / `v0.5.0` are not on `main` (PI action, see
+   `docs/adr/README.md`). Issue #21.
+5. **Reference `amedi2007`** : the BibTeX entry carried the metadata
+   of Amedi et al. 2003 (`10.1038/nn1072`) ; it now points to Amedi et
+   al. 2007, Nat Neurosci 10(6):687–689, `10.1038/nn1912`, which is
+   the paper the repository cites throughout (Crossref-verified).
+   Issue #25.
 
 ## Quickstart
 
