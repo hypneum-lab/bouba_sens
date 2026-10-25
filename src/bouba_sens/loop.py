@@ -10,6 +10,7 @@ FIFO buffer + migration snapshots.
 from __future__ import annotations
 
 import copy
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
@@ -64,6 +65,22 @@ class AdaptationReport:
 
 def _deepcopy_state(module: Any) -> dict[str, Tensor]:
     return {k: v.detach().clone() for k, v in module.state_dict().items()}
+
+
+def successes_to_accuracy(successes: Sequence[int]) -> float:
+    """Mean of 0/1 outcomes, computed exactly as `query_accuracy` always did.
+
+    ADR-0022 — `query_accuracy` used to return
+    `float((preds == label).float().mean().item())`: a float32 mean of the
+    0/1 outcomes, widened to a Python float. Taking the same float32 mean
+    here (rather than `sum / len` in double precision) keeps the result
+    bit-identical to that path for every batch size: the partial sums of
+    0/1 values are exact integers in float32, so only the final division
+    rounds, and it rounds identically in both paths.
+    """
+    if len(successes) == 0:
+        raise ValueError("successes must be non-empty")
+    return float(torch.tensor(successes, dtype=torch.float32).mean().item())
 
 
 class AdaptationLoop:
@@ -335,20 +352,27 @@ class AdaptationLoop:
 
         return report
 
-    def query_accuracy(
+    def query_successes(
         self,
         query_modality: Modality,
         *,
         batch_size: int = 64,
         seed: int = 987_654,
-    ) -> float:
-        """Accuracy on a clean probe when only `query_modality` carries signal.
+    ) -> list[int]:
+        """Per-item outcomes (1 = correct) on a clean probe with a single live modality.
 
-        Sprint 5 / Task 5.2 — builds the 5x5 Me6 perf matrix after
-        Phase 2. All four non-query modalities are zeroed out on the
-        sample (in-place style via a fresh dataclass) so the network
-        must produce its prediction from a single modality. Result is
-        a float in [0, 1].
+        ADR-0022 — the per-sample record behind `query_accuracy`. The probe
+        batch is `self.world.sample(batch_size=batch_size, seed=seed)`; the
+        four non-query modalities are zeroed out on a fresh dataclass so the
+        network must predict from `query_modality` alone. Item `i` of the
+        returned list is the outcome on probe item `i`, so two calls with the
+        same `seed` and `batch_size` (e.g. the five query modalities of one
+        lesion cell) are scored on the same probe items and can be paired
+        item by item. The list has exactly `batch_size` entries.
+
+        The forward pass draws from the global torch RNG (the modules stay
+        in training mode), so repeated calls reproduce each other only from
+        the same RNG state; the probe items themselves depend on `seed` only.
         """
         sample = self.world.sample(batch_size=batch_size, seed=seed)
         masked_tensors: dict[str, Tensor] = {}
@@ -366,7 +390,31 @@ class AdaptationLoop:
         with torch.no_grad():
             _, logits = self._forward(masked)
             preds = logits.argmax(-1)
-            return float((preds == sample.label).float().mean().item())
+            return [int(v) for v in (preds == sample.label).tolist()]
+
+    def query_accuracy(
+        self,
+        query_modality: Modality,
+        *,
+        batch_size: int = 64,
+        seed: int = 987_654,
+    ) -> float:
+        """Accuracy on a clean probe when only `query_modality` carries signal.
+
+        Sprint 5 / Task 5.2 — builds the 5x5 Me6 perf matrix after
+        Phase 2. All four non-query modalities are zeroed out on the
+        sample (in-place style via a fresh dataclass) so the network
+        must produce its prediction from a single modality. Result is
+        a float in [0, 1].
+
+        ADR-0022 — defined as the mean of `query_successes` (same probe,
+        same masking); see `successes_to_accuracy` for why the mean is
+        taken in float32, which keeps the value bit-identical to the
+        pre-refactor tensor path for every `batch_size`.
+        """
+        return successes_to_accuracy(
+            self.query_successes(query_modality, batch_size=batch_size, seed=seed)
+        )
 
     # Convenience hook so Checkpoint round-trips in tests.
     def snapshot(self) -> Checkpoint:

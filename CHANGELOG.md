@@ -27,8 +27,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   component-test power and Monte-Carlo simulation of each complete
   decision rule, plus the reference Page permutation test.
 
+### Changed
+
+- **B-3 status (Gaussian world): null, uncalibrated → calibrated:
+  compatible with the null** (ADR-0022 *Accepted*, PI decision
+  2026-10-25). Observed median 0.156 vs paired-null mean 0.141 / P99
+  0.156, p = 0.17; the iid reference is almost identical. Mean query
+  accuracy 0.254 = 4-class chance: the zero-masking probe carries no
+  information decodable per modality — a design defect to fix before
+  any new B-3 reading. The former "PASS on magnitude (5-6x threshold)"
+  was never compared with a null (README status tables updated). The
+  seed-1 excess (3 trios in their own null's upper tail) is descriptive
+  only.
+- **B-3 status (Studyforrest mock): uncalibrated → not conclusive**
+  (ADR-0022, `reports/me6_paired_null_mock*.json`). Fresh 150-cell mock
+  grid: median 0.305 (ADR-0008: 0.3125), mean query accuracy 0.240 =
+  chance. Rejected by the iid and per-item paired nulls (p < 5e-5) and
+  by block-8 flips (p = 1e-4), compatible under block flips of 16 / 32
+  items (p = 0.06 / 0.31). Entry accuracies are over-dispersed (sd 0.124
+  vs 0.053 binomial; lag-1 autocorrelation 0.36) by the contiguous
+  windows, so per-item nulls are invalid there; the block length is left
+  to the PI. **Real ECG: not recomputed** (no data cache or extraction
+  script on electron-server); 0.445 stays uncalibrated.
+
 ### Added
 
+- **Block sign flips** (`scripts/me6_paired_null.py --block N`): one
+  shared sign per block of N consecutive probe items, for contiguous-
+  window probes; `--block 1` (default) reproduces the per-item null.
+
+## [0.5.10] — 2026-10-25 (seeded CLI + reproducibility erratum)
+
+### Fixed
+
+- **CLI runs are now byte-reproducible** (#35). `bouba-sens train` and
+  `bouba-sens lesion` call `_seed_everything(seed)` before building any
+  module: Python `random`, NumPy and the global PyTorch generator are
+  seeded and `torch.use_deterministic_algorithms(True, warn_only=True)`
+  is enabled. Before this fix the modality encoders and the
+  `IntegrationHead` drew their initial weights from the unseeded global
+  PyTorch generator, so two identical runs of a cell started from
+  different weights (75 of 173 tensors differed after 20 steps,
+  max |Δ| 1.13) and gave different `eval_report.json`. The autouse
+  `_deterministic_seed` fixture hid this from the test suite; the new
+  `tests/unit/test_cli_determinism.py` runs train → lesion → eval twice
+  in subprocesses and compares the sha256 of `model.pt`,
+  `per_query_me1.json` and `eval_report.json`.
+
+### Erratum
+
+- Paper §Artefacts claimed byte-identical `eval_report.json` on a fresh
+  clone. That was false for every release up to v0.5.9, and every grid
+  cited in paper v0.1 came from the unseeded pipeline: the cited numbers
+  are reproducible in distribution across seeds, not byte for byte. The
+  paragraph now states the v0.5.10 guarantee and carries a dated
+  erratum; a re-run of `scripts/reproduce_paper_v01.sh` with the seeded
+  CLI is under way.
+
+### Changed (documentation only — phase 0 "truth", 2026-10-25)
+
+- **"Pre-registered on OSF" withdrawn** from `CITATION.cff`, `README.md`,
+  `.zenodo.json`, `CLAUDE.md`, `AGENTS.md`, `docs/paper/` and the
+  `docs/osf/` amendment headers. B-1/B-2/B-3 are pre-registered locally
+  (git-dated design spec, commit `87f723f`, 2026-04-20); OSF
+  `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only. Issue #20.
+- **B-3 requalified as an uncalibrated magnitude** (README F1, paper
+  abstract and §4.4, `.zenodo.json`, notes in ADR-0008 / ADR-0009):
+  an independent binomial null (ADR-0021) invalidates the reading of
+  the bare exceedance of 0.02; no compatibility or rejection verdict
+  before a paired calibration of the median. Values unchanged. Refs #22.
+- **Paper §4.4** no longer says "Key claim, load-bearing"; aligned with
+  the abstract. `.zenodo.json` no longer carries the withdrawn "minimal
+  configuration" claim. Issue #21.
+- **ADR index rebuilt** (`docs/adr/README.md`): the seven shared numbers
+  (0005, 0007, 0014, 0015, 0016, 0017, 0019) are disambiguated a/b in
+  the titles, file names unchanged; ADR-0006 and tags `v0.4.0` /
+  `v0.5.0` are documented as absent from `main` (PI action). Issue #21.
+- **`refs.bib` `amedi2007`** now carries the metadata of Amedi et al.
+  2007, Nat Neurosci 10(6):687–689, `10.1038/nn1912` (Crossref) instead
+  of Amedi et al. 2003 (`10.1038/nn1072`). Key unchanged. Issue #25.
+
+### Added
+
+- **Me6 paired null** (`scripts/me6_paired_null.py`,
+  `reports/me6_paired_null.json`, ADR-0022 *Proposed*). The B-3 median is
+  compared with a paired sign-flip null built from the saved per-item
+  probe outcomes: for every trio, pair (m, q) and item i the outcomes
+  `s_mq(i)` and `s_qm(i)` are swapped with probability 1/2 (H0: symmetry
+  of the expected performances), then Me6 per trio and the median over
+  trios are recomputed (B = 20 000, seed 25102026, numpy only). Reports
+  the observed median, its null mean / P99 / tail probability, the same
+  for every trio maximum, and the ADR-0021 iid reference at the same K,
+  n and p. Follows the 2026-10-25 cross-review gate: no compatibility or
+  rejection verdict before a paired calibration.
+- **Per-item probe outcomes** (`AdaptationLoop.query_successes`,
+  `successes_to_accuracy`; `bouba-sens lesion` writes
+  `per_query_successes.json` next to `per_query_me1.json`).
+  `query_accuracy` is now the float32 mean of `query_successes`, bit-
+  identical to the previous value for every batch size (non-regression
+  test). The five query modalities of a cell share one probe batch
+  (`seed + 777`); the docstring now says so.
 - **Me6 null calibration** (`scripts/me6_null_calibration.py`,
   `reports/me6_null_calibration.json`, ADR-0021 *Accepted*). Simulates
   the B-3 statistic when the 25 accuracies of the 5x5 matrix are equal

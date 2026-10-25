@@ -49,9 +49,10 @@ bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio (log-mel),
 vision (frames), and labels (shot-cuts) are real perceptual signal,
 while tactile, gravity, and force are synthetic (a film has no
 proprioception).
-Thresholds $(0.05, 0.10, 0.02)$ are frozen by OSF
-registration \texttt{10.17605/OSF.IO/Q6JYN} before the evaluation
-campaign. Across 9 grids (150 cells each, 5 seeds $\times$ 5
+Thresholds $(0.05, 0.10, 0.02)$ were frozen in a git-dated
+design specification (2026-04-20) before the evaluation campaign;
+no bouba\_sens hypothesis is registered on OSF. Across 9 grids
+(150 cells each, 5 seeds $\times$ 5
 modalities $\times$ 2 timings $\times$ 3 SNR labels; the three SNR
 labels were near-replicates, see ADR-0020) and 19 ADRs, we
 report: (i) B-3 passes on magnitude only (median max off-diagonal
@@ -60,7 +61,13 @@ null-model partition control places the pre-registered
 perceptive/proprioceptive partition at the 44--72th percentile of
 random alternatives, and the magnitude tracks per-modality
 entropy, so the original ``architectural property'' reading of
-B-3 is withdrawn (ADR-0014, ADR-0015);
+B-3 is withdrawn (ADR-0014, ADR-0015); the $0.02$ threshold itself
+was never compared with a null, and an independent binomial null at
+the production probe size invalidates the reading of the bare
+exceedance of $0.02$, so no compatibility or rejection verdict on
+B-3 is established before a paired calibration of the median (same
+probe for the five queries, shared seeds and worlds; ADR-0021) ---
+B-3 is reported as an uncalibrated magnitude;
 (ii) B-1 does not survive multi-seed validation --- the
 single-seed $+0.0125$ peak (Sprint 10) inverts to $-0.0250$ on
 the canonical seed and yields a 10-seed sign-test $p=0.62$
@@ -81,8 +88,8 @@ minimal configuration that qualitatively reproduces the Amedi
 T1/T2 asymmetry; that claim rested on the single-seed B-1 pattern
 and is withdrawn together with it. \texttt{bouba\_sens} is released at
 \url{https://git.saillant.cc/hypneum-lab/bouba_sens}
-(tag \texttt{v0.5.9}, 19 ADRs) as a reusable instrument for
-stress-testing cross-modal architectures under OSF-compliant
+(tag \texttt{v0.5.9}, ADRs 0001--0021) as a reusable instrument for
+stress-testing cross-modal architectures under git-dated
 pre-registration; the B-1 retraction (ADR-0019) constitutes a
 portable multi-seed validation protocol for future benchmarks.
 \end{abstract}
@@ -117,9 +124,10 @@ reproduces both properties simultaneously.
 pre-registered quantitative invariants (Table~\ref{tab:invariants})
 and runs them against a frozen 9-grid evaluation campaign
 (150 cells each, 5 seeds $\times$ 5 modalities $\times$ 2
-timings $\times$ 3 SNR labels). All three thresholds are frozen by the
-OSF pre-registration \texttt{10.17605/OSF.IO/Q6JYN} and are not
-revisited in this paper. A post-hoc audit (ADR-0020, draft) found that
+timings $\times$ 3 SNR labels). All three thresholds were frozen in the
+git-dated design specification (2026-04-20; not registered on OSF)
+and are not revisited in this paper. A post-hoc audit (ADR-0020,
+draft) found that
 under the default schedule the three SNR labels reached only
 $19.21 / 19.41 / 19.80$\,dB at the last lesion step, so the SNR factor
 provided almost no manipulation and no robustness-across-SNR claim is
@@ -349,12 +357,23 @@ B-2 $= +0.0111$.
 \subsection{The B-3 monotone-growth property}
 \label{sec:b3-monotone}
 
-\textbf{Key claim, load-bearing.} B-3 grows monotonically with
-input complexity: $7\times$ (synthetic cluster) $\to$ $15.6\times$
-(AR(1) mock) $\to$ $22.3\times$ (real ECG). The
-perceptive/proprioceptive asymmetry is \emph{not} a
-synthetic-cluster accident; it intensifies when the inputs carry
-richer structure.
+\textbf{Descriptive observation; interpretation withdrawn.} The
+raw B-3 median grows with input complexity: $7\times$ (synthetic
+cluster) $\to$ $15.6\times$ (AR(1) mock) $\to$ $22.3\times$ (real
+ECG). Consistent with the abstract, this is \emph{not} read as a
+perceptive/proprioceptive architectural property: the partition
+control places the pre-registered split among random alternatives
+(ADR-0014, ADR-0015), and the $0.02$ threshold was never compared
+with a null. An independent binomial null at the production probe
+size ($n = 64$) gives a median-of-30 Me6 of $0.13$--$0.16$ (P99
+$0.15$--$0.19$; ADR-0021), which invalidates the reading of the
+bare exceedance of $0.02$: the synthetic-cluster values lie inside
+that range, while mock and ECG exceed it under a reference that is
+not the null of their contiguous probes. No compatibility or
+rejection verdict on B-3 is established before a paired calibration
+of the median (same probe for the five queries, shared seeds and
+worlds). The values above stand as reported; B-3 is an uncalibrated
+magnitude.
 
 % ==================================================================
 
@@ -443,8 +462,9 @@ worlds at this parameterisation.
 \subsection{Extension to 4.5-modal real biological bridge (ADR-0012)}
 \label{sec:bridge}
 
-OSF amendment v0.5 extends the pre-registered grid with a fifth
-world derived from Studyforrest Phase-2
+Amendment v0.5 (\texttt{docs/osf/}, git-dated, never filed on
+OSF) extends the pre-registered grid with a fifth world derived
+from Studyforrest Phase-2
 \citep{hanke2016studyforrest} (sub-01, ses-localizer,
 task-movielocalizer run-1): real VGG16 features over
 \texttt{movie\_localizer.mkv}, ffmpeg scene-cut tactile proxy,
@@ -474,7 +494,7 @@ The 4.5-modal real bridge is the first world-condition pair where
 the lock produces a positive B-1 (in the pre-registered Amedi
 direction), though still below threshold. B-3 attenuates from the
 ECG $22.3\times$ down to $5.1$--$6.2\times$ --- consistent with
-Branch B of the OSF amendment v0.5 decision rule (``PASS but
+Branch B of the amendment v0.5 decision rule (``PASS but
 attenuated under biological input complexity''). B-2 is measured
 with a bootstrap 95\,\% CI via the nerve-wml v1.5.3 methodology
 module: median $-0.0376$, CI $[-0.056, -0.001]$. This is the first
@@ -1065,9 +1085,9 @@ measures only downstream invariants.
 \paragraph{Pre-registered benchmarks in ML.}
 The NeurIPS Datasets \& Benchmarks track~\citep{vanschoren2021neurips}
 and \citet{gebru2021datasheets} pushed the field towards
-OSF-style pre-registration. bouba\_sens follows the OSF
-locked-threshold protocol (registration
-\texttt{10.17605/OSF.IO/Q6JYN}): the $0.05 / 0.10 / 0.02$
+OSF-style pre-registration. bouba\_sens follows a locked-threshold
+protocol registered locally (git-dated design specification,
+2026-04-20; not filed on OSF): the $0.05 / 0.10 / 0.02$
 thresholds for B-1 / B-2 / B-3 are frozen before the 9-grid
 evaluation campaign and are not revisited by any ADR in this
 paper, including the retraction in Section~\ref{sec:sprint14}.
@@ -1141,21 +1161,38 @@ curve, committed verbatim (force-added past the
 single \texttt{uv sync --all-extras} gives a complete Python 3.14
 environment from the pinned \texttt{uv.lock}. Every cell seeded by
 $(\mathrm{seed\_base} \times 10\,000 + \mathrm{cell\_count})$.
-Byte-identical \texttt{eval\_report.json} outputs on a fresh
-clone, modulo numerical determinism caveats listed in
-Appendix~\ref{app:sha}.
+Since v0.5.10 the CLI also seeds the global Python, NumPy and
+PyTorch generators and enables deterministic kernels before it
+builds any module, so two runs of the same cell give byte-identical
+\texttt{eval\_report.json} on one machine
+(\texttt{tests/unit/test\_cli\_determinism.py}); outputs may still
+differ across platforms (Appendix~\ref{app:sha}).
+
+\paragraph{Erratum (2026-10-25).} Earlier versions of this paragraph
+claimed byte-identical outputs on a fresh clone. That did not hold
+for releases up to v0.5.9: the modality encoders and the integration
+head were initialised from the unseeded global PyTorch generator, so
+two runs of a cell started from different weights (issue \#35).
+Every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
+was produced by that unseeded pipeline. Its numbers are reproducible
+in distribution across seeds, not byte for byte. A re-run of
+\texttt{scripts/reproduce\_paper\_v01.sh} with the seeded CLI is
+under way and will be reported in the next revision.
 \texttt{scripts/reproduce\_paper\_v01.sh} (Sprint 16) regenerates
 every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
 from the tagged repository; total compute budget
 $\approx 8$\,h on an M3 Ultra.
 
 \paragraph{Pre-registration fidelity.}
-OSF registration \texttt{10.17605/OSF.IO/Q6JYN} locks the three
+The git-dated design specification (2026-04-20) locks the three
 thresholds $(0.05, 0.10, 0.02)$; they do not change across
-ADRs 0004 through 0017. Every decision (verdict, retraction, scope
+ADRs 0004 through 0021. No bouba\_sens hypothesis is registered on
+OSF: registration \texttt{10.17605/OSF.IO/Q6JYN} covers
+dream-of-kiki H1--H4 only. Every decision (verdict, retraction, scope
 narrowing) is recorded inline in a dated ADR with the grid commit
 and aggregate artefact path, cross-referenced in
-Section~\ref{sec:mechanism}. OSF amendment v0.6 covers the
+Section~\ref{sec:mechanism}. Amendment v0.6 (\texttt{docs/osf/},
+git-dated, never filed on OSF) covers the
 Sprint 10--17 hyperparameter additions
 (\texttt{constellation\_lock\_after}, \texttt{transducer\_gating},
 \texttt{gumbel\_tau}, \texttt{codebook\_lock\_after},

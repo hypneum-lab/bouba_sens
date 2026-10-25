@@ -7,8 +7,9 @@ Cross-Modal Plasticity under Critical-Period Constraints*
 **Manuscript file.** `docs/paper/main.tex` (compiled
 `docs/paper/build/main.pdf`)
 **Repository.** https://github.com/hypneum-lab/bouba_sens
-**Pre-registration.** OSF `10.17605/OSF.IO/Q6JYN` (locked
-2026-04-19, amendment v0.6 2026-04-23)
+**Pre-registration.** Local, git-dated (design spec commit
+`87f723f`, 2026-04-20; amendments v0.4–v0.6 under `docs/osf/`, never
+filed on OSF). Not registered on OSF.
 **Software DOI.** Zenodo (concept) — to be minted alongside this
 submission via `.zenodo.json` already at repo root
 **Companion software.** `nerve-wml` v1.5.3
@@ -29,7 +30,7 @@ neuroscience–AI interface**.
 The manuscript fits TMLR's reviewing criteria as follows:
 
 1. **Claims supported by evidence.** Every empirical statement in
-   the manuscript is backed by an OSF-pre-registered grid (9
+   the manuscript is backed by a locally pre-registered grid (9
    grids, 150 cells each, 5 seeds × 5 modalities × 2 timings × 3
    SNRs) with thresholds locked **before** the evaluation
    campaign. Eighteen ADRs (`docs/adr/0004..0017`) record every
@@ -153,9 +154,9 @@ proposed reviewers.
   studyforrest data licence; CC-licensed audio substitute for the
   fifth modality; all synthetic worlds regenerable from
   `scripts/build_worlds.py` + frozen seeds.
-- Pre-registration: OSF `10.17605/OSF.IO/Q6JYN`, public,
-  timestamped 2026-04-19, amendment v0.6 dated 2026-04-23 covers
-  the post-lock scope adjustments.
+- Pre-registration: local, git-dated (design spec 2026-04-20,
+  commit `87f723f`); amendment v0.6 (`docs/osf/`, 2026-04-23) covers
+  the post-lock scope adjustments. Not registered on OSF.
 - Software DOI: Zenodo version-DOI minted at submission via the
   GitHub-Zenodo webhook on the next tag (`.zenodo.json` already
   at repo root with full metadata).
@@ -166,7 +167,7 @@ proposed reviewers.
 ### Author contributions
 
 Sole author. Conceptualisation, methodology, software,
-benchmark design, OSF pre-registration, all empirical runs,
+benchmark design, pre-registration (git-dated), all empirical runs,
 manuscript drafting, and revision.
 
 ### Concurrent work
@@ -208,7 +209,9 @@ benchmark on a real biological bridge.
       in §1 of the manuscript.
 - [ ] Zenodo version-DOI minted via webhook; updated in §1
       `.zenodo.json` reference.
-- [ ] OSF pre-registration link is publicly resolvable.
+- [ ] Pre-registration deposited externally (OSF, or e-Soleau /
+      restricted Zenodo) — currently local (git-dated) only; OSF
+      `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only.
 - [ ] `scripts/reproduce_paper_v01.sh` end-to-end run validated
       on a fresh checkout within the past 7 days.
 - [ ] SHA-256 manifest matches `reports/MANIFEST.json` for every

@@ -3,6 +3,26 @@
     "sha256": "48239ecc846d604ea5bec36530084a7f79b560365ad07c0df5a8cb7e0f6d8589",
     "size": 76111
   },
+  "me6_paired_null.json": {
+    "sha256": "f69115087ceb277c6c124d6c8f06611264d4903e77bdcf6ac1e11d508c6df7be",
+    "size": 38810
+  },
+  "me6_paired_null_mock.json": {
+    "sha256": "13efd6f241d802f095804a35f787dfd6e3816bd4bbc36aec74f58320f6de77c4",
+    "size": 38881
+  },
+  "me6_paired_null_mock_b16.json": {
+    "sha256": "8bb8d0e44f1d5f0350ce0fecc24048f7fa219bc3e432a0cef7bd21a0aa2d354c",
+    "size": 38910
+  },
+  "me6_paired_null_mock_b32.json": {
+    "sha256": "34f73f7fb36e8719d19aa4f3346f26c34768a4ab693dedc0d935464d19310be9",
+    "size": 38822
+  },
+  "me6_paired_null_mock_b8.json": {
+    "sha256": "24280348adebba8a5551360e102db372e789c6d059bc13dcb03c54df1ecb9745",
+    "size": 38913
+  },
   "pilots/b1_timing_seed0_T2_audio_floor_metadata.json": {
     "sha256": "8e27a8672754e402fa4356d4de4a4037e4f5ef1f57f8c30572e0f7193865ab4f",
     "size": 174
@@ -138,6 +158,22 @@
   "v0.5_amedi_curve.png": {
     "sha256": "3137b1d24b1fa9cfe767910b24401c957d727911c472b0da8a594aec5b57dabd",
     "size": 74330
+  },
+  "v0.5_amedi_curve_multiseed_10seed_final.json": {
+    "sha256": "38a35fbf29c239bd4b827ba2a4711af3ee3d5ad78f5d2040a06139442f590bdd",
+    "size": 3873
+  },
+  "v0.5_amedi_curve_multiseed_5seed_interim.json": {
+    "sha256": "0f59ab1ad0a22f87a46dffcf03053d029edd48866ea99a0b7b0e3be593c0809e",
+    "size": 1471
+  },
+  "v0.5_amedi_curve_pooled_v2.json": {
+    "sha256": "070febf6cecabba6f7ee575394060f595bff8bef82985309139df441a9bc7636",
+    "size": 1063
+  },
+  "v0.5_amedi_n12_verdict.json": {
+    "sha256": "ca7d5eb4e5968dc6da563818920d5615215ebeec5909612a51e5ca7cde91d5ec",
+    "size": 945
   },
   "v0.5_dr_lock100_aggregate.json": {
     "sha256": "2bdd115cf2f396faf7b1aa31c7d7ebc689dcbbe3e9a104bee2b7788361ac73d9",

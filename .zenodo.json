@@ -1,6 +1,6 @@
 {
   "title": "bouba_sens: A Pre-Registered Cross-Modal Plasticity Benchmark",
-  "description": "<p>A pre-registered benchmark measuring three invariants of cross-modal plasticity (B-1 congenital-blindness T1/T2 gap, B-2 informational migration, B-3 perceptive/proprioceptive structural asymmetry) across five synthetic worlds and a 4.5-modal real Studyforrest Phase-2 bridge. Thresholds locked by OSF registration 10.17605/OSF.IO/Q6JYN before the evaluation campaign. Companion to the TMLR submission v0.1.</p><p>Central empirical claim (narrow and falsifiable): a frozen PSK mux with hard-binary transducer gating is the minimal architectural configuration that qualitatively reproduces the Amedi 2007 T1/T2 asymmetry on the real biological bridge; every compound tested (soft Gumbel gating, finer tau scans, codebook freeze, phase-transition schedule) was null or harmful.</p>",
+  "description": "<p>A pre-registered benchmark measuring three invariants of cross-modal plasticity (B-1 congenital-blindness T1/T2 gap, B-2 informational migration, B-3 perceptive/proprioceptive structural asymmetry) across five synthetic worlds and a 4.5-modal real Studyforrest Phase-2 bridge. Thresholds (0.05 / 0.10 / 0.02) were locked locally in git (dated design specification, 2026-04-20) before the evaluation campaign; they are not registered on OSF (registration 10.17605/OSF.IO/Q6JYN covers dream-of-kiki H1-H4 only). Companion to the TMLR submission v0.1.</p><p>Status of the invariants (2026-10-25): B-1 is retracted after multi-seed validation (ADR-0019); B-2 is null under every estimator (ADR-0019); B-3 is reported as an uncalibrated magnitude: the 0.02 threshold was never compared with a null; an independent binomial null invalidates the reading of the bare exceedance of 0.02; no compatibility or rejection verdict is established before a paired calibration of the median (same probe for the five queries, shared seeds and worlds; ADR-0021). The earlier claim that a frozen PSK mux with hard-binary transducer gating minimally reproduces the Amedi 2007 T1/T2 asymmetry rested on the single-seed B-1 pattern and is withdrawn with it.</p>",
   "creators": [
     {
       "name": "Saillant, Cl\u00e9ment",
@@ -25,13 +25,7 @@
   ],
   "related_identifiers": [
     {
-      "identifier": "10.17605/OSF.IO/Q6JYN",
-      "relation": "isDocumentedBy",
-      "resource_type": "other",
-      "scheme": "doi"
-    },
-    {
-      "identifier": "10.5281/zenodo.19666405",
+      "identifier": "10.5281/zenodo.19656342",
       "relation": "isDerivedFrom",
       "resource_type": "software",
       "scheme": "doi"
@@ -46,5 +40,5 @@
   "communities": [
     {"identifier": "hypneum-lab"}
   ],
-  "notes": "Built on nerve-wml v1.5.3 (DOI 10.5281/zenodo.19666405). Reproducible via `bash scripts/reproduce_paper_v01.sh`; byte-identity verification via `scripts/sha256_manifest.py` against `reports/MANIFEST.json`."
+  "notes": "Built on nerve-wml v1.5.3+ (concept DOI 10.5281/zenodo.19656342). Reproducible via `bash scripts/reproduce_paper_v01.sh`; byte-identity verification via `scripts/sha256_manifest.py` against `reports/MANIFEST.json`."
 }

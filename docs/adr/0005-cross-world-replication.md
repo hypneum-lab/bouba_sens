@@ -1,4 +1,9 @@
-# ADR-0005 — Cross-world replication of B-1 / B-2 / B-3 verdicts
+# ADR-0005a — Cross-world replication of B-1 / B-2 / B-3 verdicts
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0005 is shared
+> with `0005-v03-cross-world-verdicts.md` (ADR-0005b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-20

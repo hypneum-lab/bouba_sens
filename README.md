@@ -1,5 +1,7 @@
 # bouba_sens
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19701353.svg)](https://doi.org/10.5281/zenodo.19701353)
+
 > A benchmark for cross-modal plasticity in artificial neural systems.
 > Hypneum Lab — 2026.
 
@@ -55,7 +57,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **PASS on magnitude** (5–6× threshold — unchanged) ; the "architectural property" reading is withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -70,13 +72,14 @@ locked. Honest scope ; no overselling.
 ## Status
 
 **v0.5.9 — Paper v0.1 draft (TMLR submission blocked; see
-2026-05-11 update above).** Sprints 0–17 closed, 19 ADRs
-(0004–0019), 185+ tests. 9 grids (150 cells each) on the
+2026-05-11 update above).** Sprints 0–17 closed, 28 ADR files
+(numbers 0001–0022, seven numbers shared — index in
+`docs/adr/README.md`), 372 unit+smoke tests. 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
-- OSF registration : `10.17605/OSF.IO/Q6JYN`, amendment v0.6
+- Pre-registration : **local, git-dated** — design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, 2026-04-20) ; amendments v0.4–v0.6 under `docs/osf/` (drafted as OSF amendments, **never filed on OSF**). No bouba_sens hypothesis is registered on OSF : `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only (issue #20, Erratum below).
 - Draft OSF amendments v0.7–v0.9 (2026-10-23), **DRAFT — not yet filed
   on OSF (to be filed by the PI)**: TOST equivalence for B-1/B-2
   (`docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`),
@@ -90,19 +93,20 @@ locked. Honest scope ; no overselling.
 
 ## Headline findings (v0.5.5)
 
-Thresholds locked by OSF before the campaign : B-1 ≥ 0.05,
-B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all 14 ADRs.
+Thresholds locked in git before the campaign (design spec
+2026-04-20, commit `87f723f` ; not registered on OSF) : B-1 ≥ 0.05,
+B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all ADRs.
 
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
-| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 pass | **PASS** on magnitude in every configuration ; magnitude tracks per-modality entropy, not the partition (§4.4) |
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.156** (5.5–7.8×) | 5/5 pass the fixed rule — as do 100 % of null grids at n = 64 | **Compatible with the paired null** (ADR-0022, Gaussian: p = 0.17; null P99 = 0.156). The fixed rule cannot separate signal from noise at n = 64; mean query accuracy 0.254 = chance → probe defect (zero-masking) to fix first. Magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
 
-**F1 — B-3 passes on magnitude only.** The Me6 asymmetry
-magnitude passes at 5–6× threshold across every grid, every
-world, every seed, and is insensitive to every plasticity control
-tested (LOCK_AFTER, transducer gating mode, Gumbel tau, codebook
+**F1 — B-3 is an uncalibrated magnitude (requalified
+2026-10-25).** The Me6 asymmetry magnitude exceeds the 0.02
+threshold by 5–6× across every grid, every world, every seed, and
+is insensitive to every plasticity control tested (LOCK_AFTER, transducer gating mode, Gumbel tau, codebook
 freeze, HARD → GUMBEL phase transition). The earlier reading of
 B-3 as an *architectural* perceptive/proprioceptive property is
 **withdrawn** (paper §3.3, §4.4–4.5; ADR-0014, ADR-0015): a
@@ -114,6 +118,32 @@ magnitude result is anchored as the empirical foundation of
 §4 (embodied sensorimotor grounding stratum). The B-1 Retract
 (ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
 never B-1.
+
+**F1 update — paired calibration (ADR-0022, accepted by the PI on
+2026-10-25).** On a fresh Gaussian grid with saved per-item outcomes,
+the B-3 median (0.156) is not distinguishable from a paired sign-flip
+null (mean 0.141, P99 0.156, p = 0.17), and the mean single-modality
+query accuracy is 0.254, i.e. 4-class chance: the zero-masking probe
+carries no decodable per-modality information, a design defect to fix
+before any new B-3 reading. On the Studyforrest mock (0.305, accuracy
+0.240) the verdict depends on the block length of the null and is not
+conclusive; the real-ECG grid was not recomputed. Any downstream anchor
+on B-3 (including the Stratum 4 anchor above) should be read in that
+light.
+
+*Requalification (2026-10-25, PI decision ; ADR-0021 ; Refs #22).*
+The 0.02 threshold was never compared with a null. Under an
+independent binomial null at the production probe size (n = 64),
+the median-of-30 Me6 is 0.13–0.16 (P99 0.15–0.19) : an independent
+binomial null invalidates the reading of the bare exceedance of
+0.02. The synthetic-world medians (0.141–0.148) lie inside that
+range ; mock (0.3125) and ECG (0.4453) exceed it, but the iid
+reference is not the null of their contiguous probes. No
+compatibility or rejection verdict on B-3 is established before a
+paired calibration of the median (same probe for the five queries,
+shared seeds and worlds). The values stand ; the interpretation is
+withdrawn, and the Stratum 4 anchoring above therefore rests on an
+uncalibrated statistic until that calibration is done.
 
 **F2 — B-1 does not survive multi-seed validation (ADR-0019
 FINAL Retract).** The single-seed +0.0125 peak (Sprint 10,
@@ -165,19 +195,51 @@ null is robust to which half of the modality set carries the true signal.
 The abstract is aligned to this per-channel provenance (no "real movie
 vision" overclaim).
 
-Full trail : `docs/adr/0004` through `0017`. Every verdict,
-retraction, and scope change is recorded inline with its grid
-commit.
+Full trail : `docs/adr/` (index in `docs/adr/README.md` ; ADR
+numbers 0005, 0007, 0014, 0015, 0016, 0017 and 0019 are each shared
+by two files, disambiguated as a/b). Every verdict, retraction, and
+scope change is recorded inline with its grid commit.
+
+## Erratum (phase 0 — truth, 2026-10-25)
+
+Documentary corrections only ; no value, metric or threshold changed.
+
+1. **"Pre-registered on OSF" withdrawn** (`CITATION.cff`, this README,
+   `.zenodo.json`, `CLAUDE.md`, `AGENTS.md`, `docs/paper/`). Root
+   cause : confusion with the dream-of-kiki registration
+   `10.17605/OSF.IO/Q6JYN` (2026-04-19), which covers H1–H4 of that
+   project only. B-1/B-2/B-3 are pre-registered **locally** (git-dated
+   spec, 2026-04-20) ; the `docs/osf/` amendments were never filed.
+   Issue #20.
+2. **B-3 requalified "uncalibrated"** (F1 above, paper §4.4,
+   `.zenodo.json`, ADR-0008/0009 notes). Root cause : a threshold
+   fixed without a calibrated null. Values unchanged. Issue #22,
+   ADR-0021.
+3. **Paper §4.4 "Key claim, load-bearing" removed** ; `.zenodo.json`
+   no longer carries the withdrawn "minimal configuration" claim.
+   Root cause : documentation written ahead of the results. Issue #21.
+4. **ADR numbering** : seven numbers shared by two files, now
+   disambiguated a/b with a complete index ; ADR-0006 and tags
+   `v0.4.0` / `v0.5.0` are not on `main` (PI action, see
+   `docs/adr/README.md`). Issue #21.
+5. **Reference `amedi2007`** : the BibTeX entry carried the metadata
+   of Amedi et al. 2003 (`10.1038/nn1072`) ; it now points to Amedi et
+   al. 2007, Nat Neurosci 10(6):687–689, `10.1038/nn1912`, which is
+   the paper the repository cites throughout (Crossref-verified).
+   Issue #25.
 
 ## Quickstart
 
 ```bash
+# nerve-wml is a sibling path dependency (`[tool.uv.sources]`, not on PyPI);
+# CI checks it out at tag v1.7.0 next to this clone
+git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
 uv sync --all-extras
-uv run bouba-sens version          # bouba_sens 0.5.5
-uv run pytest                      # 185+ items, all green
-# Single cell
+uv run bouba-sens version          # bouba_sens 0.5.10
+uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
+# Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
-    --timing T1 --snr-init 0 --snr-floor -20
+    --timing T1 --snr-init 0 --snr-floor -20 --out runs/cell_t1_audio
 # Single grid (≈20 min on M3 Ultra, 5-way seed concurrency)
 WORLD=studyforrest LOCK_AFTER=100 STEPS_TRAIN=200 STEPS_LESION=100 \
     OUT_ROOT=runs/sprint10_peak METRICS="Me1,Me2,Me3" \
@@ -189,13 +251,31 @@ uv run python scripts/sha256_manifest.py
 diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ```
 
+## Reproduce in one command
+
+```bash
+git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
+git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
+uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.10
+STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
+```
+
+Expected output: `runs/v01_smoke_<ts>/{phase1/model.pt,phase1/checkpoint.pkl,phase2_t2/report.pkl,phase2_t2/eval_report.json,phase2_t2/per_query_me1.json,summary.html}`; last log line `v01 smoke done; open …/summary.html`.
+`eval_report.json` has keys `me1, me1_probe, me2, me3_delta, me6_max_abs, me7, me8, me9` (`me1 ≈ 0.4`, `me2 ≈ 0.25–0.27` at 20/20 steps; `me7` is `null` in a single-cell run — it needs a paired T1/T2 cell).
+Duration: ≈ 4 min 45 s per run at 20/20 steps on an 8-core Xeon X5680 (Linux, CPU only, 1 core used, max RSS 0.9 GB); the 100/100-step default exceeds 15 min on that CPU (Phase 1 alone ≈ 5 min 40 s), far less on Apple Silicon.
+Determinism: bit-exact in the seeded test suite; the CLI training init is not yet seeded, so two runs do not give byte-identical `eval_report.json` (tracked as an issue).
+Full reproduction: `bash scripts/reproduce_paper_v01.sh` (every grid cited in paper v0.1, ≈ 8 h on an M3 Ultra, fetches Studyforrest ds000113 first).
+Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.json` regenerates the `reports/` manifest for comparison with the committed `reports/MANIFEST.json` (the default `--out` overwrites it).
+
 ## Dependencies
 
 - Python 3.14
 - PyTorch ≥ 2.5
 - `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
   bootstrap CI, null model permutation — Hypneum Lab,
-  DOI `10.5281/zenodo.19666405`)
+  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release).
+  Installed from a sibling clone at `../nerve-wml` (`[tool.uv.sources]`
+  in `pyproject.toml`); CI pins tag `v1.7.0`.
 
 ## Priority references
 
