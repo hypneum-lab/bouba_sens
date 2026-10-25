@@ -59,7 +59,9 @@ not done by a pull request; see the PI action list below.
 | 0021 | `0021-me6-null-calibration.md` | Me6 null calibration — the B-3 statistic under sampling noise alone | 2026-10-25 | Accepted — validated by the PI |
 | 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Accepted — PI decision 2026-10-25; B-3 Gaussian compatible with the paired null, mock not conclusive, ECG not recomputed |
 
-Next free number: **0023**.
+| 0023 | `0023-b3-probe-v2.md` | B-3 probe v2 — linear read-out of frozen per-modality representations | 2026-10-25 | Proposed — preregistered reading `prereg-b3-probe-v2-20261025` |
+
+Next free number: **0024**.
 
 ## PI action list (not resolvable by pull request)
 
