@@ -113,7 +113,7 @@ def test_probe_windows_stay_inside_probe_frames(real_dir: Path) -> None:
 def test_donors_and_check_anchors_come_from_training_frames(real_dir: Path) -> None:
     world = _split(real_dir)
     index = DonorIndex(world.dataset_labels)
-    _, anchors = check_anchors(world, train_seed=2001)
+    _, anchors = check_anchors(world, train_seed=9001)  # outside every seed pool
     assert int(anchors.max()) < world.n_train
     for draw in range(50):
         donors, _ = index.draw(anchors, 10**9 + draw)

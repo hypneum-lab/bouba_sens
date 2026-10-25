@@ -44,7 +44,7 @@ def _block(
     bad_cells: int = 0,
     pre_rank: int = 8,
     ctrl_rank: int = 8,
-    seed: int = 2001,
+    seed: int = 9001,  # outside every amendment seed pool
     lock: int = 25,
     n: int = 64,
 ) -> BlockCodes:
@@ -71,11 +71,11 @@ def test_frozen_constants() -> None:
 def test_all_valid_block() -> None:
     b = _block()
     r = evaluate_block(b, k=K)
-    assert (r.seed, r.lock, r.n_cells, r.n_valid) == (2001, 25, 15, 15)
+    assert (r.seed, r.lock, r.n_cells, r.n_valid) == (9001, 25, 15, 15)
     c = subspace_shift(b.z_pre, b.z_control, K)
     expected = [subspace_shift(b.z_pre, b.z_post[key], K) - c for key in KEYS]
     assert r.y == pytest.approx(float(np.median(expected)))
-    assert r.s_split == pytest.approx(split_half_noise_floor(b.z_pre, K, seed=2001))
+    assert r.s_split == pytest.approx(split_half_noise_floor(b.z_pre, K, seed=9001))
     assert all(r.cell_valid.values())
     assert r.delta_s[KEYS[0]] == pytest.approx(expected[0])
 

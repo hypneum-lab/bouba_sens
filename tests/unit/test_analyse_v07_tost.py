@@ -155,6 +155,13 @@ def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel_k8", seed=0):
     ]
 
 
+def _ac(data):  # type: ignore[no-untyped-def]
+    """Confirmatory analysis with the frozen B-2 configuration attached."""
+    if "e2" in data and "e2_config" not in data:
+        data = {**data, "e2_config": dict(an.E2_CONFIG)}
+    return an.analyse_confirmatory(data)
+
+
 def _e1_rows(seeds):  # type: ignore[no-untyped-def]
     return [
         {"seed": s, "locks": {k: 0.0 + 0.001 * (i % 3) for k in an.LOCKS}, "nolock": 0.0}
@@ -163,7 +170,7 @@ def _e1_rows(seeds):  # type: ignore[no-untyped-def]
 
 
 def test_confirmatory_accepts_full_roster() -> None:
-    out = an.analyse_confirmatory({"e1": _e1_rows(ROSTER), "e2": _e2_rows(ROSTER)})
+    out = _ac({"e1": _e1_rows(ROSTER), "e2": _e2_rows(ROSTER)})
     assert out["B-2"]["E-2"]["n"] == 150
     assert out["B-1"]["E-1"]["n"] == 150
     assert out["roster"]["substitutions"] == []
@@ -171,26 +178,26 @@ def test_confirmatory_accepts_full_roster() -> None:
 
 def test_confirmatory_rejects_partial_roster() -> None:
     with pytest.raises(ValueError, match="roster"):
-        an.analyse_confirmatory({"e2": _e2_rows(ROSTER[:4])})
+        _ac({"e2": _e2_rows(ROSTER[:4])})
     with pytest.raises(ValueError, match="roster"):
-        an.analyse_confirmatory({"e2": _e2_rows(ROSTER[:-1])})
+        _ac({"e2": _e2_rows(ROSTER[:-1])})
 
 
 def test_confirmatory_rejects_pilot_and_unlisted_seeds() -> None:
     seeds = [*ROSTER[:-1], 1101]  # a B-2 pilot seed
     with pytest.raises(ValueError, match="roster"):
-        an.analyse_confirmatory({"e2": _e2_rows(seeds)})
+        _ac({"e2": _e2_rows(seeds)})
 
 
 def test_confirmatory_rejects_hard_primary_or_missing_readout() -> None:
     with pytest.raises(ValueError, match="gumbel_k8"):
-        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="hard")})
+        _ac({"e2": _e2_rows(ROSTER, readout="hard")})
     with pytest.raises(ValueError, match="gumbel_k8"):
-        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="gumbel")})
+        _ac({"e2": _e2_rows(ROSTER, readout="gumbel")})
     rows = _e2_rows(ROSTER)
     del rows[3]["ross_full_delta_bits_hard"]
     with pytest.raises(ValueError, match="hard"):
-        an.analyse_confirmatory({"e2": rows})
+        _ac({"e2": rows})
 
 
 def test_reserve_substitutions_are_documented_and_in_order() -> None:
@@ -199,29 +206,29 @@ def test_reserve_substitutions_are_documented_and_in_order() -> None:
         {"replaced": 1007, "by": 1156, "reason": "crash"},
         {"replaced": 1050, "by": 1157, "reason": "NaN metric"},
     ]
-    out = an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": subs})
+    out = _ac({"e2": _e2_rows(seeds), "substitutions": subs})
     assert out["B-2"]["E-2"]["n"] == 150
     assert out["roster"]["substitutions"] == subs
     with pytest.raises(ValueError, match="substitution"):  # undocumented
-        an.analyse_confirmatory({"e2": _e2_rows(seeds)})
+        _ac({"e2": _e2_rows(seeds)})
     bad = [dict(subs[0], by=1157), dict(subs[1], by=1156)]  # reserve out of order
     with pytest.raises(ValueError, match="order"):
-        an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": bad})
+        _ac({"e2": _e2_rows(seeds), "substitutions": bad})
     noreason = [dict(subs[0], reason=""), subs[1]]
     with pytest.raises(ValueError, match="reason"):
-        an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": noreason})
+        _ac({"e2": _e2_rows(seeds), "substitutions": noreason})
 
 
 def test_e2h_reported_alongside_without_label_and_disagreement_flagged() -> None:
     rows = _e2_rows(ROSTER, gumbel=0.0, hard=0.08, sd=0.01)
-    out = an.analyse_confirmatory({"e2": rows})["B-2"]
+    out = _ac({"e2": rows})["B-2"]
     assert out["E-2"]["label"] == "equivalent"
     e2h = out["E-2h"]
     assert "label" not in e2h and e2h["estimator"].startswith("Hodges-Lehmann")
     assert e2h["n"] == 150 and e2h["bound"] == 0.05
     assert e2h["ci90"][0] > 0.05
     assert out["readout_disagreement"]["differs"] is True
-    same = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
+    same = _ac({"e2": _e2_rows(ROSTER)})["B-2"]
     assert same["readout_disagreement"]["differs"] is False
     assert same["E-2"]["label"] == "equivalent"
 
@@ -272,7 +279,7 @@ def test_hl_tost_is_robust_to_one_outlier() -> None:
 
 
 def test_e2_primary_is_robust_and_mean_based_is_secondary() -> None:
-    out = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
+    out = _ac({"e2": _e2_rows(ROSTER)})["B-2"]
     assert out["E-2"]["estimator"].startswith("Hodges-Lehmann")
     assert "label" in out["E-2"] and "label" not in out["E-2 mean (secondary)"]
     sw = out["switch"]
@@ -286,11 +293,11 @@ def test_confirmatory_requires_k8_and_the_switch_fields() -> None:
     rows = _e2_rows(ROSTER)
     rows[5]["gumbel_draws"] = 1
     with pytest.raises(ValueError, match="K = 8"):
-        an.analyse_confirmatory({"e2": rows})
+        _ac({"e2": rows})
     rows = _e2_rows(ROSTER)
     del rows[5]["switch_post"]
     with pytest.raises(ValueError, match="switch_post"):
-        an.analyse_confirmatory({"e2": rows})
+        _ac({"e2": rows})
 
 
 # --- Codex review r1 and PI decisions 2026-10-25 (13:32) -----------------
@@ -302,9 +309,9 @@ def test_signed_rank_p_is_dual_to_the_hl_ci() -> None:
         x = rng.normal(rng.uniform(-0.06, 0.06), 0.05, size=int(rng.integers(8, 40)))
         r = an.hl_tost(x, 0.05)
         lo, hi = r["ci90"]
-        assert (r["p_lower"] < 0.05) == (lo > -0.05)
-        assert (r["p_upper"] < 0.05) == (hi < 0.05)
-        assert (r["label"] == "equivalent") == (max(r["p_lower"], r["p_upper"]) < 0.05)
+        assert (r["p_lower"] <= 0.05) == (lo > -0.05)
+        assert (r["p_upper"] <= 0.05) == (hi < 0.05)
+        assert (r["label"] == "equivalent") == (max(r["p_lower"], r["p_upper"]) <= 0.05)
     x = rng.normal(0.0, 1.0, size=12)
     assert an.signed_rank_p(x, -100.0, "greater") == pytest.approx(2.0**-12)
     assert an.signed_rank_p(x, 100.0, "less") == pytest.approx(2.0**-12)
@@ -328,12 +335,57 @@ def test_provenance_requires_booleans_rule_and_balanced_probe() -> None:
     rows = _e2_rows(ROSTER)
     rows[3]["switch_post"] = "false"
     with pytest.raises(ValueError, match="boolean"):
-        an.analyse_confirmatory({"e2": rows})
+        _ac({"e2": rows})
     rows = _e2_rows(ROSTER)
     rows[3]["switch_post"] = True  # stats say no switch
     with pytest.raises(ValueError, match="frozen rule"):
-        an.analyse_confirmatory({"e2": rows})
+        _ac({"e2": rows})
     rows = _e2_rows(ROSTER)
     rows[3]["probe_label_counts"] = {"1": 512}
     with pytest.raises(ValueError, match="balanced"):
+        _ac({"e2": rows})
+
+
+# --- Codex review r2 ------------------------------------------------------
+
+
+def test_signed_rank_p_is_dual_to_the_ci_with_ties_at_the_bound() -> None:
+    x = np.array([-0.025] * 100 + [0.0] * 50)  # Codex r2 counterexample
+    r = an.hl_tost(x, 0.025)
+    lo, hi = r["ci90"]
+    assert (r["p_lower"] <= 0.05) == (lo > -0.025)
+    assert (r["p_upper"] <= 0.05) == (hi < 0.025)
+    rng = np.random.default_rng(13)
+    for _ in range(200):  # quantised data: many ties
+        q = np.round(rng.normal(rng.uniform(-0.03, 0.03), 0.02, int(rng.integers(8, 60))) / 0.00625)
+        x = q * 0.00625
+        r = an.hl_tost(x, 0.025)
+        lo, hi = r["ci90"]
+        assert (r["p_lower"] <= 0.05) == (lo > -0.025)
+        assert (r["p_upper"] <= 0.05) == (hi < 0.025)
+
+
+def test_e1b_and_e1c_report_mean_secondaries() -> None:
+    rows = _e1_table({50: 0, 75: 0, 100: 0, 125: 0, 150: 0}, 0.0, 30, 0.01)
+    out = an.analyse_e1(rows)
+    assert set(out["E-1b mean (secondary)"]) == set(an.LOCKS)
+    assert "label" not in out["E-1b mean (secondary)"]["50"]
+    assert "label" not in out["E-1c mean (secondary)"]
+
+
+def test_e2_config_must_be_the_frozen_preset() -> None:
+    rows = _e2_rows(ROSTER)
+    with pytest.raises(ValueError, match="e2_config"):
         an.analyse_confirmatory({"e2": rows})
+    for key, bad in (("world", "gaussian"), ("lock_after", 50), ("k_steps", 5000),
+                     ("probe_scheme", "contiguous")):  # fmt: skip
+        cfg = {**an.E2_CONFIG, key: bad}
+        with pytest.raises(ValueError, match="frozen configuration"):
+            an.analyse_confirmatory({"e2": rows, "e2_config": cfg})
+
+
+def test_structure_shares_must_be_finite_and_in_range() -> None:
+    rows = _e2_rows(ROSTER)
+    rows[2]["pre_top1_share"] = float("nan")
+    with pytest.raises(ValueError, match="in \\[0, 1\\]"):
+        _ac({"e2": rows})

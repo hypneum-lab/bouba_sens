@@ -38,7 +38,10 @@ reported as a bounded statement about a precisely defined estimand:
   primary-estimator ΔMI on the fused code (§3), lies inside ±0.05 bit
   (half the frozen 0.10 bit threshold); equivalence at α = 0.05 by
   the robust TOST, i.e. the 90 % Hodges–Lehmann CI lies inside the
-  bounds". This bounds
+  bounds". For both, the nominal α = 0.05 of the robust TOST holds
+  for a distribution symmetric about its centre; under skew (for
+  example a switch tail) it is approximate, with the size at the
+  bounds under the pilot planning law reported (§6, §7). This bounds
   the estimated statistic only, not the true MI change and not the
   original surviving-channel B-2 invariant.
 
@@ -539,10 +542,10 @@ units) and ±0.05 bit (B-2), i.e. ±half the frozen thresholds.**
    in steps of 0.00625, so ±0.025 spans 4 quanta on each side. The
    bound is above measurement resolution.
 
-The price of the tighter bounds is sample size (§7): N = 95 is needed
-for 0.80 power on E-2 in the planning case, and E-1b stays
-under-powered at the observed per-LOCK means; the expected
-informativeness of each component is stated there.
+The price of the tighter bounds is sample size (§7): N = 150 is needed
+for 0.80 power of the robust E-2 rule under the pilot planning law
+(PI decision 2026-10-25); the expected informativeness of each
+component, including E-1b, is stated there.
 
 ## 6. Analysis plan
 
@@ -597,7 +600,7 @@ informativeness of each component is stated there.
   parametric and non-parametric verdicts disagree, both are reported and
   the disagreement is stated in the paper.
 - E-2h (descriptive): the same TOST, CIs and p-values as E-2,
-  computed on the hard-readout ΔMI-hat of the same 95 seeds, reported
+  computed on the hard-readout ΔMI-hat of the same 150 seeds, reported
   in the same table as E-2. It carries no label of its own and does not
   change the E-2 label; a disagreement between E-2 and E-2h is stated
   in the paper. The pilot records the per-seed SD of both readouts;
@@ -609,7 +612,7 @@ informativeness of each component is stated there.
   B-2, report per seed the within-seed noise of ΔMI-hat, i.e. the SD of
   ΔMI-hat over a bootstrap over probe items (1,000 resamples of the 512
   probe rows, Ross estimator re-evaluated), separately from the
-  between-seed SD of the 95 per-seed ΔMI-hat that TOST uses. The TOST
+  between-seed SD of the 150 per-seed ΔMI-hat that the TOST uses. The TOST
   itself is unchanged and still uses one ΔMI-hat per seed.
 - Exclusions: a seed is excluded only for a technical failure, i.e. a
   crash, a missing aggregate or a non-finite metric (§8). Outliers are
@@ -843,7 +846,7 @@ increase for B-2. Every claim names the estimand of §3.
 
 | Class | Condition | Paper claim |
 |-------|-----------|-------------|
-| Equivalent | −δ < L and U < δ | "The [estimand] is bounded within ±δ (TOST, α = 0.05; 90 % CI inside the bounds) on N pre-registered new seeds." If 0 ∉ [L, U], add: "it is non-zero but smaller than half the registered effect size." |
+| Equivalent | −δ < L and U < δ | "The [estimand] is bounded within ±δ (robust TOST, nominal α = 0.05 under symmetry, 90 % Hodges–Lehmann CI inside the bounds) on N pre-registered new seeds." For E-2 the size at the bounds under the pilot planning law (§7) is quoted. If 0 ∉ [L, U], add: "it is non-zero but smaller than half the registered effect size." |
 | Beyond bound, registered direction | L ≥ δ | "An effect of at least half the registered size (≥ δ), in the registered direction, on the [estimand]." Reported as a new pre-registered finding in a new ADR; this does not establish an effect of the full registered size. |
 | Beyond bound, reverse direction | U ≤ −δ | "A reverse effect of at least half the registered size (≥ δ) on the [estimand]." New ADR. |
 | Effect detected, size unresolved | 0 < L < δ ≤ U | "A non-zero effect in the registered direction; whether it reaches δ (half the registered size) is unresolved at N = 150." |

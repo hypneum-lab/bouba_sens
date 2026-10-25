@@ -10,14 +10,18 @@
 **Pre-registration id:** **N19** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0022 / 0023 / 0024, ADR-0021 having been used by PR #19); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
 **Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing)
 
-> **Filing note.** This is the machine-readable draft. Nothing in this
-> file has been run. The metric, probe capture, control arm, rank rules,
+> **Filing note.** This is the machine-readable draft. No confirmatory
+> seed has been run; the pilot (seeds 2101–2110) is run with the
+> driver below (`docs/osf/pilot-report-2026-10-25.md`). The metric, probe capture, control arm, rank rules,
 > aggregation and Page test are merged with unit tests (PRs #10 and #13:
 > `metrics/subspace.py`, `subspace_protocol.py`,
-> `metrics/subspace_aggregate.py`, `metrics/page_trend.py`). Still
-> missing: the driver that trains the Phase-1 checkpoints and calls
-> `capture_block` for every (seed, lock) block, the S-2 to S-5 analyses
-> and the secondary parameter-subspace metric (§9). All of it is frozen
+> `metrics/subspace_aggregate.py`, `metrics/page_trend.py`). The driver
+> that trains the Phase-1 checkpoints and calls `capture_block` for
+> every (seed, lock) block, and the pilot planning computations, were
+> added on 2026-10-25 (`bouba_sens.v08_driver`,
+> `scripts/run_v08_subspace.py`, `scripts/pilots/derive_v08_pilot.py`).
+> Still missing: the S-2 to S-5 analyses, the secondary
+> parameter-subspace metric in the driver and the CC-film arm (§9). All of it is frozen
 > (commit hash on the OSF form) before any confirmatory seed runs. Pilot
 > seeds (§7) may run before filing.
 

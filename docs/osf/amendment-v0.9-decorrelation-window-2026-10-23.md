@@ -20,9 +20,12 @@
 > seeds (3101–3105) have been run; no confirmatory seed. The donor scheduler, the three arms, the CKA
 > manipulation check and the fusion-gain probe are merged with unit
 > tests (PR #12, `src/bouba_sens/decorrelation.py`, hook in
-> `AdaptationLoop.pretrain`). Still missing: the driver for the arms and
-> grids (with the learning-rate check of §4), the train-side fusion gain
-> of §3.4, and the D-4 / D-5 analyses (§9). All of it is frozen (commit
+> `AdaptationLoop.pretrain`). The driver for the main-grid arms and the
+> pilot D variance, with the learning-rate check of §4, was added on
+> 2026-10-25 (`bouba_sens.v09_driver`, `scripts/run_v09_decorrelation.py`,
+> `scripts/pilots/derive_v09_pilot.py`). Still missing: the
+> fixed-budget grid, persistence and secondary cells in the driver, the
+> train-side fusion gain of §3.4, and the D-4 / D-5 analyses (§9). All of it is frozen (commit
 > hash on the OSF form) before any confirmatory seed runs. Pilot seeds
 > (§7) may run before filing.
 

@@ -6,10 +6,14 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
 
     {"e1": [{"seed": 1001, "locks": {"50": v, "75": v, "100": v,
              "125": v, "150": v}, "nolock": v}, ...],
+     "e2_config": {... the frozen --preset v07-e2 configuration ...},
      "e2": [{"seed": 1001, "primary_readout": "gumbel_k8", "gumbel_draws": 8,
              "ross_full_delta_bits": v, "ross_full_delta_bits_hard": v,
-             "switch_pre": false, "switch_post": false}, ...],
-     "substitutions": [{"replaced": 1007, "by": 1096, "reason": "crash"}]}
+             "switch_pre": false, "switch_post": false,
+             "pre_top1_share": v, "pre_between_class_share": v,
+             "post_top1_share": v, "post_between_class_share": v,
+             "probe_label_counts": {"0": 128, ...}}, ...],
+     "substitutions": [{"replaced": 1007, "by": 1156, "reason": "crash"}]}
 
 ``analyse_confirmatory`` is the only confirmatory entry point (used by
 ``main``). It refuses any input that is not exactly the frozen roster
@@ -22,11 +26,11 @@ label of its own; a difference between the two readouts is reported
 and never changes the E-2 label. ``tost`` stays a generic,
 reusable function.
 
-Decision (frozen): for E-1, TOST with two one-sided one-sample t-tests
-at alpha = 0.05, i.e. the 90 % two-sided CI inside +-bound; for E-2
-(PI decision 2026-10-25, after the pilot) the robust TOST: the 90 %
-distribution-free Hodges-Lehmann CI inside +-bound (``hl_tost``), with
-the mean-based t-TOST reported as a secondary analysis. Bounds 0.025
+Decision (frozen; PI decisions 2026-10-25, after the pilot): for E-1,
+E-1b, E-1c and E-2 the robust TOST, the 90 % distribution-free
+Hodges-Lehmann CI inside +-bound (``hl_tost``); the mean-based t-TOST
+(two one-sided one-sample t-tests at alpha = 0.05) of every step is
+reported as a secondary analysis without a label. Bounds 0.025
 (B-1) and 0.05 bit (B-2). Each primary test gets exactly one of the six
 section-9 labels from its 90 % CI. B-1 fixed sequence E-1 -> E-1b (IUT
 over the five locks) -> E-1c (no-lock). Reported, no decision: 95 % CI,
@@ -160,25 +164,25 @@ def hl_ci(values: Sequence[float], level: float) -> tuple[float, float, float]:
 def signed_rank_p(values: Sequence[float], theta: float, alternative: str) -> float:
     """Exact signed-rank p-value for H0: centre = theta, dual to ``hl_ci``.
 
-    T+ = #{Walsh averages > theta} + 0.5 #{Walsh averages = theta}; under
-    H0 (untied, continuous, symmetric) T+ has the law of ``signed_rank_cdf``.
-    ``greater``: P(T+ >= t); ``less``: P(T+ <= t). With no Walsh average
-    equal to theta, ``p < alpha`` on both sides is exactly the event that
-    the 1 - 2 alpha ``hl_ci`` excludes theta. Ties (quantised data) are
-    counted as one half and the untied law is used (stated approximation).
+    Frozen tie convention (Codex review r2): a Walsh average equal to
+    theta never counts as beyond it. ``greater``: T = #{Walsh > theta},
+    p = P(T+ >= T); ``less``: T = #{Walsh >= theta}, p = P(T+ <= T),
+    with T+ the untied signed-rank law (``signed_rank_cdf``). Then, for
+    any data, tied or not, p <= alpha exactly when the 1 - 2 alpha
+    ``hl_ci`` lies strictly beyond theta on that side (lower bound >
+    theta, resp. upper bound < theta). Under ties the untied law is an
+    approximation (stated in v0.7 section 6); the CI decides.
     """
     x = np.asarray(values, dtype=float)
     i, j = np.triu_indices(x.size)
     w = (x[i] + x[j]) / 2
-    t = float((w > theta).sum()) + 0.5 * float((w == theta).sum())
     cdf = signed_rank_cdf(x.size)
-    m = w.size
     if alternative == "greater":
-        k = math.ceil(t)  # P(T+ >= t)
-        return 1.0 if k <= 0 else float(1.0 - cdf[k - 1]) if k <= m else 0.0
+        k = int((w > theta).sum())  # P(T+ >= k)
+        return 1.0 if k <= 0 else float(1.0 - cdf[k - 1])
     if alternative == "less":
-        k = math.floor(t)  # P(T+ <= t)
-        return 0.0 if k < 0 else float(cdf[min(k, m)])
+        k = int((w >= theta).sum())  # P(T+ <= k)
+        return float(cdf[k])
     raise ValueError(f"unknown alternative {alternative!r}")
 
 
@@ -253,6 +257,8 @@ def analyse_e1(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         "E-1": hl_tost(e1_vals, B1_BOUND),
         "E-1 mean (secondary)": _unlabelled(tost(e1_vals, B1_BOUND)),
     }
+    out["E-1b mean (secondary)"] = {k: _unlabelled(tost(v, B1_BOUND)) for k, v in per_lock.items()}
+    out["E-1c mean (secondary)"] = _unlabelled(tost([float(r["nolock"]) for r in rows], B1_BOUND))
     if out["E-1"]["label"] != "equivalent":
         out["E-1b"] = {"tested": False}
         out["E-1c"] = {"tested": False}
@@ -338,6 +344,8 @@ def _check_switch_rule(r: dict[str, Any]) -> None:
             between = float(r[f"{phase}_between_class_share"])
         except KeyError as exc:
             raise ValueError(f"seed {r['seed']}: missing {exc.args[0]}") from exc
+        if not (0.0 <= top1 <= 1.0 and 0.0 <= between <= 1.0):  # also rejects NaN
+            raise ValueError(f"seed {r['seed']}: {phase} structure shares must be in [0, 1]")
         if (top1 >= SWITCH_TOP1 and between >= SWITCH_BETWEEN) != r[f"switch_{phase}"]:
             raise ValueError(f"seed {r['seed']}: switch_{phase} disagrees with the frozen rule")
 
@@ -377,6 +385,31 @@ def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+# The frozen B-2 configuration (v0.7 section 4.2; ``--preset v07-e2`` of the
+# E1 runner, summary fields of its output JSON).
+E2_CONFIG: dict[str, Any] = {
+    "world": "studyforrest",
+    "lock_after": 100,
+    "train_batch": 16,
+    "lesion_batch": 16,
+    "probe_n": 512,
+    "k_steps": 50,
+    "probe_demod": "both",
+    "probe_scheme": "balanced",
+    "gumbel_draws": 8,
+    "preset": "v07-e2",
+    "primary_readout": "gumbel_k8",
+}
+
+
+def _check_e2_config(cfg: Any) -> None:
+    if not isinstance(cfg, dict):
+        raise ValueError("e2_config (the E1 runner summary) is required")
+    bad = {k: cfg.get(k) for k, v in E2_CONFIG.items() if cfg.get(k) != v}
+    if bad:
+        raise ValueError(f"e2_config differs from the frozen configuration: {bad}")
+
+
 def analyse_confirmatory(data: dict[str, Any]) -> dict[str, Any]:
     """Validated confirmatory analysis: frozen roster, Gumbel-readout provenance."""
     subs = list(data.get("substitutions", []))
@@ -387,6 +420,7 @@ def analyse_confirmatory(data: dict[str, Any]) -> dict[str, Any]:
         result["B-1"] = analyse_e1(data["e1"])
     if "e2" in data:
         _check_roster(data["e2"], expected, "e2")
+        _check_e2_config(data.get("e2_config"))
         _check_e2_provenance(data["e2"])
         result["B-2"] = analyse_e2_with_secondary(data["e2"])
     return result
