@@ -87,7 +87,8 @@ locked. Honest scope ; no overselling.
   (`docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md`),
   decorrelation-window lesion
   (`docs/osf/amendment-v0.9-decorrelation-window-2026-10-23.md`).
-  None alters Q6JYN or ADR-0019; power analysis in
+  Each is a standalone pre-registration (no filed parent); none alters
+  the design spec or ADR-0019; power analysis in
   `scripts/power_prereg_2026_10.py`.
 - Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
 

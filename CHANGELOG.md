@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pre-registration (DRAFT — not yet filed on OSF)
 
-- Three draft OSF amendments dated 2026-10-23, to be filed by the PI.
-  Parent registration `10.17605/OSF.IO/Q6JYN` and its thresholds
-  (0.05 / 0.10 / 0.02) are unchanged; ADR-0019 verdicts and the §5.5
-  retraction are unchanged.
+- Three draft OSF pre-registrations dated 2026-10-23, to be filed by
+  the PI. Each is standalone: bouba_sens has no filed parent
+  registration (`10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4
+  only; v0.4–v0.6 were never filed). The design-spec thresholds
+  (0.05 / 0.10 / 0.02), the ADR-0019 verdicts and the §5.5 retraction
+  are unchanged.
   - `docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`: TOST
     equivalence for B-1 (±0.025) and B-2 (±0.05 bit), half the frozen
     thresholds, N = 95 new seeds; B-2 primary estimator = Ross (2014)

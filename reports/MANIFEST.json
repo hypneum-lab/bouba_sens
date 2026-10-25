@@ -59,6 +59,18 @@
     "sha256": "282f43607f5c70b093fc1121d6774bfd1958501eb82e9bfdc1adc002895c552d",
     "size": 6364
   },
+  "pilots/v07_sign_power_n150.json": {
+    "sha256": "de8c2567e494cddb0f8b3a3623cec5d2b38c607aac8bb4df799b3775b036bec3",
+    "size": 581
+  },
+  "pilots/v07_snr_pilot_seed4201_aggregate.json": {
+    "sha256": "379619c00bd6ba2e6991cf1a4464e9ea31c2c8acc0f44901916c3fce3f886ae2",
+    "size": 14092
+  },
+  "pilots/v07_snr_pilot_seed4201_cells.json": {
+    "sha256": "4143de2503ed19a7b423e1882680064f318dd3ce3720fea41b92a383d9b813b3",
+    "size": 9643
+  },
   "pilots/v08_pilot_capture_log.json": {
     "sha256": "50e8ebaed5433514e149f7d261264b35c34212a8396be5352de0706e47d2f519",
     "size": 6119
@@ -70,6 +82,10 @@
   "pilots/v08_pilot_quantities.json": {
     "sha256": "4f63f28214ee046aba5b3cfdcf7c2a3bf7634a7af4821cdced77e924190f06eb",
     "size": 19798
+  },
+  "pilots/v08_redesign_evidence.json": {
+    "sha256": "2922151ab8dfb8e3be52735521ab70ff140dc06b58b51deaa781cef30cf8465d",
+    "size": 76651
   },
   "pilots/v09_manipulation_check_seeds3101-3105.json": {
     "sha256": "cd50891cd22cc2efebb2ebfd298d737bd44c0a174c35b16bcc4b0489a02c633a",

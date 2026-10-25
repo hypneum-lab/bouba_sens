@@ -1,14 +1,14 @@
-# OSF pre-registration amendment — bouba_sens v0.7 (TOST equivalence for B-1 / B-2)
+# OSF pre-registration (standalone) — bouba_sens v0.7 (TOST equivalence for B-1 / B-2)
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
-**Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN` (unchanged by this draft)
-**Previous amendment on file:** `amendment-v0.6-sprint10-17.md`
+**Parent pre-registration:** none. **This draft is a standalone pre-registration** (corrected on 2026-10-25, PI decision of 19:04, after the pilots). bouba_sens has no filed pre-registration: OSF `10.17605/OSF.IO/Q6JYN` covers only the dream-of-kiki hypotheses H1–H4 (issue #20), and the bouba_sens amendments v0.4–v0.6 under `docs/osf/` were drafted but never filed. The thresholds 0.05 / 0.10 / 0.02 used here are those of the local, git-dated design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, §1.2); the file name keeps "amendment" for continuity only.
+**Earlier local drafts (never filed):** `amendment-v0.4-studyforrest.md`, `amendment-v0.5-studyforrest-5modal.md`, `amendment-v0.6-sprint10-17.md`
 **Sibling drafts (same date, filed independently):** `amendment-v0.8-subspace-shift-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`
-**Amendment tag on file:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
+**Tag:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4.1, §4.2).
-**Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing; ADR-0021 and ADR-0022 are now used by the Me6 null calibration and paired null, so the proposals are ADR-0023 / 0024 / 0025 for v0.7 / v0.8 / v0.9)
+**Pre-registration id:** **N18** (confirmed by the PI on 2026-10-25, 19:04). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0023** (confirmed by the PI on 2026-10-25, 19:04; ADR-0021 and ADR-0022 are used by the Me6 null calibration and paired null, so v0.7 / v0.8 / v0.9 take ADR-0023 / 0024 / 0025)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case; superseded by N = 150 on 2026-10-25, see below); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 **Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). The power of the robust rule is recomputed from the pilot (round 3, same seeds). **Third set (PI decisions 2026-10-25, 13:32, after round 3):** (vi) **N = 150** (robust-rule power target 0.80; §7, §8); (vii) E-1, E-1b and E-1c also use the robust TOST, with the mean-based t-TOST kept as a reported secondary analysis (§3, §6). These changes are stated on the OSF form.
 
@@ -23,11 +23,14 @@
 
 ## 1. What is being amended
 
-Nothing in Q6JYN is changed. The B-1 and B-2 thresholds (0.05 and
-0.10 bit) stay frozen, and so do the ADR-0019 verdicts (B-1 FINAL
+Nothing in the design spec is changed. The B-1 and B-2 thresholds (0.05
+and 0.10 bit, design spec §1.2) stay frozen, and so do the ADR-0019 verdicts (B-1 FINAL
 Retract, B-2 Null). This amendment adds **a confirmatory equivalence
 test** for the two invariants that ended null, so that a null can be
-reported as a bounded statement about a precisely defined estimand:
+reported as a bounded statement about a precisely defined estimand
+(throughout, "registered threshold", "registered size" and "registered
+direction" refer to the git-dated design spec, §1.2, not to an OSF
+registration; bouba_sens has none, see the header):
 
 - B-1: "the pseudo-median (centre of symmetry) of the per-seed E-1
   value (§3) lies inside ±0.025 (half the frozen 0.05 threshold);
@@ -48,8 +51,8 @@ reported as a bounded statement about a precisely defined estimand:
 The original tests ask whether the effect is *above* threshold. A failure
 to reject there ("below the noise floor", §5.5 FINAL) is absence of
 evidence. Two one-sided tests (TOST) against bounds set at half the
-registered thresholds give evidence that the tested estimand is smaller
-than half the registered effect size. The claim is limited to that
+design-spec thresholds give evidence that the tested estimand is smaller
+than half the design-spec effect size. The claim is limited to that
 estimand (§3, §9).
 
 This amendment does **not** rescue the retracted §5.5 dose-response
@@ -181,9 +184,15 @@ run of §4.1:
 - **World check.** `--world studyforrest` loads `StudyforrestRealWorld`
   only if `BOUBA_SENS_STUDYFORREST_DATA` points to a cache containing
   `tactile.pt`; otherwise `_build_world` falls back, without an error, to
-  the 2-modal stub (`cli.py:54-63`). The pilot and every confirmatory
-  run record the world class in their logs; a run on the stub is a
-  technical failure (§8).
+  the 2-modal stub (`cli.py:54-63`). Every `bouba-sens train` and
+  `lesion` output records `world` and `world_class` in its
+  `metadata.json` (PI decision 2026-10-25, 19:04), and the B-1
+  aggregate is built with `aggregate_grid.py --require-world
+  StudyforrestRealWorld`, which refuses a grid with a missing world
+  class, another world (the stub) or no outputs (unit tests
+  `tests/unit/test_grid_world_check.py`); a run on the stub is a
+  technical failure (§8). Lesion outputs also record the effective SNR
+  at every step (`snr_trajectory_db`).
 
 ### 4.2 B-2 (E-2, E-2b)
 
@@ -524,8 +533,8 @@ recomputation is below.
 **Primary bounds (PI decision, 2026-10-23): ±0.025 (B-1, accuracy
 units) and ±0.05 bit (B-2), i.e. ±half the frozen thresholds.**
 
-1. *The bounds are fixed fractions of the frozen OSF thresholds.* Q6JYN
-   defines 0.05 and 0.10 bit as the smallest effects that count as a
+1. *The bounds are fixed fractions of the frozen design-spec thresholds.*
+   The design spec (§1.2) defines 0.05 and 0.10 bit as the smallest effects that count as a
    congenital gap and as MI migration. Half of each is used as the
    equivalence margin, so that a pass excludes effects well below the
    registered size, not only effects at it. No new effect scale is
@@ -587,6 +596,16 @@ component, including E-1b, is stated there.
   Rationale: one pilot seed (1105) showed a genuine class-separating
   reorganisation with a ΔMI-hat about ten times the others, which
   dominates a mean and its SD.
+- **Exact sign test (registered sensitivity analysis; PI decision
+  2026-10-25, 19:04), E-1, E-1b, E-1c and E-2.** The median and its
+  distribution-free order-statistic CI, [x₍c₎, x₍n−c+1₎] with c the
+  largest integer such that P(B ≤ c − 1) ≤ 0.05, B ~ Binomial(n, 1/2)
+  (`analyse_v07_tost.sign_tost`). It needs no symmetry: its estimand is
+  the median. Same tie convention and duality with the one-sided
+  p-values as the signed-rank analysis. It is reported with its own
+  six-class label next to the robust TOST and never changes the
+  decision; a disagreement is stated in the paper. Power at N = 150 is
+  in §7.
 - E-2 mean (reported secondary, no label): the t-TOST of the earlier
   draft on the same per-seed values, with its 90 % CI; a disagreement
   with the E-2 label is stated in the paper.
@@ -661,6 +680,22 @@ centre at 0. The per-lock pseudo-medians are closer to 0 than the
 per-lock means (−0.0181 at two locks), which is why E-1b is far better
 powered under the robust rule than under the mean rule below. E-1c has
 no planning data. These are the planning numbers stated on the form.
+
+*Exact sign test at N = 150 (registered sensitivity analysis, §6;
+`scripts/pilots/derive_v07_sign_power.py`,
+`reports/pilots/v07_sign_power_n150.json`; same planning laws).* B-2,
+20,000 draws: P(sign-test CI inside ±0.05 bit) = 1.000 at μ = 0 and
+μ = −0.02 whether the law is centred on its pseudo-median or on its
+median. At the bounds the result depends on the estimand: with the
+**median** at ±0.05 it is 0.000 (the sign test's own error rate is
+controlled for any law); with the **pseudo-median** at +0.05 it is
+0.778, because under the skewed switch tail the median lies well below
+the pseudo-median, so the two tests bound different quantities. B-1,
+2,000 draws: P(E-1) = 1.000, but P(E-1 and E-1b) = **0.015** (observed
+per-lock centres) and 0.024 (centres 0): with grid medians quantised
+in steps of 0.00625, order-statistic CIs of single locks rarely fall
+strictly inside ±0.025. The sign test is therefore an informative
+check of E-1 and E-2 at N = 150 but not of E-1b.
 
 *Earlier N (kept for the record).* **Sample size: N = 95 (PI decision, 2026-10-23; superseded).** The PI set N to the
 smallest value giving 0.80 power for E-2 in the planning case (below:
@@ -816,17 +851,23 @@ on the OSF form.
 
 ## 8. Seeds and stopping rule
 
-- **Confirmatory seeds (N = 150, PI decision 2026-10-25, 13:32):**
-  1001–1100 and 1106–1155, the same list for B-1 and B-2; the B-2
-  pilot seeds 1101–1105 are skipped (proposed by the drafter, PI
-  confirms at filing). They are disjoint from every seed used so far: the default
-  grid seeds 0–4, Q3/Q3+ {0, 17, 42, 73, 101, 7, 23, 31, 53, 89} and
-  N12 {3, 11, 19, 29, 37, 41, 47, 59, 67, 79}, and from the v0.8
-  (2001–2044, pilots 2101–2110) and v0.9 (3001–3044, pilots 3101–3105)
-  seed pools.
-- **Reserve seeds (technical replacement only):** 1156–1159, used in
-  order. They do not overlap the pilot seeds.
-- **B-2 pilot seeds:** 1101–1105 (§4.3), never confirmatory.
+- **Confirmatory seeds (N = 150; PI decisions 2026-10-25, 13:32 for
+  N and 19:04 for the list):** the contiguous block **4001–4150**, the
+  same list for B-1 and B-2. An earlier proposal (1001–1100 and
+  1106–1155) is withdrawn. The block was checked against the whole
+  repository on 2026-10-25: no script, test, report or draft uses a
+  seed in 4001–4154 (the numbers that occur there are sample sizes and
+  hashes), and it is disjoint from the default grid seeds 0–4, Q3/Q3+
+  {0, 17, 42, 73, 101, 7, 23, 31, 53, 89}, N12 {3, 11, 19, 29, 37, 41,
+  47, 59, 67, 79}, every pilot seed (1101–1105, 2101–2110, 3101–3105,
+  4201) and the v0.8 (2001–2044) and v0.9 (3001–3044) pools.
+- **Reserve seeds (technical replacement only):** 4151–4154, used in
+  order.
+- **Filing gate:** `analyse_v07_tost.py` accepts only this roster;
+  the E1 runner (`--osf-filed`) and `run_grid.sh` (`OSF_FILED`) refuse
+  seeds 4001–4154 before filing.
+- **Pilot seeds, never confirmatory:** B-2 1101–1105 (§4.3); B-1 SNR /
+  world-class pilot cell 4201 (§11).
 - **Fixed-N design.** N = 150 is fixed on the OSF form. There is no interim
   look at outcomes and no optional stopping or extension. Every analysis
   runs once, after all N seeds have finished.
@@ -894,7 +935,7 @@ which concerned a different estimand. All outcomes are publishable.
 
 ## 11. Pre-registration fidelity checklist
 
-- [ ] Filed on OSF by the PI before any confirmatory seed (1001–1100, 1106–1159) is run.
+- [ ] Filed on OSF by the PI before any confirmatory seed (4001–4154) is run.
 - [ ] Pre-filing code tasks of §4.3 merged with unit tests; commit hashes
       of `run_grid.sh`, `aggregate_grid.py`, `analyse_amedi_quadratic.py`,
       the E1 runner, the calibration harness, the TOST analysis script
@@ -909,7 +950,7 @@ which concerned a different estimand. All outcomes are publishable.
       → N = 150 and the robust E-1, E-1b, E-1c.
 - [x] No threshold change.
 - [x] No metric-math change.
-- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
+- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form. (Pilot cell, PI decision 2026-10-25 19:04: dedicated B-1 pilot seed **4201**, outside every pool, v0.7 B-1 parameters with `LOCK_AFTER=100`, `K_STEPS=50`, commit `1ec2a0a`: in all 30 cells the recorded SNR is +20 dB at step 0, the floor −20.00 / −10.00 / +10.00 dB at steps 50–99, mean −9.80 / −2.35 / +12.55 dB, as in §4.1; every output records `StudyforrestRealWorld` and `--require-world` passed; `reports/pilots/v07_snr_pilot_seed4201_cells.json`. Remaining: the statement on the OSF form.)
 - [x] World class (`StudyforrestRealWorld`) confirmed in the pilot logs (§4.1; preset world check passed and recorded, pilot report 2026-10-25).
 - [ ] Post-pilot design changes of 2026-10-25 (Gumbel primary, class-balanced probe; header) stated on the OSF form as made after the PI saw pilot round 1.
 - [x] Bounds derived from frozen thresholds (half of each), not from data.

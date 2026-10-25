@@ -1,0 +1,30 @@
+{
+  "N": 150,
+  "sims_b2": 20000,
+  "sims_b1": 2000,
+  "rng_seed": 20261027,
+  "B-2 sign, P(equivalent)": {
+    "pseudo-median at mu": {
+      "mu=+0.00": 1.0,
+      "mu=-0.02": 1.0,
+      "mu=+0.05": 0.7776,
+      "mu=-0.05": 0.0
+    },
+    "median at mu": {
+      "mu=+0.00": 1.0,
+      "mu=-0.02": 1.0,
+      "mu=+0.05": 0.0,
+      "mu=-0.05": 0.0
+    }
+  },
+  "B-1 sign": {
+    "observed per-lock centres": {
+      "P(E-1 sign)": 1.0,
+      "P(E-1 and E-1b sign)": 0.0145
+    },
+    "all centres 0": {
+      "P(E-1 sign)": 1.0,
+      "P(E-1 and E-1b sign)": 0.0235
+    }
+  }
+}

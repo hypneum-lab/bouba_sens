@@ -2,7 +2,7 @@
 
 **Status:** pilot data only. Nothing here is confirmatory. Pilot data
 are excluded from every confirmatory test (v0.7 §4.3, v0.8 §7, v0.9
-§7). No confirmatory seed (v0.7 1001–1100 and 1106–1159, v0.8
+§7). No confirmatory seed (v0.7 4001–4154, v0.8
 2001–2044, v0.9 3001–3044) was run, sampled or inspected.
 
 **Result-informed changes (disclosed).** The drafts are unfiled, and
@@ -467,6 +467,46 @@ room and D is 0 in 14 of 25 pilot cells; σ̂ is driven by one cell
 (−0.111). The rules are unchanged; whether the design can detect a
 deficit of the SESOI size with such floor-level fusion gain is a
 question for the PI.
+
+## PI decisions of 19:04 (after all pilots) and the runs they asked for
+
+- **Draft headers:** bouba_sens has no filed parent registration
+  (Q6JYN covers dream-of-kiki H1–H4; v0.4–v0.6 never filed); each draft
+  is now stated as a standalone pre-registration.
+- **v0.7 confirmatory seeds:** new block 4001–4150, reserve 4151–4154
+  (repository-wide check: no other use); roster, E1 runner and
+  `run_grid.sh` refuse them before filing.
+- **World class:** every `train` / `lesion` output records it;
+  `aggregate_grid.py --require-world` refuses a grid without it or on
+  the stub.
+- **SNR pilot cell (v0.7 B-1):** dedicated pilot seed **4201**, outside
+  every pool, v0.7 B-1 parameters (Studyforrest, 200 / 100 steps,
+  batch 16, HARD gating, `LOCK_AFTER=100`, `K_STEPS=50`), commit
+  `1ec2a0a`, 3.6 min for the grid. In all 30 cells the recorded SNR
+  starts at +20 dB, reaches −20.00 / −10.00 / +10.00 dB at step 50 and
+  holds it to step 99 (means −9.80 / −2.35 / +12.55 dB), and every
+  output records `StudyforrestRealWorld`; the aggregate with
+  `--require-world StudyforrestRealWorld` passed
+  (`reports/pilots/v07_snr_pilot_seed4201_cells.json`, `…_aggregate.json`,
+  log `reports/pilots/logs/v07_snr_pilot.log`). The seed-0 timing run
+  above is no longer used for this check.
+- **Numbering confirmed:** N18–N20, ADR-0023–0025.
+- **Exact sign test** (registered sensitivity analysis, no symmetry
+  assumption), power at N = 150 under the same planning laws
+  (`reports/pilots/v07_sign_power_n150.json`): B-2 P(equivalent) =
+  1.000 at μ = 0 and −0.02; at the bounds 0.000 when the law's median
+  is at ±0.05, but 0.778 when its pseudo-median is at +0.05 (the
+  skewed law has its median well below its pseudo-median, so the two
+  tests bound different quantities); B-1 P(E-1) = 1.000 but
+  P(E-1 and E-1b) = 0.015 / 0.024 (order-statistic CIs of quantised
+  single-lock values rarely fit strictly inside ±0.025).
+- **v0.8 and v0.9 redesign:** proposals in
+  `docs/osf/redesign-proposals-v08-v09-2026-10-25.md`, with evidence
+  from a read-only re-analysis of the stored v0.8 pilot codes
+  (`reports/pilots/v08_redesign_evidence.json`: 14 equal eigenvalues
+  then a ×117–1,160 cliff; λ₁₃ / λ₁₄ median 1.066; 1 − CKA(Z_pre,
+  Z_control) = 0.97). The new pilots (seeds 2201–2210 and 3201–3205)
+  wait for the PI's review.
 
 ## Findings at 11:00 and how they were resolved
 

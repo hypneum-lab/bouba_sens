@@ -1,14 +1,15 @@
-# OSF pre-registration amendment — bouba_sens v0.9 (decorrelation-window lesion)
+# OSF pre-registration (standalone) — bouba_sens v0.9 (decorrelation-window lesion)
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
-**Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN` (unchanged by this draft)
-**Previous amendment on file:** `amendment-v0.6-sprint10-17.md`
+**Parent pre-registration:** none. **This draft is a standalone pre-registration** (corrected on 2026-10-25, PI decision of 19:04, after the pilots). bouba_sens has no filed pre-registration: OSF `10.17605/OSF.IO/Q6JYN` covers only the dream-of-kiki hypotheses H1–H4 (issue #20), and the bouba_sens amendments v0.4–v0.6 under `docs/osf/` were drafted but never filed. The thresholds 0.05 / 0.10 / 0.02 used here are those of the local, git-dated design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, §1.2); the file name keeps "amendment" for continuity only.
+**Earlier local drafts (never filed):** `amendment-v0.4-studyforrest.md`, `amendment-v0.5-studyforrest-5modal.md`, `amendment-v0.6-sprint10-17.md`
 **Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.8-subspace-shift-2026-10-23.md`
-**Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
+**Tag:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
+**Redesign pending (PI decision 2026-10-25, 19:04, after the pilot):** this draft is **not fileable as drafted**. The pilot showed a problem with the fusion-gain probe (no headroom: majority-class predictions, zero-masking off-distribution, ADR-0022); a redesign is proposed in `docs/osf/redesign-proposals-v08-v09-2026-10-25.md` (section B) and will be piloted on fresh pilot seeds after the PI's review.
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
-**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0025** (proposed — PI confirms at filing; ADR-0021 and ADR-0022 are now used by the Me6 null calibration and paired null, so the proposals are ADR-0023 / 0024 / 0025 for v0.7 / v0.8 / v0.9)
+**Pre-registration id:** **N20** (confirmed by the PI on 2026-10-25, 19:04). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0025** (confirmed by the PI on 2026-10-25, 19:04; ADR-0021 and ADR-0022 are used by the Me6 null calibration and paired null, so v0.7 / v0.8 / v0.9 take ADR-0023 / 0024 / 0025)
 
 > **Design change of 2026-10-25 (disclosed).** The PI replaced the
 > tail held-out split by a class-stratified held-out probe (§3.4)
@@ -389,7 +390,7 @@ budget**, with the remaining recovery confound stated.
 
 **SESOI = 0.05 accuracy units.** D is an accuracy difference, like Me7,
 and 0.05 is the benchmark's registered smallest meaningful accuracy gap
-(B-1 threshold, Q6JYN). Reusing it keeps one effect-size scale across
+(B-1 threshold, design spec §1.2). Reusing it keeps one effect-size scale across
 the benchmark.
 
 **Multiplicity.** D-1 → D-2 is a fixed sequence, each at α = 0.05; the
