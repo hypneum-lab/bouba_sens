@@ -1,5 +1,8 @@
 # bouba_sens
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19701353.svg)](https://doi.org/10.5281/zenodo.19701353)
+[![OSF](https://img.shields.io/badge/OSF-10.17605%2FOSF.IO%2FQ6JYN-lightgrey)](https://doi.org/10.17605/OSF.IO/Q6JYN)
+
 > A benchmark for cross-modal plasticity in artificial neural systems.
 > Hypneum Lab — 2026.
 
@@ -186,7 +189,7 @@ diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 - PyTorch ≥ 2.5
 - `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
   bootstrap CI, null model permutation — Hypneum Lab,
-  DOI `10.5281/zenodo.19666405`)
+  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release)
 
 ## Priority references
 
