@@ -12,12 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Me6 null calibration** (`scripts/me6_null_calibration.py`,
   `reports/me6_null_calibration.json`, ADR-0021 *Proposed*). Simulates
   the B-3 statistic when the 25 accuracies of the 5x5 matrix are equal
-  and differ only by binomial noise at the production probe size
-  n = 64: for base accuracies 0.2-0.5 the median-over-30-trios Me6 is
-  0.13-0.16 under the null (P99 0.15-0.19) and the 0.02 threshold is
-  cleared by 100 % of null grids for n <= 1024. Synthetic-world medians (0.141-0.148) sit inside
-  the null; mock (0.3125) and ECG (0.4453) exceed its P99. No metric,
-  verdict or threshold changed.
+  and differ only by iid binomial noise at the production probe size
+  n = 64 (an idealized reference: shared probe batches and the
+  contiguous Studyforrest windows are not modelled). For base
+  accuracies 0.2-0.5 the median-over-30-trios Me6 is 0.13-0.16 under
+  this reference (P99 0.15-0.19) and the 0.02 threshold is cleared by
+  every simulated grid at n = 64 and 256. Synthetic-world medians
+  (0.141-0.148) show no upper-tail excess over it; mock (0.3125) and
+  ECG (0.4453) exceed its P99, but the reference is not a valid null
+  for their contiguous probes. No metric, verdict or threshold changed.
 - **Subspace-shift metric** (`src/bouba_sens/metrics/subspace.py`).
   Top-k principal-direction shift S between pre/post-lesion codes, with
   rank checks, split-half noise floor and eigengap report, as drafted in

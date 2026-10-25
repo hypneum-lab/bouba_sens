@@ -73,7 +73,8 @@ the three measured values {0.2112, 0.2514, 0.2750}.
 
 `scripts/me6_null_calibration.py` (numpy only, no model, no checkpoint):
 
-- H0: the 25 entries of `M` are independent `Binomial(n, p) / n` draws
+- H0 (the "iid reference"): the 25 entries of `M` are independent
+  `Binomial(n, p) / n` draws, each from n iid Bernoulli outcomes,
   with a common `p`. For each (n, p) it simulates R = 20 000 grids of
   K = 30 trios (600 000 trios), computes Me6 per trio exactly as steps
   2–3 above, then the median over the 30 trios exactly as step 4.
@@ -91,15 +92,42 @@ the three measured values {0.2112, 0.2514, 0.2750}.
   --out reports/me6_null_calibration.json`. The unit test runs the same
   code with R = 200.
 
-**Simplifications.** (i) Within one cell the five queries share one
-probe batch (`seed + 777`), so entries of the same column are correlated
-through the samples; the two entries of each compared pair (i, j) / (j, i)
-come from different cells and different lesion seeds
-(`run_grid.sh`: `seed * 10000 + count`), so each difference is a
-difference of independent estimates, as simulated. The residual
-within-column dependence between the 10 differences is ignored. (ii) H0
-takes one common p; a symmetric null with pair-specific accuracies has
-the same binomial variance to first order, which the p-sweep brackets.
+**Simplifications and what they leave open.** The reference built here
+is an **idealized iid binomial reference**, not the exact null of the
+production pipeline. Three departures are known and none is modelled:
+
+- (i) **Shared probe batch within a column.** Within one cell the five
+  queries share one probe batch (`seed + 777`), so entries of the same
+  column are correlated through the samples. The two entries of each
+  compared pair (i, j) / (j, i) come from different cells and different
+  lesion seeds (`run_grid.sh`: `seed * 10000 + count`), so each single
+  difference is a difference of independent estimates, as simulated;
+  but the 10 differences entering the maximum are not mutually
+  independent, and that dependence changes the distribution of the
+  maximum (in either direction, depending on its sign and strength).
+  Equal true accuracies alone do not imply independent entries.
+- (ii) **One common p.** H0 takes one common p. The p-sweep varies the
+  marginal binomial variance only; it does not vary the covariance
+  between entries and therefore does **not** bracket the effect of (i)
+  or (iii).
+- (iii) **Temporally contiguous probes (Studyforrest mock and real
+  ECG only).** `StudyforrestWorld.sample` draws a contiguous temporal
+  window of `batch_size` rows from a random start
+  (`src/bouba_sens/world/studyforrest.py:63-68`), and the mock labels
+  are a quantised slow drift of an AR(1) scene latent, autocorrelated
+  by construction (`_build_mock_cache`, `:164-207`); the real ECG run
+  uses the same world class and sampler on a recorded time series
+  (ADR-0009). The 64 correct/incorrect outcomes of one probe are then
+  not independent Bernoulli draws, the accuracy need not follow
+  `Binomial(64, p) / 64`, and with positively autocorrelated outcomes
+  its variance is larger than the iid value. Different seeds change the window start but do
+  not remove this within-window dependence. The Gaussian, XOR and
+  Sinusoid worlds draw iid samples, so (iii) does not apply to them.
+
+A dependence-aware null (e.g. a permutation or block-bootstrap null
+built from the saved per-sample outcomes, or simulation with the
+measured within-column and within-window correlation) is required
+before any statement stronger than "relative to the iid reference".
 
 ## Results (`reports/me6_null_calibration.json`)
 
@@ -138,24 +166,38 @@ mean 0.1320, P99 0.1562; p = 0.2514 → 0.1404, P99 0.1562; p = 0.2750 →
 
 Where the fixed 0.02 threshold meets the null P99 of the verdict
 statistic (p = 0.25): P99 = 0.0400 at n = 1024, 0.0286 at 2048, 0.0233
-at 3072, **0.0201 at 4096**, 0.0142 at 8192; P(B-3 passes | H0) stays
-at 1.000 up to n = 1536 and only drops below 5 % at n ≈ 4096 (at
-p = 0.5 it is still 0.59 at n = 4096 and 0.0 at 8192).
+at 3072, **0.0201 at 4096**, 0.0142 at 8192. At p = 0.25 every
+simulated reference grid clears 0.02 up to n = 1536, and the simulated
+pass frequency only drops below 5 % at n ≈ 4096 (at p = 0.5 it is
+still 0.59 at n = 4096 and 0.0 at 8192; at p = 0.9 it is already
+0.9993 at n = 1024 and 0.44 at n = 1536). These are Monte Carlo
+frequencies (R = 20 000 on the main grid, 5 000 on the fine grid),
+not exact probabilities.
 
-### Observed medians against the null at n = 64
+### Observed medians against the iid reference at n = 64
 
 | Grid | Observed median | Null (median-of-30) at the relevant p | Reading |
 |---|---:|---|---|
 | Gaussian (ADR-0004) | 0.1484 | p ≈ 0.25: mean 0.1402, median 0.1406, P95 0.1562, P99 0.1562 | between the null median and P95 |
 | XOR (ADR-0005-v03) | 0.1406 | p = 0.5 (2-class): mean 0.1619, median 0.1562, P99 0.1875 | **below** the null median |
 | Sinusoid (ADR-0005-v03) | 0.1406 | p ≈ 0.25: median 0.1406 | **equals** the null median |
-| Sprint 14c joint (`v0.5_s14c_joint_aggregate.json`) | 0.1094 | p ≈ 0.25: median 0.1406 | below the null median |
-| Studyforrest mock (ADR-0008) | 0.3125 | max P99 over all p: 0.1875 (median-of-30), 0.2812 (per trio) | above every null P99 |
-| Real ECG (ADR-0009) | 0.4453 | idem | above every null P99 |
+| Sprint 14c joint (`v0.5_s14c_joint_aggregate.json`) | 0.1094 | p ≈ 0.25: median 0.1406; simulated P(median ≤ 0.109375) = 0.0013 | **lower tail** of the reference (see below) |
+| Studyforrest mock (ADR-0008) | 0.3125 | max P99 over all p: 0.1875 (median-of-30), 0.2812 (per trio) | above every iid-reference P99; reference not valid for contiguous probes, (iii) |
+| Real ECG (ADR-0009) | 0.4453 | idem | idem |
+
+The Sprint 14c lower-tail frequency is not stored in the JSON; it was
+obtained from the same deterministic stream as the report
+(`simulate_null(64, 0.25, replicates=20000, cells=30, seed=0)` from
+`scripts/me6_null_calibration.py`, fraction of the 20 000 medians
+≤ 0.109375: 0.0013; 0.0015 at p = 0.2514). A value that far below the
+reference median is itself unexpected under the iid reference and is
+more consistent with the reference being mis-specified for this grid
+(e.g. dependence between entries, or an accuracy variance that is not
+binomial) than with a clean match to it.
 
 The "7.4× / 7× the threshold" multiples reported for the synthetic
-worlds (ADR-0004, ADR-0005) are the multiples the null itself produces
-at n = 64: the null P99 of the verdict statistic is 7.4×–9.4× the
+worlds (ADR-0004, ADR-0005) are the multiples the iid reference itself
+produces at n = 64: its P99 of the verdict statistic is 7.4×–9.4× the
 threshold for p between 0.2 and 0.5.
 
 ### Smallest n at which each observed median would exceed the null P99
@@ -171,51 +213,81 @@ probe samples per entry would make it exceed what noise alone produces?"
 | 0.3125 (mock) | 64 / 64 | 64 / 64 | 64 / 64 | 64 / 64 |
 | 0.4453 (ECG) | 64 / 64 | 64 / 64 | 64 / 64 | 64 / 64 |
 
-None of the synthetic values exceeds the null at the n = 64 actually
-used. The full table (all p, both references) is in the JSON under
-`n_min`.
+None of the synthetic values exceeds the iid-reference P99 at the
+n = 64 actually used. These n are computed under the same iid
+reference and inherit its simplifications (i)–(iii); they are orders
+of magnitude, not sample-size guarantees. The full table (all p, both
+references) is in the JSON under `n_min`.
 
 ## Conclusion (prudent)
 
-(a) **At n = 64 the three synthetic worlds are compatible with the
-null.** Gaussian 0.1484, XOR 0.1406 and Sinusoid 0.1406 sit at or below
-the median of what 25 equal accuracies produce by sampling noise; the
-Sprint 14c value 0.109375 is below it. The B-3 PASS on these grids is
-what the rule returns on noise: under H0 the verdict passes with
-probability 1.000 at n = 64, 256 and 1024. These grids therefore provide
-no evidence for an asymmetry; they also do not prove its absence, since
-a true asymmetry of ~0.14 would be hidden at this n (see (c)).
+All statements below are relative to the **idealized iid binomial
+reference** of §Method, not to the exact null of the pipeline
+(simplifications (i)–(iii)).
+
+(a) **At n = 64 the synthetic-world medians show no upper-tail excess
+over the iid reference.** Against p ≈ 0.25 (p = 0.5 for XOR):
+XOR 0.1406 is below the reference median (0.1562); Sinusoid 0.1406
+equals it (0.1406); Gaussian 0.1484 lies above it, between the median
+and the P95 (0.1562); none reaches the reference P99. Sprint 14c
+0.109375 lies in the reference's **lower** tail (simulated frequency
+0.0013 at p = 0.25), which is a sign that the reference is imperfect
+for that grid rather than evidence of a good fit. The fixed rule
+"median > 0.02" is cleared by all 20 000 simulated reference grids at
+every p of the main sweep for n = 64 and n = 256, and at n = 1024 for
+every p except p = 0.9 (0.9993). The B-3 PASS on these grids is
+therefore what the rule also returns under the iid reference; these
+grids do not by themselves provide evidence for an asymmetry. They do
+not prove its absence either: an asymmetry of ~0.14 would be hidden at
+this n (see (c)), and the dependence in (i) shifts the reference in an
+unknown direction.
 
 (b) **The Studyforrest mock (0.3125) and the real ECG (0.4453) exceed
-the null P99 at every p and both references.** Their matrices contain
-heterogeneity beyond binomial noise. This ADR does not explain it;
-ADR-0014 showed it does not align with the pre-registered partition and
+the iid-reference P99 at every p and both references.** This does
+**not** establish heterogeneity beyond sampling noise: both grids use
+temporally contiguous probe windows over autocorrelated data
+(simplification (iii)), for which the accuracy variance can exceed the
+binomial value and the iid reference is not a valid null. Attributing
+the excess to differences between the true accuracies of the matrix
+requires a dependence-aware calibration (block bootstrap or permutation
+over the saved per-sample outcomes, or simulation with the measured
+within-window autocorrelation). Independently of that, ADR-0014 showed
+that the magnitude does not align with the pre-registered partition and
 tracks per-modality entropy, and ADR-0009 notes that three of the five
-ECG modalities are zeroed. It remains to be explained.
+ECG modalities are zeroed. The excess remains to be explained.
 
-(c) **The decisive test is to re-evaluate the existing cells at
-n ≥ 1024.** `query_accuracy` already takes `batch_size`
+(c) **A more informative test is to re-evaluate the existing cells at
+larger n.** `query_accuracy` already takes `batch_size`
 (`loop.py:310`); re-probing the saved lesion-adapted states of the
 historical grids (checkpoints in the `runs/` trees, not in this
-repository) at n = 1024 would lower the null P99 of the verdict
-statistic to 0.040 (p = 0.25) and 0.046 (p = 0.5). A median that stays
-near 0.14 would then be unambiguous; one that falls to ≈ 0.035 would
-confirm (a). Not done here (no checkpoint access, no compute budget).
+repository) at n = 1024 would lower the iid-reference P99 of the
+verdict statistic to 0.040 (p = 0.25) and 0.046 (p = 0.5). A median
+that stays near 0.14 would then be strong evidence against the iid
+reference; one that falls to the 0.03–0.04 range would be consistent
+with (a). Either reading must be confirmed against a dependence-aware
+reference, since (i) persists at any n and (iii) persists for the
+Studyforrest world unless its probes are drawn non-contiguously. Not
+done here (no checkpoint access, no compute budget).
 
-(d) **The fixed 0.02 threshold should be replaced by a threshold
-calibrated on the null at the n actually used** — the P95 or P99 of
-the median-of-K distribution above (0.156 / 0.156 at n = 64, p = 0.25;
-0.180 / 0.1875 at p = 0.5), or equivalently a reported null percentile
-of the observed median. The value 0.02 corresponds to the null P99 only
-around n ≈ 4096 at p ≈ 0.25. Because 0.05 / 0.10 / 0.02 are locked by
-the OSF pre-registration, this is a proposal for an amendment and a
-paper erratum, not a change made here.
+(d) **Proposal: replace the fixed 0.02 threshold by one calibrated on
+a null at the n actually used.** The iid-reference values above are
+indicative only — P95 / P99 of the median-of-K of 0.156 / 0.156 at
+n = 64, p = 0.25 and 0.180 / 0.1875 at p = 0.5 — and should not be
+adopted as thresholds as they stand: because of (i) and (iii) they may
+under- or over-state the true null quantiles. A threshold for adoption
+must come from a dependence-aware null matching the probe design of
+each world (or be reported as the null percentile of the observed
+median under that null). Under the iid reference, 0.02 corresponds to
+the P99 only around n ≈ 4096 at p ≈ 0.25. Because 0.05 / 0.10 / 0.02
+are locked by the OSF pre-registration, this is a proposal for an
+amendment and a paper erratum, not a change made here.
 
 ## What this does and does not change
 
 - Changes nothing in `src/`, `scripts/aggregate_grid.py`, the metrics,
   the thresholds or any recorded verdict. ADR-0004 to ADR-0020 stand as
-  written; this ADR adds the reference distribution they lacked.
+  written; this ADR adds an idealized iid reference distribution they
+  lacked, not a validated null for every world.
 - Does not re-run any cell and uses no checkpoint.
 - Adds a numpy-only script, its test, and the calibration JSON
   (SHA-256 recorded in `reports/MANIFEST.json`).
@@ -223,15 +295,21 @@ paper erratum, not a change made here.
 ## Proposed follow-ups (none done here)
 
 1. PI decision on this ADR (accept / amend / reject).
-2. Re-probe the saved historical cells at n ∈ {1024, 4096} (c) on a
+2. Build a dependence-aware null — block bootstrap or permutation over
+   saved per-sample probe outcomes, or simulation with the measured
+   within-column correlation (i) and within-window autocorrelation
+   (iii) — before using any threshold from (d) or interpreting (b).
+3. Re-probe the saved historical cells at n ∈ {1024, 4096} (c) on a
    machine holding the `runs/` trees; compare with the table above.
-3. For future grids, raise the probe batch (n ≥ 1024: five forward
+4. For future grids, raise the probe batch (n ≥ 1024: five forward
    passes of 1024 samples per cell, no training) and report the observed
-   B-3 median together with its null percentile from this calibration.
-4. OSF amendment + paper erratum for the "7×–22× threshold" wording
+   B-3 median together with its percentile under a null matching the
+   probe design (this iid calibration only for iid-sampled worlds, and
+   only as a reference until (2) is done).
+5. OSF amendment + paper erratum for the "7×–22× threshold" wording
    (`docs/paper/main.tex:328, 402-405`, README, CHANGELOG) once the PI
    decides (d).
-5. Add a `--batch-size` flag to `bouba-sens lesion` / `eval` so the
+6. Add a `--batch-size` flag to `bouba-sens lesion` / `eval` so the
    probe size is recorded in `metadata.json` (currently implicit).
 
 ## References
