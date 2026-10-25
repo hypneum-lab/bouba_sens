@@ -2,13 +2,18 @@
 
 Reads the B-2 pilot output of the E1 runner (``--preset v07-e2``,
 seeds 1101-1105) and computes what section 7 asks for at filing: the
-per-seed SD of the primary (hard readout) Ross Delta-MI-hat and of the
-E-2g (Gumbel) value, the one-sided UCL80 of each SD (df = 4,
-``sd_ucl(sd, 5)``), the exact TOST power at N = 95 for mu = 0 and
-mu = +-0.02 bit (``tost_power_exact``), the N that would give 0.80 and
-the informativeness label. Only the hard readout is the registered
-power computation; the Gumbel numbers are descriptive. N is not changed
-(section 7). Usage:
+per-seed SD of the primary Ross Delta-MI-hat and of the other readout,
+the one-sided UCL80 of each SD (df = 4, ``sd_ucl(sd, 5)``), the exact
+TOST power at N = 95 for mu = 0 and mu = +-0.02 bit
+(``tost_power_exact``), the N that would give 0.80 and the
+informativeness label. Only the primary readout is the registered power
+computation; the other readout is descriptive. N is not changed
+(section 7).
+
+The primary readout is read from the pilot file: ``hard`` for round 1
+(the drafted protocol of 2026-10-24) and ``gumbel`` for round 2 (PI
+decision 2026-10-25, after round 1: Gumbel primary, class-balanced
+probe). Usage:
 
   uv run python scripts/pilots/derive_v07_pilot.py PILOT_JSON OUT_JSON
 """
@@ -69,21 +74,30 @@ def main(src: Path, dst: Path) -> None:
     seeds = [s["seed"] for s in d["per_seed"]]
     if seeds != PILOT_SEEDS or d.get("preset") != "v07-e2":
         raise SystemExit(f"not the v0.7 B-2 pilot: preset={d.get('preset')} seeds={seeds}")
+    primary = d.get("primary_readout")
+    other = {"hard": "gumbel", "gumbel": "hard"}[primary]
+    rows = d["per_seed"]
     out = {
         "source": str(src),
+        "primary_readout": primary,
+        "probe_scheme": d.get("probe_scheme", "contiguous"),
         "N_fixed": N_FIXED,
         "bound_bits": BOUND,
-        "primary_hard_ross": power_block([s["ross_full_delta_bits"] for s in d["per_seed"]]),
-        "e2g_gumbel_ross_descriptive": power_block(
-            [s["ross_full_delta_bits_gumbel"] for s in d["per_seed"]]
+        f"primary_{primary}_ross": power_block([s["ross_full_delta_bits"] for s in rows]),
+        f"{other}_ross_descriptive": power_block(
+            [s[f"ross_full_delta_bits_{other}"] for s in rows]
         ),
-        "ross_zero_distance_points_hard_pre": [
-            s["ross_n_zero_distance_pre"] for s in d["per_seed"]
+        f"ross_zero_distance_points_{primary}_pre": [s["ross_n_zero_distance_pre"] for s in rows],
+        f"ross_zero_distance_points_{primary}_post": [s["ross_n_zero_distance_post"] for s in rows],
+        f"ross_zero_distance_points_{other}_pre": [
+            s[f"ross_n_zero_distance_pre_{other}"] for s in rows
         ],
-        "ross_zero_distance_points_hard_post": [
-            s["ross_n_zero_distance_post"] for s in d["per_seed"]
+        f"ross_zero_distance_points_{other}_post": [
+            s[f"ross_n_zero_distance_post_{other}"] for s in rows
         ],
     }
+    if "probe_label_counts" in rows[0]:
+        out["probe_label_counts"] = {str(s["seed"]): s["probe_label_counts"] for s in rows}
     dst.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps(out, indent=2))
 

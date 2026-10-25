@@ -209,7 +209,8 @@ def test_hard_readout_is_deterministic_on_a_fixed_model() -> None:
     assert torch.equal(a, b)
 
 
-def test_b2_fields_hard_is_primary_and_gumbel_is_suffixed() -> None:
+def test_b2_fields_gumbel_is_primary_and_hard_is_suffixed() -> None:
+    # PI decision 2026-10-25 (after the pilot): Gumbel primary, hard descriptive.
     rng = np.random.default_rng(1)
     labels = np.repeat(np.arange(4), 32)
     hard = (rng.normal(size=(128, 10)), rng.normal(size=(128, 10)))
@@ -217,10 +218,10 @@ def test_b2_fields_hard_is_primary_and_gumbel_is_suffixed() -> None:
     out = runner.b2_readout_fields({"hard": hard, "gumbel": gumbel}, labels)
     ref_h = runner.full_probe_b2(*hard, labels)
     ref_g = runner.full_probe_b2(*gumbel, labels)
-    assert out["primary_readout"] == "hard"
-    for key, val in ref_h.items():
+    assert out["primary_readout"] == "gumbel"
+    for key, val in ref_g.items():
         assert out[key] == val
-        assert out[f"{key}_gumbel"] == ref_g[key]
+        assert out[f"{key}_hard"] == ref_h[key]
     legacy = runner.b2_readout_fields({"gumbel": gumbel}, labels)
     assert legacy == {**ref_g, "primary_readout": "gumbel"}
 
@@ -239,12 +240,16 @@ _V07 = {
 }
 
 
-@pytest.mark.parametrize(("preset", "world"), [("v07-e2", "studyforrest"), ("v07-e2b", "ccfilm")])
-def test_preset_sets_the_frozen_configuration(preset: str, world: str) -> None:
+@pytest.mark.parametrize(
+    ("preset", "world", "scheme"),
+    [("v07-e2", "studyforrest", "balanced"), ("v07-e2b", "ccfilm", "contiguous")],
+)
+def test_preset_sets_the_frozen_configuration(preset: str, world: str, scheme: str) -> None:
     argv = ["--preset", preset, "--seed-list", "1101"]
     args = runner.build_parser().parse_args(argv)
     runner.apply_preset(args, argv)
     assert args.world == world
+    assert args.probe_scheme == scheme
     for key, val in _V07.items():
         assert getattr(args, key) == val, key
 
@@ -270,6 +275,7 @@ def test_no_preset_keeps_legacy_defaults() -> None:
     assert args.world == "gaussian"
     assert (args.train_batch, args.lesion_batch, args.probe_n, args.k_steps) == (None,) * 4
     assert args.probe_demod == "soft"
+    assert args.probe_scheme == "contiguous"
 
 
 def test_preset_world_check_refuses_the_stub(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -294,7 +300,7 @@ def test_legacy_path_skips_amendment_estimators() -> None:
     out = runner.amendment_b2_fields(
         both, {"hard": (pre[:128], post[:128]), "gumbel": (pre[:128], post[:128])}, rows
     )
-    assert out["primary_readout"] == "hard" and "ross_full_delta_bits" in out
+    assert out["primary_readout"] == "gumbel" and "ross_full_delta_bits_hard" in out
 
 
 def test_preset_refuses_explicit_option_equal_to_the_parser_default() -> None:
@@ -309,3 +315,51 @@ def test_preset_refuses_explicit_option_equal_to_the_parser_default() -> None:
     args = runner.build_parser().parse_args(argv)
     runner.apply_preset(args, argv)
     assert args.steps_lesion == 100
+
+
+# --- v0.7 PI decision 2026-10-25: class-balanced E-2 probe ----------------
+
+
+class _IndexedToyWorld:
+    """Minimal world with run-structured labels, ``gather`` and ``dataset_labels``."""
+
+    def __init__(self) -> None:
+        from bouba_sens.world.base import WorldSample
+
+        self._ws = WorldSample
+        self.labels = torch.cat([torch.full((300,), c, dtype=torch.long) for c in (2, 0, 3, 1)])
+
+    @property
+    def dataset_labels(self) -> torch.Tensor:
+        return self.labels
+
+    def gather(self, idx: torch.Tensor):  # type: ignore[no-untyped-def]
+        n = len(idx)
+        return self._ws(
+            z=torch.zeros(n, 1),
+            audio=idx.float()[:, None],
+            vision=torch.zeros(n, 1),
+            tactile=torch.zeros(n, 1),
+            gravity=torch.zeros(n, 1),
+            force=torch.zeros(n, 1),
+            label=self.labels[idx],
+        )
+
+    def sample(self, batch_size: int, seed: int):  # type: ignore[no-untyped-def]
+        return self.gather(torch.arange(batch_size))
+
+
+def test_balanced_probe_scheme_draws_the_class_balanced_rows() -> None:
+    from bouba_sens.probe import class_balanced_probe_indices
+
+    world = _IndexedToyWorld()
+    probe = runner.draw_probe(world, 512, 1101 - 99_999, "balanced")
+    ref = class_balanced_probe_indices(world.labels, seed=1101 - 99_999)
+    assert torch.equal(probe.audio[:, 0].long(), ref)
+    assert torch.bincount(probe.label, minlength=4).tolist() == [128] * 4
+    legacy = runner.draw_probe(world, 512, 5, "contiguous")
+    assert torch.equal(legacy.audio[:, 0].long(), torch.arange(512))
+    with pytest.raises(ValueError, match="512"):
+        runner.draw_probe(world, 256, 0, "balanced")
+    with pytest.raises(ValueError, match="scheme"):
+        runner.draw_probe(world, 512, 0, "other")

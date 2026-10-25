@@ -94,8 +94,9 @@ def capture_probe(*args, **kwargs):
 def capture_probe_readouts(*args, **kwargs):
     """Both v0.7 B-2 readouts from one run: ``(labels, {"hard", "gumbel"})``.
 
-    PI decision 2026-10-24: the hard (argmax) readout is primary and the
-    Gumbel-sampled readout (ADR-0019) is a registered secondary analysis.
+    PI decision 2026-10-25 (after the B-2 pilot, which found the hard
+    readout input-independent): the Gumbel-sampled readout (ADR-0019) is
+    primary and the hard (argmax) readout is reported descriptively.
     Both are captured on the same checkpoint and probe. The Gumbel
     captures run first, exactly where the legacy runner takes them, and
     the hard captures use no RNG, so the Gumbel readout and the training
@@ -118,6 +119,7 @@ def _capture(
     k_steps: int | None = None,
     rng_seed: int | None = None,
     readouts: tuple[str, ...] = ("gumbel",),
+    probe_scheme: str = "contiguous",
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
@@ -144,7 +146,7 @@ def _capture(
     loop = build_loop(world_name, seed, lock_after)
     loop.pretrain(steps_train, batch_size=tb, seed=seed)
 
-    probe = loop.world.sample(batch_size=pn, seed=seed - 99_999)
+    probe = draw_probe(loop.world, pn, seed - 99_999, probe_scheme)
     pre = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
     labels = probe.label.detach().cpu()
 
@@ -157,6 +159,31 @@ def _capture(
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=lb, seed=seed, probe_size=pn)
     post = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
     return labels.numpy(), {r: (pre[r].numpy(), post[r].numpy()) for r in readouts}
+
+
+def draw_probe(world, n: int, seed: int, scheme: str):
+    """B-2 probe: legacy contiguous window or the v0.7 class-balanced probe.
+
+    ``balanced`` (amendment v0.7 section 4.2, PI decision 2026-10-25) is
+    ``bouba_sens.probe.class_balanced_probe_indices`` on the world labels
+    with ``seed`` (= s - 99_999): 4 classes x 8 windows x 16 frames, so
+    ``n`` must be 512. Both schemes use only their own generator.
+    """
+    if scheme == "contiguous":
+        return world.sample(batch_size=n, seed=seed)
+    if scheme == "balanced":
+        from bouba_sens.probe import (
+            PROBE_N_CLASSES,
+            PROBE_WINDOW,
+            PROBE_WINDOWS_PER_CLASS,
+            class_balanced_probe_indices,
+        )
+
+        size = PROBE_N_CLASSES * PROBE_WINDOWS_PER_CLASS * PROBE_WINDOW
+        if n != size:
+            raise ValueError(f"the balanced probe has {size} rows; got probe_n={n}")
+        return world.gather(class_balanced_probe_indices(world.dataset_labels, seed=seed))
+    raise ValueError(f"unknown probe scheme {scheme!r}")
 
 
 def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict[str, float]:
@@ -183,20 +210,17 @@ def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict
 
 
 def b2_readout_fields(readouts, labels: np.ndarray) -> dict:
-    """Per-seed B-2 fields: primary readout unsuffixed, Gumbel suffixed.
+    """Per-seed B-2 fields: Gumbel (primary) unsuffixed, hard suffixed.
 
-    With both readouts the hard one is primary (v0.7, PI 2026-10-24) and
-    the Gumbel one is reported with a ``_gumbel`` suffix; it never
-    changes the primary label. With the Gumbel readout alone (legacy) it
-    fills the unsuffixed fields.
+    The Gumbel readout is primary (v0.7, PI decision 2026-10-25, after
+    the pilot) and fills the unsuffixed fields; the hard readout, when
+    captured, is reported with a ``_hard`` suffix and never changes the
+    primary label.
     """
-    primary = "hard" if "hard" in readouts else "gumbel"
-    out = dict(full_probe_b2(*readouts[primary], labels))
-    if primary == "hard" and "gumbel" in readouts:
-        out.update(
-            {f"{k}_gumbel": v for k, v in full_probe_b2(*readouts["gumbel"], labels).items()}
-        )
-    out["primary_readout"] = primary
+    out = dict(full_probe_b2(*readouts["gumbel"], labels))
+    if "hard" in readouts:
+        out.update({f"{k}_hard": v for k, v in full_probe_b2(*readouts["hard"], labels).items()})
+    out["primary_readout"] = "gumbel"
     return out
 
 
@@ -293,7 +317,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--probe-demod",
         choices=("soft", "both"),
         default="soft",
-        help="soft = legacy Gumbel readout; both = v0.7 hard primary + Gumbel secondary",
+        help="soft = Gumbel readout only; both = v0.7 Gumbel primary + hard (descriptive)",
+    )
+    ap.add_argument(
+        "--probe-scheme",
+        choices=("contiguous", "balanced"),
+        default="contiguous",
+        help="contiguous = legacy 1 window; balanced = v0.7 E-2 class-balanced probe",
     )
     ap.add_argument(
         "--preset",
@@ -319,8 +349,11 @@ _V07_FROZEN = {
 PRESETS = {
     # Amendment v0.7, PI decisions 2026-10-23/24: E-2 on Studyforrest,
     # E-2b on the CC-film bridge, same frozen configuration otherwise.
-    "v07-e2": {"world": "studyforrest", **_V07_FROZEN},
-    "v07-e2b": {"world": "ccfilm", **_V07_FROZEN},
+    # PI decision 2026-10-25: E-2 uses the class-balanced probe; CC-film
+    # (600 frames, label runs shorter than 16) keeps the contiguous probe,
+    # which covers 512 of its 600 frames.
+    "v07-e2": {"world": "studyforrest", "probe_scheme": "balanced", **_V07_FROZEN},
+    "v07-e2b": {"world": "ccfilm", "probe_scheme": "contiguous", **_V07_FROZEN},
 }
 _EXPECTED_WORLD = {
     "studyforrest": "StudyforrestRealWorld",
@@ -420,9 +453,10 @@ def main() -> None:
             k_steps=args.k_steps,
             rng_seed=seed if args.seed_list is not None else None,
             readouts=("gumbel", "hard") if args.probe_demod == "both" else ("gumbel",),
+            probe_scheme=args.probe_scheme,
         )
-        # Legacy estimators run on the primary readout (hard under "both").
-        pre, post = readouts["hard" if args.probe_demod == "both" else "gumbel"]
+        # Legacy estimators run on the primary (Gumbel) readout.
+        pre, post = readouts["gumbel"]
         n_samples, d_fused = pre.shape
 
         # --- E1.1 dimensionality of the Me3 probe representation ---
@@ -469,6 +503,9 @@ def main() -> None:
         per_seed.append(
             {
                 "seed": seed,
+                "probe_label_counts": {
+                    str(c): int(n) for c, n in zip(*np.unique(labels, return_counts=True), strict=True)
+                },
                 "N": n_samples,
                 "d_fused": d_fused,
                 "D_participation_ratio": d_pr,
@@ -518,8 +555,9 @@ def main() -> None:
         "probe_n": args.batch_size if args.probe_n is None else args.probe_n,
         "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
         "probe_demod": args.probe_demod,
+        "probe_scheme": args.probe_scheme,
         "preset": args.preset,
-        "primary_readout": "hard" if args.probe_demod == "both" else "gumbel",
+        "primary_readout": "gumbel",
         "amendment_b2": bool(per_seed and "ross_full_delta_bits" in per_seed[0]),
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
@@ -537,8 +575,8 @@ def main() -> None:
         ),
         **(
             {
-                "ross_full_delta_gumbel": ci([s["ross_full_delta_bits_gumbel"] for s in per_seed]),
-                "ksg_full_delta_gumbel": ci([s["ksg_full_delta_bits_gumbel"] for s in per_seed]),
+                "ross_full_delta_hard": ci([s["ross_full_delta_bits_hard"] for s in per_seed]),
+                "ksg_full_delta_hard": ci([s["ksg_full_delta_bits_hard"] for s in per_seed]),
             }
             if args.probe_demod == "both"
             else {}

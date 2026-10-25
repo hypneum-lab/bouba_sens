@@ -6,19 +6,20 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
 
     {"e1": [{"seed": 1001, "locks": {"50": v, "75": v, "100": v,
              "125": v, "150": v}, "nolock": v}, ...],
-     "e2": [{"seed": 1001, "primary_readout": "hard",
+     "e2": [{"seed": 1001, "primary_readout": "gumbel",
              "ross_full_delta_bits": v,
-             "ross_full_delta_bits_gumbel": v}, ...],
+             "ross_full_delta_bits_hard": v}, ...],
      "substitutions": [{"replaced": 1007, "by": 1096, "reason": "crash"}]}
 
 ``analyse_confirmatory`` is the only confirmatory entry point (used by
 ``main``). It refuses any input that is not exactly the frozen roster
 1001-1095 after documented reserve substitutions (1096-1099, used in
 order, at most 4, each with a reason), and any B-2 record that is not
-from the hard primary readout or lacks the Gumbel secondary value.
-E-2g (Gumbel readout) is reported next to E-2 with the same statistics
-but no label of its own; a difference between the two readouts is
-reported and never changes the E-2 label. ``tost`` stays a generic,
+from the Gumbel primary readout or lacks the hard-readout value (PI
+decision 2026-10-25, after the B-2 pilot). E-2h (hard readout,
+descriptive) is reported next to E-2 with the same statistics but no
+label of its own; a difference between the two readouts is reported
+and never changes the E-2 label. ``tost`` stays a generic,
 reusable function.
 
 Decision (frozen): TOST with two one-sided one-sample t-tests at
@@ -181,11 +182,11 @@ def _check_roster(rows: Sequence[dict[str, Any]], expected: Sequence[int], what:
 
 def _check_e2_provenance(rows: Sequence[dict[str, Any]]) -> None:
     for r in rows:
-        if r.get("primary_readout") != "hard":
-            raise ValueError(f"seed {r['seed']}: primary_readout must be 'hard' (section 4.2)")
-        for key in ("ross_full_delta_bits", "ross_full_delta_bits_gumbel"):
+        if r.get("primary_readout") != "gumbel":
+            raise ValueError(f"seed {r['seed']}: primary_readout must be 'gumbel' (section 4.2)")
+        for key in ("ross_full_delta_bits", "ross_full_delta_bits_hard"):
             if key not in r:
-                raise ValueError(f"seed {r['seed']}: missing {key} (gumbel readout E-2g)")
+                raise ValueError(f"seed {r['seed']}: missing {key} (hard readout E-2h)")
 
 
 def _unlabelled(res: dict[str, Any]) -> dict[str, Any]:
@@ -196,17 +197,17 @@ def _unlabelled(res: dict[str, Any]) -> dict[str, Any]:
 
 
 def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """E-2 (hard readout, decides) and E-2g (Gumbel readout, reported, no label)."""
+    """E-2 (Gumbel readout, decides) and E-2h (hard readout, reported, no label)."""
     e2 = analyse_e2(rows)
-    g = tost([float(r["ross_full_delta_bits_gumbel"]) for r in rows], B2_BOUND)
-    differs = classify(*g["ci90"], B2_BOUND) != e2["label"]
+    h = tost([float(r["ross_full_delta_bits_hard"]) for r in rows], B2_BOUND)
+    differs = classify(*h["ci90"], B2_BOUND) != e2["label"]
     return {
         "E-2": e2,
-        "E-2g": _unlabelled(g),
+        "E-2h": _unlabelled(h),
         "readout_disagreement": {
             "differs": differs,
             "note": (
-                "descriptive: the Gumbel 90 % CI falls in a different section-9 "
+                "descriptive: the hard-readout 90 % CI falls in a different section-9 "
                 "category than E-2; the E-2 label is unchanged"
                 if differs
                 else "descriptive: both readouts fall in the same section-9 category"
@@ -216,7 +217,7 @@ def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
 
 
 def analyse_confirmatory(data: dict[str, Any]) -> dict[str, Any]:
-    """Validated confirmatory analysis: frozen roster, hard-readout provenance."""
+    """Validated confirmatory analysis: frozen roster, Gumbel-readout provenance."""
     subs = list(data.get("substitutions", []))
     expected = resolve_roster(subs)
     result: dict[str, Any] = {"roster": {"n": len(expected), "substitutions": subs}}

@@ -134,14 +134,14 @@ def test_duplicate_seeds_rejected() -> None:
 ROSTER = list(range(1001, 1096))
 
 
-def _e2_rows(seeds, hard=0.0, gumbel=0.0, sd=0.01, readout="hard", seed=0):  # type: ignore[no-untyped-def]
+def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel", seed=0):  # type: ignore[no-untyped-def]
     rng = np.random.default_rng(seed)
     return [
         {
             "seed": s,
             "primary_readout": readout,
-            "ross_full_delta_bits": float(hard + rng.normal(0, sd)),
-            "ross_full_delta_bits_gumbel": float(gumbel + rng.normal(0, sd)),
+            "ross_full_delta_bits": float(gumbel + rng.normal(0, sd)),
+            "ross_full_delta_bits_hard": float(hard + rng.normal(0, sd)),
         }
         for s in seeds
     ]
@@ -174,12 +174,12 @@ def test_confirmatory_rejects_pilot_and_unlisted_seeds() -> None:
         an.analyse_confirmatory({"e2": _e2_rows(seeds)})
 
 
-def test_confirmatory_rejects_gumbel_primary_or_missing_readout() -> None:
-    with pytest.raises(ValueError, match="hard"):
-        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="gumbel")})
-    rows = _e2_rows(ROSTER)
-    del rows[3]["ross_full_delta_bits_gumbel"]
+def test_confirmatory_rejects_hard_primary_or_missing_readout() -> None:
     with pytest.raises(ValueError, match="gumbel"):
+        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="hard")})
+    rows = _e2_rows(ROSTER)
+    del rows[3]["ross_full_delta_bits_hard"]
+    with pytest.raises(ValueError, match="hard"):
         an.analyse_confirmatory({"e2": rows})
 
 
@@ -202,14 +202,14 @@ def test_reserve_substitutions_are_documented_and_in_order() -> None:
         an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": noreason})
 
 
-def test_e2g_reported_alongside_without_label_and_disagreement_flagged() -> None:
-    rows = _e2_rows(ROSTER, hard=0.0, gumbel=0.08, sd=0.01)
+def test_e2h_reported_alongside_without_label_and_disagreement_flagged() -> None:
+    rows = _e2_rows(ROSTER, gumbel=0.0, hard=0.08, sd=0.01)
     out = an.analyse_confirmatory({"e2": rows})["B-2"]
     assert out["E-2"]["label"] == "equivalent"
-    e2g = out["E-2g"]
-    assert "label" not in e2g and "label" not in e2g["bootstrap"]
-    assert e2g["n"] == 95 and e2g["bound"] == 0.05
-    assert e2g["ci90"][0] > 0.05
+    e2h = out["E-2h"]
+    assert "label" not in e2h and "label" not in e2h["bootstrap"]
+    assert e2h["n"] == 95 and e2h["bound"] == 0.05
+    assert e2h["ci90"][0] > 0.05
     assert out["readout_disagreement"]["differs"] is True
     same = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
     assert same["readout_disagreement"]["differs"] is False
