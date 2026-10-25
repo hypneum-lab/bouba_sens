@@ -7,8 +7,8 @@
 **Amendment tag on file:** `bouba_sens/v0.9-decorrelation-window` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule of the D-4 lesion phase (§4).
-**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0022 / 0023 / 0024, ADR-0021 having been used by PR #19); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
-**Verdict ADR:** **ADR-0024** (proposed — PI confirms at filing)
+**Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Verdict ADR:** **ADR-0025** (proposed — PI confirms at filing; ADR-0021 and ADR-0022 are now used by the Me6 null calibration and paired null, so the proposals are ADR-0023 / 0024 / 0025 for v0.7 / v0.8 / v0.9)
 
 > **Design change of 2026-10-25 (disclosed).** The PI replaced the
 > tail held-out split by a class-stratified held-out probe (§3.4)
@@ -745,7 +745,7 @@ cross and a mitigation arm (cross-sensor reconstruction), both as
 **secondary** analyses (§3.5, D-6 / D-7), because their power at the
 planned N is adequate only for large effects (§7). Planning SD for N = the conservative χ² UCL80 with
 df = 4 (× 1.558, §7). Pre-registration id **N20**, verdict ADR
-**ADR-0024** (shifted from ADR-0023 on 2026-10-25), amendment v0.9, as proposed in the header (proposed — PI
+**ADR-0025** (shifted twice on 2026-10-25: ADR-0021 and ADR-0022 are now used), amendment v0.9, as proposed in the header (proposed — PI
 confirms at filing).
 
 No design decision remains open. Filing still needs the prerequisites
