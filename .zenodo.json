@@ -31,7 +31,7 @@
       "scheme": "doi"
     },
     {
-      "identifier": "10.5281/zenodo.19666405",
+      "identifier": "10.5281/zenodo.19656342",
       "relation": "isDerivedFrom",
       "resource_type": "software",
       "scheme": "doi"
@@ -46,5 +46,5 @@
   "communities": [
     {"identifier": "hypneum-lab"}
   ],
-  "notes": "Built on nerve-wml v1.5.3 (DOI 10.5281/zenodo.19666405). Reproducible via `bash scripts/reproduce_paper_v01.sh`; byte-identity verification via `scripts/sha256_manifest.py` against `reports/MANIFEST.json`."
+  "notes": "Built on nerve-wml v1.5.3+ (concept DOI 10.5281/zenodo.19656342). Reproducible via `bash scripts/reproduce_paper_v01.sh`; byte-identity verification via `scripts/sha256_manifest.py` against `reports/MANIFEST.json`."
 }

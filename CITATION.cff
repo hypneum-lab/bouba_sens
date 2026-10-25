@@ -11,7 +11,11 @@ date-released: "2026-05-10"
 license: MIT
 repository-code: "https://github.com/hypneum-lab/bouba_sens"
 url: "https://github.com/hypneum-lab/bouba_sens"
+doi: "10.5281/zenodo.19701353"
 identifiers:
+  - type: doi
+    value: "10.5281/zenodo.19701353"
+    description: "Zenodo concept DOI (resolves to the latest archived release)"
   - type: other
     value: "OSF:10.17605/OSF.IO/Q6JYN"
     description: "OSF pre-registration, locked 2026-04-19, amendment v0.6 2026-04-23"
