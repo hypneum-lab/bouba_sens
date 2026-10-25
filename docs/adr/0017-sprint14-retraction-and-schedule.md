@@ -1,4 +1,9 @@
-# ADR-0017 — Sprint 14: per-seed retraction + phase-transition schedule
+# ADR-0017a — Sprint 14: per-seed retraction + phase-transition schedule
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0017 is shared
+> with `0017-sprint10-mean-statistic-verdict.md` (ADR-0017b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — ADR-0016 B-2 migration-peak claim is
 **retracted**; codebook entropy is the wrong resolution; B-grid

@@ -1,4 +1,9 @@
-# ADR-0007 — Biological-adjacent bridge stub (StudyforrestWorld)
+# ADR-0007a — Biological-adjacent bridge stub (StudyforrestWorld)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0007 is shared
+> with `0007-cli-paired-runs.md` (ADR-0007b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-20

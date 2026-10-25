@@ -1,4 +1,9 @@
-# ADR-0014 — B-3 partition-control verdict (Sprint 9 gateway)
+# ADR-0014b — B-3 partition-control verdict (Sprint 9 gateway)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0014 is shared
+> with `0014-compound-lock-gumbel-transducer.md` (ADR-0014a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-24

@@ -1,4 +1,9 @@
-# ADR-0015 — Unreachability of the 95% threshold for the partition-control test (formal lemma)
+# ADR-0015b — Unreachability of the 95% threshold for the partition-control test (formal lemma)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0015 is shared
+> with `0015-gumbel-tau-scan.md` (ADR-0015a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted
 **Date:** 2026-04-24

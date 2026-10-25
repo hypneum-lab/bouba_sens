@@ -1,4 +1,9 @@
-# ADR-0016 — Finer tau + codebook freeze (Sprint 13)
+# ADR-0016a — Finer tau + codebook freeze (Sprint 13)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0016 is shared
+> with `0016-next-gen-partition-control-design.md` (ADR-0016b). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — B-2 sweet spot is bimodal; codebook freeze destroys B-1 peak
 **Date:** 2026-04-22
