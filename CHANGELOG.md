@@ -19,9 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   was never compared with a null (README status tables updated). The
   seed-1 excess (3 trios in their own null's upper tail) is descriptive
   only.
+- **B-3 status (Studyforrest mock): uncalibrated → not conclusive**
+  (ADR-0022, `reports/me6_paired_null_mock*.json`). Fresh 150-cell mock
+  grid: median 0.305 (ADR-0008: 0.3125), mean query accuracy 0.240 =
+  chance. Rejected by the iid and per-item paired nulls (p < 5e-5) and
+  by block-8 flips (p = 1e-4), compatible under block flips of 16 / 32
+  items (p = 0.06 / 0.31). Entry accuracies are over-dispersed (sd 0.124
+  vs 0.053 binomial; lag-1 autocorrelation 0.36) by the contiguous
+  windows, so per-item nulls are invalid there; the block length is left
+  to the PI. **Real ECG: not recomputed** (no data cache or extraction
+  script on electron-server); 0.445 stays uncalibrated.
 
 ### Added
 
+- **Block sign flips** (`scripts/me6_paired_null.py --block N`): one
+  shared sign per block of N consecutive probe items, for contiguous-
+  window probes; `--block 1` (default) reproduces the per-item null.
 - **Me6 paired null** (`scripts/me6_paired_null.py`,
   `reports/me6_paired_null.json`, ADR-0022 *Accepted* 2026-10-25). The B-3 median is
   compared with a paired sign-flip null built from the saved per-item

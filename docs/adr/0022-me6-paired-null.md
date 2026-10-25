@@ -176,6 +176,68 @@ audio|vision, …): no single pair carries the excess.
   maxima in their own null's upper tail. Whether this is seed-1
   structure or multiplicity (30 trios × 10 pairs) is not decided here.
 
+## Results — Studyforrest mock world (`reports/me6_paired_null_mock*.json`)
+
+Grid: same method as the Gaussian grid (`WORLD=studyforrest`, no
+`BOUBA_SENS_STUDYFORREST_DATA`, i.e. `StudyforrestWorld` mode `mock`:
+AR(1) scene latent, audio + vision live, tactile / gravity / force
+zeroed), commit `369fcd3`, electron-server, 2026-10-25 14:40–16:23,
+150/150 cells, 30/30 trios, 0 failure (mean 158 s per cell under load).
+`aggregate_grid.py` on it gives `b3.median_me6_max_abs = 0.3047`
+(ADR-0008 reported 0.3125), identical to `median.observed`.
+
+| null (median over 30 trios) | observed | null mean | P99 | P(null ≥ obs) | trios with P < 0.05 |
+|---|---:|---:|---:|---:|---:|
+| iid binomial (ADR-0021, p = 0.2395) | 0.3047 | 0.1381 | 0.1562 | < 5·10⁻⁵ | — |
+| paired, per-item flips (block 1) | 0.3047 | 0.1385 | 0.1562 | < 5·10⁻⁵ (0 / 20 000) | 22 / 30 |
+| paired, block 8 | 0.3047 | 0.2361 | 0.2734 | 1·10⁻⁴ | 8 / 30 |
+| paired, block 16 | 0.3047 | 0.2743 | 0.3125 | 0.0585 | 0 / 30 |
+| paired, block 32 | 0.3047 | 0.2905 | 0.3203 | 0.3063 | 0 / 30 |
+
+Facts that bear on the reading:
+
+- **Mean query accuracy 0.2395** (per query: audio 0.248, vision 0.245,
+  tactile 0.234, gravity 0.236, force 0.235) — 4-class chance, as on the
+  Gaussian grid. The zero-masking probe defect of §Verdict applies here
+  too.
+- **Over-dispersed entries.** The standard deviation of the 750 entry
+  accuracies is 0.124, against 0.053 for a binomial at the same mean
+  (0.063 vs 0.054 on the Gaussian grid). The within-probe lag
+  autocorrelation of the paired differences is 0.36 (lag 1), 0.25 (2),
+  0.12 (4), 0.02 (8) on the mock and ≤ 0.03 in absolute value at every
+  lag on the Gaussian grid: contiguous windows over an autocorrelated
+  label stream make each 64-item accuracy much noisier than iid noise,
+  which is exactly ADR-0021 departure (iii).
+- **Block-length sensitivity.** The excess survives per-item flips and
+  blocks of 8 (where the measured autocorrelation has vanished), but not
+  blocks of 16 (p = 0.06) or 32 (p = 0.31). With n = 64, blocks of 16 /
+  32 leave only 4 / 2 independent signs per pair, so those nulls are
+  coarse and low-powered; the window-level variation of the label mix is
+  not captured by a lag autocorrelation computed within the window.
+
+**Reading (descriptive; not a PI verdict):** the mock B-3 median (0.30)
+is far above the iid and per-item nulls, but those nulls are invalid for
+contiguous probes; under block flips long enough to keep the
+window-level dependence it is compatible with the null (p = 0.06 at
+block 16, 0.31 at block 32), and it is rejected at block 8. The test is
+therefore **not conclusive** and depends on a block length that the
+data at n = 64 cannot pin down. With every query at chance accuracy,
+the excess is more plausibly the over-dispersion of window-sampled
+accuracies than an asymmetry of performance. The choice of block length
+(and hence the mock verdict) is left to the PI.
+
+## Results — real ECG world (ADR-0009): not recomputed
+
+Not run. The ECG grid needs the `data/studyforrest_real/` cache
+(`audio.pt`, `vision.pt`, `labels.pt` built from
+`scipy/dataset-ecg/ecg.dat`, ADR-0009). `data/` is gitignored, no such
+cache exists on electron-server, the repository contains no script that
+builds it (ADR-0009 describes the extraction in prose only), and the
+electron-server venv lacks `pooch`, which `scipy.datasets` needs to
+download the trace. The 0.4453 of ADR-0009 therefore stays
+**uncalibrated**; given the mock results, a block-flip null with a
+pre-registered block length is the minimum before reading it.
+
 ## Verdict (PI decision 2026-10-25)
 
 Accepted by the PI on 2026-10-25 with the following verdict (original in
@@ -208,7 +270,9 @@ a finding.
    exchangeable, which holds for the iid-sampled Gaussian, XOR and
    Sinusoid worlds. The Studyforrest world draws contiguous temporal
    windows (ADR-0021 (iii)); for it a **block** sign flip (contiguous
-   runs of items flipped together) is needed. Not implemented here.
+   runs of items flipped together) is needed. Implemented as `--block`
+   (`a69a1fd`); the block length is not identified at n = 64 (mock
+   results above).
 2. **Independent signs across the 10 pairs.** Pairs sharing a cell
    (e.g. (a, b) and (a, c) both use cell a's probe) have correlated
    differences; the null keeps their observed magnitudes but flips their
@@ -227,9 +291,11 @@ a finding.
    have very different accuracies per modality (ADR-0014's entropy
    reading) and still satisfy H0; conversely, rejecting H0 says nothing
    about the pre-registered 3+2 partition.
-5. **One grid, one world.** The computation covers a fresh Gaussian grid
-   produced for this ADR; the historical grids have no per-item files
-   and cannot be re-analysed without re-running them (ADR-0021 (c)).
+5. **Two fresh grids.** The computation covers fresh Gaussian and
+   Studyforrest-mock grids produced for this ADR; the historical grids
+   have no per-item files and cannot be re-analysed without re-running
+   them (ADR-0021 (c)); the real-ECG grid could not be re-run (no data
+   cache on electron-server).
 
 ## What this does and does not change
 
@@ -245,7 +311,9 @@ a finding.
    single-modality queries at chance, mean accuracy 0.254) before any
    new B-3 reading on any world; a probe whose per-modality accuracy is
    above chance is required for Me6 to measure anything.
-2. Block sign flips for the Studyforrest world; a `--block` option.
+2. ~~Block sign flips~~ — `--block` added; PI to fix (pre-register) the
+   block length for contiguous-window worlds, then rebuild the ECG cache
+   with a committed extraction script and run the ECG grid.
 3. Re-run the XOR and Sinusoid grids with the per-item files and apply
    the same null (iid worlds, so limit 1 does not apply).
 4. Decide whether future grids should share one probe seed across the
