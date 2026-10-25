@@ -1,6 +1,6 @@
 # ADR-0021 — Me6 null calibration: the B-3 statistic under sampling noise alone
 
-**Status:** Proposed — to be validated by the PI. This ADR modifies no
+**Status:** Accepted — validated by the PI (2026-10-25). This ADR modifies no
 metric, no verdict, no past ADR and no locked threshold.
 **Date:** 2026-10-25
 **Sprint:** post-v0.5.9 audit (follows ADR-0020)

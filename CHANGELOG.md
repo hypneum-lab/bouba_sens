@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Me6 null calibration** (`scripts/me6_null_calibration.py`,
-  `reports/me6_null_calibration.json`, ADR-0021 *Proposed*). Simulates
+  `reports/me6_null_calibration.json`, ADR-0021 *Accepted*). Simulates
   the B-3 statistic when the 25 accuracies of the 5x5 matrix are equal
   and differ only by iid binomial noise at the production probe size
   n = 64 (an idealized reference: shared probe batches and the
