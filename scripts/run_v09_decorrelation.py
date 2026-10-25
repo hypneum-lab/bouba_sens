@@ -44,10 +44,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--seeds", type=_seeds, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
     args = ap.parse_args()
     seeds = args.seeds
     if not (set(seeds) <= set(PILOT_SEEDS) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.9 pilot seeds or all confirmatory-pool seeds")
+    if set(seeds) <= set(CONFIRMATORY_POOL) and not args.osf_filed:
+        raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
     if args.out.exists():
         raise SystemExit(f"{args.out} exists; refusing to overwrite")
     torch.use_deterministic_algorithms(True)
@@ -56,7 +59,11 @@ def main() -> None:
         data_dir=Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"]),
         stratified_probe=True,
     )
-    out: dict[str, object] = {"world_class": check_world(world), "seeds": seeds}
+    out: dict[str, object] = {
+        "world_class": check_world(world),
+        "seeds": seeds,
+        "osf_filed": args.osf_filed,
+    }
     cells = []
     t0 = time.monotonic()
     for s in seeds:

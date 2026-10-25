@@ -52,7 +52,7 @@ def _block(ckpt=None, **over) -> BlockCodes:  # type: ignore[no-untyped-def]
     if ckpt is None:
         ckpt = _make_loop().pretrain(steps=3, batch_size=4, seed=0)
     kw = {
-        "seed": 2001,
+        "seed": 9001,
         "lock": 25,
         "modalities": ("audio", "vision"),
         "snr_floors": (-20.0, 10.0),
@@ -72,7 +72,7 @@ def test_frozen_protocol_constants() -> None:
 
 def test_block_has_control_and_all_cells() -> None:
     b = _block()
-    assert (b.seed, b.lock) == (2001, 25)
+    assert (b.seed, b.lock) == (9001, 25)
     assert set(b.z_post) == {
         ("audio", -20.0),
         ("audio", 10.0),
@@ -88,7 +88,7 @@ def test_all_arms_share_probe_labels_and_z_pre() -> None:
     b = _block()
     assert b.probe_labels.shape == (16,)
     # The probe is the documented draw world.sample(n, seed=phase2_seed - 99_999).
-    expected = GaussianWorld(seed=0).sample(batch_size=16, seed=2001 - 99_999).label
+    expected = GaussianWorld(seed=0).sample(batch_size=16, seed=9001 - 99_999).label
     assert torch.equal(b.probe_labels, expected)
 
 
@@ -141,12 +141,12 @@ def test_capture_averages_k_gumbel_draws() -> None:
     assert not torch.equal(k2.z_pre, k1.z_pre)
     loop = _make_loop()
     loop.restore(ckpt)
-    probe = loop.world.sample(batch_size=16, seed=2001 - 99_999)
+    probe = loop.world.sample(batch_size=16, seed=9001 - 99_999)
 
     def cap() -> torch.Tensor:
         with torch.no_grad():
             car = {m: loop.sensories[m].step(getattr(probe, m)) for m in loop.sensories}
             return loop.nerve.fuse(car).flatten(1)
 
-    ref = torch.stack(gumbel_draws(cap, 2001, 0, 2)).mean(0)
+    ref = torch.stack(gumbel_draws(cap, 9001, 0, 2)).mean(0)
     assert torch.allclose(k2.z_pre, ref)

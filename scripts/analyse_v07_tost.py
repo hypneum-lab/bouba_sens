@@ -13,7 +13,7 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
 
 ``analyse_confirmatory`` is the only confirmatory entry point (used by
 ``main``). It refuses any input that is not exactly the frozen roster
-1001-1095 after documented reserve substitutions (1096-1099, used in
+1001-1100 and 1106-1155 (N = 150) after documented reserve substitutions (1156-1159, used in
 order, at most 4, each with a reason), and any B-2 record that is not
 from the Gumbel primary readout or lacks the hard-readout value (PI
 decision 2026-10-25, after the B-2 pilot). E-2h (hard readout,
@@ -53,8 +53,12 @@ ALPHA = 0.05
 B1_BOUND = 0.025
 B2_BOUND = 0.05
 LOCKS: tuple[str, ...] = ("50", "75", "100", "125", "150")
-ROSTER: tuple[int, ...] = tuple(range(1001, 1096))  # N = 95 (section 8)
-RESERVE: tuple[int, ...] = (1096, 1097, 1098, 1099)
+# N = 150 (PI decision 2026-10-25, 13:32; section 8): 1001-1100 and
+# 1106-1155, skipping the B-2 pilot seeds 1101-1105; reserve 1156-1159.
+ROSTER: tuple[int, ...] = tuple(range(1001, 1101)) + tuple(range(1106, 1156))
+RESERVE: tuple[int, ...] = (1156, 1157, 1158, 1159)
+SWITCH_TOP1 = 0.25  # bouba_sens.readout (v0.7 section 4.2)
+SWITCH_BETWEEN = 0.10
 N_BOOT = 10_000
 BOOT_SEED = 20261023
 
@@ -153,6 +157,31 @@ def hl_ci(values: Sequence[float], level: float) -> tuple[float, float, float]:
     return float(np.median(walsh)), float(walsh[c - 1]), float(walsh[m - c])
 
 
+def signed_rank_p(values: Sequence[float], theta: float, alternative: str) -> float:
+    """Exact signed-rank p-value for H0: centre = theta, dual to ``hl_ci``.
+
+    T+ = #{Walsh averages > theta} + 0.5 #{Walsh averages = theta}; under
+    H0 (untied, continuous, symmetric) T+ has the law of ``signed_rank_cdf``.
+    ``greater``: P(T+ >= t); ``less``: P(T+ <= t). With no Walsh average
+    equal to theta, ``p < alpha`` on both sides is exactly the event that
+    the 1 - 2 alpha ``hl_ci`` excludes theta. Ties (quantised data) are
+    counted as one half and the untied law is used (stated approximation).
+    """
+    x = np.asarray(values, dtype=float)
+    i, j = np.triu_indices(x.size)
+    w = (x[i] + x[j]) / 2
+    t = float((w > theta).sum()) + 0.5 * float((w == theta).sum())
+    cdf = signed_rank_cdf(x.size)
+    m = w.size
+    if alternative == "greater":
+        k = math.ceil(t)  # P(T+ >= t)
+        return 1.0 if k <= 0 else float(1.0 - cdf[k - 1]) if k <= m else 0.0
+    if alternative == "less":
+        k = math.floor(t)  # P(T+ <= t)
+        return 0.0 if k < 0 else float(cdf[min(k, m)])
+    raise ValueError(f"unknown alternative {alternative!r}")
+
+
 def hl_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
     """Robust TOST: section-9 label from the 90 % Hodges-Lehmann CI (PI 2026-10-25)."""
     x = np.asarray(values, dtype=float)
@@ -160,6 +189,8 @@ def hl_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
         raise ValueError("need >= 3 finite per-seed values")
     est, lo, hi = hl_ci(x, 1 - 2 * ALPHA)
     _, lo95, hi95 = hl_ci(x, 0.95)
+    i, j = np.triu_indices(x.size)
+    walsh = (x[i] + x[j]) / 2
     return {
         "n": int(x.size),
         "bound": bound,
@@ -168,8 +199,9 @@ def hl_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
         "median": float(np.median(x)),
         "ci90": [lo, hi],
         "ci95": [lo95, hi95],
-        "p_lower": float(stats.wilcoxon(x + bound, alternative="greater").pvalue),
-        "p_upper": float(stats.wilcoxon(x - bound, alternative="less").pvalue),
+        "p_lower": signed_rank_p(x, -bound, "greater"),
+        "p_upper": signed_rank_p(x, bound, "less"),
+        "walsh_ties": int(walsh.size - np.unique(walsh).size),
         "label": classify(lo, hi, bound),
     }
 
@@ -205,25 +237,33 @@ def _unique_seeds(rows: Sequence[dict[str, Any]]) -> None:
 
 
 def analyse_e1(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """E-1 (mean over the five locks), then E-1b (IUT), then E-1c (no-lock)."""
+    """E-1 (mean over the five locks), then E-1b (IUT), then E-1c (no-lock).
+
+    PI decision 2026-10-25 (13:32): each step uses the robust TOST
+    (``hl_tost``, 90 % Hodges-Lehmann CI); the mean-based t-TOST of each
+    step is reported alongside without a label ("... mean (secondary)").
+    """
     _unique_seeds(rows)
     for r in rows:
         if set(r["locks"]) != set(LOCKS):
             raise ValueError(f"seed {r['seed']}: locks must be exactly {LOCKS}")
     per_lock = {k: [float(r["locks"][k]) for r in rows] for k in LOCKS}
     e1_vals = [float(np.mean([r["locks"][k] for k in LOCKS])) for r in rows]
-    out: dict[str, Any] = {"E-1": tost(e1_vals, B1_BOUND)}
+    out: dict[str, Any] = {
+        "E-1": hl_tost(e1_vals, B1_BOUND),
+        "E-1 mean (secondary)": _unlabelled(tost(e1_vals, B1_BOUND)),
+    }
     if out["E-1"]["label"] != "equivalent":
         out["E-1b"] = {"tested": False}
         out["E-1c"] = {"tested": False}
         return out
-    by_lock = {k: tost(v, B1_BOUND) for k, v in per_lock.items()}
+    by_lock = {k: hl_tost(v, B1_BOUND) for k, v in per_lock.items()}
     iut = all(r["label"] == "equivalent" for r in by_lock.values())
     out["E-1b"] = {"tested": True, "equivalent": iut, "per_lock": by_lock}
     if not iut:
         out["E-1c"] = {"tested": False}
         return out
-    out["E-1c"] = {"tested": True, **tost([float(r["nolock"]) for r in rows], B1_BOUND)}
+    out["E-1c"] = {"tested": True, **hl_tost([float(r["nolock"]) for r in rows], B1_BOUND)}
     return out
 
 
@@ -234,7 +274,7 @@ def analyse_e2(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
 
 
 def resolve_roster(substitutions: Sequence[dict[str, Any]]) -> list[int]:
-    """The 95 analysed seeds after documented reserve substitutions (section 8)."""
+    """The 150 analysed seeds after documented reserve substitutions (section 8)."""
     if len(substitutions) > len(RESERVE):
         raise ValueError("more than 4 substitutions: the run halts (section 8)")
     seeds = list(ROSTER)
@@ -272,6 +312,12 @@ def _check_e2_provenance(rows: Sequence[dict[str, Any]]) -> None:
     for r in rows:
         if r.get("primary_readout") != "gumbel_k8":
             raise ValueError(f"seed {r['seed']}: primary_readout must be 'gumbel_k8' (section 4.2)")
+        for key in ("switch_pre", "switch_post"):
+            if not isinstance(r.get(key), bool):
+                raise ValueError(f"seed {r['seed']}: {key} must be a JSON boolean")
+        _check_switch_rule(r)
+        if r.get("probe_label_counts") != {"0": 128, "1": 128, "2": 128, "3": 128}:
+            raise ValueError(f"seed {r['seed']}: probe_label_counts is not the balanced probe")
         if r.get("gumbel_draws") != 8:
             raise ValueError(f"seed {r['seed']}: the primary readout averages K = 8 Gumbel draws")
         for key in (
@@ -282,6 +328,18 @@ def _check_e2_provenance(rows: Sequence[dict[str, Any]]) -> None:
         ):
             if key not in r:
                 raise ValueError(f"seed {r['seed']}: missing {key} (hard readout E-2h)")
+
+
+def _check_switch_rule(r: dict[str, Any]) -> None:
+    """Recompute the frozen switch rule from the recorded structure statistics."""
+    for phase in ("pre", "post"):
+        try:
+            top1 = float(r[f"{phase}_top1_share"])
+            between = float(r[f"{phase}_between_class_share"])
+        except KeyError as exc:
+            raise ValueError(f"seed {r['seed']}: missing {exc.args[0]}") from exc
+        if (top1 >= SWITCH_TOP1 and between >= SWITCH_BETWEEN) != r[f"switch_{phase}"]:
+            raise ValueError(f"seed {r['seed']}: switch_{phase} disagrees with the frozen rule")
 
 
 def _unlabelled(res: dict[str, Any]) -> dict[str, Any]:

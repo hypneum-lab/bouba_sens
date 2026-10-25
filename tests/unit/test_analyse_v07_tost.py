@@ -131,7 +131,7 @@ def test_duplicate_seeds_rejected() -> None:
 
 # --- confirmatory entry point (Codex review of b6fda3f) -------------------
 
-ROSTER = list(range(1001, 1096))
+ROSTER = list(an.ROSTER)
 
 
 def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel_k8", seed=0):  # type: ignore[no-untyped-def]
@@ -143,6 +143,11 @@ def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel_k8", seed=0):
             "gumbel_draws": 8,
             "switch_pre": False,
             "switch_post": i % 10 == 0,
+            "pre_top1_share": 0.1,
+            "pre_between_class_share": 0.006,
+            "post_top1_share": 0.5 if i % 10 == 0 else 0.1,
+            "post_between_class_share": 0.3 if i % 10 == 0 else 0.006,
+            "probe_label_counts": {"0": 128, "1": 128, "2": 128, "3": 128},
             "ross_full_delta_bits": float(gumbel + rng.normal(0, sd)),
             "ross_full_delta_bits_hard": float(hard + rng.normal(0, sd)),
         }
@@ -159,8 +164,8 @@ def _e1_rows(seeds):  # type: ignore[no-untyped-def]
 
 def test_confirmatory_accepts_full_roster() -> None:
     out = an.analyse_confirmatory({"e1": _e1_rows(ROSTER), "e2": _e2_rows(ROSTER)})
-    assert out["B-2"]["E-2"]["n"] == 95
-    assert out["B-1"]["E-1"]["n"] == 95
+    assert out["B-2"]["E-2"]["n"] == 150
+    assert out["B-1"]["E-1"]["n"] == 150
     assert out["roster"]["substitutions"] == []
 
 
@@ -189,17 +194,17 @@ def test_confirmatory_rejects_hard_primary_or_missing_readout() -> None:
 
 
 def test_reserve_substitutions_are_documented_and_in_order() -> None:
-    seeds = [s for s in ROSTER if s not in (1007, 1050)] + [1096, 1097]
+    seeds = [s for s in ROSTER if s not in (1007, 1050)] + [1156, 1157]
     subs = [
-        {"replaced": 1007, "by": 1096, "reason": "crash"},
-        {"replaced": 1050, "by": 1097, "reason": "NaN metric"},
+        {"replaced": 1007, "by": 1156, "reason": "crash"},
+        {"replaced": 1050, "by": 1157, "reason": "NaN metric"},
     ]
     out = an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": subs})
-    assert out["B-2"]["E-2"]["n"] == 95
+    assert out["B-2"]["E-2"]["n"] == 150
     assert out["roster"]["substitutions"] == subs
     with pytest.raises(ValueError, match="substitution"):  # undocumented
         an.analyse_confirmatory({"e2": _e2_rows(seeds)})
-    bad = [dict(subs[0], by=1097), dict(subs[1], by=1096)]  # reserve out of order
+    bad = [dict(subs[0], by=1157), dict(subs[1], by=1156)]  # reserve out of order
     with pytest.raises(ValueError, match="order"):
         an.analyse_confirmatory({"e2": _e2_rows(seeds), "substitutions": bad})
     noreason = [dict(subs[0], reason=""), subs[1]]
@@ -213,7 +218,7 @@ def test_e2h_reported_alongside_without_label_and_disagreement_flagged() -> None
     assert out["E-2"]["label"] == "equivalent"
     e2h = out["E-2h"]
     assert "label" not in e2h and e2h["estimator"].startswith("Hodges-Lehmann")
-    assert e2h["n"] == 95 and e2h["bound"] == 0.05
+    assert e2h["n"] == 150 and e2h["bound"] == 0.05
     assert e2h["ci90"][0] > 0.05
     assert out["readout_disagreement"]["differs"] is True
     same = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
@@ -271,10 +276,10 @@ def test_e2_primary_is_robust_and_mean_based_is_secondary() -> None:
     assert out["E-2"]["estimator"].startswith("Hodges-Lehmann")
     assert "label" in out["E-2"] and "label" not in out["E-2 mean (secondary)"]
     sw = out["switch"]
-    assert (sw["n"], sw["switch_post"], sw["switch_pre"]) == (95, 10, 0)
-    assert sw["ci95_exact"][0] < 10 / 95 < sw["ci95_exact"][1]
-    assert sw["mcnemar"]["gained"] == 10 and sw["mcnemar"]["lost"] == 0
-    assert sw["mcnemar"]["p_two_sided_exact"] == pytest.approx(2 * 0.5**10)
+    assert (sw["n"], sw["switch_post"], sw["switch_pre"]) == (150, 15, 0)
+    assert sw["ci95_exact"][0] < 15 / 150 < sw["ci95_exact"][1]
+    assert sw["mcnemar"]["gained"] == 15 and sw["mcnemar"]["lost"] == 0
+    assert sw["mcnemar"]["p_two_sided_exact"] == pytest.approx(2 * 0.5**15)
 
 
 def test_confirmatory_requires_k8_and_the_switch_fields() -> None:
@@ -285,4 +290,50 @@ def test_confirmatory_requires_k8_and_the_switch_fields() -> None:
     rows = _e2_rows(ROSTER)
     del rows[5]["switch_post"]
     with pytest.raises(ValueError, match="switch_post"):
+        an.analyse_confirmatory({"e2": rows})
+
+
+# --- Codex review r1 and PI decisions 2026-10-25 (13:32) -----------------
+
+
+def test_signed_rank_p_is_dual_to_the_hl_ci() -> None:
+    rng = np.random.default_rng(11)
+    for _ in range(200):
+        x = rng.normal(rng.uniform(-0.06, 0.06), 0.05, size=int(rng.integers(8, 40)))
+        r = an.hl_tost(x, 0.05)
+        lo, hi = r["ci90"]
+        assert (r["p_lower"] < 0.05) == (lo > -0.05)
+        assert (r["p_upper"] < 0.05) == (hi < 0.05)
+        assert (r["label"] == "equivalent") == (max(r["p_lower"], r["p_upper"]) < 0.05)
+    x = rng.normal(0.0, 1.0, size=12)
+    assert an.signed_rank_p(x, -100.0, "greater") == pytest.approx(2.0**-12)
+    assert an.signed_rank_p(x, 100.0, "less") == pytest.approx(2.0**-12)
+
+
+def test_e1_is_robust_with_mean_secondary() -> None:
+    rows = _e1_table({50: 0, 75: 0, 100: 0, 125: 0, 150: 0}, 0.0, 30, 0.01)
+    out = an.analyse_e1(rows)
+    assert out["E-1"]["estimator"].startswith("Hodges-Lehmann")
+    assert "label" not in out["E-1 mean (secondary)"]
+    assert out["E-1b"]["per_lock"]["50"]["estimator"].startswith("Hodges-Lehmann")
+
+
+def test_roster_is_150_seeds_without_the_pilot_seeds() -> None:
+    assert len(an.ROSTER) == 150 and len(set(an.ROSTER)) == 150
+    assert not set(an.ROSTER) & {1101, 1102, 1103, 1104, 1105}
+    assert not set(an.ROSTER) & set(an.RESERVE)
+
+
+def test_provenance_requires_booleans_rule_and_balanced_probe() -> None:
+    rows = _e2_rows(ROSTER)
+    rows[3]["switch_post"] = "false"
+    with pytest.raises(ValueError, match="boolean"):
+        an.analyse_confirmatory({"e2": rows})
+    rows = _e2_rows(ROSTER)
+    rows[3]["switch_post"] = True  # stats say no switch
+    with pytest.raises(ValueError, match="frozen rule"):
+        an.analyse_confirmatory({"e2": rows})
+    rows = _e2_rows(ROSTER)
+    rows[3]["probe_label_counts"] = {"1": 512}
+    with pytest.raises(ValueError, match="balanced"):
         an.analyse_confirmatory({"e2": rows})

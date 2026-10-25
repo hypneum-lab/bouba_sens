@@ -47,9 +47,15 @@ def capture(args: argparse.Namespace) -> None:
     seeds = args.seeds
     if not (set(seeds) <= set(PILOT_SEEDS) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.8 pilot seeds or all confirmatory-pool seeds")
+    if set(seeds) <= set(CONFIRMATORY_POOL) and not args.osf_filed:
+        raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
     torch.use_deterministic_algorithms(True)
     world = _build_world("studyforrest", seeds[0])
-    log: dict[str, object] = {"world_class": check_world(world), "blocks": []}
+    log: dict[str, object] = {
+        "world_class": check_world(world),
+        "osf_filed": args.osf_filed,
+        "blocks": [],
+    }
     blocks: list[dict[str, object]] = []
     t0 = time.monotonic()
     for s in seeds:
@@ -86,6 +92,7 @@ def main() -> None:
     c = sub.add_parser("capture")
     c.add_argument("--seeds", type=_seeds, required=True)
     c.add_argument("--blocks-dir", type=Path, required=True)
+    c.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
     p = sub.add_parser("pilot")
     p.add_argument("--blocks-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)

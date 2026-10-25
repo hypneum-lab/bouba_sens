@@ -15,7 +15,11 @@ The primary readout is read from the pilot file: ``hard`` for round 1
 decision 2026-10-25, after round 1: Gumbel primary, class-balanced
 probe). Usage:
 
-  uv run python scripts/pilots/derive_v07_pilot.py PILOT_JSON OUT_JSON
+  uv run python scripts/pilots/derive_v07_pilot.py PILOT_JSON OUT_JSON [N]
+
+N defaults to 95 (rounds 1-3 as recorded); round 3 at the N = 150 of the
+PI decision of 2026-10-25 (13:32) passes 150 and adds the size of the
+robust rule at the bounds under the planning law.
 """
 
 from __future__ import annotations
@@ -69,8 +73,8 @@ def power_block(values: list[float]) -> dict:
         n80 = next(
             (n for n in range(3, 20000) if pw.tost_power_exact(mu, sdu, n, BOUND) >= 0.80), None
         )
-        rec[f"mu={mu:+.2f}"] = {"exact_power_N95": p, "N_for_0.80": n80}
-    rec["label_planning_case"] = label(rec["mu=-0.02"]["exact_power_N95"])
+        rec[f"mu={mu:+.2f}"] = {f"exact_power_N{N_FIXED}": p, "N_for_0.80": n80}
+    rec["label_planning_case"] = label(rec["mu=-0.02"][f"exact_power_N{N_FIXED}"])
     return rec
 
 
@@ -113,13 +117,19 @@ def robust_power(values: list[float]) -> dict:
 
     rec: dict = {"inflation": infl, "support": dev.tolist()}
     for mu in (0.0, -0.02):
-        p95 = power(mu, N_FIXED, ROBUST_SIMS)
+        p_n = power(mu, N_FIXED, ROBUST_SIMS)
         n80 = next((n for n in ROBUST_N_GRID if power(mu, n, ROBUST_GRID_SIMS) >= 0.80), None)
         rec[f"mu={mu:+.2f}"] = {
-            "power_N95": p95,
+            f"power_N{N_FIXED}": p_n,
             "N_for_0.80_grid": n80 if n80 is not None else f"> {ROBUST_N_GRID[-1]}",
         }
-    rec["label_planning_case"] = label(rec["mu=-0.02"]["power_N95"])
+    rec["label_planning_case"] = label(rec["mu=-0.02"][f"power_N{N_FIXED}"])
+    if N_FIXED != 95:
+        # Codex review r1: rejection frequency at the bounds under the same
+        # (asymmetric) planning law, i.e. the size of the robust rule there.
+        rec["size_at_bound"] = {
+            f"theta={t:+.2f}": power(t, N_FIXED, ROBUST_SIMS) for t in (BOUND, -BOUND)
+        }
     return rec
 
 
@@ -205,4 +215,6 @@ def main_k(src: Path, dst: Path, d: dict, rows: list) -> None:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 3:
+        N_FIXED = int(sys.argv[3])  # 150 since the PI decision of 2026-10-25 13:32
     main(Path(sys.argv[1]), Path(sys.argv[2]))
