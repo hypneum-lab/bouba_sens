@@ -170,6 +170,61 @@ tested).
 **Runtime (round 2).** 54 s for the five seeds (1101: 12 s including
 start-up; 1102–1105: 10–11 s each).
 
+### Seed 1105 diagnosis (read-only, PI request 2026-10-25 12:45)
+
+Question: is the 1105 value (+0.646 bit, post-lesion participation
+ratio 3.5 against 12–13 elsewhere) a genuine outcome, a numerical or
+implementation artefact, or a probe / readout edge case? Script
+`scripts/pilots/diagnose_v07_seed1105.py` (re-runs the frozen preset
+step by step with the same calls as the runner; no rule or statistic
+changed); outputs `reports/pilots/v07_r2_seed1105_diagnostic.jsonl`
+and `reports/pilots/v07_r2_gumbel_redraw.jsonl`, macM1, same commit
+and environment as round 2.
+
+| Seed | Ross Δ (reproduced) | loss first / last 10 steps (max) | post PR | post top-1 eigenvalue share | post between-class share of variance | post total variance | NN label agreement post |
+|-----:|--------:|---------------------:|------:|------:|------:|------:|------:|
+| 1101 | +0.0466 | 1.675 / 1.797 (3.57) | 13.08 | 0.106 | 0.006 | 0.190 | 0.287 |
+| 1102 | +0.0347 | 1.666 / 1.804 (3.64) | 12.04 | 0.118 | 0.010 | 0.227 | 0.291 |
+| 1103 | +0.0694 | 1.769 / 1.845 (3.72) | 12.38 | 0.109 | 0.008 | 0.201 | 0.262 |
+| 1104 | +0.0789 | 1.667 / 1.882 (3.57) | 13.12 | 0.104 | 0.006 | 0.236 | 0.273 |
+| 1105 | +0.6461 | 1.669 / 2.075 (4.41) | 3.52 | 0.513 | 0.346 | 0.469 | 0.418 |
+
+Pre-lesion, 1105 looks like the other seeds (PR 12.5, top-1 share
+0.113, between-class share 0.007, Ross MI-hat +0.043 bit).
+
+Evidence:
+
+1. *Not a numerical artefact.* Every loss value is finite, the run is
+   deterministic (the diagnostic reproduces the committed Δ to all
+   digits), and five estimators agree on a large increase (Ross
+   +0.646, full KSG +0.658, MINE full +0.557, binning +0.586, 1-D KSG
+   +0.597 bit; round-2 output).
+2. *Not one Gumbel draw.* Re-drawing the post-lesion Gumbel readout
+   five times on the same trained network (RNG seeds 10,000–10,004)
+   gives Ross MI-hat post 0.634–0.677 bit (mean 0.662, SD 0.017) and
+   PR 3.36–3.56; on 1101 the same check gives −0.018 to +0.051 (mean
+   +0.010, SD 0.028).
+3. *Not a probe edge case.* The probe is the balanced 4 × 128 probe on
+   every seed; pre-lesion statistics of 1105 are typical.
+4. *A change in the trained network.* After the lesion phase the 1105
+   code is dominated by one direction (51 % of the variance; total
+   variance doubled) that carries the label (between-class share 0.35
+   against ≤ 0.01 elsewhere). The hard readout, input-independent on
+   the other seeds, splits the 1105 probe into two codes: {class 0:
+   0, 1: 32, 2: 128, 3: 112} and {0: 128, 1: 96, 2: 0, 3: 16}, i.e. a
+   learned switch separating classes 0/1 from 2/3. The lesion-phase
+   loss rose more than on the other seeds (last-10 mean 2.08 against
+   1.80–1.88; maximum 4.41).
+
+Diagnosis: a **genuine outcome of this seed's lesion-phase training
+trajectory** (a reorganisation of the fused code into a class-aligned
+dominant direction), not an artefact of the estimator, the readout
+draw or the probe. It is reported as is; no rule is changed and the
+seed is not excluded (v0.7 §6: outliers are not removed). A side
+observation for the PI: the within-seed Gumbel readout noise of the
+post-lesion MI-hat (SD 0.017–0.028 bit over re-draws) is of the same
+order as the ΔMI-hat of the other four seeds (+0.035 to +0.079).
+
 **Not done in this pilot (v0.7).** (a) The §11 checklist item "effective
 SNR checked in `metadata.json` of a pilot cell" refers to a B-1 grid
 cell, but §4.3 says no B-1 pilot is needed and names no B-1 pilot seed;
