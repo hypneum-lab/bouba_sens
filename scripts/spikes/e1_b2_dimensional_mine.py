@@ -121,6 +121,7 @@ def _capture(
     readouts: tuple[str, ...] = ("gumbel",),
     probe_scheme: str = "contiguous",
     gumbel_k: int = 0,
+    seed_namespace: int | None = None,
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
@@ -145,9 +146,17 @@ def _capture(
         torch.manual_seed(rng_seed)
 
     loop = build_loop(world_name, seed, lock_after)
+    # PI decision 2026-10-25 (19:47): campaign seed namespace (bouba_sens.seeds).
+    loop.seed_namespace = seed_namespace
     loop.pretrain(steps_train, batch_size=tb, seed=seed)
 
-    probe = draw_probe(loop.world, pn, seed - 99_999, probe_scheme)
+    if seed_namespace is None:
+        probe_seed = seed - 99_999
+    else:
+        from bouba_sens.seeds import STREAMS, ns_seed
+
+        probe_seed = ns_seed(seed_namespace, seed, STREAMS["b2_probe"], 0)
+    probe = draw_probe(loop.world, pn, probe_seed, probe_scheme)
     pre = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
     pre_k = _k_draws(loop, probe, seed, 0, gumbel_k)
     labels = probe.label.detach().cpu()
@@ -471,6 +480,15 @@ def check_world(world_name: str, seed: int) -> None:
 V07_CONFIRMATORY_POOL = range(4001, 4155)  # 4001-4150 + reserve 4151-4154
 
 
+def namespace_for(args: argparse.Namespace, seed: int) -> int | None:
+    """v07-b2 campaign code under a preset (pilot or confirmatory pool); else legacy."""
+    if args.preset is None:
+        return None
+    from bouba_sens.seeds import resolve_campaign
+
+    return resolve_campaign("v07-b2", seed).code
+
+
 def resolve_seeds(args: argparse.Namespace) -> list[int]:
     seeds = list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
     if any(s in V07_CONFIRMATORY_POOL for s in seeds) and not getattr(args, "osf_filed", ""):
@@ -520,6 +538,7 @@ def main() -> None:
             readouts=("gumbel", "hard") if args.probe_demod == "both" else ("gumbel",),
             probe_scheme=args.probe_scheme,
             gumbel_k=args.gumbel_draws,
+            seed_namespace=namespace_for(args, seed),
         )
         # Legacy estimators run on the primary (Gumbel) readout.
         pre, post = readouts["gumbel"]

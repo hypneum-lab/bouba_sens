@@ -53,6 +53,16 @@ for s in "${SEEDS[@]}"; do
         exit 2
     fi
 done
+# PI decision 2026-10-25 (19:47): per-campaign seed namespaces
+# (bouba_sens.seeds). v0.7 B-1: confirmatory 4001-4154 -> 7102, pilot
+# 4201 -> 7101; other seeds keep the legacy derived seeds.
+seed_namespace_for() {
+    local s="$1"
+    if [[ "${s}" =~ ^[0-9]+$ ]] && (( s >= 4001 && s <= 4154 )); then echo 7102
+    elif [[ "${s}" == "4201" ]]; then echo 7101
+    else echo ""
+    fi
+}
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 
@@ -72,6 +82,7 @@ skipped=0
 for seed in "${SEEDS[@]}"; do
     # One Phase 1 checkpoint per seed (reused across T2 cells for that seed).
     phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
+    ns="$(seed_namespace_for "${seed}")"
     if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
         echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
         train_args=(
@@ -82,6 +93,7 @@ for seed in "${SEEDS[@]}"; do
             --out "${phase1_dir}"
         )
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
+        [[ -n "${ns}" ]] && train_args+=(--seed-namespace "${ns}")
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
         [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
@@ -125,6 +137,7 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
                 [[ -n "${GATING_TARGET}" ]] && lesion_args+=(--transducer-gating-target "${GATING_TARGET}")
                 [[ -n "${K_STEPS}" ]] && lesion_args+=(--k-steps "${K_STEPS}")
+                [[ -n "${ns}" ]] && lesion_args+=(--seed-namespace "${ns}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"

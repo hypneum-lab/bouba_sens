@@ -30,7 +30,13 @@ N_CLASSES = 4
 TRANSDUCER_GATING = "hard"
 
 
-def build_loop(world: WorldSimulator, seed: int, *, lock_after: int | None) -> AdaptationLoop:
+def build_loop(
+    world: WorldSimulator,
+    seed: int,
+    *,
+    lock_after: int | None,
+    seed_namespace: int | None = None,
+) -> AdaptationLoop:
     """Fresh loop for training seed ``seed``; ``lock_after=None`` = never locked."""
     mux = GammaThetaMultiplexer(seed=seed, constellation_lock_after=lock_after)
     sensories: dict[Modality, SensoryWML] = {
@@ -42,4 +48,4 @@ def build_loop(world: WorldSimulator, seed: int, *, lock_after: int | None) -> A
     }
     nerve = CrossModalNerve(mux, seed=seed, transducer_gating=TRANSDUCER_GATING)
     head = IntegrationHead(n_classes=N_CLASSES)
-    return AdaptationLoop(world, mux, sensories, nerve, head)
+    return AdaptationLoop(world, mux, sensories, nerve, head, seed_namespace=seed_namespace)

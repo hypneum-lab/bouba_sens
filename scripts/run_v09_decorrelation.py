@@ -22,12 +22,14 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import torch
 
 from bouba_sens.v09_driver import (
     CONFIRMATORY_POOL,
     ONSETS,
     PILOT_SEEDS,
+    PILOT_SEEDS_REVB,
     check_world,
     deficit_matrix,
     run_main_grid,
@@ -45,9 +47,11 @@ def main() -> None:
     ap.add_argument("--seeds", type=_seeds, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
+    ap.add_argument("--design", choices=("revb", "legacy"), default="revb")
     args = ap.parse_args()
     seeds = args.seeds
-    if not (set(seeds) <= set(PILOT_SEEDS) or set(seeds) <= set(CONFIRMATORY_POOL)):
+    pilot_pool = PILOT_SEEDS_REVB if args.design == "revb" else PILOT_SEEDS
+    if not (set(seeds) <= set(pilot_pool) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.9 pilot seeds or all confirmatory-pool seeds")
     if set(seeds) <= set(CONFIRMATORY_POOL) and not args.osf_filed:
         raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
@@ -63,26 +67,56 @@ def main() -> None:
         "world_class": check_world(world),
         "seeds": seeds,
         "osf_filed": args.osf_filed,
+        "design": args.design,
     }
     cells = []
     t0 = time.monotonic()
     for s in seeds:
-        for c in run_main_grid(world, s):
+        for c in run_main_grid(world, s, design=args.design):
             cells.append(c)
+            lin = (
+                f" FGlin={c.lin.fg:+.4f} bacc_all={c.lin.bacc_all:.3f} best={c.lin.best_modality}"
+                f" ctrl={c.lin.fg_control:+.4f}"
+                if c.lin is not None
+                else ""
+            )
             print(
                 f"seed={c.seed} onset={c.onset} arm={c.arm} FG={c.fg.fusion_gain:+.4f} "
-                f"acc_all={c.fg.acc_all:.4f} wall={c.wall_s:.1f}s",
+                f"acc_all={c.fg.acc_all:.4f}{lin} wall={c.wall_s:.1f}s",
                 flush=True,
             )
     out["wall_s_total"] = time.monotonic() - t0
     out["cells"] = [
-        {**{k: v for k, v in asdict(c).items() if k != "fg"}, "fg": asdict(c.fg)} for c in cells
+        {
+            **{k: v for k, v in asdict(c).items() if k not in ("fg", "lin")},
+            "fg": asdict(c.fg),
+            "lin": None if c.lin is None else asdict(c.lin),
+        }
+        for c in cells
     ]
-    if sorted(seeds) == sorted(PILOT_SEEDS):
-        d = deficit_matrix(cells, sorted(seeds))
+    if sorted(seeds) == sorted(pilot_pool):
+        outcome = "linear" if args.design == "revb" else "head"
+        d = deficit_matrix(cells, sorted(seeds), outcome=outcome)
         out["onsets"] = list(ONSETS)
+        out["D_outcome"] = outcome
         out["D"] = d.tolist()
         out["variance_components"] = variance_components(d)
+        if args.design == "revb":
+            out["D_head_descriptive"] = deficit_matrix(cells, sorted(seeds)).tolist()
+            plain = [c.lin for c in cells if c.arm == "plain"]
+            out["headroom"] = {
+                "plain_bacc_all_mean": float(np.mean([x.bacc_all for x in plain])),
+                "plain_bacc_best_single_mean": float(np.mean([x.bacc_best for x in plain])),
+                "fg_lin_mean_all_runs": float(np.mean([c.lin.fg for c in cells])),
+                "fg_control_mean_all_runs": float(np.mean([c.lin.fg_control for c in cells])),
+                "D_zero_fraction": float(np.mean(d == 0.0)),
+                "recalls_all_mean": np.mean([c.lin.recalls_all for c in cells], 0).tolist(),
+                "best_modality_counts": {
+                    m: sum(c.lin.best_modality == m for c in cells)
+                    for m in ("audio", "vision", "tactile", "gravity", "force")
+                },
+                "all_converged": all(c.lin.converged for c in cells),
+            }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k != "cells"}, indent=2))

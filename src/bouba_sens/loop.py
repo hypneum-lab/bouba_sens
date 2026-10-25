@@ -61,6 +61,8 @@ class AdaptationReport:
     probe_labels: Tensor | None = None
     pre_lesion_codes: Tensor | None = None
     post_lesion_codes: Tensor | None = None
+    # v0.8 rev. B: secondary probe readouts, name -> (pre, post) codes.
+    extra_codes: dict[str, tuple[Tensor, Tensor]] = field(default_factory=dict)
 
 
 def _deepcopy_state(module: Any) -> dict[str, Tensor]:
@@ -103,8 +105,13 @@ class AdaptationLoop:
         head: IntegrationHead,
         *,
         lr: float = 1e-3,
+        seed_namespace: int | None = None,
     ) -> None:
         self.world = world
+        # PI decision 2026-10-25 (19:47): with a campaign code, every derived
+        # data seed is ``seeds.ns_seed(code, s, stream, t)``; None keeps the
+        # legacy arithmetic (``s + t``, ``s - 1 - i``, ...).
+        self.seed_namespace = seed_namespace
         self.mux = mux
         self.sensories = sensories
         self.nerve = nerve
@@ -117,6 +124,14 @@ class AdaptationLoop:
         for s in sensories.values():
             params += list(s.parameters())
         self.opt = torch.optim.Adam(params, lr=lr)
+
+    def _derived_seed(self, seed: int, legacy: int, stream: str, index: int) -> int:
+        """Legacy derived seed, or its namespaced counterpart (``bouba_sens.seeds``)."""
+        if self.seed_namespace is None:
+            return legacy
+        from bouba_sens.seeds import STREAMS, ns_seed
+
+        return ns_seed(self.seed_namespace, seed, STREAMS[stream], index)
 
     def _forward(self, sample: WorldSample) -> tuple[Tensor, Tensor]:
         carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
@@ -157,13 +172,14 @@ class AdaptationLoop:
         mux_step = getattr(self.mux, "step", None)
         nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
+            batch_seed = self._derived_seed(seed, seed + step, "phase1_batch", step)
             if decorrelation is None:
-                sample = self.world.sample(batch_size=batch_size, seed=seed + step)
+                sample = self.world.sample(batch_size=batch_size, seed=batch_seed)
             else:
                 sample = decorrelation.sample(
                     self.world,  # type: ignore[arg-type]
                     batch_size=batch_size,
-                    seed=seed + step,
+                    seed=batch_seed,
                     step=step,
                 )
             loss, _ = self._forward(sample)
@@ -205,6 +221,7 @@ class AdaptationLoop:
         probe_seed: int | None = None,
         probe_demod: str = "soft",
         probe_gumbel_draws: int = 0,
+        extra_probe_readouts: tuple[tuple[str, int], ...] = (),
     ) -> AdaptationReport:
         """Phase 2: lesion-active training + theta-replay buffer.
 
@@ -260,24 +277,36 @@ class AdaptationLoop:
         # the surviving channel. `probe_pool="mean"` restores the legacy
         # 1-D mean-pooled scalar (Sprint 5..17) for reproducibility.
         # Seed stepped far from the Phase-2 training seeds to avoid overlap.
-        if probe_demod not in ("soft", "hard"):
-            raise ValueError(f"probe_demod must be 'soft' or 'hard'; got {probe_demod!r}")
+        demods = ("soft", "hard", "softmax")
+        for demod, k_draws in ((probe_demod, probe_gumbel_draws), *extra_probe_readouts):
+            if demod not in demods:
+                raise ValueError(f"probe_demod must be one of {demods}; got {demod!r}")
+            if k_draws < 0 or (k_draws and demod != "soft"):
+                raise ValueError("Gumbel draws need probe_demod='soft' and K >= 0")
 
-        if probe_gumbel_draws < 0 or (probe_gumbel_draws and probe_demod != "soft"):
-            raise ValueError("probe_gumbel_draws needs probe_demod='soft' and K >= 0")
-
-        def _capture_once(sample: WorldSample) -> Tensor:
+        def _capture_once(sample: WorldSample, demod: str) -> Tensor:
             with torch.no_grad():
                 carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
-                return self.nerve.fuse(carriers, hard_demod=probe_demod == "hard")
+                return self.nerve.fuse(
+                    carriers, hard_demod=demod == "hard", softmax_demod=demod == "softmax"
+                )
 
-        def _capture(sample: WorldSample, phase: int) -> Tensor:
-            if not probe_gumbel_draws:
-                return _capture_once(sample)
+        def _capture_with(sample: WorldSample, phase: int, demod: str, k_draws: int) -> Tensor:
+            if not k_draws:
+                return _capture_once(sample, demod)
             from bouba_sens.readout import gumbel_draws
 
-            draws = gumbel_draws(lambda: _capture_once(sample), seed, phase, probe_gumbel_draws)
+            draws = gumbel_draws(lambda: _capture_once(sample, demod), seed, phase, k_draws)
             return torch.stack(draws).mean(0)
+
+        def _capture(sample: WorldSample, phase: int) -> Tensor:
+            return _capture_with(sample, phase, probe_demod, probe_gumbel_draws)
+
+        def _extras(sample: WorldSample, phase: int) -> dict[str, Tensor]:
+            return {
+                f"{d}_k{k}": _pool(_capture_with(sample, phase, d, k)).detach().clone()
+                for d, k in extra_probe_readouts
+            }
 
         def _pool(fused: Tensor) -> Tensor:
             flat = fused.flatten(1)  # (B, K*d)
@@ -285,11 +314,15 @@ class AdaptationLoop:
                 return flat.mean(dim=-1)  # (B,) legacy scalar sonde
             return flat  # (B, K*d) full sonde
 
+        legacy_probe = seed - 99_999 if probe_seed is None else probe_seed
+        if self.seed_namespace is not None and legacy_probe != seed - 99_999:
+            raise ValueError("with a seed namespace the probe seed is derived from seed")
         probe = self.world.sample(
             batch_size=batch_size if probe_size is None else probe_size,
-            seed=seed - 99_999 if probe_seed is None else probe_seed,
+            seed=self._derived_seed(seed, legacy_probe, "phase2_probe", 0),
         )
         fused_pre = _capture(probe, 0)
+        extra_pre = _extras(probe, 0)
         report.probe_labels = probe.label.detach().clone()
         report.pre_lesion_codes = _pool(fused_pre).detach().clone()
 
@@ -298,7 +331,9 @@ class AdaptationLoop:
             report.lesion_events = list(self.nerve._lesion_log)
 
         replay_buffer: list[WorldSample] = [
-            self.world.sample(batch_size=batch_size, seed=seed - 1 - i)
+            self.world.sample(
+                batch_size=batch_size, seed=self._derived_seed(seed, seed - 1 - i, "replay_init", i)
+            )
             for i in range(min(replay_buffer_size, 16))
         ]
 
@@ -308,7 +343,10 @@ class AdaptationLoop:
         mux_step = getattr(self.mux, "step", None)
         nerve_step = getattr(self.nerve, "step", None)
         for step in range(steps):
-            fresh = self.world.sample(batch_size=batch_size, seed=seed + step)
+            fresh = self.world.sample(
+                batch_size=batch_size,
+                seed=self._derived_seed(seed, seed + step, "phase2_batch", step),
+            )
             lesioned = scheduler.apply(fresh, step) if scheduler is not None else fresh
             loss_fresh, logits = self._forward(lesioned)
 
@@ -339,7 +377,10 @@ class AdaptationLoop:
             # evict the oldest.
             if replay_buffer_size > 0:
                 replay_buffer.append(
-                    self.world.sample(batch_size=batch_size, seed=seed - steps - step - 1)
+                    self.world.sample(
+                        batch_size=batch_size,
+                        seed=self._derived_seed(seed, seed - steps - step - 1, "replay_fifo", step),
+                    )
                 )
                 if len(replay_buffer) > replay_buffer_size:
                     replay_buffer.pop(0)
@@ -349,6 +390,8 @@ class AdaptationLoop:
         # the pre-lesion capture (full (B, K*d) by default).
         fused_post = _capture(probe, 1)
         report.post_lesion_codes = _pool(fused_post).detach().clone()
+        extra_post = _extras(probe, 1)
+        report.extra_codes = {k: (extra_pre[k], extra_post[k]) for k in extra_pre}
 
         return report
 
@@ -374,7 +417,9 @@ class AdaptationLoop:
         in training mode), so repeated calls reproduce each other only from
         the same RNG state; the probe items themselves depend on `seed` only.
         """
-        sample = self.world.sample(batch_size=batch_size, seed=seed)
+        sample = self.world.sample(
+            batch_size=batch_size, seed=self._derived_seed(seed, seed, "query", 0)
+        )
         masked_tensors: dict[str, Tensor] = {}
         for m in MODALITIES:
             tensor = getattr(sample, m)

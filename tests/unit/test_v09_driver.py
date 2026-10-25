@@ -107,3 +107,24 @@ def test_run_cell_requires_deterministic_kernels(real_dir: Path) -> None:
     torch.use_deterministic_algorithms(False)  # the fixture restores it
     with pytest.raises(RuntimeError, match="deterministic"):
         drv.run_cell(_world(real_dir), 3101, 0, "decor", recovery=2, width=2)
+
+
+# --- rev. B (PI decision 2026-10-25, 19:47) --------------------------------
+
+
+def test_revb_cell_has_linear_probe_outcome_and_namespace(real_dir: Path) -> None:
+    world = _world(real_dir)
+    c = drv.run_cell(world, 3201, 0, "decor", recovery=2, width=2, design="revb")
+    d = drv.run_cell(world, 3201, 0, "decor", recovery=2, width=2, design="revb")
+    assert c.lin is not None and c.lin == d.lin
+    legacy = drv.run_cell(world, 3201, 0, "decor", recovery=2, width=2)
+    assert legacy.lin is None
+    with pytest.raises(ValueError, match="pool"):
+        drv.run_cell(world, 3101, 0, "decor", recovery=2, width=2, design="revb")
+    cells = [
+        drv.run_cell(world, 3201, o, a, recovery=2, width=2, design="revb")
+        for o in (0,)
+        for a in ("joint", "decor")
+    ]
+    m = drv.deficit_matrix(cells, [3201], onsets=(0,), outcome="linear")
+    assert m[0, 0] == pytest.approx(cells[0].lin.fg - cells[1].lin.fg)

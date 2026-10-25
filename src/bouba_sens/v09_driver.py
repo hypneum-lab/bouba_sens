@@ -53,7 +53,10 @@ from bouba_sens.decorrelation import (
 from bouba_sens.loop import AdaptationLoop
 from bouba_sens.world.base import WorldSimulator
 
-PILOT_SEEDS: tuple[int, ...] = (3101, 3102, 3103, 3104, 3105)
+PILOT_SEEDS: tuple[int, ...] = (3101, 3102, 3103, 3104, 3105)  # first pilot (legacy seeds)
+# Rev. B (PI decision 2026-10-25, 19:47): fresh pilot seeds in the v09-pilot
+# seed namespace; outcome = linear-probe fusion gain (``fusion_probe``).
+PILOT_SEEDS_REVB: tuple[int, ...] = (3201, 3202, 3203, 3204, 3205)
 CONFIRMATORY_POOL: tuple[int, ...] = tuple(range(3001, 3045))
 ONSETS: tuple[int, ...] = (0, 50, 100, 150, 200)
 WIDTH = 50
@@ -98,6 +101,7 @@ class CellRun:
     fg: FusionGain
     n_self_donor: int
     wall_s: float
+    lin: Any = None  # fusion_probe.LinearFG under design "revb"
 
 
 def run_cell(
@@ -108,25 +112,46 @@ def run_cell(
     *,
     recovery: int = RECOVERY,
     width: int = WIDTH,
+    design: str = "legacy",
+    seed_namespace: int | None = None,
 ) -> CellRun:
-    """One Phase-1 run of (seed, onset, arm) and its held-out fusion gain."""
+    """One Phase-1 run of (seed, onset, arm) and its held-out fusion gain.
+
+    ``design="revb"``: the v09 seed namespace of the seed's pool (unless
+    ``seed_namespace`` is given) and the linear-probe fusion gain
+    (``fusion_probe.linear_probe_fg``) next to the legacy head FG.
+    """
+    if design == "revb" and seed_namespace is None:
+        from bouba_sens.seeds import resolve_campaign
+
+        seed_namespace = resolve_campaign("v09", seed).code
+    elif design not in ("revb", "legacy"):
+        raise ValueError(f"unknown design {design!r}")
     if not torch.are_deterministic_algorithms_enabled():
         raise RuntimeError("call torch.use_deterministic_algorithms(True) first")
     t0 = time.monotonic()
     torch.manual_seed(seed)
-    loop = build_loop(world, seed, lock_after=None)
+    loop = build_loop(world, seed, lock_after=None, seed_namespace=seed_namespace)
     check_learning_rate(loop)
     sched = DecorrelationSchedule(
         DecorrelationWindow(onset, width),
         arm,
         seed=seed,
         world=world,  # type: ignore[arg-type]
+        seed_namespace=seed_namespace,
     )
     steps = onset + width + recovery
     loop.pretrain(steps, batch_size=BATCH, seed=seed, decorrelation=sched)
     check_learning_rate(loop)
     fg = fusion_gain(loop, train_seed=seed)
-    return CellRun(seed, onset, arm, recovery, steps, fg, sched.n_self_donor, time.monotonic() - t0)
+    lin = None
+    if design == "revb":
+        from bouba_sens.fusion_probe import linear_probe_fg
+
+        lin = linear_probe_fg(loop, world)
+    return CellRun(
+        seed, onset, arm, recovery, steps, fg, sched.n_self_donor, time.monotonic() - t0, lin
+    )
 
 
 def run_main_grid(
@@ -141,10 +166,28 @@ def run_main_grid(
 
 
 def deficit_matrix(
-    cells: Sequence[CellRun], seeds: Sequence[int], onsets: Sequence[int] = ONSETS
+    cells: Sequence[CellRun],
+    seeds: Sequence[int],
+    onsets: Sequence[int] = ONSETS,
+    *,
+    outcome: str = "head",
 ) -> np.ndarray:
-    """D(s, o) = FG_joint - FG_decor, rows = seeds, columns = onsets."""
-    fg = {(c.seed, c.onset, c.arm): c.fg.fusion_gain for c in cells}
+    """D(s, o) = FG_joint - FG_decor, rows = seeds, columns = onsets.
+
+    ``outcome="head"``: the network-head FG (legacy); ``"linear"``: the
+    rev. B linear-probe FG; ``"control"``: its positive control.
+    """
+
+    def value(c: CellRun) -> float:
+        if outcome == "head":
+            return float(c.fg.fusion_gain)
+        if outcome == "linear":
+            return float(c.lin.fg)
+        if outcome == "control":
+            return float(c.lin.fg_control)
+        raise ValueError(f"unknown outcome {outcome!r}")
+
+    fg = {(c.seed, c.onset, c.arm): value(c) for c in cells}
     return np.array(
         [[fg[(s, o, "joint")] - fg[(s, o, "decor")] for o in onsets] for s in seeds],
         dtype=np.float64,

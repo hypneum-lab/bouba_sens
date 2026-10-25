@@ -30,10 +30,12 @@ from bouba_sens.metrics.subspace_aggregate import LOCKS
 from bouba_sens.v08_driver import (
     CONFIRMATORY_POOL,
     PILOT_SEEDS,
+    PILOT_SEEDS_REVB,
     block_path,
     check_world,
     load_block,
     pilot_quantities,
+    pilot_quantities_revb,
     run_block,
     save_block,
 )
@@ -45,7 +47,8 @@ def _seeds(text: str) -> list[int]:
 
 def capture(args: argparse.Namespace) -> None:
     seeds = args.seeds
-    if not (set(seeds) <= set(PILOT_SEEDS) or set(seeds) <= set(CONFIRMATORY_POOL)):
+    pilot_pool = PILOT_SEEDS_REVB if args.design == "revb" else PILOT_SEEDS
+    if not (set(seeds) <= set(pilot_pool) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.8 pilot seeds or all confirmatory-pool seeds")
     if set(seeds) <= set(CONFIRMATORY_POOL) and not args.osf_filed:
         raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
@@ -54,6 +57,7 @@ def capture(args: argparse.Namespace) -> None:
     log: dict[str, object] = {
         "world_class": check_world(world),
         "osf_filed": args.osf_filed,
+        "design": args.design,
         "blocks": [],
     }
     blocks: list[dict[str, object]] = []
@@ -63,7 +67,7 @@ def capture(args: argparse.Namespace) -> None:
             path = block_path(args.blocks_dir, s, lock)
             if path.exists():
                 raise SystemExit(f"{path} exists; refusing to overwrite")
-            run = run_block(world, s, lock)
+            run = run_block(world, s, lock, design=args.design)
             save_block(run.block, path)
             blocks.append({"seed": s, "lock": lock, "wall_s": run.wall_s})
             print(f"seed={s} lock={lock} wall={run.wall_s:.1f}s", flush=True)
@@ -73,8 +77,14 @@ def capture(args: argparse.Namespace) -> None:
 
 
 def pilot(args: argparse.Namespace) -> None:
-    blocks = [load_block(block_path(args.blocks_dir, s, lk)) for s in PILOT_SEEDS for lk in LOCKS]
-    out = pilot_quantities(blocks)
+    if args.design == "revb":
+        seeds = PILOT_SEEDS_REVB
+        blocks = [load_block(block_path(args.blocks_dir, s, lk)) for s in seeds for lk in LOCKS]
+        out = pilot_quantities_revb(blocks)
+    else:
+        seeds = PILOT_SEEDS
+        blocks = [load_block(block_path(args.blocks_dir, s, lk)) for s in seeds for lk in LOCKS]
+        out = pilot_quantities(blocks)
     log = json.loads((args.blocks_dir / "capture_log.json").read_text())
     walls: dict[int, float] = {}
     for b in log["blocks"]:
@@ -93,9 +103,11 @@ def main() -> None:
     c.add_argument("--seeds", type=_seeds, required=True)
     c.add_argument("--blocks-dir", type=Path, required=True)
     c.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
+    c.add_argument("--design", choices=("revb", "legacy"), default="revb")
     p = sub.add_parser("pilot")
     p.add_argument("--blocks-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--design", choices=("revb", "legacy"), default="revb")
     args = ap.parse_args()
     {"capture": capture, "pilot": pilot}[args.cmd](args)
 

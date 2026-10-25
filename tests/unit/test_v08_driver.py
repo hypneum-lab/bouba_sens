@@ -39,8 +39,8 @@ def test_run_block_is_reproducible_and_shares_z_pre(
 ) -> None:
     monkeypatch.setattr(drv, "STEPS_TRAIN", 2)
     world = GaussianWorld(seed=0)
-    a = drv.run_block(world, 2101, 25, **_SMALL).block
-    b = drv.run_block(world, 2101, 25, **_SMALL).block
+    a = drv.run_block(world, 2101, 25, design="legacy", **_SMALL).block
+    b = drv.run_block(world, 2101, 25, design="legacy", **_SMALL).block
     assert (a.seed, a.lock, a.phase2_seed) == (2101, 25, 2101)
     assert torch.equal(a.z_pre, b.z_pre) and torch.equal(a.z_control, b.z_control)
     assert set(a.z_post) == {(m, f) for m in ("audio", "vision") for f in (-20.0, 10.0)}
@@ -48,8 +48,8 @@ def test_run_block_is_reproducible_and_shares_z_pre(
         assert torch.equal(a.z_post[key], b.z_post[key])
     # With 2 training steps a lock after step 1 freezes the constellation
     # and a lock after step 175 never fires: the checkpoints differ.
-    c = drv.run_block(world, 2101, 1, **_SMALL).block
-    d = drv.run_block(world, 2101, 175, **_SMALL).block
+    c = drv.run_block(world, 2101, 1, design="legacy", **_SMALL).block
+    d = drv.run_block(world, 2101, 175, design="legacy", **_SMALL).block
     assert not torch.equal(c.z_pre, d.z_pre)
 
 
@@ -138,4 +138,44 @@ def test_pilot_quantities_refuse_wrong_seeds() -> None:
 def test_run_block_requires_deterministic_kernels() -> None:
     torch.use_deterministic_algorithms(False)  # the fixture restores it
     with pytest.raises(RuntimeError, match="deterministic"):
-        drv.run_block(GaussianWorld(seed=0), 2101, 25, **_SMALL)
+        drv.run_block(GaussianWorld(seed=0), 2101, 25, design="legacy", **_SMALL)
+
+
+# --- rev. B (PI decision 2026-10-25, 19:47) --------------------------------
+
+
+def test_revb_block_uses_namespace_softmax_primary_and_gumbel_secondary(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(drv, "STEPS_TRAIN", 2)
+    small = {**_SMALL, "extra_readouts": (("soft", 2),)}
+    world = GaussianWorld(seed=0)
+    a = drv.run_block(world, 2201, 25, **small).block
+    b = drv.run_block(world, 2201, 25, **small).block
+    assert torch.equal(a.z_pre, b.z_pre) and torch.equal(a.z_control, b.z_control)
+    assert set(a.secondary) == {"soft_k2"}
+    assert set(a.secondary["soft_k2"].z_post) == set(a.z_post)
+    path = drv.block_path(tmp_path, 2201, 25)
+    drv.save_block(a, path)
+    got = drv.load_block(path)
+    assert torch.equal(got.secondary["soft_k2"].z_control, a.secondary["soft_k2"].z_control)
+    legacy = drv.run_block(world, 2201, 25, design="legacy", seed_namespace=None, **_SMALL)
+    assert not torch.equal(legacy.block.z_pre, a.z_pre)
+    with pytest.raises(ValueError, match="pool"):
+        drv.run_block(world, 2101, 25, **small)  # first-pilot seed: not a rev. B pool
+
+
+def test_pilot_quantities_revb_on_synthetic_blocks() -> None:
+    rng = np.random.default_rng(3)
+    blocks = []
+    for s in drv.PILOT_SEEDS_REVB:
+        for lk in LOCKS:
+            blk = _block(s, lk, rng)
+            blk.secondary["soft_k8"] = _block(s, lk, rng)
+            blocks.append(blk)
+    out = drv.pilot_quantities_revb(blocks)
+    assert out["n_complete"] == 10 and out["g_hat"] == drv.REVB_GUARD_SD
+    assert out["sigma_hat_df"] == 54 and out["fileable_as_drafted"] is True
+    assert out["q_hat_cp80"] == pytest.approx(drv.clopper_pearson_upper(0, 10))
+    assert len(out["secondary_gumbel_cka_block_y"]) == 70
+    assert isinstance(out["secondary_k_gap"], int)

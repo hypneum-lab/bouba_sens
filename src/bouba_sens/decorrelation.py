@@ -162,7 +162,13 @@ class DecorrelationSchedule:
     """Phase-1 batch source for one (arm, window, training seed)."""
 
     def __init__(
-        self, window: DecorrelationWindow, arm: Arm | str, *, seed: int, world: IndexedWorld
+        self,
+        window: DecorrelationWindow,
+        arm: Arm | str,
+        *,
+        seed: int,
+        world: IndexedWorld,
+        seed_namespace: int | None = None,
     ) -> None:
         if arm not in ARMS:
             raise ValueError(f"unknown arm {arm!r}, expected one of {ARMS}")
@@ -171,13 +177,22 @@ class DecorrelationSchedule:
         self.seed = seed
         self.index = DonorIndex(world.dataset_labels)
         self.n_self_donor = 0  # logged, not expected (3.1)
+        # PI decision 2026-10-25 (19:47): namespaced donor seeds per campaign.
+        self.seed_namespace = seed_namespace
+
+    def donor_seed(self, step: int) -> int:
+        if self.seed_namespace is None:
+            return training_generator_seed(self.seed, step)
+        from bouba_sens.seeds import STREAMS, ns_seed
+
+        return ns_seed(self.seed_namespace, self.seed, STREAMS["donor"], step)
 
     def sample(self, world: IndexedWorld, *, batch_size: int, seed: int, step: int) -> WorldSample:
         """The batch for Phase-1 ``step``; identical to ``world.sample`` outside the window."""
         if self.arm == "plain" or not self.window.active(step):
             return world.sample(batch_size, seed)  # type: ignore[attr-defined, no-any-return]
         _, anchors = world.sample_with_indices(batch_size, seed)
-        donors, n_self = self.index.draw(anchors, training_generator_seed(self.seed, step))
+        donors, n_self = self.index.draw(anchors, self.donor_seed(step))
         self.n_self_donor += n_self
         return build_arm_sample(world, anchors, donors, self.arm)
 
@@ -325,21 +340,39 @@ def _features(sample: WorldSample) -> dict[str, Tensor]:
     return {m: getattr(sample, m).double().reshape(len(sample.label), -1) for m in MODALITIES}
 
 
-def check_anchors(world: IndexedWorld, train_seed: int) -> tuple[WorldSample, Tensor]:
-    """512 anchors: 32 contiguous windows of 16 (``seed = s + 3e6 + r``)."""
+def _check_seed(train_seed: int, legacy: int, stream: str, index: int, ns: int | None) -> int:
+    if ns is None:
+        return legacy
+    from bouba_sens.seeds import STREAMS, ns_seed
+
+    return ns_seed(ns, train_seed, STREAMS[stream], index)
+
+
+def check_anchors(
+    world: IndexedWorld, train_seed: int, seed_namespace: int | None = None
+) -> tuple[WorldSample, Tensor]:
+    """512 anchors: 32 contiguous windows of 16 (``seed = s + 3e6 + r``, or namespaced)."""
     parts = [
-        world.sample_with_indices(CHECK_WINDOW, train_seed + 3 * 10**6 + r)
+        world.sample_with_indices(
+            CHECK_WINDOW,
+            _check_seed(train_seed, train_seed + 3 * 10**6 + r, "check_anchor", r, seed_namespace),
+        )
         for r in range(CHECK_N_WINDOWS)
     ]
     idx = torch.cat([p[1] for p in parts])
     return world.gather(idx), idx
 
 
-def run_check_draw(world: IndexedWorld, *, train_seed: int, draw: int) -> CheckDraw:
+def run_check_draw(
+    world: IndexedWorld, *, train_seed: int, draw: int, seed_namespace: int | None = None
+) -> CheckDraw:
     """One matched joint/decor draw on the pilot seed's anchors."""
-    original, anchors = check_anchors(world, train_seed)
+    original, anchors = check_anchors(world, train_seed, seed_namespace)
     index = DonorIndex(world.dataset_labels)
-    donors, n_self = index.draw(anchors, check_generator_seed(train_seed, draw))
+    gen_seed = _check_seed(
+        train_seed, check_generator_seed(train_seed, draw), "check_draw", draw, seed_namespace
+    )
+    donors, n_self = index.draw(anchors, gen_seed)
     joint = build_arm_sample(world, anchors, donors, "joint")
     decor = build_arm_sample(world, anchors, donors, "decor")
     labels = original.label
@@ -409,6 +442,7 @@ def run_manipulation_check(
     *,
     n_draws: int = CHECK_N_DRAWS,
     n_perm: int = GATE_N_PERM,
+    seed_namespace: int | None = None,
 ) -> tuple[GateResult, float | None]:
     """Full gate over pilot ``seeds``; also returns mean CKA of the original anchors (reported)."""
     kj = torch.full((len(seeds), n_draws), math.nan, dtype=torch.float64)
@@ -416,7 +450,7 @@ def run_manipulation_check(
     originals: list[float] = []
     for i, s in enumerate(seeds):
         for b in range(1, n_draws + 1):
-            d = run_check_draw(world, train_seed=s, draw=b)
+            d = run_check_draw(world, train_seed=s, draw=b, seed_namespace=seed_namespace)
             if d.k_joint is not None:
                 kj[i, b - 1] = d.k_joint
             if d.k_decor is not None:

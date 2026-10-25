@@ -56,6 +56,8 @@ class BlockCodes:
     z_pre: Tensor
     z_control: Tensor
     z_post: dict[CellKey, Tensor] = field(default_factory=dict)
+    # v0.8 rev. B: secondary readouts of the same arms, by readout name.
+    secondary: dict[str, BlockCodes] = field(default_factory=dict)
 
 
 def capture_block(
@@ -74,6 +76,7 @@ def capture_block(
     k_steps: int = K_STEPS,
     probe_demod: str = PROBE_DEMOD,
     probe_gumbel_draws: int | None = None,
+    extra_readouts: tuple[tuple[str, int], ...] = (),
 ) -> BlockCodes:
     """Run the control arm and every lesion cell of one (seed, lock) block.
 
@@ -115,6 +118,7 @@ def capture_block(
             probe_seed=probe_seed,
             probe_demod=probe_demod,
             probe_gumbel_draws=k_draws,
+            extra_probe_readouts=extra_readouts,
         )
 
     control = run(None)
@@ -128,6 +132,15 @@ def capture_block(
         z_pre=control.pre_lesion_codes,
         z_control=control.post_lesion_codes,
     )
+    for name, (pre, post) in control.extra_codes.items():
+        block.secondary[name] = BlockCodes(
+            seed=seed,
+            lock=lock,
+            phase2_seed=p2_seed,
+            probe_labels=control.probe_labels,
+            z_pre=pre,
+            z_control=post,
+        )
     for modality in modalities:
         for floor in snr_floors:
 
@@ -143,4 +156,8 @@ def capture_block(
                     f"lock={lock}: the Phase-2 entry state is not shared"
                 )
             block.z_post[(modality, floor)] = rep.post_lesion_codes
+            for name, (pre, post) in rep.extra_codes.items():
+                if not torch.equal(pre, block.secondary[name].z_pre):
+                    raise RuntimeError(f"secondary {name} Z_pre differs between arms")
+                block.secondary[name].z_post[(modality, floor)] = post
     return block

@@ -196,6 +196,10 @@ def train(
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
     out: Path = typer.Option(..., help="Run directory"),
+    seed_namespace: int | None = typer.Option(
+        None,
+        help="campaign seed-namespace code (bouba_sens.seeds); None = legacy derived seeds",
+    ),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
     import pickle
@@ -234,7 +238,7 @@ def train(
         transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
 
     ckpt = loop.pretrain(steps=steps, batch_size=batch_size, seed=seed)
     out.mkdir(parents=True, exist_ok=True)
@@ -250,6 +254,7 @@ def train(
                 # PI decision 2026-10-25: every grid output records the world
                 # class, so a silent fallback to the stub is visible.
                 "world_class": type(world_obj).__name__,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
             },
             f,
@@ -339,6 +344,10 @@ def lesion(
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
+    seed_namespace: int | None = typer.Option(
+        None,
+        help="campaign seed-namespace code (bouba_sens.seeds); None = legacy derived seeds",
+    ),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
     skips pretrain for T1 congenital runs (ckpt=None).
@@ -389,7 +398,7 @@ def lesion(
         transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
 
     # T2 late-acquired: restore checkpoint. T1 congenital: skip pretrain.
     if ckpt is not None and timing.upper() == "T2":
@@ -441,6 +450,7 @@ def lesion(
                 "snr_trajectory_db": [float(schedule(t)) for t in range(steps)],
                 "world": world,
                 "world_class": type(world_obj).__name__,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
             },
             meta_out,
