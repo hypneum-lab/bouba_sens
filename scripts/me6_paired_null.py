@@ -223,6 +223,7 @@ def paired_null(
     *,
     replicates: int,
     seed: int,
+    block: int = 1,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Sign-flip null of Me6 per trio and of the median over trios.
 
@@ -232,18 +233,34 @@ def paired_null(
     per trio, then the median over the K trios. Returns
     `(me6_per_trio, median_over_trios)` of shapes `(replicates, K)` and
     `(replicates,)`. Deterministic given `seed`.
+
+    `block > 1` flips consecutive items in blocks of that length with one
+    shared sign (block sign flip, ADR-0022 follow-up 2): for probes that
+    are contiguous temporal windows (Studyforrest worlds) the items are not
+    exchangeable, and a block at least as long as the correlation length
+    keeps the within-block dependence. `block = 1` is the per-item flip and
+    reproduces the draws of earlier runs exactly.
     """
     if differences.ndim != 3 or differences.shape[1] != len(PAIR_NAMES):
         raise ValueError(f"expected (K, 10, n); got {differences.shape}")
     if replicates <= 0:
         raise ValueError("replicates must be positive")
+    if block < 1:
+        raise ValueError("block must be >= 1")
     n_trios, _, n_items = differences.shape
+    n_blocks = -(-n_items // block)
     per_trio = np.empty((replicates, n_trios))
     start = 0
     while start < replicates:
         g = min(_CHUNK, replicates - start)
         rng = _rng_for(seed, start)
-        signs = rng.integers(0, 2, size=(g, *differences.shape), dtype=np.int8) * 2 - 1
+        if block == 1:
+            signs = rng.integers(0, 2, size=(g, *differences.shape), dtype=np.int8) * 2 - 1
+        else:
+            block_signs = rng.integers(
+                0, 2, size=(g, n_trios, len(PAIR_NAMES), n_blocks), dtype=np.int8
+            )
+            signs = np.repeat(block_signs * 2 - 1, block, axis=-1)[..., :n_items]
         flipped_sum = (signs * differences).sum(axis=-1, dtype=np.int32)  # (g, K, 10)
         per_trio[start : start + g] = np.abs(flipped_sum).max(axis=-1) / n_items
         start += g
@@ -310,6 +327,7 @@ def analyse(
     with_binomial: bool = True,
     incomplete: list[dict[str, Any]] | None = None,
     root: Path | None = None,
+    block: int = 1,
 ) -> dict[str, Any]:
     """Observed B-3 statistic, paired null, per-trio nulls, binomial reference."""
     t0 = time.perf_counter()
@@ -321,7 +339,9 @@ def analyse(
     observed_median = float(np.median(observed_cells))
     grand_mean_p = float(successes.mean())
 
-    null_cells, null_medians = paired_null(differences, replicates=replicates, seed=seed)
+    null_cells, null_medians = paired_null(
+        differences, replicates=replicates, seed=seed, block=block
+    )
 
     cells_out: list[dict[str, Any]] = []
     for k, trio in enumerate(trios):
@@ -367,7 +387,12 @@ def analyse(
             "cells_counted": n_trios,
             "cells_expected_full_grid": 30,
             "complete": n_trios == 30 and not incomplete,
-            "null": "paired sign-flip of s_mq(i) <-> s_qm(i), independent per (trio, pair, item)",
+            "block": block,
+            "null": (
+                "paired sign-flip of s_mq(i) <-> s_qm(i), independent per (trio, pair, item)"
+                if block == 1
+                else f"paired sign-flip of s_mq(i) <-> s_qm(i), one sign per (trio, pair, block of {block} consecutive items)"
+            ),
         },
         "incomplete_trios": incomplete or [],
         "median": {
@@ -436,6 +461,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replicates", type=int, default=DEFAULT_REPLICATES)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
+        "--block",
+        type=int,
+        default=1,
+        help=(
+            "flip consecutive items in blocks of this length with one shared sign "
+            "(for contiguous-window probes such as the Studyforrest worlds); 1 = per item"
+        ),
+    )
+    parser.add_argument(
         "--no-binomial", action="store_true", help="skip the ADR-0021 iid binomial reference"
     )
     parser.add_argument("--out", type=Path, default=Path("reports/me6_paired_null.json"))
@@ -460,6 +494,7 @@ def main(argv: list[str] | None = None) -> int:
         trios,
         replicates=args.replicates,
         seed=args.seed,
+        block=args.block,
         with_binomial=not args.no_binomial,
         incomplete=incomplete,
         root=args.root,

@@ -147,6 +147,57 @@ def test_paired_null_is_deterministic_and_keeps_discordant_structure() -> None:
     assert cells0.max() == 0.0 and med0.max() == 0.0
 
 
+def test_block_flips_share_one_sign_per_block() -> None:
+    rng = np.random.default_rng(5)
+    d = pair_differences(_symmetric_successes(rng, cells=3, n=64, p=0.35))
+    # block = 1 is exactly the per-item null (same draws, same values)
+    a_cells, _ = paired_null(d, replicates=200, seed=11)
+    b_cells, _ = paired_null(d, replicates=200, seed=11, block=1)
+    np.testing.assert_array_equal(a_cells, b_cells)
+    # block = n: one sign per (trio, pair) -> |mean d| is unchanged, so the
+    # null equals the observed value in every replicate.
+    whole, _ = paired_null(d, replicates=50, seed=11, block=64)
+    observed = np.abs(d.mean(axis=-1)).max(axis=-1)
+    np.testing.assert_allclose(whole, np.broadcast_to(observed, whole.shape), atol=1e-12)
+    # block = 16 is deterministic and bounded like the per-item null
+    c1, m1 = paired_null(d, replicates=100, seed=3, block=16)
+    c2, _ = paired_null(d, replicates=100, seed=3, block=16)
+    np.testing.assert_array_equal(c1, c2)
+    assert m1.shape == (100,) and (c1 <= 1.0).all()
+    # odd block length that does not divide n still covers every item
+    c3, _ = paired_null(d, replicates=20, seed=3, block=7)
+    assert c3.shape == (20, 3)
+    with pytest.raises(ValueError, match="block"):
+        paired_null(d, replicates=10, seed=0, block=0)
+
+
+def test_analyse_records_block_and_cli_accepts_it(tmp_path: Path) -> None:
+    rng = np.random.default_rng(6)
+    s = _symmetric_successes(rng, cells=2, n=64, p=0.3)
+    trios = [Trio(str(k), "T1", "floor", s[k]) for k in range(2)]
+    out = analyse(trios, replicates=100, seed=1, with_binomial=False, block=16)
+    assert out["params"]["block"] == 16
+    assert "block of 16" in out["params"]["null"]
+    root = tmp_path / "grid"
+    _write_grid(root, s)
+    rc = main(
+        [
+            "--root",
+            str(root),
+            "--replicates",
+            "50",
+            "--block",
+            "8",
+            "--no-binomial",
+            "--out",
+            str(tmp_path / "b.json"),
+            "--quiet",
+        ]
+    )
+    assert rc == 0
+    assert json.loads((tmp_path / "b.json").read_text())["params"]["block"] == 8
+
+
 def test_symmetric_data_gives_uniform_like_p_values() -> None:
     """Under H0 the tail probability of the observed median is not extreme on average."""
     p_values = []

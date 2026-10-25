@@ -38,8 +38,8 @@ not done by a pull request; see the PI action list below.
 | 0006 | *(not on `main`)* | Critical validation of v0.3 findings (Sprint 7) | 2026-04-21 | Only in `87b850b` / tags `v0.4.0`, `v0.5.0` — PI action |
 | 0007a | `0007-biological-bridge-stub.md` | Biological-adjacent bridge stub (StudyforrestWorld) | 2026-04-20 | Accepted |
 | 0007b | `0007-cli-paired-runs.md` | CLI-level paired-run wiring (`eval --t1-ckpt/--t2-ckpt`) | 2026-04-20 | Accepted |
-| 0008 | `0008-v04-studyforrest-mock-verdicts.md` | Studyforrest-mock out-of-cluster verdicts | 2026-04-20 | Accepted — descriptive; B-3 requalified uncalibrated 2026-10-25 |
-| 0009 | `0009-real-ecg-verdicts.md` | Real-biological-signal verdicts (MIT-BIH ECG) | 2026-04-20 | Accepted — descriptive, partially retracted 2026-04-22; B-3 requalified uncalibrated 2026-10-25 |
+| 0008 | `0008-v04-studyforrest-mock-verdicts.md` | Studyforrest-mock out-of-cluster verdicts | 2026-04-20 | Accepted — descriptive; B-3 requalified uncalibrated 2026-10-25, paired null not conclusive (ADR-0022) |
+| 0009 | `0009-real-ecg-verdicts.md` | Real-biological-signal verdicts (MIT-BIH ECG) | 2026-04-20 | Accepted — descriptive, partially retracted 2026-04-22; B-3 requalified uncalibrated 2026-10-25, not recomputed in ADR-0022 (no data) |
 | 0010 | `0010-b1-recovery-via-plasticity-lock.md` | B-1 recovery via nerve-wml#4 plasticity lock | 2026-04-21 | Accepted — partial, directional |
 | 0011 | `0011-cross-world-plasticity-lock-matrix.md` | Cross-world plasticity-lock matrix | 2026-04-21 | Accepted — B-3 "strongest architectural invariant" headline superseded by ADR-0014b/0015b/0021 |
 | 0012 | `0012-real-5modal-studyforrest-verdicts.md` | Real 5-modality Studyforrest verdicts | 2026-04-21 | Pending (template) |
@@ -57,7 +57,7 @@ not done by a pull request; see the PI action list below.
 | 0019b | `0019-b2-dimensional-mine-criterion.md` | B-2 re-run with MINE at N ≳ f(D); retire "probe batch ≥128" | 2026-06-04 | Accepted |
 | 0020 | `0020-snr-floors-nearly-identical-under-default-settings.md` | SNR floors were nearly identical under default settings | 2026-10-23 | Accepted — factual audit |
 | 0021 | `0021-me6-null-calibration.md` | Me6 null calibration — the B-3 statistic under sampling noise alone | 2026-10-25 | Accepted — validated by the PI |
-| 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Proposed — awaiting PI decision |
+| 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Accepted — PI decision 2026-10-25; B-3 Gaussian compatible with the paired null, mock not conclusive, ECG not recomputed |
 
 Next free number: **0023**.
 

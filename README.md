@@ -57,7 +57,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **Uncalibrated** (requalified 2026-10-25, see F1 and Erratum) — the 5–6× magnitude is unchanged, but the 0.02 threshold was never compared with a null ; the "architectural property" reading was already withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -90,7 +90,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all ADRs.
 
 | Invariant | Threshold | Best grid-median | Seed-stability | Verdict |
 |-----------|----------:|-----------------:|:---------------|---------|
-| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.125** (5.5–6.3×) | 5/5 above 0.02 | **Uncalibrated** — exceeds 0.02 in every configuration, but the bare exceedance is not interpretable before a paired null calibration (F1, ADR-0021) ; magnitude tracks per-modality entropy, not the partition (§4.4) |
+| **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.156** (5.5–7.8×) | 5/5 pass the fixed rule — as do 100 % of null grids at n = 64 | **Compatible with the paired null** (ADR-0022, Gaussian: p = 0.17; null P99 = 0.156). The fixed rule cannot separate signal from noise at n = 64; mean query accuracy 0.254 = chance → probe defect (zero-masking) to fix first. Magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
 | B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
 
@@ -109,6 +109,18 @@ magnitude result is anchored as the empirical foundation of
 §4 (embodied sensorimotor grounding stratum). The B-1 Retract
 (ADR-0019) is honoured — Stratum 4 explicitly anchors on B-3,
 never B-1.
+
+**F1 update — paired calibration (ADR-0022, accepted by the PI on
+2026-10-25).** On a fresh Gaussian grid with saved per-item outcomes,
+the B-3 median (0.156) is not distinguishable from a paired sign-flip
+null (mean 0.141, P99 0.156, p = 0.17), and the mean single-modality
+query accuracy is 0.254, i.e. 4-class chance: the zero-masking probe
+carries no decodable per-modality information, a design defect to fix
+before any new B-3 reading. On the Studyforrest mock (0.305, accuracy
+0.240) the verdict depends on the block length of the null and is not
+conclusive; the real-ECG grid was not recomputed. Any downstream anchor
+on B-3 (including the Stratum 4 anchor above) should be read in that
+light.
 
 *Requalification (2026-10-25, PI decision ; ADR-0021 ; Refs #22).*
 The 0.02 threshold was never compared with a null. Under an
