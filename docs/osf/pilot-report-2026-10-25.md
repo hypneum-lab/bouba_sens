@@ -42,6 +42,7 @@ alongside (the manifest tool only covers `.json`, `.csv`, `.png`).
 |-------|-------|--------|-----------|--------|
 | v0.7 B-2 round 1 (§4.3, protocol of 2026-10-24) | 1101–1105 | **run**; primary readout degenerate (findings 1–2) | 57 s total; 10–13 s per seed | `reports/pilots/v07_b2_pilot_seeds1101-1105.json`, `…_derived.json`, `v07_b2_probe_diagnostic.jsonl` |
 | v0.7 B-2 round 2 (§4.2 after the PI decisions of 2026-10-25) | 1101–1105 (same seeds) | **run** | 54 s total; 10–12 s per seed | `reports/pilots/v07_b2_pilot_r2_seeds1101-1105.json`, `…_r2_derived.json` |
+| v0.7 B-2 round 3 (K = 8 Gumbel draws, robust E-2, switch; PI decisions 2026-10-25 13:12) | 1101–1105 (same seeds) | **run** | 112 s run (about 22 s per seed) + 57 s derivation | `reports/pilots/v07_b2_pilot_r3_seeds1101-1105.json`, `…_r3_derived.json` |
 | v0.8 (§7) | 2101–2110 | **blocked**: driver missing (draft filing note, §9) | — | none; structural check on seed 0 only (`v08_hard_rank_diagnostic_seed0.jsonl`) |
 | v0.9 manipulation check (§3.3) | 3101–3105 | **run, gate passed** | 35 s | `reports/pilots/v09_manipulation_check_seeds3101-3105.json` |
 | v0.9 variance components of D, runtime (§7) | 3101–3105 | **blocked**: driver for arms / grids missing (draft filing note, §9) | — | none |
@@ -169,6 +170,49 @@ tested).
 
 **Runtime (round 2).** 54 s for the five seeds (1101: 12 s including
 start-up; 1102–1105: 10–11 s each).
+
+## v0.7 — B-2 pilot, round 3 (PI decisions of 2026-10-25, 13:12)
+
+Decisions, taken after round 2 and the seed-1105 diagnosis below and
+disclosed in the v0.7 header: K = 8 Gumbel draws per network with fixed
+seeds (`bouba_sens.readout`), a robust E-2 (90 % Hodges–Lehmann CI;
+mean-based t-TOST kept as a reported secondary), and a registered
+secondary binary outcome E-2s "class-separating switch learned" (post
+top-1 share ≥ 0.25 and post between-class share ≥ 0.10; thresholds
+justified in v0.7 §4.2 from the no-structure value and the nine
+non-switch pilot matrices). Commit `aaf8448`, macM1, log
+`reports/pilots/logs/v07_b2_pilot_r3.log`; the training trajectories
+and the legacy single-draw readouts are identical to round 2 (same
+legacy values in the log).
+
+| Seed | primary ΔMI-hat (K = 8), bit | per-draw SD | single draw (round 2) | post top-1 / between-class share | switch pre → post |
+|-----:|------:|------:|------:|------:|:----:|
+| 1101 | −0.0177 | 0.050 | +0.0466 | 0.109 / 0.006 | no → no |
+| 1102 | −0.0184 | 0.040 | +0.0347 | 0.120 / 0.006 | no → no |
+| 1103 | −0.0328 | 0.059 | +0.0694 | 0.114 / 0.006 | no → no |
+| 1104 | +0.0047 | 0.033 | +0.0789 | 0.105 / 0.005 | no → no |
+| 1105 | +0.6265 | 0.039 | +0.6461 | 0.511 / 0.344 | no → **yes** |
+
+With 8 draws the four non-switch seeds move from +0.035 … +0.079 (one
+draw) to −0.033 … +0.005: the round-2 positives were mostly the noise
+of a single Gumbel draw. Seed 1105 stays at +0.63 bit.
+
+**Pilot-derived quantities (`reports/pilots/v07_b2_pilot_r3_derived.json`).**
+
+| Rule | per-seed summary | power at N = 95, μ = 0 / −0.02 | N for 0.80 | label |
+|------|------|------:|------:|------|
+| **robust (registered E-2)** | HL −0.0068, median −0.0177 | **0.744 / 0.746** | 150 (grid 95, 150, 200, …) | **"under-powered"** |
+| mean (secondary) | mean +0.1125, SD 0.2877, UCL80 0.4481 | ≈ 0 / ≈ 0 (exact t-TOST) | 690 / 1,381 | "low informativeness" |
+
+Robust planning model: the five pilot values resampled with
+replacement, deviations from their pseudo-median inflated by the df = 4
+UCL80 factor 1.558, shifted to pseudo-median μ; 20,000 draws at N = 95,
+2,000 per grid N, generator 20261025. The model keeps one switch seed
+in five, so 20 % of the simulated seeds sit at about +1 bit; that tail,
+not the spread of the non-switch seeds, limits the power. N stays 95.
+
+**E-2s in the pilot:** switch after the lesion on 1 of 5 seeds (1105),
+exact 95 % CI 0.005–0.716; 0 of 5 before the lesion.
 
 ### Seed 1105 diagnosis (read-only, PI request 2026-10-25 12:45)
 

@@ -97,16 +97,27 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    on every v0.7 pilot seed and on a seed-0 check of this protocol
    (LOCK_AFTER 25 and 175: Z_pre rank 0), which would make every rank
    check of §3.1 fail (`docs/osf/pilot-report-2026-10-25.md`). The
-   Gumbel draws come from the global torch RNG, which `capture_block`
-   re-seeds with the Phase-2 seed before each arm (item 11); Z_pre is
-   captured before any Phase-2 step, so it is bit-identical across the
-   16 arms of a block (checked in code), and each Z_post draws after
-   its arm's 100 steps. S therefore includes Gumbel sampling noise in
-   both captures; S_split (item 9) is computed on the same Gumbel
-   Z_pre. A deterministic soft (probability-based, non-sampled)
-   readout may be added later as a declared secondary comparison; it
-   is not part of this draft. Training and lesion-phase steps are
-   unchanged.
+   captures are seeded as below, so Z_pre is bit-identical across the
+   16 arms of a block (checked in code). S includes the remaining
+   Gumbel sampling noise of the 8-draw means in both captures; S_split (item 9) is computed on the same Gumbel
+   Z_pre.
+   **K = 8 Gumbel draws (PI decision 2026-10-25, 13:12).** Each capture
+   (Z_pre, every Z_post, the control end matrix) is the **mean of 8
+   Gumbel captures** of the same network and probe: draw r = 0 … 7 of
+   phase p (0 = Z_pre, 1 = end of Phase 2) is taken inside
+   `torch.random.fork_rng` after `torch.manual_seed(2·10⁹ + 1000·s₂ +
+   100·p + r)`, with s₂ the Phase-2 seed of item 11
+   (`subspace_protocol.PROBE_GUMBEL_DRAWS`, `lesion_phase(...,
+   probe_gumbel_draws=8)`), so the draws do not touch the training RNG
+   stream and Z_pre is identical across the 16 arms. v0.8 has no MI
+   estimate: the PI's "average each network's estimate over K draws"
+   is implemented here by averaging the **codes** over the 8 draws
+   before S, the rank checks, S_split and k* are computed (averaging S
+   itself would need 8 rank-checked matrices per capture); the PI
+   confirms this reading at filing. A deterministic soft
+   (probability-based, non-sampled) readout may be added later as a
+   declared secondary comparison; it is not part of this draft.
+   Training and lesion-phase steps are unchanged.
 3. **Subspaces.** Column-centre each matrix. V_pre, V_post ∈ ℝ^{896×k}
    are the top-k right singular vectors, i.e. the top-k principal
    directions in feature space. **k is fixed on the pilot (PI decision

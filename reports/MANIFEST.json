@@ -15,6 +15,14 @@
     "sha256": "b9d1ca73bddbefb0cff7e5da4901ca87def1dfbb75b2713c4f73323d5c77cdfe",
     "size": 7507
   },
+  "pilots/v07_b2_pilot_r3_derived.json": {
+    "sha256": "938a9b208b0e5d4fb720ef2b1394b95e90650b9a30ebd336bfa26b2e51e2142a",
+    "size": 4176
+  },
+  "pilots/v07_b2_pilot_r3_seeds1101-1105.json": {
+    "sha256": "f09211fe337d827799b273b719fdc9efea877c91072ee29fb5a32d1967957e26",
+    "size": 12043
+  },
   "pilots/v07_b2_pilot_seeds1101-1105.json": {
     "sha256": "282f43607f5c70b093fc1121d6774bfd1958501eb82e9bfdc1adc002895c552d",
     "size": 6364

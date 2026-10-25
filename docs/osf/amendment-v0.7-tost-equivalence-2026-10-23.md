@@ -10,7 +10,7 @@
 **Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
 **Verdict ADR:** **ADR-0021** (proposed — PI confirms at filing)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
-**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. These changes are stated on the OSF form.
+**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). N stays 95; the power of the robust rule is recomputed from the pilot (round 3, same seeds). These changes are stated on the OSF form.
 
 > **Filing note.** This is the machine-readable draft. Only the B-2
 > pilot (seeds 1101–1105, §4.3) has been run; no confirmatory seed has
@@ -106,8 +106,10 @@ in true-MI units.
 | **E-1** | μ₁ = mean of the per-seed E-1 value (above) | μ₁ ≤ −0.025 or μ₁ ≥ +0.025 | −0.025 < μ₁ < +0.025 | primary |
 | E-1b | μ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|μ₁(ℓ)\| ≥ 0.025 | all five inside ±0.025 (IUT) | confirmatory, step 2 of a fixed sequence |
 | E-1c | μ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.025 | \|μ\| < 0.025 | confirmatory, step 3 of a fixed sequence |
-| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator (Ross 2014, k = 3), Gumbel-sampled probe readout (ADR-0019), class-balanced probe (§4.2) | μ₂ ≤ −0.05 or μ₂ ≥ +0.05 | −0.05 < μ₂ < +0.05 | primary |
+| **E-2** | θ₂ = pseudo-median (centre of symmetry) of the per-seed ΔMI, primary estimator (Ross 2014, k = 3) averaged over K = 8 Gumbel draws of the probe readout (ADR-0019), class-balanced probe (§4.2) | θ₂ ≤ −0.05 or θ₂ ≥ +0.05 | −0.05 < θ₂ < +0.05 | primary (robust TOST, §6) |
+| E-2 mean | μ₂ = mean of the same per-seed values | as E-2 with μ₂ | as E-2 with μ₂ | reported secondary, no label (the t-TOST of the earlier draft) |
 | E-2h | same quantity and estimator, hard (argmax) probe readout | — | — | descriptive, reported alongside E-2, no decision (input-independent in the pilot) |
+| E-2s | proportion π of seeds with a post-lesion class-separating switch (§4.2) | — | — | registered secondary, estimation with exact CI, no decision |
 | E-2b | same quantity, secondary estimators (full-probe KSG, MINE, 1-D KSG) and the CC-film bridge | — | — | exploratory, no decision |
 
 **Multiplicity.** E-1 and E-2 are two separate claims about two separate
@@ -242,6 +244,38 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   readout mapped all 512 probe rows to one code on every seed (pre
   and post), so every k-NN MI difference was 0 by construction; this
   is why it is no longer primary.
+- **K = 8 Gumbel draws (PI decision 2026-10-25, 13:12).** The primary
+  readout of each network averages the MI estimate over K = 8
+  independent Gumbel captures of the same checkpoint and probe: draw
+  r = 0 … 7 of phase p (0 = Z_pre, 1 = Z_post) is captured inside
+  `torch.random.fork_rng` after `torch.manual_seed(2·10⁹ + 1000·s +
+  100·p + r)` (`bouba_sens.readout.gumbel_draw_seed`), so the draws
+  neither use nor change the training RNG stream; MI-hat_pre and
+  MI-hat_post are the means over the 8 draws of the per-draw Ross
+  estimates (draw r of Z_pre paired with draw r of Z_post) and the
+  per-seed ΔMI-hat is their difference; KSG is averaged the same way.
+  The single legacy Gumbel capture is still taken (unchanged training
+  stream) and reported with suffix `_gumbel1`. Rationale: in the
+  pilot, re-drawing the Gumbel readout of one network changed its
+  MI-hat by SD 0.017–0.028 bit, the size of the between-seed
+  differences of four of the five pilot seeds.
+- **Class-separating switch, E-2s (PI decision 2026-10-25, 13:12; rule
+  fixed before any confirmatory run).** For each of the K = 8 draws of
+  Z_pre and Z_post: the top-1 share λ₁ / Σλ of the eigenvalues of the
+  centred covariance, and the between-class share, the fraction of the
+  total variance carried by the four class means
+  (Σ_c n_c ‖z̄_c − z̄‖² / (N − 1) / Σλ); each averaged over the 8 draws
+  (`bouba_sens.readout`). A switch is **detected** for a seed when the
+  post-lesion top-1 share is **≥ 0.25** and the post-lesion
+  between-class share is **≥ 0.10**; the same rule on Z_pre gives the
+  pre-lesion state. Justification of the thresholds, not tuned on seed
+  1105: with no class structure the expected between-class share is
+  about (classes − 1) / (N − 1) = 3 / 511 ≈ 0.006, and the nine
+  non-switch matrices of the pilot (round 2: all five pre-lesion codes
+  and the post-lesion codes of four seeds) had top-1 shares 0.099–0.118
+  and between-class shares 0.004–0.010; 0.25 is about twice the
+  largest top-1 share and 0.10 about ten times the largest
+  between-class share and seventeen times the no-structure value.
 - **World check:** as in §4.1, the run log must show
   `StudyforrestRealWorld` (or the CC-film world for E-2b); a silent
   fallback to the stub is a technical failure.
@@ -500,10 +534,34 @@ informativeness of each component is stated there.
 
 - Unit of analysis: the seed. Cells within a seed are not treated as
   independent.
-- TOST: two one-sided one-sample t-tests at α = 0.05 each. Equivalently,
-  the **90 % two-sided CI** of the mean lies inside the bounds. Report
-  the 90 % CI (decision-relevant), the 95 % CI (descriptive), both
-  one-sided p-values, the mean and the SD.
+- TOST, E-1 (and E-1b, E-1c): two one-sided one-sample t-tests at
+  α = 0.05 each. Equivalently, the **90 % two-sided CI** of the mean
+  lies inside the bounds. Report the 90 % CI (decision-relevant), the
+  95 % CI (descriptive), both one-sided p-values, the mean and the SD.
+- **Robust TOST, E-2 (PI decision 2026-10-25, 13:12).** The E-2 label
+  is read from the **90 % distribution-free Hodges–Lehmann CI** of the
+  per-seed ΔMI-hat: the Hodges–Lehmann estimate is the median of the
+  M = n(n + 1)/2 Walsh averages (x_i + x_j)/2, i ≤ j, and the CI is
+  [W₍c₎, W₍M−c+1₎] of the sorted Walsh averages with c the largest
+  integer such that P(T⁺ ≤ c − 1) ≤ 0.05 under the exact null law of
+  the Wilcoxon signed-rank statistic (`analyse_v07_tost.hl_ci`). This
+  is the inversion of the two one-sided signed-rank tests at α = 0.05
+  each. Its estimand is the pseudo-median (centre of symmetry); the
+  CI has coverage ≥ 90 % for a continuous distribution symmetric about
+  its centre. Reported: the estimate, the median, the 90 % and 95 %
+  CIs and both one-sided signed-rank p-values. Rationale: one pilot
+  seed (1105) showed a genuine class-separating reorganisation with a
+  ΔMI-hat about ten times the others, which dominates a mean and its SD.
+- E-2 mean (reported secondary, no label): the t-TOST of the earlier
+  draft on the same per-seed values, with its 90 % CI; a disagreement
+  with the E-2 label is stated in the paper.
+- E-2s (registered secondary, no decision): number and proportion of
+  seeds with a post-lesion switch, with the exact (Clopper–Pearson)
+  two-sided 95 % CI; the paired pre/post comparison by the exact
+  McNemar test (two-sided binomial on the seeds whose switch state
+  differs before and after the lesion). B-2 has one condition per
+  world, so this pre/post contrast is the only within-design
+  comparison; the CC-film E-2b proportion is reported descriptively.
 - Robustness (reported, not decision-relevant): the same TOST on a
   10 000-resample percentile bootstrap of the mean, and a
   Wilcoxon-based TOST. The data are quantised and may be non-normal. If
@@ -655,6 +713,22 @@ as equivalence at this N.
   1,162 (μ = −0.02). Label: **"low informativeness"**. N stays 95. The
   SD is dominated by one seed (1105, +0.646 bit); the rule uses the
   pilot SD as defined, without exclusion.
+  *Pilot result (round 3, 2026-10-25, after the PI decisions of 13:12;
+  `reports/pilots/v07_b2_pilot_r3_derived.json`).* Same seeds, K = 8
+  Gumbel draws. Primary ΔMI-hat per seed: −0.0177, −0.0184, −0.0328,
+  +0.0047, +0.6265 bit (Hodges–Lehmann −0.0068, median −0.0177);
+  within-seed SD of the per-draw ΔMI-hat 0.033–0.059 bit. *Robust rule
+  (registered):* planning model = resampling of the pilot values, their
+  deviations from the pilot pseudo-median inflated by the df = 4 UCL80
+  factor 1.558 and the law shifted to pseudo-median μ
+  (`derive_v07_pilot.robust_power`, 20,000 draws at N = 95, a coarse
+  grid of N with 2,000 draws each, generator 20261025): power at N = 95
+  is **0.744 (μ = 0) and 0.746 (μ = −0.02)**; 0.80 is reached at N =
+  150 on the grid (95, 150, 200, …). Label: **"under-powered"**. *Mean
+  rule (secondary):* SD 0.2877, UCL80 0.4481, exact t-TOST power at
+  N = 95 ≈ 0 (N for 0.80: 690 / 1,381), "low informativeness". N stays
+  95. E-2s in the pilot: switch after the lesion on 1 of 5 seeds
+  (1105; exact 95 % CI 0.005–0.716), on 0 of 5 before it.
 
 Normal-approximation formula used as a cross-check: for true μ = 0,
 N ≈ ((z₁₋α + z₁₋β/₂) · σ / δ)²; for μ ≠ 0, N ≈ ((z₁₋α + z₁₋β) · σ /
@@ -695,8 +769,9 @@ on the OSF form.
 
 ## 9. Decision rule for the paper
 
-Each primary test (E-1, E-2) is classified from the 90 % two-sided CI
-[L, U] of the mean against its bound δ (0.025 for B-1, 0.05 bit for
+Each primary test (E-1, E-2) is classified from its 90 % two-sided CI
+[L, U] (E-1: the t-interval of the mean; E-2: the Hodges–Lehmann
+interval of §6) against its bound δ (0.025 for B-1, 0.05 bit for
 B-2; half the registered thresholds, §5). The six classes below are exhaustive and mutually exclusive.
 "Registered direction" is a positive gap (T1 better) for B-1 and an MI
 increase for B-2. Every claim names the estimand of §3.
