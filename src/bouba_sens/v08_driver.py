@@ -60,6 +60,18 @@ def check_world(world: object) -> str:
     return name
 
 
+def require_determinism() -> None:
+    """Bit-identical arms need deterministic CPU kernels (``tests/conftest.py``).
+
+    On Linux x86 ``torch.linalg.lstsq`` (called by the demodulator) can
+    differ by 1 ulp between identical calls unless
+    ``torch.use_deterministic_algorithms(True)`` is set; then Z_pre would
+    not be shared across the arms of a block.
+    """
+    if not torch.are_deterministic_algorithms_enabled():
+        raise RuntimeError("call torch.use_deterministic_algorithms(True) first")
+
+
 def train_checkpoint(world: WorldSimulator, seed: int, lock: int) -> Checkpoint:
     """Phase-1 checkpoint of block (seed, lock): 200 steps, batch 16, seed s."""
     torch.manual_seed(seed)
@@ -75,6 +87,7 @@ class BlockRun:
 
 def run_block(world: WorldSimulator, seed: int, lock: int, **capture_kw: Any) -> BlockRun:
     """Checkpoint + every Phase-2 arm of one block (section 3 item 11)."""
+    require_determinism()
     t0 = time.monotonic()
     ckpt = train_checkpoint(world, seed, lock)
 

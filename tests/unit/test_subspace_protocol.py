@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 import torch
 from track_p.multiplexer import GammaThetaMultiplexer
 
@@ -24,6 +25,9 @@ from bouba_sens.subspace_protocol import (
     capture_block,
 )
 from bouba_sens.world.gaussian import GaussianWorld
+
+# Bit-identical comparisons need deterministic CPU kernels (tests/conftest.py).
+pytestmark = pytest.mark.usefixtures("deterministic_torch")
 
 
 def _make_loop() -> AdaptationLoop:

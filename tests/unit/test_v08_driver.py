@@ -25,6 +25,9 @@ _SMALL = {
     "probe_size": 16,
 }
 
+# Bit-identical comparisons need deterministic CPU kernels (tests/conftest.py).
+pytestmark = pytest.mark.usefixtures("deterministic_torch")
+
 
 def test_check_world_refuses_anything_but_the_real_bridge() -> None:
     with pytest.raises(RuntimeError, match="StudyforrestRealWorld"):
@@ -130,3 +133,9 @@ def test_pilot_quantities_refuse_wrong_seeds() -> None:
     blocks = _pilot_blocks()
     with pytest.raises(ValueError, match="pilot"):
         drv.pilot_quantities(blocks[:-7])
+
+
+def test_run_block_requires_deterministic_kernels() -> None:
+    torch.use_deterministic_algorithms(False)  # the fixture restores it
+    with pytest.raises(RuntimeError, match="deterministic"):
+        drv.run_block(GaussianWorld(seed=0), 2101, 25, **_SMALL)

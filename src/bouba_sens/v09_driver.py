@@ -111,6 +111,8 @@ def run_cell(
     width: int = WIDTH,
 ) -> CellRun:
     """One Phase-1 run of (seed, onset, arm) and its held-out fusion gain."""
+    if not torch.are_deterministic_algorithms_enabled():
+        raise RuntimeError("call torch.use_deterministic_algorithms(True) first")
     t0 = time.monotonic()
     torch.manual_seed(seed)
     loop = build_loop(world, seed, lock_after=None)

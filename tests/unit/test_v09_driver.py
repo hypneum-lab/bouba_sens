@@ -17,6 +17,9 @@ from bouba_sens.world.studyforrest import StudyforrestRealWorld
 
 N_ROWS = 5200  # 520 held-out frames >= the 512-row probe
 
+# Bit-identical comparisons need deterministic CPU kernels (tests/conftest.py).
+pytestmark = pytest.mark.usefixtures("deterministic_torch")
+
 
 @pytest.fixture
 def real_dir(tmp_path: Path) -> Path:
@@ -94,3 +97,9 @@ def test_deficit_matrix_and_variance_components() -> None:
     assert vc["ucl_multiplier"] == pytest.approx(math.sqrt(4 / stats.chi2.ppf(0.2, 4)))
     assert vc["ucl_multiplier"] == pytest.approx(1.558, abs=5e-4)
     assert vc["sigma_plan"] == pytest.approx(vc["sigma_hat"] * vc["ucl_multiplier"])
+
+
+def test_run_cell_requires_deterministic_kernels(real_dir: Path) -> None:
+    torch.use_deterministic_algorithms(False)  # the fixture restores it
+    with pytest.raises(RuntimeError, match="deterministic"):
+        drv.run_cell(_world(real_dir), 3101, 0, "decor", recovery=2, width=2)
