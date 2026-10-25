@@ -311,7 +311,17 @@ def lesion(
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
-    skips pretrain for T1 congenital runs (ckpt=None)."""
+    skips pretrain for T1 congenital runs (ckpt=None).
+
+    Post-lesion probe (Sprint 5 / Task 5.2, ADR-0022): the five query
+    modalities are scored on ONE shared probe batch,
+    ``world.sample(batch_size=64, seed=seed + 777)``, with the
+    lesion-adapted state frozen. ``per_query_me1.json`` holds the five
+    accuracies; ``per_query_successes.json`` holds the per-item 0/1
+    outcomes behind them (``{modality: [0/1] * 64}``, item ``i`` is the
+    same probe item for every modality). The seed is the lesion seed, so
+    different cells (different ``--seed``) probe different batches.
+    """
     import pickle
 
     from track_p.multiplexer import GammaThetaMultiplexer
@@ -369,13 +379,20 @@ def lesion(
     # Sprint 5 / Task 5.2 — per-query Me1 vector for the downstream Me6
     # perf matrix. One accuracy scalar per candidate query modality, all
     # measured after Phase 2 ended, with the lesion-adapted state frozen.
+    # ADR-0022 — the per-item outcomes are kept too (same probe batch for
+    # the five queries) and the accuracy is derived from them, so both
+    # files describe the same forward pass.
+    from bouba_sens.loop import successes_to_accuracy
     from bouba_sens.sensory import MODALITIES as _MODS
 
-    per_query_me1 = {m: loop.query_accuracy(m, seed=seed + 777) for m in _MODS}
+    per_query_successes = {m: loop.query_successes(m, seed=seed + 777) for m in _MODS}
+    per_query_me1 = {m: successes_to_accuracy(s) for m, s in per_query_successes.items()}
 
     out.mkdir(parents=True, exist_ok=True)
     with (out / "per_query_me1.json").open("w") as pq_out:
         json.dump(per_query_me1, pq_out, indent=2)
+    with (out / "per_query_successes.json").open("w") as ps_out:
+        json.dump(per_query_successes, ps_out)
     with (out / "report.pkl").open("wb") as report_out:
         pickle.dump(report, report_out)
     with (out / "metadata.json").open("w") as meta_out:

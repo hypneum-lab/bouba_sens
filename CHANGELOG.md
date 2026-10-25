@@ -32,6 +32,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Me6 paired null** (`scripts/me6_paired_null.py`,
+  `reports/me6_paired_null.json`, ADR-0022 *Proposed*). The B-3 median is
+  compared with a paired sign-flip null built from the saved per-item
+  probe outcomes: for every trio, pair (m, q) and item i the outcomes
+  `s_mq(i)` and `s_qm(i)` are swapped with probability 1/2 (H0: symmetry
+  of the expected performances), then Me6 per trio and the median over
+  trios are recomputed (B = 20 000, seed 25102026, numpy only). Reports
+  the observed median, its null mean / P99 / tail probability, the same
+  for every trio maximum, and the ADR-0021 iid reference at the same K,
+  n and p. Follows the 2026-10-25 cross-review gate: no compatibility or
+  rejection verdict before a paired calibration.
+- **Per-item probe outcomes** (`AdaptationLoop.query_successes`,
+  `successes_to_accuracy`; `bouba-sens lesion` writes
+  `per_query_successes.json` next to `per_query_me1.json`).
+  `query_accuracy` is now the float32 mean of `query_successes`, bit-
+  identical to the previous value for every batch size (non-regression
+  test). The five query modalities of a cell share one probe batch
+  (`seed + 777`); the docstring now says so.
 - **Me6 null calibration** (`scripts/me6_null_calibration.py`,
   `reports/me6_null_calibration.json`, ADR-0021 *Accepted*). Simulates
   the B-3 statistic when the 25 accuracies of the 5x5 matrix are equal

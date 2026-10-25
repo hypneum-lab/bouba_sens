@@ -57,8 +57,9 @@ not done by a pull request; see the PI action list below.
 | 0019b | `0019-b2-dimensional-mine-criterion.md` | B-2 re-run with MINE at N ≳ f(D); retire "probe batch ≥128" | 2026-06-04 | Accepted |
 | 0020 | `0020-snr-floors-nearly-identical-under-default-settings.md` | SNR floors were nearly identical under default settings | 2026-10-23 | Accepted — factual audit |
 | 0021 | `0021-me6-null-calibration.md` | Me6 null calibration — the B-3 statistic under sampling noise alone | 2026-10-25 | Accepted — validated by the PI |
+| 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Proposed — awaiting PI decision |
 
-Next free number: **0022**.
+Next free number: **0023**.
 
 ## PI action list (not resolvable by pull request)
 

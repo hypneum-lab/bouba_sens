@@ -11,7 +11,11 @@ date-released: "2026-05-10"
 license: MIT
 repository-code: "https://github.com/hypneum-lab/bouba_sens"
 url: "https://github.com/hypneum-lab/bouba_sens"
+doi: "10.5281/zenodo.19701353"
 identifiers:
+  - type: doi
+    value: "10.5281/zenodo.19701353"
+    description: "Zenodo concept DOI (resolves to the latest archived release)"
   - type: url
     value: "https://github.com/hypneum-lab/bouba_sens/blob/main/docs/superpowers/specs/2026-04-20-bouba-sens-design.md"
     description: "Local pre-registration of the B-1/B-2/B-3 thresholds (0.05/0.10/0.02): git-dated design spec, commit 87f723f, 2026-04-20; amendments v0.4-v0.6 under docs/osf/ (git-dated 2026-04-20/21/23, never filed on OSF). Not registered on OSF: 10.17605/OSF.IO/Q6JYN covers dream-of-kiki H1-H4 only (issue #20)."
