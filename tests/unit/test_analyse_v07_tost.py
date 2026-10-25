@@ -378,6 +378,7 @@ def test_e2_config_must_be_the_frozen_preset() -> None:
     with pytest.raises(ValueError, match="e2_config"):
         an.analyse_confirmatory({"e2": rows})
     for key, bad in (("world", "gaussian"), ("lock_after", 50), ("k_steps", 5000),
+                     ("steps_train", 1), ("steps_lesion", 1), ("snr_floor_db", -10.0),
                      ("probe_scheme", "contiguous")):  # fmt: skip
         cfg = {**an.E2_CONFIG, key: bad}
         with pytest.raises(ValueError, match="frozen configuration"):

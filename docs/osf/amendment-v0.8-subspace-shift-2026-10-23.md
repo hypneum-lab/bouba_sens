@@ -783,8 +783,11 @@ each item below gives the decision, the rationale and what changed.
    arm is descriptive, not confirmatory. Changed: from undecided to
    this exploratory arm.
 
-No design decision remains open. Filing still needs the driver,
-the S-2 to S-5 analyses and the secondary metric in the driver, the
-pilot, N by the rule of §7, and the PI's confirmation of the proposed
-numbers.
+No design decision remains open. Done on 2026-10-25: the driver
+(capture and pilot planning), the pilot and N by the rule of §7 (N =
+20, k* = 13). Filing still needs the S-2 to S-5 analyses, the
+secondary parameter-subspace metric and the CC-film arm in the driver,
+the corrected participation ratio of Chun et al., the recording of the
+pilot quantities, k* and N on the OSF form, and the PI's confirmation
+of the proposed numbers.
 

@@ -569,9 +569,12 @@ component, including E-1b, is stated there.
   CI has coverage ≥ 90 % for a continuous distribution symmetric about
   its centre. Reported: the estimate, the median, the 90 % and 95 %
   CIs and both one-sided signed-rank p-values, computed from the same
-  exact law (`signed_rank_p`: T⁺ = number of Walsh averages above the
-  bound, ties at the bound counted one half), so that on untied data
-  both p < 0.05 exactly when the 90 % CI lies inside the bounds.
+  exact law (`signed_rank_p`), with a frozen tie convention: a Walsh
+  average equal to the bound never counts as beyond it (lower test:
+  T = #{W > −δ}, p = P(T⁺ ≥ T); upper test: T = #{W ≥ +δ},
+  p = P(T⁺ ≤ T)). Then, tied or not, p ≤ 0.05 on a side exactly when
+  the 90 % CI lies strictly beyond that bound, so both p ≤ 0.05 exactly
+  when the label is Equivalent.
   **Ties.** B-1 grid medians are quantised (steps of 0.00625), so Walsh
   averages tie; the CI is still read from the order statistics and the
   untied law is used, an approximation stated in the paper.

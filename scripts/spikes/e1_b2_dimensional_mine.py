@@ -604,6 +604,11 @@ def main() -> None:
     summary = {
         "world": args.world,
         "lock_after": args.lock_after,
+        "steps_train": args.steps_train,
+        "steps_lesion": args.steps_lesion,
+        # The lesion SNR ramp of _capture (fixed in code: 0 dB -> -20 dB).
+        "snr_init_db": 0.0,
+        "snr_floor_db": -20.0,
         "seeds": args.seeds if args.seed_list is None else list(args.seed_list),
         "train_batch": args.batch_size if args.train_batch is None else args.train_batch,
         "lesion_batch": args.batch_size if args.lesion_batch is None else args.lesion_batch,

@@ -390,6 +390,10 @@ def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
 E2_CONFIG: dict[str, Any] = {
     "world": "studyforrest",
     "lock_after": 100,
+    "steps_train": 200,
+    "steps_lesion": 100,
+    "snr_init_db": 0.0,
+    "snr_floor_db": -20.0,
     "train_batch": 16,
     "lesion_batch": 16,
     "probe_n": 512,
