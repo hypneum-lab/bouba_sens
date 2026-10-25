@@ -1,7 +1,8 @@
 # ADR-0022 — Me6 paired null: the B-3 median against a sign-flip null on the saved outcomes
 
-**Status:** Proposed — awaiting PI decision. This ADR modifies no metric,
-no verdict, no past ADR and no locked threshold.
+**Status:** Accepted — PI decision 2026-10-25 (see §Verdict). This ADR
+modifies no metric, no past ADR and no locked threshold; it records the
+first calibrated reading of B-3 (Gaussian world).
 **Date:** 2026-10-25
 **Sprint:** post-v0.5.9 audit (follows ADR-0021)
 **Artefacts:** `src/bouba_sens/loop.py` (`query_successes`,
@@ -114,7 +115,7 @@ cells.
 - The per-trio rows show whether an excess, if any, is carried by a few
   trios or by all.
 
-None of these is a verdict on B-3: the PI reads the JSON and decides.
+The PI read the JSON on 2026-10-25; the verdict is recorded in §Verdict.
 
 ## Results (`reports/me6_paired_null.json`)
 
@@ -153,7 +154,7 @@ about 1.5 of 30 would be expected below 0.05. The pairs attaining the
 maximum differ from trio to trio (vision|gravity, tactile|force,
 audio|vision, …): no single pair carries the excess.
 
-### Reading (not a verdict — PI decision pending)
+### Reading
 
 - The grid-level B-3 median (0.1562) is **inside the body of the paired
   null**, not in its upper tail: 17 % of null grids reach or exceed it.
@@ -175,7 +176,32 @@ audio|vision, …): no single pair carries the excess.
   maxima in their own null's upper tail. Whether this is seed-1
   structure or multiplicity (30 trios × 10 pairs) is not decided here.
 
-## Known limits (to be weighed by the PI)
+## Verdict (PI decision 2026-10-25)
+
+Accepted by the PI on 2026-10-25 with the following verdict (original in
+French):
+
+> « B-3 sur le monde gaussien n'est pas distinguable du nul apparié
+> (médiane observée 0,156, nul E 0,141, P99 0,156, p = 0,17 ; nul iid
+> quasi identique) ; l'exactitude moyenne des requêtes vaut 0,254, soit le
+> hasard à 4 classes : la sonde (masquage à zéro des quatre autres
+> modalités) ne porte pas d'information décodable par modalité seule, ce
+> qui est un défaut de dispositif à corriger avant toute nouvelle lecture
+> de B-3. »
+
+In English: on the Gaussian world, **B-3 is not distinguishable from the
+paired null** (observed median 0.156; null mean 0.141, P99 0.156;
+p = 0.17; the iid reference is almost identical). The **mean query
+accuracy is 0.254, i.e. 4-class chance**: the probe — zero-masking the
+four other modalities — carries no information decodable from a single
+modality. This is a **design defect to be fixed before any new reading of
+B-3**. The B-3 status for the Gaussian world therefore moves from "null,
+uncalibrated" to "calibrated: compatible with the null" (README,
+CHANGELOG). The seed-1 excess (three trios with maxima in their own
+null's upper tail, §Results) is recorded as **descriptive only**, not as
+a finding.
+
+## Known limits
 
 1. **Exchangeability of items within a probe.** The per-item sign flip
    is exact (conditional on |d_i|) when the outcomes of a probe are
@@ -214,8 +240,11 @@ audio|vision, …): no single pair carries the excess.
 
 ## Proposed follow-ups (none done here)
 
-1. PI decision on this ADR (accept / amend / reject) after reading the
-   JSON.
+1. ~~PI decision on this ADR~~ — done 2026-10-25 (Accepted, §Verdict).
+   **New precondition:** fix the probe design (zero-masking leaves the
+   single-modality queries at chance, mean accuracy 0.254) before any
+   new B-3 reading on any world; a probe whose per-modality accuracy is
+   above chance is required for Me6 to measure anything.
 2. Block sign flips for the Studyforrest world; a `--block` option.
 3. Re-run the XOR and Sinusoid grids with the per-item files and apply
    the same null (iid worlds, so limit 1 does not apply).

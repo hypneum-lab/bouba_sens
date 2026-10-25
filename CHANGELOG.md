@@ -7,10 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **B-3 status (Gaussian world): null, uncalibrated → calibrated:
+  compatible with the null** (ADR-0022 *Accepted*, PI decision
+  2026-10-25). Observed median 0.156 vs paired-null mean 0.141 / P99
+  0.156, p = 0.17; the iid reference is almost identical. Mean query
+  accuracy 0.254 = 4-class chance: the zero-masking probe carries no
+  information decodable per modality — a design defect to fix before
+  any new B-3 reading. The former "PASS on magnitude (5-6x threshold)"
+  was never compared with a null (README status tables updated). The
+  seed-1 excess (3 trios in their own null's upper tail) is descriptive
+  only.
+
 ### Added
 
 - **Me6 paired null** (`scripts/me6_paired_null.py`,
-  `reports/me6_paired_null.json`, ADR-0022 *Proposed*). The B-3 median is
+  `reports/me6_paired_null.json`, ADR-0022 *Accepted* 2026-10-25). The B-3 median is
   compared with a paired sign-flip null built from the saved per-item
   probe outcomes: for every trio, pair (m, q) and item i the outcomes
   `s_mq(i)` and `s_qm(i)` are swapped with probability 1/2 (H0: symmetry
