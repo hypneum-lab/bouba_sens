@@ -1,0 +1,21 @@
+{
+  "source": "reports/pilots/v08_pilot_quantities.json",
+  "sims": 100000,
+  "rng_seed": 20261831,
+  "g_hat": 23.091754795213703,
+  "q_hat": 0.1486600774792154,
+  "exclusion_model": "level",
+  "trend_sd_units": 23.791754795213702,
+  "candidates": [
+    {
+      "N": 20,
+      "complete_only": 0.93349,
+      "safeguarded": 0.90701,
+      "fail": 0.02049,
+      "kept_fraction": 0.851267,
+      "lower_2se": 0.9051732326233297
+    }
+  ],
+  "N": 20,
+  "rule_outcome": "N found"
+}

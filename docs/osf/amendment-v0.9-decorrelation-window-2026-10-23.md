@@ -591,6 +591,23 @@ publishable.
   gives **N = 32** (estimates
   0.788 / 0.801 / 0.809 at N = 30 / 31 / 32; lower bounds 0.786 /
   0.799 / 0.807; `scripts/power_prereg_2026_10.py`).
+  *Pilot result (2026-10-25, seeds 3101–3105, macM1, commit `849d0ef`,
+  class-stratified held-out probe; `reports/pilots/v09_pilot_main_grid.json`,
+  `…_n_rule.json`).* Manipulation check under the stratified split:
+  Δ_K = 0.1206, p = 1 / 10,001, gate **passed** (K_joint 0.130,
+  K_decor 0.010). Main grid (decor / joint / plain at 5 onsets):
+  held-out acc_all 0.373–0.506 in 74 of 75 runs, i.e. mostly the
+  majority-class rates of the probe (192 / 512 = 0.375 for class 1,
+  240 / 512 = 0.469 for class 2), and FG = 0 in most runs. D(s, o) is
+  0 in 14 of 25 cells, within ±0.008 elsewhere, and −0.111 once (3103,
+  o = 200). ANOVA: MS_seed 0.000422, MS_residual 0.000511 (df 16),
+  σ̂_u² = 0, **σ̂ = 0.0226**, planning SD **σ̂_plan = 0.0352**
+  (× 1.558). N rule: at N = 20 P(A+ and C+) = 0.9499 (lower bound
+  0.9485), so **N = 20**. Runtime: 404 s for the 75 main-grid runs
+  (3.5–7.3 s each, about 81 s per seed). Reported (no decision): the
+  networks are close to majority-class prediction on the held-out
+  probe after 250–450 steps, which leaves fusion gain little room;
+  the SD is driven by one cell. This changes no rule.
   If no N ≤ 40 qualifies, the amendment is not filed as drafted: the PI
   either files N = 40 with its computed power stated on the form as
   below target, or redesigns (for example a larger SESOI justified
@@ -688,7 +705,8 @@ mitigate.
       denominators skipped, translation invariance, label-swap gate),
       PR #12.
 - [ ] Manipulation check passed on pilot seeds and recorded on the form,
-      with Δ_K, its permutation p-value, K_joint and K_decor.
+      with Δ_K, its permutation p-value, K_joint and K_decor. (Pilot
+      2026-10-25, stratified split: Δ_K 0.1206, p 1e-4, passed, §7.)
 - [ ] Pilot variance components of D, χ² UCL80 planning SD (df = 4,
       × 1.558) and runtime recorded; N fixed on the form.
 - [x] No threshold or existing-metric change.

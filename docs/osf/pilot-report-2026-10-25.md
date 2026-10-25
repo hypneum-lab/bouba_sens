@@ -15,12 +15,12 @@ change is listed in the draft headers with its trigger. The sections
 below are in chronological order; earlier sections record what was
 true at the time and are kept as history.
 
-**Current position (2026-10-25, about 13:45).** v0.7 B-2 pilot: rounds
-1–3 done. v0.8: driver written (`bouba_sens.v08_driver`), Codex review
-round 1 done (FIX-FIRST, fixes applied), pilot not yet run. v0.9:
-manipulation check run under the old tail split; driver written,
-stratified probe implemented; the stratified-split check and the
-D-variance pilot not yet run.
+**Current position (2026-10-25, 18:45).** All pilots are run: v0.7
+B-2 rounds 1–3 (plus the N = 150 recomputation), v0.8 (seeds
+2101–2110, after Codex review rounds 1–2 of the driver), v0.9
+manipulation check (tail split, then stratified split) and the v0.9
+main-grid D-variance pilot (seeds 3101–3105). No confirmatory seed was
+run.
 
 **Authorisation:** PI go, 2026-10-25 11:50 (run the pilots of the
 draft PR, branch `docs/osf-prereg-2026-10`).
@@ -59,9 +59,11 @@ alongside (the manifest tool only covers `.json`, `.csv`, `.png`).
 | v0.7 B-2 round 1 (§4.3, protocol of 2026-10-24) | 1101–1105 | **run**; primary readout degenerate (findings 1–2) | 57 s total; 10–13 s per seed | `reports/pilots/v07_b2_pilot_seeds1101-1105.json`, `…_derived.json`, `v07_b2_probe_diagnostic.jsonl` |
 | v0.7 B-2 round 2 (§4.2 after the PI decisions of 2026-10-25) | 1101–1105 (same seeds) | **run** | 54 s total; 10–12 s per seed | `reports/pilots/v07_b2_pilot_r2_seeds1101-1105.json`, `…_r2_derived.json` |
 | v0.7 B-2 round 3 (K = 8 Gumbel draws, robust E-2, switch; PI decisions 2026-10-25 13:12) | 1101–1105 (same seeds) | **run** | 112 s run (about 22 s per seed) + 57 s derivation | `reports/pilots/v07_b2_pilot_r3_seeds1101-1105.json`, `…_r3_derived.json` |
-| v0.8 (§7) | 2101–2110 | **blocked**: driver missing (draft filing note, §9) | — | none; structural check on seed 0 only (`v08_hard_rank_diagnostic_seed0.jsonl`) |
+| v0.8 (§7), at 11:00 | 2101–2110 | blocked then (driver missing); seed-0 hard-rank check | — | `v08_hard_rank_diagnostic_seed0.jsonl` |
+| v0.8 pilot (§7), after the driver and the review | 2101–2110 | **run**: k* = 13, 10 / 10 complete, N = 20 | 61 min (about 365 s per seed) | `v08_pilot_capture_log.json`, `v08_pilot_quantities.json`, `v08_pilot_n_rule.json` |
 | v0.9 manipulation check (§3.3) | 3101–3105 | **run, gate passed** | 35 s | `reports/pilots/v09_manipulation_check_seeds3101-3105.json` |
-| v0.9 variance components of D, runtime (§7) | 3101–3105 | **blocked**: driver for arms / grids missing (draft filing note, §9) | — | none |
+| v0.9 manipulation check, stratified split | 3101–3105 | **run, gate passed** | 38 s | `v09_manipulation_check_stratified_seeds3101-3105.json` |
+| v0.9 main grid and D variance (§7) | 3101–3105 | **run**: σ̂_plan 0.0352, N = 20; FG mostly 0 | 404 s | `v09_pilot_main_grid.json`, `v09_pilot_n_rule.json` |
 
 ## v0.7 — B-2 pilot, round 1 (protocol as drafted on 2026-10-24)
 
@@ -380,6 +382,91 @@ arm / grid driver and the train-side fusion gain (draft filing note,
 held-out frames, so finding 2 does not transfer directly, but the
 probe window is again one contiguous window (inside the 900 probe
 frames).
+
+## v0.8 pilot (seeds 2101–2110)
+
+Command (`reports/pilots/logs/run_v08_pilot.sh`, log
+`reports/pilots/logs/v08_pilot.log`), macM1, commit `aef0988` (driver
+as reviewed in Codex round 2; later commits changed only the v0.7
+analysis, tests and text):
+
+```
+uv run python scripts/run_v08_subspace.py capture \
+  --seeds 2101,…,2110 --blocks-dir <runs>/v08_pilot_blocks
+uv run python scripts/run_v08_subspace.py pilot \
+  --blocks-dir <runs>/v08_pilot_blocks --out reports/pilots/v08_pilot_quantities.json
+uv run python scripts/pilots/derive_v08_pilot.py \
+  reports/pilots/v08_pilot_quantities.json reports/pilots/v08_pilot_n_rule.json
+```
+
+World `StudyforrestRealWorld`; Gumbel readout, each capture the mean
+of K = 8 seeded draws; 70 blocks of 16 arms (51–59 s per block, about
+365 s per seed, 61 min in all). The raw code matrices (2.2 GB) stay on
+macM1 (`~/hypneum-lab/pilots-pr9/runs/v08_pilot_blocks`), not in the
+repository.
+
+| Quantity (v0.8 §3 item 3, §7) | Value |
+|---|---:|
+| k* (median plug-in PR of the 70 pilot Z_pre, rounded half up) | **13** (median 12.72; range 10.74–13.39) |
+| invalid cells / undefined blocks / complete seeds | 0 / 1,050; 0 / 70; **10 / 10** |
+| q̂ (Clopper–Pearson 80 % bound of 0 / 10) | 0.149 |
+| exclusion model | level |
+| σ̂ (two-way ANOVA residual SD, df 54) / UCL80 | 0.00293 / **0.00320** |
+| median S_split (complete blocks, all 7 levels) | **0.0739** (blocks 0.052–0.077) |
+| ĝ = median S_split / σ̂_UCL80 | **23.09** SD |
+| N rule: safeguarded P(Supported) at N = 20, trend ĝ + 0.70 SD, 100,000 draws (lower bound) | 0.9070 (0.9052) → **N = 20** |
+| runtime at N = 20 | about 2.0 h on macM1 |
+
+Reported, no decision: the block outcomes Y range from −0.0074 to
++0.0159 (median +0.0008), more than ten times below the guard median
+S_split; under the frozen planning rule the assumed trend (ĝ + 0.70 SD
+≈ 0.076 in Y units) is far above anything seen in the pilot, so N = 20
+is the minimum by rule rather than a sign of a large expected effect.
+66 % of the Z_pre / Z_post matrices have an eigengap ratio
+λ_k* / λ_(k*+1) below 1.1 (the section 5 instability flag). The
+finite-sample-corrected participation ratio of Chun et al. is not
+implemented and was not computed.
+
+## v0.9 pilot (seeds 3101–3105), stratified split
+
+Command (`reports/pilots/logs/run_v09_pilot.sh`, log
+`reports/pilots/logs/v09_pilot.log`), macM1, commit `849d0ef`:
+manipulation check with `--split stratified`, then
+`scripts/run_v09_decorrelation.py --seeds 3101,…,3105`, then
+`scripts/pilots/derive_v09_pilot.py`.
+
+**Manipulation check (stratified split):** Δ_K = 0.1206, p = 1 / 10,001,
+**passed** (K_joint 0.130, K_decor 0.010; original anchors 0.234). The
+tail-split check of 11:00 (Δ_K 0.1077) is kept as history.
+
+**Main grid and D:** 75 runs (decor / joint / plain × 5 onsets × 5
+seeds), 404 s. Held-out accuracy acc_all is 0.373–0.506 in 74 of 75
+runs (0.750 once), i.e. near the majority-class rates of the probe
+(class 1: 192 / 512 = 0.375; class 2: 240 / 512 = 0.469), and FG is 0 in
+most runs. D(s, o) (rows 3101–3105, onsets 0–200):
+
+```
+3101:  +0.0020 +0.0020 -0.0020  0.0000 -0.0039
+3102:   0.0000 -0.0039 -0.0020  0.0000  0.0000
+3103:   0.0000 -0.0020 +0.0078  0.0000 -0.1113
+3104:   0.0000  0.0000  0.0000  0.0000  0.0000
+3105:   0.0000 -0.0059 +0.0020  0.0000  0.0000
+```
+
+ANOVA without replication: MS_seed 0.000422, MS_residual 0.000511
+(df 16), σ̂_u² = 0, σ̂ = 0.0226, **σ̂_plan = 0.0352** (× 1.558). N rule
+(early profile, μ₀ 0.05, ρ 0, 100,000 draws): P(A+ and C+) = 0.9499 at
+N = 20 (lower bound 0.9485) → **N = 20**. Runtime: about 81 s per seed
+for the 15 main-grid runs; the full 31-run design per seed is
+estimated at about 3 min per seed, about 1 h at N = 20 (the remaining
+16 runs were not timed).
+
+Reported, no decision: after 250–450 Phase-1 steps the networks mostly
+predict one class on the held-out probe, so fusion gain has almost no
+room and D is 0 in 14 of 25 pilot cells; σ̂ is driven by one cell
+(−0.111). The rules are unchanged; whether the design can detect a
+deficit of the SESOI size with such floor-level fusion gain is a
+question for the PI.
 
 ## Findings at 11:00 and how they were resolved
 

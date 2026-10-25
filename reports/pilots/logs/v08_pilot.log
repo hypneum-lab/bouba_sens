@@ -1,0 +1,288 @@
+START 2026-10-25T12:47:46Z 1792932466 commit aef09883a0a806e2dbfb2aac96b6cbb3a340ea87
+Uninstalled 1 package in 6ms
+Installed 1 package in 6ms
+seed=2101 lock=25 wall=55.6s
+seed=2101 lock=50 wall=53.8s
+seed=2101 lock=75 wall=56.6s
+seed=2101 lock=100 wall=59.2s
+seed=2101 lock=125 wall=53.8s
+seed=2101 lock=150 wall=56.5s
+seed=2101 lock=175 wall=52.2s
+seed=2102 lock=25 wall=52.2s
+seed=2102 lock=50 wall=51.8s
+seed=2102 lock=75 wall=51.9s
+seed=2102 lock=100 wall=51.9s
+seed=2102 lock=125 wall=52.0s
+seed=2102 lock=150 wall=52.2s
+seed=2102 lock=175 wall=53.2s
+seed=2103 lock=25 wall=56.0s
+seed=2103 lock=50 wall=51.0s
+seed=2103 lock=75 wall=50.7s
+seed=2103 lock=100 wall=51.0s
+seed=2103 lock=125 wall=50.8s
+seed=2103 lock=150 wall=51.6s
+seed=2103 lock=175 wall=50.1s
+seed=2104 lock=25 wall=50.1s
+seed=2104 lock=50 wall=51.7s
+seed=2104 lock=75 wall=52.5s
+seed=2104 lock=100 wall=52.3s
+seed=2104 lock=125 wall=52.6s
+seed=2104 lock=150 wall=52.2s
+seed=2104 lock=175 wall=52.1s
+seed=2105 lock=25 wall=51.4s
+seed=2105 lock=50 wall=51.9s
+seed=2105 lock=75 wall=51.7s
+seed=2105 lock=100 wall=52.7s
+seed=2105 lock=125 wall=52.1s
+seed=2105 lock=150 wall=52.0s
+seed=2105 lock=175 wall=52.2s
+seed=2106 lock=25 wall=51.9s
+seed=2106 lock=50 wall=52.0s
+seed=2106 lock=75 wall=51.4s
+seed=2106 lock=100 wall=52.7s
+seed=2106 lock=125 wall=52.9s
+seed=2106 lock=150 wall=52.4s
+seed=2106 lock=175 wall=52.3s
+seed=2107 lock=25 wall=53.5s
+seed=2107 lock=50 wall=53.1s
+seed=2107 lock=75 wall=52.8s
+seed=2107 lock=100 wall=51.3s
+seed=2107 lock=125 wall=50.6s
+seed=2107 lock=150 wall=51.1s
+seed=2107 lock=175 wall=51.9s
+seed=2108 lock=25 wall=52.3s
+seed=2108 lock=50 wall=52.6s
+seed=2108 lock=75 wall=52.6s
+seed=2108 lock=100 wall=52.3s
+seed=2108 lock=125 wall=52.0s
+seed=2108 lock=150 wall=52.8s
+seed=2108 lock=175 wall=52.6s
+seed=2109 lock=25 wall=52.6s
+seed=2109 lock=50 wall=51.5s
+seed=2109 lock=75 wall=50.9s
+seed=2109 lock=100 wall=51.9s
+seed=2109 lock=125 wall=50.2s
+seed=2109 lock=150 wall=51.6s
+seed=2109 lock=175 wall=51.1s
+seed=2110 lock=25 wall=50.6s
+seed=2110 lock=50 wall=51.8s
+seed=2110 lock=75 wall=51.9s
+seed=2110 lock=100 wall=50.5s
+seed=2110 lock=125 wall=49.6s
+seed=2110 lock=150 wall=53.3s
+seed=2110 lock=175 wall=51.3s
+CAPTURE-DONE 2026-10-25T13:48:50Z 1792936130
+Uninstalled 1 package in 7ms
+Installed 1 package in 4ms
+{
+  "k_star": 13,
+  "median_pr": 12.717158321287599,
+  "n_seeds": 10,
+  "n_complete": 10,
+  "seeds_complete": [
+    2101,
+    2102,
+    2103,
+    2104,
+    2105,
+    2106,
+    2107,
+    2108,
+    2109,
+    2110
+  ],
+  "undefined_levels_per_seed": {
+    "2101": 0,
+    "2102": 0,
+    "2103": 0,
+    "2104": 0,
+    "2105": 0,
+    "2106": 0,
+    "2107": 0,
+    "2108": 0,
+    "2109": 0,
+    "2110": 0
+  },
+  "per_level": [
+    {
+      "lock": 25,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 50,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 75,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 100,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 125,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 150,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    },
+    {
+      "lock": 175,
+      "invalid_cells": 0,
+      "total_cells": 150,
+      "undefined_blocks": 0,
+      "total_blocks": 10
+    }
+  ],
+  "y_all": [
+    [
+      0.00873195058883109,
+      0.015939225999037798,
+      0.011520186890674418,
+      -0.007393096617515471,
+      0.013026452938261442,
+      0.014452743177141243,
+      0.01216270749283517
+    ],
+    [
+      0.0021297060742443835,
+      0.0021483870555657203,
+      0.002001143600257091,
+      0.0018260811580171482,
+      0.0017801378782271587,
+      0.001798108044331656,
+      0.0017367485265649268
+    ],
+    [
+      -0.0008038168310491728,
+      -0.0009074013524214969,
+      -0.00013827372558718187,
+      3.7260953994894264e-06,
+      -1.145084123783946e-05,
+      -2.393943361037043e-05,
+      -9.52479642570142e-05
+    ],
+    [
+      -0.00013302911656135064,
+      -0.0004361269439704524,
+      -0.00045448720008779697,
+      -0.00047801037364987586,
+      -0.0005695646292678269,
+      -0.0006180983022917724,
+      -0.0006543923369073251
+    ],
+    [
+      -0.004616171148933493,
+      -0.0037867932514099173,
+      -0.003121888396332456,
+      -0.0003748544237560103,
+      -1.708555255933164e-05,
+      -0.00011718920773921837,
+      -0.0004441465338636541
+    ],
+    [
+      0.0015507224706102843,
+      0.0013746975552642593,
+      0.0009229678858452689,
+      0.0007237565080631253,
+      0.0007916169527135211,
+      0.0008510896896859813,
+      0.0006076216490079958
+    ],
+    [
+      0.0006018600469544499,
+      -0.0006025636927754208,
+      -0.00110096636179359,
+      -0.0013079567120241192,
+      -0.0013830305586477742,
+      -0.0013969673651157838,
+      -0.0015146096830927491
+    ],
+    [
+      0.0068785957453942545,
+      0.0074491315273323075,
+      0.007194125508638918,
+      0.010906738328675315,
+      0.007887847103542484,
+      0.00750492216835149,
+      0.0039839049960084805
+    ],
+    [
+      0.005606393918839221,
+      0.0029720344578675756,
+      0.005679507208667875,
+      0.005612864883095904,
+      0.004764333047367293,
+      0.005113582682911864,
+      0.004498325225983833
+    ],
+    [
+      -0.00032197521033611176,
+      -0.005712907312755672,
+      0.00031642604267838326,
+      0.0013337335310175114,
+      0.003288457399513403,
+      0.003341570159917151,
+      0.0011745460850601797
+    ]
+  ],
+  "q_hat_cp80": 0.1486600774792154,
+  "exclusion_model": "level",
+  "eigengap_share_below_1_1": 0.6589285714285714,
+  "sigma_hat_point": 0.002926128841435886,
+  "sigma_hat_df": 54,
+  "sigma_hat_ucl80": 0.0032012639376414456,
+  "median_s_split_complete": 0.07392280188277656,
+  "g_hat": 23.091754795213703,
+  "g_hat_point_sd": 25.263003062606693,
+  "fileable_as_drafted": true,
+  "world_class": "StudyforrestRealWorld",
+  "wall_s_per_seed": {
+    "2101": 387.7511942940764,
+    "2102": 365.1159462091746,
+    "2103": 361.22668662585784,
+    "2104": 363.5126607498387,
+    "2105": 363.96414858219214,
+    "2106": 365.5819979556836,
+    "2107": 364.2502656659344,
+    "2108": 367.2732833739137,
+    "2109": 359.7679551659385,
+    "2110": 359.0501035001362
+  }
+}
+PILOT-DONE 2026-10-25T13:53:54Z 1792936434
+Uninstalled 1 package in 5ms
+Installed 1 package in 6ms
+N=20: safeguarded=0.9070 lower=0.9052 fail=0.0205
+{
+  "source": "reports/pilots/v08_pilot_quantities.json",
+  "sims": 100000,
+  "rng_seed": 20261831,
+  "g_hat": 23.091754795213703,
+  "q_hat": 0.1486600774792154,
+  "exclusion_model": "level",
+  "trend_sd_units": 23.791754795213702,
+  "N": 20,
+  "rule_outcome": "N found"
+}
+END 2026-10-25T13:54:00Z 1792936440

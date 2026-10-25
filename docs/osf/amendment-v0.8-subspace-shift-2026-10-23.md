@@ -601,6 +601,23 @@ outcomes are publishable.
   rank rule before filing (k* is fixed by the rule of §3 item 3 and is
   not tuned to reach power). N is fixed on the OSF form; it is never
   below 20.
+  *Pilot result (2026-10-25, seeds 2101–2110, macM1, commit `aef0988`;
+  `reports/pilots/v08_pilot_quantities.json`, `…_n_rule.json`,
+  `docs/osf/pilot-report-2026-10-25.md`).* Gumbel readout, K = 8
+  averaged codes. **k* = 13** (median plug-in PR 12.72 over the 70
+  pilot Z_pre; range 10.74–13.39; ADR-0019 value 11.7). Rank checks:
+  0 invalid cells of 1,050, **10 / 10 complete blocks**, so q̂ = 0.149
+  (Clopper–Pearson 80 % bound of 0/10) and the exclusion model is
+  **level**. σ̂ = 0.00293 (df 54), UCL80 **0.00320**; median S_split
+  over the complete blocks **0.0739**; **ĝ = 23.09** within-seed SD.
+  N rule: at N = 20 the safeguarded P(Supported) is 0.9070 (lower
+  bound 0.9052; P(protocol failure) 0.020) with a total trend of
+  ĝ + 0.70 = 23.79 SD, so **N = 20**. Runtime: about 365 s per seed
+  (7 blocks, 51–59 s each), about 2.0 h at N = 20. Reported (no
+  decision): Y ranged −0.0074 to +0.0159 (median +0.0008), an order
+  of magnitude below the guard; 66 % of the Z_pre / Z_post matrices
+  have an eigengap ratio λ_k* / λ_(k*+1) below 1.1. Neither number
+  changes N or any rule.
 - **Fixed-N design.** There is no interim look at outcomes and no
   optional stopping. A technical failure (crash, non-finite codes,
   missing capture) is replaced from the reserve list in order, blind to
@@ -672,7 +689,8 @@ outcomes are publishable.
       permutation test implemented (`metrics/page_trend.py`, PR #13).
 - [ ] Pilot (exactly 10 seeds, 2101–2110) within-seed SD of Y, median
       S_split, rank-exclusion rate and runtime recorded on the form; N
-      fixed on the form.
+      fixed on the form. (Pilot run 2026-10-25: k* = 13, σ̂ UCL80
+      0.00320, median S_split 0.0739, 0 / 10 incomplete, N = 20, §7.)
 - [x] No threshold or existing-metric change.
 - [x] Hypothesis is an increasing ordered trend; no peaked-shape test.
 - [x] Seeds disjoint from all previous and sibling-draft seeds.

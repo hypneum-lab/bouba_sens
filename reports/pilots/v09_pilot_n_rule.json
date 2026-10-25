@@ -1,0 +1,15 @@
+{
+  "source": "reports/pilots/v09_pilot_main_grid.json",
+  "sims": 100000,
+  "rng_seed": 20261932,
+  "sigma_plan": 0.03520545424458079,
+  "candidates": [
+    {
+      "N": 20,
+      "p_headline": 0.94992,
+      "lower_2se": 0.9485405509273627
+    }
+  ],
+  "N": 20,
+  "rule_outcome": "N found"
+}

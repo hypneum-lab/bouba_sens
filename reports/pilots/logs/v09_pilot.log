@@ -1,0 +1,189 @@
+START 2026-10-25T17:22:32Z 1792948952 commit 849d0ef667727ae0b1a7b3dcef814dd9e1a13a8f
+Uninstalled 1 package in 7ms
+Installed 1 package in 9ms
+{
+  "amendment": "v0.9 section 3.3 manipulation check (pilot)",
+  "world_class": "StudyforrestRealWorld",
+  "split": "stratified",
+  "n_frames": 9000,
+  "n_train": 8488,
+  "n_probe": 512,
+  "seeds": [
+    3101,
+    3102,
+    3103,
+    3104,
+    3105
+  ],
+  "n_draws_per_seed": 200,
+  "n_perm": 10000,
+  "gate_seed": 20261023,
+  "gate": {
+    "passed": true,
+    "delta_k": 0.12058853219617623,
+    "p_value": 9.999000099990002e-05,
+    "k_joint": 0.13035561683554545,
+    "k_decor": 0.009767084639369216,
+    "n_perm": 10000,
+    "reason": "ok"
+  },
+  "k_original_mean": 0.2335361513241904,
+  "wall_time_s": 37.76510016596876
+}
+CHECK-DONE 2026-10-25T17:23:11Z 1792948991
+Uninstalled 1 package in 8ms
+Installed 1 package in 6ms
+seed=3101 onset=0 arm=decor FG=-0.0020 acc_all=0.4688 wall=3.8s
+seed=3101 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 wall=3.8s
+seed=3101 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 wall=3.7s
+seed=3101 onset=50 arm=decor FG=+0.0078 acc_all=0.4043 wall=4.6s
+seed=3101 onset=50 arm=joint FG=+0.0098 acc_all=0.4062 wall=4.4s
+seed=3101 onset=50 arm=plain FG=-0.0039 acc_all=0.4199 wall=4.5s
+seed=3101 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 wall=5.8s
+seed=3101 onset=100 arm=joint FG=-0.0020 acc_all=0.5059 wall=5.9s
+seed=3101 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 wall=6.1s
+seed=3101 onset=150 arm=decor FG=+0.0000 acc_all=0.3750 wall=5.8s
+seed=3101 onset=150 arm=joint FG=+0.0000 acc_all=0.3750 wall=5.7s
+seed=3101 onset=150 arm=plain FG=+0.0000 acc_all=0.3750 wall=5.9s
+seed=3101 onset=200 arm=decor FG=-0.0078 acc_all=0.4023 wall=6.3s
+seed=3101 onset=200 arm=joint FG=-0.0117 acc_all=0.4004 wall=6.1s
+seed=3101 onset=200 arm=plain FG=-0.0156 acc_all=0.3965 wall=6.1s
+seed=3102 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 wall=3.6s
+seed=3102 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 wall=3.5s
+seed=3102 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 wall=3.6s
+seed=3102 onset=50 arm=decor FG=-0.0039 acc_all=0.3750 wall=4.2s
+seed=3102 onset=50 arm=joint FG=-0.0078 acc_all=0.3730 wall=4.3s
+seed=3102 onset=50 arm=plain FG=-0.0039 acc_all=0.3750 wall=4.2s
+seed=3102 onset=100 arm=decor FG=-0.0098 acc_all=0.4688 wall=4.8s
+seed=3102 onset=100 arm=joint FG=-0.0117 acc_all=0.4688 wall=4.8s
+seed=3102 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 wall=4.8s
+seed=3102 onset=150 arm=decor FG=+0.0000 acc_all=0.3750 wall=5.5s
+seed=3102 onset=150 arm=joint FG=+0.0000 acc_all=0.3750 wall=5.6s
+seed=3102 onset=150 arm=plain FG=+0.0000 acc_all=0.3750 wall=5.6s
+seed=3102 onset=200 arm=decor FG=+0.0000 acc_all=0.3750 wall=6.4s
+seed=3102 onset=200 arm=joint FG=+0.0000 acc_all=0.3750 wall=6.6s
+seed=3102 onset=200 arm=plain FG=+0.0000 acc_all=0.3750 wall=7.0s
+seed=3103 onset=0 arm=decor FG=+0.0000 acc_all=0.4766 wall=3.9s
+seed=3103 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 wall=3.9s
+seed=3103 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 wall=3.7s
+seed=3103 onset=50 arm=decor FG=+0.0020 acc_all=0.3770 wall=4.4s
+seed=3103 onset=50 arm=joint FG=+0.0000 acc_all=0.3750 wall=4.6s
+seed=3103 onset=50 arm=plain FG=+0.0020 acc_all=0.3770 wall=4.6s
+seed=3103 onset=100 arm=decor FG=-0.0254 acc_all=0.4258 wall=7.3s
+seed=3103 onset=100 arm=joint FG=-0.0176 acc_all=0.4355 wall=5.1s
+seed=3103 onset=100 arm=plain FG=-0.0215 acc_all=0.4336 wall=6.0s
+seed=3103 onset=150 arm=decor FG=+0.0000 acc_all=0.3750 wall=7.0s
+seed=3103 onset=150 arm=joint FG=+0.0000 acc_all=0.3750 wall=6.2s
+seed=3103 onset=150 arm=plain FG=+0.0000 acc_all=0.3750 wall=5.6s
+seed=3103 onset=200 arm=decor FG=+0.0000 acc_all=0.3750 wall=6.8s
+seed=3103 onset=200 arm=joint FG=-0.1113 acc_all=0.3750 wall=7.0s
+seed=3103 onset=200 arm=plain FG=-0.1113 acc_all=0.3750 wall=6.9s
+seed=3104 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 wall=4.0s
+seed=3104 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 wall=4.1s
+seed=3104 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 wall=4.1s
+seed=3104 onset=50 arm=decor FG=+0.0000 acc_all=0.3750 wall=4.9s
+seed=3104 onset=50 arm=joint FG=+0.0000 acc_all=0.3750 wall=4.9s
+seed=3104 onset=50 arm=plain FG=+0.0000 acc_all=0.3750 wall=4.7s
+seed=3104 onset=100 arm=decor FG=-0.0020 acc_all=0.3848 wall=5.6s
+seed=3104 onset=100 arm=joint FG=-0.0020 acc_all=0.3848 wall=5.7s
+seed=3104 onset=100 arm=plain FG=-0.0020 acc_all=0.3848 wall=5.8s
+seed=3104 onset=150 arm=decor FG=+0.0000 acc_all=0.3750 wall=6.4s
+seed=3104 onset=150 arm=joint FG=+0.0000 acc_all=0.3750 wall=6.3s
+seed=3104 onset=150 arm=plain FG=+0.0000 acc_all=0.3750 wall=6.3s
+seed=3104 onset=200 arm=decor FG=+0.0000 acc_all=0.3750 wall=6.8s
+seed=3104 onset=200 arm=joint FG=+0.0000 acc_all=0.3750 wall=6.9s
+seed=3104 onset=200 arm=plain FG=+0.0000 acc_all=0.3750 wall=7.1s
+seed=3105 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 wall=4.1s
+seed=3105 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 wall=4.0s
+seed=3105 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 wall=4.1s
+seed=3105 onset=50 arm=decor FG=+0.0000 acc_all=0.7500 wall=4.9s
+seed=3105 onset=50 arm=joint FG=-0.0059 acc_all=0.4043 wall=4.7s
+seed=3105 onset=50 arm=plain FG=-0.0117 acc_all=0.4238 wall=4.9s
+seed=3105 onset=100 arm=decor FG=+0.0000 acc_all=0.4297 wall=5.6s
+seed=3105 onset=100 arm=joint FG=+0.0020 acc_all=0.4297 wall=5.5s
+seed=3105 onset=100 arm=plain FG=+0.0039 acc_all=0.4316 wall=5.4s
+seed=3105 onset=150 arm=decor FG=+0.0000 acc_all=0.3750 wall=6.5s
+seed=3105 onset=150 arm=joint FG=+0.0000 acc_all=0.3750 wall=6.4s
+seed=3105 onset=150 arm=plain FG=+0.0000 acc_all=0.3750 wall=6.3s
+seed=3105 onset=200 arm=decor FG=-0.0059 acc_all=0.3750 wall=7.1s
+seed=3105 onset=200 arm=joint FG=-0.0059 acc_all=0.3750 wall=7.2s
+seed=3105 onset=200 arm=plain FG=-0.0059 acc_all=0.3750 wall=7.1s
+{
+  "world_class": "StudyforrestRealWorld",
+  "seeds": [
+    3101,
+    3102,
+    3103,
+    3104,
+    3105
+  ],
+  "osf_filed": "",
+  "wall_s_total": 403.6269984579412,
+  "onsets": [
+    0,
+    50,
+    100,
+    150,
+    200
+  ],
+  "D": [
+    [
+      0.001953125,
+      0.001953125,
+      -0.001953125,
+      0.0,
+      -0.00390625
+    ],
+    [
+      0.0,
+      -0.00390625,
+      -0.001953125,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -0.001953125,
+      0.0078125,
+      0.0,
+      -0.111328125
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      -0.005859375,
+      0.001953125,
+      0.0,
+      0.0
+    ]
+  ],
+  "variance_components": {
+    "ms_seed": 0.0004215240478515625,
+    "ms_residual": 0.0005108833312988282,
+    "df_residual": 16.0,
+    "sigma_e2": 0.0005108833312988282,
+    "sigma_u2": 0.0,
+    "sigma_hat": 0.02260272840386373,
+    "ucl_multiplier": 1.55757542255663,
+    "sigma_plan": 0.03520545424458079
+  }
+}
+GRID-DONE 2026-10-25T17:29:58Z 1792949398
+Uninstalled 1 package in 7ms
+Installed 1 package in 7ms
+N=20: P(A+ and C+)=0.9499 lower=0.9485
+{
+  "source": "reports/pilots/v09_pilot_main_grid.json",
+  "sims": 100000,
+  "rng_seed": 20261932,
+  "sigma_plan": 0.03520545424458079,
+  "N": 20,
+  "rule_outcome": "N found"
+}
+END 2026-10-25T17:30:00Z 1792949400
