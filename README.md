@@ -74,7 +74,7 @@ locked. Honest scope ; no overselling.
 
 **v0.5.9 — Paper v0.1 draft (TMLR submission blocked; see
 2026-05-11 update above).** Sprints 0–17 closed, 19 ADRs
-(0004–0019), 185+ tests. 9 grids (150 cells each) on the
+(0004–0019), 372 unit+smoke tests. 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
@@ -166,12 +166,15 @@ commit.
 ## Quickstart
 
 ```bash
+# nerve-wml is a sibling path dependency (`[tool.uv.sources]`, not on PyPI);
+# CI checks it out at tag v1.7.0 next to this clone
+git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
 uv sync --all-extras
-uv run bouba-sens version          # bouba_sens 0.5.5
-uv run pytest                      # 185+ items, all green
-# Single cell
+uv run bouba-sens version          # bouba_sens 0.5.9
+uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
+# Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
-    --timing T1 --snr-init 0 --snr-floor -20
+    --timing T1 --snr-init 0 --snr-floor -20 --out runs/cell_t1_audio
 # Single grid (≈20 min on M3 Ultra, 5-way seed concurrency)
 WORLD=studyforrest LOCK_AFTER=100 STEPS_TRAIN=200 STEPS_LESION=100 \
     OUT_ROOT=runs/sprint10_peak METRICS="Me1,Me2,Me3" \
@@ -183,13 +186,31 @@ uv run python scripts/sha256_manifest.py
 diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ```
 
+## Reproduce in one command
+
+```bash
+git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
+git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
+uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.9
+STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
+```
+
+Expected output: `runs/v01_smoke_<ts>/{phase1/model.pt,phase1/checkpoint.pkl,phase2_t2/report.pkl,phase2_t2/eval_report.json,phase2_t2/per_query_me1.json,summary.html}`; last log line `v01 smoke done; open …/summary.html`.
+`eval_report.json` has keys `me1, me1_probe, me2, me3_delta, me6_max_abs, me7, me8, me9` (`me1 ≈ 0.4`, `me2 ≈ 0.25–0.27` at 20/20 steps; `me7` is `null` in a single-cell run — it needs a paired T1/T2 cell).
+Duration: ≈ 4 min 45 s per run at 20/20 steps on an 8-core Xeon X5680 (Linux, CPU only, 1 core used, max RSS 0.9 GB); the 100/100-step default exceeds 15 min on that CPU (Phase 1 alone ≈ 5 min 40 s), far less on Apple Silicon.
+Determinism: bit-exact in the seeded test suite; the CLI training init is not yet seeded, so two runs do not give byte-identical `eval_report.json` (tracked as an issue).
+Full reproduction: `bash scripts/reproduce_paper_v01.sh` (every grid cited in paper v0.1, ≈ 8 h on an M3 Ultra, fetches Studyforrest ds000113 first).
+Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.json` regenerates the `reports/` manifest for comparison with the committed `reports/MANIFEST.json` (the default `--out` overwrites it).
+
 ## Dependencies
 
 - Python 3.14
 - PyTorch ≥ 2.5
 - `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
   bootstrap CI, null model permutation — Hypneum Lab,
-  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release)
+  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release).
+  Installed from a sibling clone at `../nerve-wml` (`[tool.uv.sources]`
+  in `pyproject.toml`); CI pins tag `v1.7.0`.
 
 ## Priority references
 
