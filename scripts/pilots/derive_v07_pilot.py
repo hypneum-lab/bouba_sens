@@ -32,6 +32,11 @@ _spec = importlib.util.spec_from_file_location("power_prereg", _POWER)
 pw = importlib.util.module_from_spec(_spec)
 assert _spec.loader is not None
 _spec.loader.exec_module(pw)
+_AN = Path(__file__).resolve().parents[1] / "analyse_v07_tost.py"
+_spec2 = importlib.util.spec_from_file_location("analyse_v07_tost", _AN)
+an = importlib.util.module_from_spec(_spec2)
+assert _spec2.loader is not None
+_spec2.loader.exec_module(an)
 
 N_FIXED = 95
 BOUND = 0.05
@@ -69,14 +74,66 @@ def power_block(values: list[float]) -> dict:
     return rec
 
 
+ROBUST_SIMS = 20_000
+ROBUST_GRID_SIMS = 2_000
+ROBUST_N_GRID = (95, 150, 200, 300, 500, 800, 1200)
+ROBUST_SEED = 20261025
+
+
+def _pseudo_median_discrete(v: np.ndarray) -> float:
+    """Pseudo-median of the uniform distribution on ``v``: median of (X1 + X2) / 2."""
+    w = np.sort(((v[:, None] + v[None, :]) / 2).ravel())
+    return float(np.median(w))
+
+
+def robust_power(values: list[float]) -> dict:
+    """Power of the robust E-2 rule (90 % Hodges-Lehmann CI inside +-0.05 bit).
+
+    Planning model, from the pilot (PI decision 2026-10-25): seeds are
+    drawn with replacement from the pilot values, their deviations from
+    the pilot pseudo-median inflated by the UCL80 multiplier of section 7
+    (sqrt(4 / chi2_0.20,4) = 1.558, the df = 4 rule used for the SD), and
+    the distribution shifted so that its pseudo-median is mu. Power at
+    N = 95 with 20,000 draws; the smallest N on a coarse grid that reaches
+    0.80 with 2,000 draws per N. Generator ``default_rng(20261025)``.
+    """
+    v = np.asarray(values, float)
+    infl = pw.sd_ucl(1.0, len(v))
+    dev = (v - _pseudo_median_discrete(v)) * infl
+    dev = dev - _pseudo_median_discrete(dev)
+    rng = np.random.default_rng(ROBUST_SEED)
+
+    def power(mu: float, n: int, sims: int) -> float:
+        hits = 0
+        for _ in range(sims):
+            x = mu + dev[rng.integers(0, len(dev), n)]
+            _, lo, hi = an.hl_ci(x, 0.90)
+            hits += lo > -BOUND and hi < BOUND
+        return hits / sims
+
+    rec: dict = {"inflation": infl, "support": dev.tolist()}
+    for mu in (0.0, -0.02):
+        p95 = power(mu, N_FIXED, ROBUST_SIMS)
+        n80 = next((n for n in ROBUST_N_GRID if power(mu, n, ROBUST_GRID_SIMS) >= 0.80), None)
+        rec[f"mu={mu:+.2f}"] = {
+            "power_N95": p95,
+            "N_for_0.80_grid": n80 if n80 is not None else f"> {ROBUST_N_GRID[-1]}",
+        }
+    rec["label_planning_case"] = label(rec["mu=-0.02"]["power_N95"])
+    return rec
+
+
 def main(src: Path, dst: Path) -> None:
     d = json.loads(src.read_text())
     seeds = [s["seed"] for s in d["per_seed"]]
     if seeds != PILOT_SEEDS or d.get("preset") != "v07-e2":
         raise SystemExit(f"not the v0.7 B-2 pilot: preset={d.get('preset')} seeds={seeds}")
     primary = d.get("primary_readout")
-    other = {"hard": "gumbel", "gumbel": "hard"}[primary]
     rows = d["per_seed"]
+    if str(primary).startswith("gumbel_k"):
+        main_k(src, dst, d, rows)
+        return
+    other = {"hard": "gumbel", "gumbel": "hard"}[primary]
     out = {
         "source": str(src),
         "primary_readout": primary,
@@ -98,6 +155,51 @@ def main(src: Path, dst: Path) -> None:
     }
     if "probe_label_counts" in rows[0]:
         out["probe_label_counts"] = {str(s["seed"]): s["probe_label_counts"] for s in rows}
+    dst.write_text(json.dumps(out, indent=2) + "\n")
+    print(json.dumps(out, indent=2))
+
+
+def main_k(src: Path, dst: Path, d: dict, rows: list) -> None:
+    """Round 3 (PI decisions 2026-10-25, 13:12): K-draw Gumbel, robust E-2, switch."""
+    from scipy import stats
+
+    k = sum(bool(s["switch_post"]) for s in rows)
+    ci = stats.binomtest(k, len(rows)).proportion_ci(confidence_level=0.95, method="exact")
+    vals = [s["ross_full_delta_bits"] for s in rows]
+    out = {
+        "source": str(src),
+        "primary_readout": d["primary_readout"],
+        "probe_scheme": d.get("probe_scheme"),
+        "gumbel_draws": d.get("gumbel_draws"),
+        "N_fixed": N_FIXED,
+        "bound_bits": BOUND,
+        "primary_values": vals,
+        "primary_hl": an.hl_ci(vals, 0.90)[0],
+        "primary_median": float(np.median(vals)),
+        "robust_primary_power": robust_power(vals),
+        "mean_based_secondary": power_block(vals),
+        "gumbel1_descriptive": power_block([s["ross_full_delta_bits_gumbel1"] for s in rows]),
+        "hard_descriptive": power_block([s["ross_full_delta_bits_hard"] for s in rows]),
+        "per_draw_delta_sd_within_seed": {
+            str(s["seed"]): float(np.std(s["ross_full_delta_bits_per_draw"], ddof=1)) for s in rows
+        },
+        "switch": {
+            "per_seed": {
+                str(s["seed"]): {
+                    "pre": s["switch_pre"],
+                    "post": s["switch_post"],
+                    "post_top1_share": s["post_top1_share"],
+                    "post_between_class_share": s["post_between_class_share"],
+                    "pre_top1_share": s["pre_top1_share"],
+                    "pre_between_class_share": s["pre_between_class_share"],
+                }
+                for s in rows
+            },
+            "post_count": k,
+            "proportion": k / len(rows),
+            "ci95_exact": [float(ci.low), float(ci.high)],
+        },
+    }
     dst.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps(out, indent=2))
 

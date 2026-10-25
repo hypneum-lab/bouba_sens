@@ -128,3 +128,25 @@ def test_probe_readout_is_gumbel_and_block_reproducible() -> None:
         assert torch.equal(a.z_post[key], b.z_post[key])
     hard = _block(ckpt, probe_demod="hard")
     assert not torch.equal(hard.z_pre, a.z_pre)
+
+
+def test_capture_averages_k_gumbel_draws() -> None:
+    from bouba_sens.readout import gumbel_draws
+    from bouba_sens.subspace_protocol import PROBE_GUMBEL_DRAWS
+
+    assert PROBE_GUMBEL_DRAWS == 8
+    ckpt = _make_loop().pretrain(steps=3, batch_size=4, seed=0)
+    k2 = _block(ckpt, probe_gumbel_draws=2)
+    k1 = _block(ckpt, probe_gumbel_draws=0)
+    assert not torch.equal(k2.z_pre, k1.z_pre)
+    loop = _make_loop()
+    loop.restore(ckpt)
+    probe = loop.world.sample(batch_size=16, seed=2001 - 99_999)
+
+    def cap() -> torch.Tensor:
+        with torch.no_grad():
+            car = {m: loop.sensories[m].step(getattr(probe, m)) for m in loop.sensories}
+            return loop.nerve.fuse(car).flatten(1)
+
+    ref = torch.stack(gumbel_draws(cap, 2001, 0, 2)).mean(0)
+    assert torch.allclose(k2.z_pre, ref)

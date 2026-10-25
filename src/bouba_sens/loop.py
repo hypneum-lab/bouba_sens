@@ -187,6 +187,7 @@ class AdaptationLoop:
         probe_size: int | None = None,
         probe_seed: int | None = None,
         probe_demod: str = "soft",
+        probe_gumbel_draws: int = 0,
     ) -> AdaptationReport:
         """Phase 2: lesion-active training + theta-replay buffer.
 
@@ -213,6 +214,13 @@ class AdaptationLoop:
         captures both Z_pre and Z_post with deterministic argmax
         demodulation (``fuse(hard_demod=True)``): same checkpoint, same
         codes, no RNG use. Training steps are unaffected either way.
+
+        ``probe_gumbel_draws`` = K > 0 (amendment v0.8, PI decision
+        2026-10-25; soft readout only) replaces each Gumbel capture by the
+        mean of K Gumbel captures, draw r of phase p (0 = Z_pre,
+        1 = Z_post) taken under ``readout.gumbel_draw_seed(seed, p, r)``
+        inside ``fork_rng``: the captures neither use nor change the
+        global RNG stream.
         """
         from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
 
@@ -238,10 +246,21 @@ class AdaptationLoop:
         if probe_demod not in ("soft", "hard"):
             raise ValueError(f"probe_demod must be 'soft' or 'hard'; got {probe_demod!r}")
 
-        def _capture(sample: WorldSample) -> Tensor:
+        if probe_gumbel_draws < 0 or (probe_gumbel_draws and probe_demod != "soft"):
+            raise ValueError("probe_gumbel_draws needs probe_demod='soft' and K >= 0")
+
+        def _capture_once(sample: WorldSample) -> Tensor:
             with torch.no_grad():
                 carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
                 return self.nerve.fuse(carriers, hard_demod=probe_demod == "hard")
+
+        def _capture(sample: WorldSample, phase: int) -> Tensor:
+            if not probe_gumbel_draws:
+                return _capture_once(sample)
+            from bouba_sens.readout import gumbel_draws
+
+            draws = gumbel_draws(lambda: _capture_once(sample), seed, phase, probe_gumbel_draws)
+            return torch.stack(draws).mean(0)
 
         def _pool(fused: Tensor) -> Tensor:
             flat = fused.flatten(1)  # (B, K*d)
@@ -253,7 +272,7 @@ class AdaptationLoop:
             batch_size=batch_size if probe_size is None else probe_size,
             seed=seed - 99_999 if probe_seed is None else probe_seed,
         )
-        fused_pre = _capture(probe)
+        fused_pre = _capture(probe, 0)
         report.probe_labels = probe.label.detach().clone()
         report.pre_lesion_codes = _pool(fused_pre).detach().clone()
 
@@ -311,7 +330,7 @@ class AdaptationLoop:
         # Task 5.1 — post-lesion probe capture. Feed the same clean probe
         # batch through the lesion-adapted network; pooled identically to
         # the pre-lesion capture (full (B, K*d) by default).
-        fused_post = _capture(probe)
+        fused_post = _capture(probe, 1)
         report.post_lesion_codes = _pool(fused_post).detach().clone()
 
         return report

@@ -237,6 +237,7 @@ _V07 = {
     "probe_n": 512,
     "k_steps": 50,
     "probe_demod": "both",
+    "gumbel_draws": 8,
 }
 
 
@@ -363,3 +364,45 @@ def test_balanced_probe_scheme_draws_the_class_balanced_rows() -> None:
         runner.draw_probe(world, 256, 0, "balanced")
     with pytest.raises(ValueError, match="scheme"):
         runner.draw_probe(world, 512, 0, "other")
+
+
+# --- v0.7 PI decision 2026-10-25: K = 8 Gumbel draws ---------------------
+
+
+def test_k_draws_leave_training_and_legacy_readouts_unchanged(
+    deterministic_torch: None,
+) -> None:
+    kw = {"train_batch": 4, "lesion_batch": 4, "probe_n": 32, "k_steps": 2, **_SMALL}
+    base = runner._capture("gaussian", 7, 100, rng_seed=7, readouts=("gumbel", "hard"), **kw)
+    with_k = runner._capture(
+        "gaussian", 7, 100, rng_seed=7, readouts=("gumbel", "hard"), gumbel_k=3, **kw
+    )
+    for r in ("gumbel", "hard"):
+        np.testing.assert_array_equal(base[1][r][0], with_k[1][r][0])
+        np.testing.assert_array_equal(base[1][r][1], with_k[1][r][1])
+    pre_k, post_k = with_k[1]["gumbel_k"]
+    assert pre_k.shape == (3, *base[1]["gumbel"][0].shape)
+    assert not np.array_equal(pre_k[0], pre_k[1])  # independent draws
+    again = runner._capture(
+        "gaussian", 7, 100, rng_seed=7, readouts=("gumbel", "hard"), gumbel_k=3, **kw
+    )
+    np.testing.assert_array_equal(again[1]["gumbel_k"][1], post_k)
+
+
+def test_b2_fields_average_the_k_draws_and_add_the_switch() -> None:
+    rng = np.random.default_rng(2)
+    labels = np.repeat(np.arange(4), 32)
+    draws = [(rng.normal(size=(128, 10)), rng.normal(size=(128, 10))) for _ in range(3)]
+    single = (rng.normal(size=(128, 10)), rng.normal(size=(128, 10)))
+    pre_k = np.stack([d[0] for d in draws])
+    post_k = np.stack([d[1] for d in draws])
+    out = runner.b2_readout_fields({"gumbel": single, "gumbel_k": (pre_k, post_k)}, labels)
+    per = [runner.full_probe_b2(a, b, labels) for a, b in draws]
+    assert out["primary_readout"] == "gumbel_k3" and out["gumbel_draws"] == 3
+    for key in ("ross_full_delta_bits", "ross_full_pre_bits", "ksg_full_delta_bits"):
+        assert out[key] == pytest.approx(np.mean([d[key] for d in per]))
+    assert (
+        out["ross_full_delta_bits_gumbel1"]
+        == runner.full_probe_b2(*single, labels)["ross_full_delta_bits"]
+    )
+    assert out["switch_post"] is False and 0 <= out["post_top1_share"] <= 1

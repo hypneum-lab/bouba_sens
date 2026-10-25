@@ -120,6 +120,7 @@ def _capture(
     rng_seed: int | None = None,
     readouts: tuple[str, ...] = ("gumbel",),
     probe_scheme: str = "contiguous",
+    gumbel_k: int = 0,
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
@@ -148,6 +149,7 @@ def _capture(
 
     probe = draw_probe(loop.world, pn, seed - 99_999, probe_scheme)
     pre = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
+    pre_k = _k_draws(loop, probe, seed, 0, gumbel_k)
     labels = probe.label.detach().cpu()
 
     lesion = LesionSpec(
@@ -158,7 +160,26 @@ def _capture(
     )
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=lb, seed=seed, probe_size=pn)
     post = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
-    return labels.numpy(), {r: (pre[r].numpy(), post[r].numpy()) for r in readouts}
+    post_k = _k_draws(loop, probe, seed, 1, gumbel_k)
+    out = {r: (pre[r].numpy(), post[r].numpy()) for r in readouts}
+    if gumbel_k:
+        out["gumbel_k"] = (np.stack(pre_k), np.stack(post_k))
+    return labels.numpy(), out
+
+
+def _k_draws(loop, probe, seed: int, phase: int, k: int) -> list:
+    """K Gumbel captures under their own seeds; the global RNG is left as it was.
+
+    PI decision 2026-10-25 (``bouba_sens.readout``): the primary B-2
+    readout averages the MI estimate over K = 8 Gumbel draws. The draws
+    run inside ``fork_rng``, so training and the legacy single Gumbel
+    capture are unchanged.
+    """
+    from bouba_sens.readout import gumbel_draws
+
+    if not k:
+        return []
+    return [z.numpy() for z in gumbel_draws(lambda: _full_fused(loop, probe), seed, phase, k)]
 
 
 def draw_probe(world, n: int, seed: int, scheme: str):
@@ -210,17 +231,43 @@ def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict
 
 
 def b2_readout_fields(readouts, labels: np.ndarray) -> dict:
-    """Per-seed B-2 fields: Gumbel (primary) unsuffixed, hard suffixed.
+    """Per-seed B-2 fields: primary unsuffixed, other readouts suffixed.
 
-    The Gumbel readout is primary (v0.7, PI decision 2026-10-25, after
-    the pilot) and fills the unsuffixed fields; the hard readout, when
-    captured, is reported with a ``_hard`` suffix and never changes the
+    PI decisions 2026-10-25 (after the pilot): the Gumbel readout is
+    primary; with ``gumbel_k`` draws (``--gumbel-draws``, preset K = 8)
+    the primary fields are the averages over the K draws of each
+    per-draw field (Ross / KSG pre, post and delta), the single legacy
+    Gumbel capture is reported with a ``_gumbel1`` suffix, and the
+    code-structure statistics and the switch outcome
+    (``bouba_sens.readout``) are added. The hard readout, when captured,
+    is reported with a ``_hard`` suffix. No other readout changes the
     primary label.
     """
-    out = dict(full_probe_b2(*readouts["gumbel"], labels))
+    if "gumbel_k" in readouts:
+        from bouba_sens.readout import mean_structure, switch_detected
+
+        pre_k, post_k = readouts["gumbel_k"]
+        per = [full_probe_b2(a, b, labels) for a, b in zip(pre_k, post_k, strict=True)]
+        out = {key: float(np.mean([d[key] for d in per])) for key in per[0]}
+        out["gumbel_draws"] = len(per)
+        out["ross_full_delta_bits_per_draw"] = [d["ross_full_delta_bits"] for d in per]
+        y = torch.from_numpy(labels)
+        pre_s = mean_structure([torch.from_numpy(z) for z in pre_k], y)
+        post_s = mean_structure([torch.from_numpy(z) for z in post_k], y)
+        out.update({f"pre_{k}": v for k, v in pre_s.items()})
+        out.update({f"post_{k}": v for k, v in post_s.items()})
+        out["switch_pre"] = switch_detected(pre_s)
+        out["switch_post"] = switch_detected(post_s)
+        out.update(
+            {f"{k}_gumbel1": v for k, v in full_probe_b2(*readouts["gumbel"], labels).items()}
+        )
+        primary = f"gumbel_k{len(per)}"
+    else:
+        out = dict(full_probe_b2(*readouts["gumbel"], labels))
+        primary = "gumbel"
     if "hard" in readouts:
         out.update({f"{k}_hard": v for k, v in full_probe_b2(*readouts["hard"], labels).items()})
-    out["primary_readout"] = "gumbel"
+    out["primary_readout"] = primary
     return out
 
 
@@ -320,6 +367,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="soft = Gumbel readout only; both = v0.7 Gumbel primary + hard (descriptive)",
     )
     ap.add_argument(
+        "--gumbel-draws",
+        type=int,
+        default=0,
+        help="K Gumbel draws averaged in the primary readout (0 = legacy; v0.7: 8)",
+    )
+    ap.add_argument(
         "--probe-scheme",
         choices=("contiguous", "balanced"),
         default="contiguous",
@@ -345,6 +398,7 @@ _V07_FROZEN = {
     "probe_n": 512,
     "k_steps": 50,
     "probe_demod": "both",
+    "gumbel_draws": 8,  # PI decision 2026-10-25
 }
 PRESETS = {
     # Amendment v0.7, PI decisions 2026-10-23/24: E-2 on Studyforrest,
@@ -454,6 +508,7 @@ def main() -> None:
             rng_seed=seed if args.seed_list is not None else None,
             readouts=("gumbel", "hard") if args.probe_demod == "both" else ("gumbel",),
             probe_scheme=args.probe_scheme,
+            gumbel_k=args.gumbel_draws,
         )
         # Legacy estimators run on the primary (Gumbel) readout.
         pre, post = readouts["gumbel"]
@@ -556,8 +611,9 @@ def main() -> None:
         "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
         "probe_demod": args.probe_demod,
         "probe_scheme": args.probe_scheme,
+        "gumbel_draws": args.gumbel_draws,
         "preset": args.preset,
-        "primary_readout": "gumbel",
+        "primary_readout": f"gumbel_k{args.gumbel_draws}" if args.gumbel_draws else "gumbel",
         "amendment_b2": bool(per_seed and "ross_full_delta_bits" in per_seed[0]),
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),

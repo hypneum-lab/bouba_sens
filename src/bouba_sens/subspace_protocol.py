@@ -38,6 +38,9 @@ K_STEPS = 50
 # B-2 pilot): the probe captures use the Gumbel readout. The hard (argmax)
 # path mapped every probe row to one code (rank 0).
 PROBE_DEMOD = "soft"
+# PI decision 2026-10-25 (13:12): each Gumbel capture is the mean of K = 8
+# Gumbel draws under fixed seeds (``bouba_sens.readout``).
+PROBE_GUMBEL_DRAWS = 8
 
 CellKey = tuple[Modality, float]  # (lesioned modality, SNR floor in dB)
 
@@ -70,6 +73,7 @@ def capture_block(
     snr_init: float = 20.0,
     k_steps: int = K_STEPS,
     probe_demod: str = PROBE_DEMOD,
+    probe_gumbel_draws: int | None = None,
 ) -> BlockCodes:
     """Run the control arm and every lesion cell of one (seed, lock) block.
 
@@ -78,7 +82,9 @@ def capture_block(
     its own loop. All arms use the same ``phase2_seed`` (default: the
     experiment ``seed``), hence the same probe, the same fresh and replay
     batches, and Gumbel-readout captures (``probe_demod="soft"``, PI
-    decision 2026-10-25; ``"hard"`` is kept only for diagnostics).
+    decision 2026-10-25; ``"hard"`` is kept only for diagnostics), each
+    the mean of ``PROBE_GUMBEL_DRAWS`` = 8 draws seeded by
+    ``readout.gumbel_draw_seed(phase2_seed, phase, r)``.
     Before each arm the global torch RNG is re-seeded with
     ``phase2_seed``, so the lesion noise stream and the Gumbel draws are
     reproducible, and ``Z_pre`` (captured before any Phase-2 step) is
@@ -89,6 +95,11 @@ def capture_block(
     Phase-2 entry state would not be shared, a pipeline defect).
     """
     p2_seed = seed if phase2_seed is None else phase2_seed
+    k_draws = (
+        (PROBE_GUMBEL_DRAWS if probe_demod == "soft" else 0)
+        if probe_gumbel_draws is None
+        else probe_gumbel_draws
+    )
     probe_seed = p2_seed - 99_999
 
     def run(spec: LesionSpec | None):  # type: ignore[no-untyped-def]
@@ -103,6 +114,7 @@ def capture_block(
             probe_size=probe_size,
             probe_seed=probe_seed,
             probe_demod=probe_demod,
+            probe_gumbel_draws=k_draws,
         )
 
     control = run(None)

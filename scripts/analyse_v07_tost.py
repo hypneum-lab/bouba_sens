@@ -6,9 +6,9 @@ the E1 runner, ``ross_full_delta_bits`` per seed)::
 
     {"e1": [{"seed": 1001, "locks": {"50": v, "75": v, "100": v,
              "125": v, "150": v}, "nolock": v}, ...],
-     "e2": [{"seed": 1001, "primary_readout": "gumbel",
-             "ross_full_delta_bits": v,
-             "ross_full_delta_bits_hard": v}, ...],
+     "e2": [{"seed": 1001, "primary_readout": "gumbel_k8", "gumbel_draws": 8,
+             "ross_full_delta_bits": v, "ross_full_delta_bits_hard": v,
+             "switch_pre": false, "switch_post": false}, ...],
      "substitutions": [{"replaced": 1007, "by": 1096, "reason": "crash"}]}
 
 ``analyse_confirmatory`` is the only confirmatory entry point (used by
@@ -22,8 +22,11 @@ label of its own; a difference between the two readouts is reported
 and never changes the E-2 label. ``tost`` stays a generic,
 reusable function.
 
-Decision (frozen): TOST with two one-sided one-sample t-tests at
-alpha = 0.05, i.e. the 90 % two-sided CI inside +-bound; bounds 0.025
+Decision (frozen): for E-1, TOST with two one-sided one-sample t-tests
+at alpha = 0.05, i.e. the 90 % two-sided CI inside +-bound; for E-2
+(PI decision 2026-10-25, after the pilot) the robust TOST: the 90 %
+distribution-free Hodges-Lehmann CI inside +-bound (``hl_tost``), with
+the mean-based t-TOST reported as a secondary analysis. Bounds 0.025
 (B-1) and 0.05 bit (B-2). Each primary test gets exactly one of the six
 section-9 labels from its 90 % CI. B-1 fixed sequence E-1 -> E-1b (IUT
 over the five locks) -> E-1c (no-lock). Reported, no decision: 95 % CI,
@@ -36,6 +39,7 @@ TOST.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import math
 from collections.abc import Sequence
@@ -111,6 +115,89 @@ def tost(values: Sequence[float], bound: float, *, n_boot: int = N_BOOT) -> dict
     }
 
 
+@functools.lru_cache(maxsize=64)
+def signed_rank_cdf(n: int) -> np.ndarray:
+    """Exact null CDF of the Wilcoxon signed-rank statistic T+ for n untied values.
+
+    Entry t is P(T+ <= t), t = 0 ... n(n + 1) / 2 (dynamic programming over
+    the 2^n sign patterns).
+    """
+    counts = np.zeros(n * (n + 1) // 2 + 1)
+    counts[0] = 1.0
+    for i in range(1, n + 1):
+        shifted = np.zeros_like(counts)
+        shifted[i:] = counts[:-i]
+        counts = counts + shifted
+    return np.cumsum(counts) / counts.sum()
+
+
+def hl_ci(values: Sequence[float], level: float) -> tuple[float, float, float]:
+    """Hodges-Lehmann estimate and its distribution-free CI (Walsh averages).
+
+    The CI is [W_(c), W_(M - c + 1)] of the M = n(n + 1) / 2 sorted Walsh
+    averages (x_i + x_j) / 2, i <= j, with c the largest integer such that
+    P(T+ <= c - 1) <= (1 - level) / 2 under the exact signed-rank null;
+    its coverage is at least ``level`` for a continuous distribution
+    symmetric about its centre (Hollander, Wolfe & Chicken, ch. 3).
+    """
+    x = np.asarray(values, dtype=float)
+    n = x.size
+    i, j = np.triu_indices(n)
+    walsh = np.sort((x[i] + x[j]) / 2)
+    m = walsh.size
+    cdf = signed_rank_cdf(n)
+    a = (1 - level) / 2
+    c = int(np.searchsorted(cdf, a, side="right"))  # P(T+ <= c - 1) <= a
+    if c < 1:
+        raise ValueError(f"n = {n} is too small for a {level:.0%} signed-rank CI")
+    return float(np.median(walsh)), float(walsh[c - 1]), float(walsh[m - c])
+
+
+def hl_tost(values: Sequence[float], bound: float) -> dict[str, Any]:
+    """Robust TOST: section-9 label from the 90 % Hodges-Lehmann CI (PI 2026-10-25)."""
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 1 or x.size < 3 or not np.all(np.isfinite(x)):
+        raise ValueError("need >= 3 finite per-seed values")
+    est, lo, hi = hl_ci(x, 1 - 2 * ALPHA)
+    _, lo95, hi95 = hl_ci(x, 0.95)
+    return {
+        "n": int(x.size),
+        "bound": bound,
+        "estimator": "Hodges-Lehmann pseudo-median",
+        "hl": est,
+        "median": float(np.median(x)),
+        "ci90": [lo, hi],
+        "ci95": [lo95, hi95],
+        "p_lower": float(stats.wilcoxon(x + bound, alternative="greater").pvalue),
+        "p_upper": float(stats.wilcoxon(x - bound, alternative="less").pvalue),
+        "label": classify(lo, hi, bound),
+    }
+
+
+def switch_analysis(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Registered secondary binary outcome (PI 2026-10-25): no label, no decision.
+
+    Proportion of seeds with a post-lesion switch and its exact
+    (Clopper-Pearson) two-sided 95 % CI; paired pre/post comparison by the
+    exact McNemar test (two-sided binomial on the discordant seeds).
+    """
+    post = [bool(r["switch_post"]) for r in rows]
+    pre = [bool(r["switch_pre"]) for r in rows]
+    n, k = len(post), sum(post)
+    ci = stats.binomtest(k, n).proportion_ci(confidence_level=0.95, method="exact")
+    gained = sum(b and not a for a, b in zip(pre, post, strict=True))
+    lost = sum(a and not b for a, b in zip(pre, post, strict=True))
+    p_mc = float(stats.binomtest(gained, gained + lost, 0.5).pvalue) if gained + lost else 1.0
+    return {
+        "n": n,
+        "switch_post": k,
+        "proportion": k / n,
+        "ci95_exact": [float(ci.low), float(ci.high)],
+        "switch_pre": sum(pre),
+        "mcnemar": {"gained": gained, "lost": lost, "p_two_sided_exact": p_mc},
+    }
+
+
 def _unique_seeds(rows: Sequence[dict[str, Any]]) -> None:
     seeds = [r["seed"] for r in rows]
     if len(set(seeds)) != len(seeds):
@@ -141,8 +228,9 @@ def analyse_e1(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
 
 
 def analyse_e2(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """E-2 primary: robust Hodges-Lehmann TOST (PI decision 2026-10-25)."""
     _unique_seeds(rows)
-    return tost([float(r["ross_full_delta_bits"]) for r in rows], B2_BOUND)
+    return hl_tost([float(r["ross_full_delta_bits"]) for r in rows], B2_BOUND)
 
 
 def resolve_roster(substitutions: Sequence[dict[str, Any]]) -> list[int]:
@@ -182,9 +270,16 @@ def _check_roster(rows: Sequence[dict[str, Any]], expected: Sequence[int], what:
 
 def _check_e2_provenance(rows: Sequence[dict[str, Any]]) -> None:
     for r in rows:
-        if r.get("primary_readout") != "gumbel":
-            raise ValueError(f"seed {r['seed']}: primary_readout must be 'gumbel' (section 4.2)")
-        for key in ("ross_full_delta_bits", "ross_full_delta_bits_hard"):
+        if r.get("primary_readout") != "gumbel_k8":
+            raise ValueError(f"seed {r['seed']}: primary_readout must be 'gumbel_k8' (section 4.2)")
+        if r.get("gumbel_draws") != 8:
+            raise ValueError(f"seed {r['seed']}: the primary readout averages K = 8 Gumbel draws")
+        for key in (
+            "ross_full_delta_bits",
+            "ross_full_delta_bits_hard",
+            "switch_pre",
+            "switch_post",
+        ):
             if key not in r:
                 raise ValueError(f"seed {r['seed']}: missing {key} (hard readout E-2h)")
 
@@ -197,13 +292,21 @@ def _unlabelled(res: dict[str, Any]) -> dict[str, Any]:
 
 
 def analyse_e2_with_secondary(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """E-2 (Gumbel readout, decides) and E-2h (hard readout, reported, no label)."""
+    """E-2 (Gumbel K-draw readout, robust TOST, decides) and reported analyses.
+
+    E-2 mean: the earlier mean-based t-TOST on the same values (reported,
+    no label). E-2h: hard readout, robust TOST (reported, no label).
+    Switch: the binary outcome (``switch_analysis``).
+    """
     e2 = analyse_e2(rows)
-    h = tost([float(r["ross_full_delta_bits_hard"]) for r in rows], B2_BOUND)
+    mean_based = tost([float(r["ross_full_delta_bits"]) for r in rows], B2_BOUND)
+    h = hl_tost([float(r["ross_full_delta_bits_hard"]) for r in rows], B2_BOUND)
     differs = classify(*h["ci90"], B2_BOUND) != e2["label"]
     return {
         "E-2": e2,
-        "E-2h": _unlabelled(h),
+        "E-2 mean (secondary)": _unlabelled(mean_based),
+        "E-2h": {k: v for k, v in h.items() if k != "label"},
+        "switch": switch_analysis(rows),
         "readout_disagreement": {
             "differs": differs,
             "note": (

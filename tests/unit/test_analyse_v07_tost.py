@@ -116,11 +116,11 @@ def test_e1_requires_all_five_locks() -> None:
 
 
 def test_e2_uses_half_threshold_bound() -> None:
-    vals = [{"seed": 1001 + i, "ross_full_delta_bits": v} for i, v in enumerate([0.01] * 3)]
+    vals = [{"seed": 1001 + i, "ross_full_delta_bits": v} for i, v in enumerate([0.01] * 5)]
     vals += [{"seed": 2000, "ross_full_delta_bits": -0.01}]
     out = an.analyse_e2(vals)
     assert out["bound"] == 0.05
-    assert out["n"] == 4
+    assert out["n"] == 6
 
 
 def test_duplicate_seeds_rejected() -> None:
@@ -134,16 +134,19 @@ def test_duplicate_seeds_rejected() -> None:
 ROSTER = list(range(1001, 1096))
 
 
-def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel", seed=0):  # type: ignore[no-untyped-def]
+def _e2_rows(seeds, gumbel=0.0, hard=0.0, sd=0.01, readout="gumbel_k8", seed=0):  # type: ignore[no-untyped-def]
     rng = np.random.default_rng(seed)
     return [
         {
             "seed": s,
             "primary_readout": readout,
+            "gumbel_draws": 8,
+            "switch_pre": False,
+            "switch_post": i % 10 == 0,
             "ross_full_delta_bits": float(gumbel + rng.normal(0, sd)),
             "ross_full_delta_bits_hard": float(hard + rng.normal(0, sd)),
         }
-        for s in seeds
+        for i, s in enumerate(seeds)
     ]
 
 
@@ -175,8 +178,10 @@ def test_confirmatory_rejects_pilot_and_unlisted_seeds() -> None:
 
 
 def test_confirmatory_rejects_hard_primary_or_missing_readout() -> None:
-    with pytest.raises(ValueError, match="gumbel"):
+    with pytest.raises(ValueError, match="gumbel_k8"):
         an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="hard")})
+    with pytest.raises(ValueError, match="gumbel_k8"):
+        an.analyse_confirmatory({"e2": _e2_rows(ROSTER, readout="gumbel")})
     rows = _e2_rows(ROSTER)
     del rows[3]["ross_full_delta_bits_hard"]
     with pytest.raises(ValueError, match="hard"):
@@ -207,10 +212,77 @@ def test_e2h_reported_alongside_without_label_and_disagreement_flagged() -> None
     out = an.analyse_confirmatory({"e2": rows})["B-2"]
     assert out["E-2"]["label"] == "equivalent"
     e2h = out["E-2h"]
-    assert "label" not in e2h and "label" not in e2h["bootstrap"]
+    assert "label" not in e2h and e2h["estimator"].startswith("Hodges-Lehmann")
     assert e2h["n"] == 95 and e2h["bound"] == 0.05
     assert e2h["ci90"][0] > 0.05
     assert out["readout_disagreement"]["differs"] is True
     same = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
     assert same["readout_disagreement"]["differs"] is False
     assert same["E-2"]["label"] == "equivalent"
+
+
+# --- PI decisions 2026-10-25: robust E-2, switch outcome -----------------
+
+
+def test_signed_rank_cdf_matches_brute_force() -> None:
+    import itertools
+
+    n = 8
+    sums = [
+        sum(i + 1 for i, b in enumerate(bits) if b) for bits in itertools.product((0, 1), repeat=n)
+    ]
+    ref = np.cumsum(np.bincount(sums, minlength=n * (n + 1) // 2 + 1)) / 2**n
+    np.testing.assert_allclose(an.signed_rank_cdf(n), ref)
+
+
+def test_hl_ci_matches_its_definition_and_covers() -> None:
+    x = np.array([0.3, -0.1, 0.05, 0.2, 0.9, -0.4, 0.15, 0.0, 0.6, 0.25])
+    est, lo, hi = an.hl_ci(x, 0.90)
+    i, j = np.triu_indices(10)
+    w = np.sort((x[i] + x[j]) / 2)
+    assert est == pytest.approx(np.median(w))
+    cdf = an.signed_rank_cdf(10)
+    c = max(c for c in range(1, 56) if cdf[c - 1] <= 0.05)
+    assert (lo, hi) == (w[c - 1], w[55 - c])
+    rng = np.random.default_rng(3)  # coverage at a symmetric, heavy-tailed law
+    hits = 0
+    for _ in range(400):
+        y = rng.standard_t(2, size=30) + 1.0
+        _, a, b = an.hl_ci(y, 0.90)
+        hits += a <= 1.0 <= b
+    assert hits / 400 >= 0.86
+
+
+def test_hl_ci_refuses_too_few_values() -> None:
+    with pytest.raises(ValueError, match="too small"):
+        an.hl_ci([0.1, 0.2, 0.3, 0.4], 0.90)
+
+
+def test_hl_tost_is_robust_to_one_outlier() -> None:
+    rng = np.random.default_rng(5)
+    x = rng.normal(0.0, 0.01, 95)
+    x[0] = 0.65
+    assert an.hl_tost(x, 0.05)["label"] == "equivalent"
+    assert an.tost(x, 0.05)["ci90"][1] > an.hl_tost(x, 0.05)["ci90"][1]
+
+
+def test_e2_primary_is_robust_and_mean_based_is_secondary() -> None:
+    out = an.analyse_confirmatory({"e2": _e2_rows(ROSTER)})["B-2"]
+    assert out["E-2"]["estimator"].startswith("Hodges-Lehmann")
+    assert "label" in out["E-2"] and "label" not in out["E-2 mean (secondary)"]
+    sw = out["switch"]
+    assert (sw["n"], sw["switch_post"], sw["switch_pre"]) == (95, 10, 0)
+    assert sw["ci95_exact"][0] < 10 / 95 < sw["ci95_exact"][1]
+    assert sw["mcnemar"]["gained"] == 10 and sw["mcnemar"]["lost"] == 0
+    assert sw["mcnemar"]["p_two_sided_exact"] == pytest.approx(2 * 0.5**10)
+
+
+def test_confirmatory_requires_k8_and_the_switch_fields() -> None:
+    rows = _e2_rows(ROSTER)
+    rows[5]["gumbel_draws"] = 1
+    with pytest.raises(ValueError, match="K = 8"):
+        an.analyse_confirmatory({"e2": rows})
+    rows = _e2_rows(ROSTER)
+    del rows[5]["switch_post"]
+    with pytest.raises(ValueError, match="switch_post"):
+        an.analyse_confirmatory({"e2": rows})
