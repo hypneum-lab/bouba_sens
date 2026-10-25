@@ -11,3 +11,4 @@ by ADR-NNNN" at the top.
 | 0001 | Codebook sharing between SensoryWMLs | Accepted |
 | 0019 | B-2 re-run with MINE at N ≳ f(D) ; retire "probe batch ≥128" | Accepted |
 | 0021 | Me6 null calibration — the B-3 statistic under sampling noise alone | Accepted |
+| 0022 | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | Proposed |
