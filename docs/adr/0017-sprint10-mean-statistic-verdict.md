@@ -1,4 +1,9 @@
-# ADR-0017 — Sprint 10 mean-statistic verdict (negative on real data)
+# ADR-0017b — Sprint 10 mean-statistic verdict (negative on real data)
+
+> **Numbering note (2026-10-25, issue #21).** ADR number 0017 is shared
+> with `0017-sprint14-retraction-and-schedule.md` (ADR-0017a). Suffixes follow
+> first-commit order; file names are unchanged so existing links keep
+> working. Index: `docs/adr/README.md`.
 
 **Status:** Accepted — **negative result**
 **Date:** 2026-04-24

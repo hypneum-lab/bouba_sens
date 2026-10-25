@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 ## Project
 
-`bouba_sens` — TMLR-track benchmark for the bouba/kiki cross-modal plasticity phenomenon, developed under the **GENIAL framework** at **Hypneum Lab**. Studies how a 5-modality agent (audio, vision, tactile, gravity, force) reorganises after channel loss/degradation. Three pre-registered invariants B-1/B-2/B-3 (OSF `10.17605/OSF.IO/Q6JYN`, amendment v0.6). HEAD ≈ v0.5.9, ~156 commits, 19 ADRs, 185+ tests.
+`bouba_sens` — TMLR-track benchmark for the bouba/kiki cross-modal plasticity phenomenon, developed under the **GENIAL framework** at **Hypneum Lab**. Studies how a 5-modality agent (audio, vision, tactile, gravity, force) reorganises after channel loss/degradation. Three invariants B-1/B-2/B-3 pre-registered locally (git-dated design spec 2026-04-20; `docs/osf/` amendments never filed on OSF — `10.17605/OSF.IO/Q6JYN` is dream-of-kiki H1–H4 only). HEAD ≈ v0.5.9, ~156 commits, 19 ADRs, 185+ tests.
 
 ## Tech stack
 
@@ -39,7 +39,7 @@ uv run python -m bouba_sens.cli --help
 - `tests/{unit,property,smoke,integration,empirical}/` — test pyramid.
 - `docs/adr/` — 19 ADRs (0004-0019).
 - `docs/paper/` — TMLR draft + §5.5 reformulation drafts.
-- `docs/osf/` — pre-registration + amendments.
+- `docs/osf/` — pre-registration amendment drafts (git-dated, never filed on OSF).
 - `docs/milestones/` — sprint closure notes.
 - `docs/superpowers/` — plans / brainstorms.
 - `configs/` — grid + world configs.

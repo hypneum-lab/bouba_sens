@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (documentation only — phase 0 "truth", 2026-10-25)
+
+- **"Pre-registered on OSF" withdrawn** from `CITATION.cff`, `README.md`,
+  `.zenodo.json`, `CLAUDE.md`, `AGENTS.md`, `docs/paper/` and the
+  `docs/osf/` amendment headers. B-1/B-2/B-3 are pre-registered locally
+  (git-dated design spec, commit `87f723f`, 2026-04-20); OSF
+  `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only. Issue #20.
+- **B-3 requalified as an uncalibrated magnitude** (README F1, paper
+  abstract and §4.4, `.zenodo.json`, notes in ADR-0008 / ADR-0009):
+  an independent binomial null (ADR-0021) invalidates the reading of
+  the bare exceedance of 0.02; no compatibility or rejection verdict
+  before a paired calibration of the median. Values unchanged. Refs #22.
+- **Paper §4.4** no longer says "Key claim, load-bearing"; aligned with
+  the abstract. `.zenodo.json` no longer carries the withdrawn "minimal
+  configuration" claim. Issue #21.
+- **ADR index rebuilt** (`docs/adr/README.md`): the seven shared numbers
+  (0005, 0007, 0014, 0015, 0016, 0017, 0019) are disambiguated a/b in
+  the titles, file names unchanged; ADR-0006 and tags `v0.4.0` /
+  `v0.5.0` are documented as absent from `main` (PI action). Issue #21.
+- **`refs.bib` `amedi2007`** now carries the metadata of Amedi et al.
+  2007, Nat Neurosci 10(6):687–689, `10.1038/nn1912` (Crossref) instead
+  of Amedi et al. 2003 (`10.1038/nn1072`). Key unchanged. Issue #25.
+
 ### Added
 
 - **Me6 paired null** (`scripts/me6_paired_null.py`,

@@ -9,6 +9,13 @@
 - Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19, amendment v0.6 2026-04-22)
 - ADRs : `docs/adr/0004..0017` record every verdict, retraction, and scope change inline with its grid commit.
 
+> **Superseded draft (note added 2026-10-25).** The LaTeX manuscript
+> `main.tex` is the manuscript of record. The OSF pre-registration
+> statements below are inaccurate: B-1/B-2/B-3 are pre-registered
+> locally (git-dated, 2026-04-20), not on OSF; the "load-bearing"
+> reading of B-3 is withdrawn and B-3 is an uncalibrated magnitude.
+> See `README.md` § Erratum (issues #20, #21, #22).
+
 ---
 
 ## Abstract
