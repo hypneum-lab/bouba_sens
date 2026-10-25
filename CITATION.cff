@@ -12,9 +12,9 @@ license: MIT
 repository-code: "https://github.com/hypneum-lab/bouba_sens"
 url: "https://github.com/hypneum-lab/bouba_sens"
 identifiers:
-  - type: other
-    value: "OSF:10.17605/OSF.IO/Q6JYN"
-    description: "OSF pre-registration, locked 2026-04-19, amendment v0.6 2026-04-23"
+  - type: url
+    value: "https://github.com/hypneum-lab/bouba_sens/blob/main/docs/superpowers/specs/2026-04-20-bouba-sens-design.md"
+    description: "Local pre-registration of the B-1/B-2/B-3 thresholds (0.05/0.10/0.02): git-dated design spec, commit 87f723f, 2026-04-20; amendments v0.4-v0.6 under docs/osf/ (git-dated 2026-04-20/21/23, never filed on OSF). Not registered on OSF: 10.17605/OSF.IO/Q6JYN covers dream-of-kiki H1-H4 only (issue #20)."
 keywords:
   - cross-modal plasticity
   - pre-registered benchmark
