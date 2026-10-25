@@ -4,9 +4,10 @@ Scope (PI decision 2026-10-25): the arms of the main grid and the pilot
 variance components of the deficit D. One Phase-1 run is one (seed s,
 onset o, arm) cell with window width w = 50 and recovery R:
 
-* world: ``StudyforrestRealWorld(probe_fraction = 0.10)`` (section 3.4);
-  training draws, donor pools and the check anchors stay in the first
-  90 % of frames;
+* world: ``StudyforrestRealWorld(stratified_probe = True)`` (section
+  3.4, PI decision 2026-10-25): 512 held-out rows in 32 label-run
+  blocks of 16, apportioned to the classes by frame count; training
+  windows, donor pools and the check anchors avoid them;
 * network: ``builders.build_loop`` with no constellation lock (section
   4), Adam at the constant lr 1e-3 of ``AdaptationLoop`` (checked:
   ``check_learning_rate``), no scheduler, no optimiser reset;
@@ -17,8 +18,8 @@ onset o, arm) cell with window width w = 50 and recovery R:
   built, so all arms of a seed share the initial weights and the
   Gumbel noise stream up to the window (outside the window all arms
   are identical, section 3.2);
-* outcome: ``decorrelation.fusion_gain`` on the held-out probe
-  ``probe_sample_with_indices(512, seed = s + 2e6)`` (section 3.4).
+* outcome: ``decorrelation.fusion_gain`` on the held-out probe (all
+  512 held-out rows, the same for every seed and arm; section 3.4).
 
 D(s, o) = FG_joint - FG_decor (section 3.4). ``variance_components``
 fits D(s, o) = mu_o + u_s + e_so by ANOVA without replication and
@@ -43,7 +44,7 @@ from scipy import stats  # type: ignore[import-untyped]
 
 from bouba_sens.builders import build_loop
 from bouba_sens.decorrelation import (
-    V09_PROBE_FRACTION,
+    PROBE_ROWS,
     DecorrelationSchedule,
     DecorrelationWindow,
     FusionGain,
@@ -66,14 +67,12 @@ UCL_LEVEL = 0.80
 
 
 def check_world(world: object) -> str:
-    """Refuse the stub and a world without the held-out probe frames."""
+    """Refuse the stub and a world without the stratified held-out probe."""
     name = type(world).__name__
     if name != EXPECTED_WORLD:
         raise RuntimeError(f"v0.9 needs {EXPECTED_WORLD}; got {name} (technical failure)")
-    n_probe = getattr(world, "n_probe", 0)
-    n_all = n_probe + getattr(world, "n_train", 0)
-    if n_probe != math.ceil(V09_PROBE_FRACTION * n_all):
-        raise RuntimeError(f"world must hold out {V09_PROBE_FRACTION:.0%} of frames for the probe")
+    if not getattr(world, "stratified", False) or getattr(world, "n_probe", 0) != PROBE_ROWS:
+        raise RuntimeError("world must hold out the stratified probe (stratified_probe=True)")
     return name
 
 

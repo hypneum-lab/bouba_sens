@@ -75,3 +75,71 @@ def class_balanced_probe_indices(
         for i in perm.tolist():
             rows.extend(range(starts[i], starts[i] + window))
     return torch.tensor(rows, dtype=torch.long)
+
+
+# --- amendment v0.9: class-stratified held-out probe (PI decision 2026-10-25) ---
+
+V09_HELDOUT_BLOCKS = 32  # 32 blocks x 16 frames = 512 held-out probe rows
+V09_HELDOUT_SEED = 20_261_025
+
+
+def proportional_block_counts(class_counts: list[int], total_blocks: int) -> list[int]:
+    """Blocks per class: proportional to the class frame counts, at least one each.
+
+    Largest-remainder (Hamilton) apportionment of ``total_blocks`` over the
+    classes in proportion to ``class_counts``; every class first gets
+    max(1, floor(quota)); the blocks still unassigned go one by one to the
+    classes with the largest fractional remainder among those not raised
+    to 1 (ties: lower class index).
+    """
+    n = sum(class_counts)
+    if total_blocks < len(class_counts) or n <= 0:
+        raise ValueError("need at least one block per class and a non-empty dataset")
+    quotas = [total_blocks * c / n for c in class_counts]
+    base = [max(1, int(q)) for q in quotas]
+    raised = [int(q) < 1 for q in quotas]
+    left = total_blocks - sum(base)
+    if left < 0:
+        raise ValueError("the minimum of one block per class exceeds total_blocks")
+    order = sorted(
+        (i for i in range(len(quotas)) if not raised[i]),
+        key=lambda i: (-(quotas[i] - int(quotas[i])), i),
+    )
+    for i in order[:left]:
+        base[i] += 1
+    if sum(base) != total_blocks:
+        raise ValueError("apportionment failed")  # pragma: no cover - defensive
+    return base
+
+
+def stratified_heldout_indices(
+    labels: Tensor,
+    *,
+    seed: int = V09_HELDOUT_SEED,
+    total_blocks: int = V09_HELDOUT_BLOCKS,
+    window: int = PROBE_WINDOW,
+    n_classes: int = PROBE_N_CLASSES,
+) -> Tensor:
+    """Held-out probe rows for v0.9 (section 3.4): class-stratified label-run blocks.
+
+    Candidate blocks are the label-run tiles of ``label_run_blocks``. The
+    number of blocks per class is ``proportional_block_counts`` of the
+    class frame counts (32 blocks in all). One generator seeded with
+    ``seed`` draws, for c = 0, 1, ... in order, one ``torch.randperm``
+    over the class's blocks (increasing start order) and keeps its first
+    count_c entries. Returns the held-out rows sorted ascending. A class
+    with fewer blocks than its count raises ``ValueError``.
+    """
+    y = labels.long().flatten()
+    counts = [int((y == c).sum()) for c in range(n_classes)]
+    per_class = proportional_block_counts(counts, total_blocks)
+    blocks = label_run_blocks(y, window)
+    gen = torch.Generator().manual_seed(seed)
+    rows: list[int] = []
+    for c in range(n_classes):
+        starts = sorted(blocks.get(c, []))
+        if len(starts) < per_class[c]:
+            raise ValueError(f"class {c} has {len(starts)} blocks; {per_class[c]} are needed")
+        for i in torch.randperm(len(starts), generator=gen)[: per_class[c]].tolist():
+            rows.extend(range(starts[i], starts[i] + window))
+    return torch.tensor(sorted(rows), dtype=torch.long)

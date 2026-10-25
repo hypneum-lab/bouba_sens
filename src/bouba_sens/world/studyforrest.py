@@ -105,8 +105,24 @@ class StudyforrestRealWorld:
     SensoryWML + encoders + nerve need no change.
     """
 
-    def __init__(self, *, seed: int = 0, data_dir: Path, probe_fraction: float = 0.0) -> None:
+    def __init__(
+        self,
+        *,
+        seed: int = 0,
+        data_dir: Path,
+        probe_fraction: float = 0.0,
+        stratified_probe: bool = False,
+    ) -> None:
         """Load the cache; ``probe_fraction`` > 0 holds out the last frames.
+
+        ``stratified_probe`` (amendment v0.9 section 3.4, PI decision
+        2026-10-25; excludes ``probe_fraction``) holds out instead the 512
+        rows of ``probe.stratified_heldout_indices``: 32 label-run blocks
+        of 16 frames, apportioned to the four classes in proportion to
+        their frame counts (at least one block each), drawn with the
+        frozen seed ``V09_HELDOUT_SEED``. Training windows then avoid
+        every held-out frame, donor pools exclude them, and the probe is
+        exactly the held-out rows.
 
         Amendment v0.9 (section 3.4) reserves the last
         ``ceil(probe_fraction * n)`` frames for the fusion-gain probe.
@@ -135,6 +151,34 @@ class StudyforrestRealWorld:
         self.n_train = self._n - self.n_probe
         if self.n_probe and self.n_train < 1:
             raise ValueError(f"probe_fraction {probe_fraction} leaves no training frame")
+        self._heldout: torch.Tensor | None = None
+        self._held_mask = torch.zeros(self._n, dtype=torch.bool)
+        self._valid_starts: dict[int, torch.Tensor] = {}
+        if stratified_probe:
+            if probe_fraction:
+                raise ValueError("stratified_probe and probe_fraction are exclusive")
+            from bouba_sens.probe import stratified_heldout_indices
+
+            self._heldout = stratified_heldout_indices(self._labels)
+            self._held_mask[self._heldout] = True
+            self.n_probe = len(self._heldout)
+            self.n_train = self._n - self.n_probe
+
+    @property
+    def stratified(self) -> bool:
+        return self._heldout is not None
+
+    def _training_starts(self, batch_size: int) -> torch.Tensor:
+        """Window starts t with [t, t + batch_size) free of held-out frames (no wrap)."""
+        if batch_size not in self._valid_starts:
+            held = torch.cat([torch.zeros(1), self._held_mask.double().cumsum(0)])
+            t = torch.arange(0, self._n - batch_size + 1)
+            ok = (held[t + batch_size] - held[t]) == 0
+            starts = t[ok]
+            if len(starts) == 0:
+                raise ValueError(f"no training window of {batch_size} frames avoids the probe")
+            self._valid_starts[batch_size] = starts
+        return self._valid_starts[batch_size]
 
     @property
     def mode(self) -> str:
@@ -150,12 +194,23 @@ class StudyforrestRealWorld:
         Every row without a held-out probe; the first ``n_train`` rows
         with one, so donor indices never point into the probe frames.
         """
+        if self._heldout is not None:
+            # Full length, held-out rows relabelled -1: row index = dataset
+            # index, and no training anchor shares the -1 class.
+            masked: torch.Tensor = self._labels.clone()
+            masked[self._heldout] = -1
+            return masked
         labels: torch.Tensor = self._labels[: self.n_train]
         return labels
 
     def sample_with_indices(self, batch_size: int, seed: int) -> tuple[WorldSample, torch.Tensor]:
         """Same batch as `sample`, plus the dataset row index of each sample."""
         gen = torch.Generator().manual_seed(seed)
+        if self._heldout is not None:
+            starts = self._training_starts(batch_size)
+            j = int(torch.randint(0, len(starts), (1,), generator=gen).item())
+            idx = torch.arange(int(starts[j]), int(starts[j]) + batch_size)
+            return self.gather(idx), idx
         if not self.n_probe:
             start = int(torch.randint(0, max(1, self._n - batch_size), (1,), generator=gen).item())
             idx = torch.arange(start, start + batch_size) % self._n
@@ -171,7 +226,16 @@ class StudyforrestRealWorld:
     def probe_sample_with_indices(
         self, batch_size: int, seed: int
     ) -> tuple[WorldSample, torch.Tensor]:
-        """Contiguous window inside the held-out probe frames (v0.9, 3.4)."""
+        """Contiguous window inside the held-out probe frames (v0.9, 3.4).
+
+        With ``stratified_probe`` the probe is every held-out row (sorted),
+        the same for all seeds; ``batch_size`` must equal ``n_probe`` and
+        ``seed`` is not used.
+        """
+        if self._heldout is not None:
+            if batch_size != self.n_probe:
+                raise ValueError(f"the stratified probe has {self.n_probe} rows; got {batch_size}")
+            return self.gather(self._heldout), self._heldout
         if not self.n_probe:
             raise ValueError("this world has no held-out probe (probe_fraction = 0)")
         if batch_size > self.n_probe:

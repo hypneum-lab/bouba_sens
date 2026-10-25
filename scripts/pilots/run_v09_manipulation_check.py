@@ -3,9 +3,10 @@
 Thin entry point around the merged library function
 ``bouba_sens.decorrelation.run_manipulation_check`` with its frozen
 defaults (200 draws per seed, 10,000 label swaps, generator seed
-20261023). The world is ``StudyforrestRealWorld`` built with
-``probe_fraction = V09_PROBE_FRACTION`` (0.10, section 3.4), so every
-anchor and donor lies in the training split. This is not the v0.9
+20261023). The world is ``StudyforrestRealWorld`` with the held-out probe
+of section 3.4: ``--split stratified`` (PI decision 2026-10-25, default)
+or ``--split tail`` (``probe_fraction = 0.10``, the split of the first
+run), so every anchor and donor lies in the training split. This is not the v0.9
 driver: the arms, grids and fusion gain are not run here. Usage:
 
   BOUBA_SENS_STUDYFORREST_DATA=... uv run python \
@@ -37,21 +38,25 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("seeds", type=int, nargs="+")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--split", choices=("stratified", "tail"), default="stratified")
     args = ap.parse_args()
     if tuple(args.seeds) != PILOT_SEEDS:
         raise SystemExit(f"v0.9 pilot seeds are {PILOT_SEEDS}; got {tuple(args.seeds)}")
     data_dir = Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"])
     # The constructor seed is stored only; sampling takes explicit seeds.
-    world = StudyforrestRealWorld(
-        seed=args.seeds[0], data_dir=data_dir, probe_fraction=V09_PROBE_FRACTION
-    )
+    if args.split == "tail":
+        world = StudyforrestRealWorld(
+            seed=args.seeds[0], data_dir=data_dir, probe_fraction=V09_PROBE_FRACTION
+        )
+    else:
+        world = StudyforrestRealWorld(seed=args.seeds[0], data_dir=data_dir, stratified_probe=True)
     t0 = time.monotonic()
     gate, k_original = run_manipulation_check(world, list(args.seeds))
     wall = time.monotonic() - t0
     rec = {
         "amendment": "v0.9 section 3.3 manipulation check (pilot)",
         "world_class": type(world).__name__,
-        "probe_fraction": V09_PROBE_FRACTION,
+        "split": args.split,
         "n_frames": world.n_train + world.n_probe,
         "n_train": world.n_train,
         "n_probe": world.n_probe,

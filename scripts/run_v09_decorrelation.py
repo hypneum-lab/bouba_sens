@@ -2,7 +2,7 @@
 
 Runs every (seed, onset, arm) cell of the main grid (onsets 0-200, arms
 decor / joint / plain, w = 50, R = 200; ``bouba_sens.v09_driver``) on
-``StudyforrestRealWorld(probe_fraction = 0.10)`` and writes one JSON with
+``StudyforrestRealWorld(stratified_probe = True)`` and writes one JSON with
 the fusion gains, wall times and, for the pilot seeds 3101-3105, the
 deficit matrix D and its variance components (section 7). Seeds must
 all be pilot seeds or all come from the confirmatory pool (3001-3044).
@@ -24,7 +24,6 @@ from pathlib import Path
 
 import torch
 
-from bouba_sens.decorrelation import V09_PROBE_FRACTION
 from bouba_sens.v09_driver import (
     CONFIRMATORY_POOL,
     ONSETS,
@@ -55,7 +54,7 @@ def main() -> None:
     world = StudyforrestRealWorld(
         seed=seeds[0],
         data_dir=Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"]),
-        probe_fraction=V09_PROBE_FRACTION,
+        stratified_probe=True,
     )
     out: dict[str, object] = {"world_class": check_world(world), "seeds": seeds}
     cells = []

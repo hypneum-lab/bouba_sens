@@ -10,8 +10,14 @@
 **Pre-registration id:** **N20** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
 **Verdict ADR:** **ADR-0023** (proposed — PI confirms at filing)
 
-> **Filing note.** This is the machine-readable draft. Nothing in this
-> file has been run. The donor scheduler, the three arms, the CKA
+> **Design change of 2026-10-25 (disclosed).** The PI replaced the
+> tail held-out split by a class-stratified held-out probe (§3.4)
+> after the manipulation check had been run on the pilot seeds and
+> after a driver smoke run on seed 0 (outside every seed pool); no
+> pilot arm or deficit D had been computed. Stated on the OSF form.
+
+> **Filing note.** This is the machine-readable draft. Only pilot
+> seeds (3101–3105) have been run; no confirmatory seed. The donor scheduler, the three arms, the CKA
 > manipulation check and the fusion-gain probe are merged with unit
 > tests (PR #12, `src/bouba_sens/decorrelation.py`, hook in
 > `AdaptationLoop.pretrain`). Still missing: the driver for the arms and
@@ -168,25 +174,48 @@ are identical and only the cross-modal pairing differs.
 
 ### 3.4 Outcome: fusion gain and deficit
 
-**Held-out probe frames (PI decision 2026-10-24).** The world is built
-with `StudyforrestRealWorld(..., probe_fraction = 0.10)`
-(`V09_PROBE_FRACTION`): the last ⌈0.10 · n⌉ frames of the cache (900
-of 9,000) are reserved for the probe. Every training-side draw uses
-only the first n_train frames: Phase-1 batches of every arm, donor
-pools (§3.1), and the manipulation-check anchors (§3.3). Training
-windows lie wholly inside the training split (no window straddles the
-boundary and none wraps around the end of the cache), and a batch
-larger than the training split is refused. Unit tests
-(`tests/unit/test_studyforrest_probe_split.py`) check that no Phase-1
-arm ever gathers a probe row. With `probe_fraction` = 0 (the default)
-the world behaves exactly as before, so no other analysis changes.
-Residual: frames are a time series, so the first probe frames are
-temporally adjacent to the last training frames; no gap is inserted.
+**Held-out probe frames: class-stratified (PI decision 2026-10-25,
+replacing the tail split of 2026-10-24).** The tail split (the last 900
+frames held out, one contiguous 512-frame window per seed) contained
+only classes 2 and 3 and 10 frames of class 0, never class 1; in a
+smoke run of the driver on seed 0 (outside every seed pool) the
+held-out accuracy was 0.26 at onset 0 and 0.00 at onset 200, so FG
+was 0 by construction. The PI replaced it before any v0.9 pilot arm
+was run. The world is built with
+`StudyforrestRealWorld(..., stratified_probe = True)`
+(`bouba_sens.probe.stratified_heldout_indices`):
+
+- candidate blocks: every label run of the cache is tiled from its
+  first frame into consecutive, non-overlapping blocks of **16**
+  frames (a trailing remainder shorter than 16 is not used), so each
+  block lies in one run and has one label (the v0.7 tiling);
+- counts per class: **32 blocks** in all, apportioned to the four
+  classes in proportion to their frame counts by largest remainder,
+  with at least one block per class (`proportional_block_counts`). On
+  the filing cache (class counts 180 / 3,480 / 4,280 / 1,060) this is
+  **1 / 12 / 15 / 4 blocks = 16 / 192 / 240 / 64 rows**;
+- draw: one `torch.Generator` seeded with the frozen seed
+  **20261025** (`V09_HELDOUT_SEED`, the same for every seed and arm);
+  for each class c = 0, 1, 2, 3 in that order, one `torch.randperm`
+  over that class's blocks (in increasing start order), of which the
+  first count_c are kept;
+- the held-out set is the **512 rows** of the chosen blocks (5.7 % of
+  the 9,000 frames); a class with too few blocks is a technical failure
+  of the world (checked when the world is built);
+- disjointness from training: every Phase-1 batch of every arm, every
+  donor and every manipulation-check anchor avoids the held-out rows.
+  A training window of 16 frames is drawn uniformly (generator seeded
+  with the batch seed, as before) among the windows that contain no
+  held-out frame and do not wrap around the end of the cache; donor
+  pools see the held-out rows with label −1, a class no anchor has.
+  Unit tests: `tests/unit/test_studyforrest_stratified_probe.py`.
+  Residual: frames are a time series, so the frames next to a held-out
+  block are temporally adjacent to it; no gap is inserted.
 
 At the end of Phase 1 (no lesion), on one clean probe of 512 rows,
-a contiguous window inside the probe frames,
-`world.probe_sample_with_indices(512, seed = s + 2·10⁶)`, identical for
-all arms:
+**all the held-out rows** (`world.probe_sample_with_indices(512, ·)`;
+the seed argument is not used), identical for all arms and all
+seeds:
 
 - acc_all: plain accuracy with all channels present.
 - acc_m: the accuracy on the same 512 probe rows when only modality m
@@ -617,8 +646,13 @@ mitigate.
       path unchanged). Commit hash recorded on the form at filing.
 - [ ] Driver for the arms and grids merged with unit tests; learning
       rate confirmed constant at 1e-3 in it (no override, no scheduler,
-      no optimiser reset); world built with `probe_fraction = 0.10`;
-      train-side fusion-gain output implemented.
+      no optimiser reset); world built with `stratified_probe = True`;
+      train-side fusion-gain output implemented. (Main grid and D
+      variance done: `bouba_sens.v09_driver`,
+      `scripts/run_v09_decorrelation.py`, unit tests
+      `tests/unit/test_v09_driver.py`; the fixed-budget grid,
+      persistence arm, secondary cells and train-side fusion gain are
+      not yet in the driver.)
 - [x] Mitigation objective (§3.5 a, PI decision 2026-10-24):
       `CrossSensorReconstruction` and the optional `reconstruction`
       argument of `AdaptationLoop.pretrain`, unit tests
@@ -629,7 +663,10 @@ mitigate.
 - [ ] Driver runs the 8 secondary cells per seed (§3.5: 2 mitigation,
       6 LOCK_AFTER), with `constellation_lock_after` = ℓ set on the
       multiplexer for the lock cells only.
-- [x] Held-out probe frames (§3.4, PI decision 2026-10-24):
+- [x] Class-stratified held-out probe (§3.4, PI decision 2026-10-25):
+      `StudyforrestRealWorld(stratified_probe=True)`, unit tests
+      `tests/unit/test_studyforrest_stratified_probe.py`.
+- [x] (superseded) Held-out probe frames (§3.4, PI decision 2026-10-24):
       `StudyforrestRealWorld(probe_fraction=...)`, held-out
       `fusion_gain`, unit tests
       `tests/unit/test_studyforrest_probe_split.py` (no training draw,
@@ -658,6 +695,12 @@ SNR ramp `k_steps` = 50 for the D-4 lesion phase (§4, ADR-0020).
 
 Decided by the PI on 2026-10-24 (no longer open): §3.4 probe overlap,
 resolved by holding out the last 10 % of frames (§3.1, §3.3, §3.4).
+**Superseded on 2026-10-25** by the class-stratified held-out probe
+(§3.4), decided by the PI after a driver smoke run on seed 0 (outside
+every seed pool) showed that the tail probe never contains class 1
+and gave FG = 0; no v0.9 pilot arm had been run. The manipulation check run on the pilot seeds
+under the tail split (pilot report 2026-10-25) is re-run under the
+stratified split.
 
 Decided by the PI on 2026-10-24 (no longer open): the design is kept as
 drafted, with the held-out probe as the only change to the primary design: within-class

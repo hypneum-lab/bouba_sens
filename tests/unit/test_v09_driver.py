@@ -15,7 +15,8 @@ from bouba_sens.builders import build_loop
 from bouba_sens.decorrelation import V09_PROBE_FRACTION, FusionGain, fusion_gain
 from bouba_sens.world.studyforrest import StudyforrestRealWorld
 
-N_ROWS = 5200  # 520 held-out frames >= the 512-row probe
+# Run-structured labels (the stratified probe tiles label runs into blocks).
+RUNS = [(0, 400), (1, 1200), (2, 1500), (3, 700), (1, 800), (2, 600)]
 
 # Bit-identical comparisons need deterministic CPU kernels (tests/conftest.py).
 pytestmark = pytest.mark.usefixtures("deterministic_torch")
@@ -24,18 +25,21 @@ pytestmark = pytest.mark.usefixtures("deterministic_torch")
 @pytest.fixture
 def real_dir(tmp_path: Path) -> Path:
     gen = torch.Generator().manual_seed(0)
-    n = N_ROWS
+    y = torch.cat([torch.full((k,), c, dtype=torch.long) for c, k in RUNS])
+    n = len(y)
     torch.save(torch.randn(n, 128, generator=gen), tmp_path / "audio.pt")
     torch.save(torch.randn(n, 16, 16, generator=gen), tmp_path / "vision.pt")
     torch.save(torch.randn(n, 32, generator=gen), tmp_path / "tactile.pt")
     torch.save(torch.randn(n, 3, generator=gen), tmp_path / "gravity.pt")
     torch.save(torch.randn(n, 6, generator=gen), tmp_path / "force.pt")
-    torch.save(torch.randint(0, 4, (n,), generator=gen), tmp_path / "labels.pt")
+    torch.save(y, tmp_path / "labels.pt")
     return tmp_path
 
 
-def _world(real_dir: Path, frac: float = V09_PROBE_FRACTION) -> StudyforrestRealWorld:
-    return StudyforrestRealWorld(seed=0, data_dir=real_dir, probe_fraction=frac)
+def _world(real_dir: Path, *, stratified: bool = True) -> StudyforrestRealWorld:
+    if stratified:
+        return StudyforrestRealWorld(seed=0, data_dir=real_dir, stratified_probe=True)
+    return StudyforrestRealWorld(seed=0, data_dir=real_dir, probe_fraction=V09_PROBE_FRACTION)
 
 
 def test_frozen_constants() -> None:
@@ -46,8 +50,8 @@ def test_frozen_constants() -> None:
 
 def test_check_world_needs_the_held_out_probe(real_dir: Path) -> None:
     assert drv.check_world(_world(real_dir)) == "StudyforrestRealWorld"
-    with pytest.raises(RuntimeError, match="hold out"):
-        drv.check_world(_world(real_dir, 0.0))
+    with pytest.raises(RuntimeError, match="stratified"):
+        drv.check_world(_world(real_dir, stratified=False))
     with pytest.raises(RuntimeError, match="StudyforrestRealWorld"):
         drv.check_world(object())
 
