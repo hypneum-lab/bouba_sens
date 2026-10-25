@@ -13,12 +13,12 @@ draft PR, branch `docs/osf-prereg-2026-10`).
 
 | Item | Value |
 |------|-------|
-| bouba_sens commit (code that ran) | `b09070bc6af4a78cd1ea8f57d20918f2a443f84d` (PR branch head) plus the four new scripts in `scripts/pilots/` (this commit) |
+| bouba_sens commit (code that ran) | v0.7 round 1 and v0.9 check: `b09070bc6af4a78cd1ea8f57d20918f2a443f84d` plus the scripts in `scripts/pilots/` (commit `164a18c`); v0.7 round 2: `de68e990a4822a040be30bc4c0fa5ef8e7df9405` |
 | nerve-wml | tag `v1.7.0`, `c36822aac38dc83e2c9dd14f504948d0d17267eb` (the CI pin, `.github/workflows/ci.yml`) |
 | Host | macM1: Apple M1 Max, 32 GB, macOS 27.0.1 (26A434), CPU only, `nice -n 10`, one job at a time |
 | Python / torch / numpy | 3.14.4 / 2.11.0 / 2.4.4 (`uv run --frozen`, `uv.lock` of the branch; local uv rewrote only the lock-file revision header, not committed) |
 | World cache | `StudyforrestRealWorld`, 9,000 frames, label counts [180, 3480, 4280, 1060], 10 label runs (median run 530 frames) |
-| Date (UTC) | 2026-10-25 10:53–11:01 |
+| Date (UTC) | 2026-10-25 10:53–11:01 (round 1, v0.9 check), 11:23–11:24 (v0.7 round 2) |
 
 Cache SHA-256 (`data/studyforrest_real/`):
 
@@ -40,12 +40,13 @@ alongside (the manifest tool only covers `.json`, `.csv`, `.png`).
 
 | Pilot | Seeds | Status | Wall time | Output |
 |-------|-------|--------|-----------|--------|
-| v0.7 B-2 (§4.3) | 1101–1105 | **run**; primary readout degenerate (see finding 1) | 57 s total; 10–13 s per seed | `reports/pilots/v07_b2_pilot_seeds1101-1105.json`, `…_derived.json`, `v07_b2_probe_diagnostic.jsonl` |
+| v0.7 B-2 round 1 (§4.3, protocol of 2026-10-24) | 1101–1105 | **run**; primary readout degenerate (findings 1–2) | 57 s total; 10–13 s per seed | `reports/pilots/v07_b2_pilot_seeds1101-1105.json`, `…_derived.json`, `v07_b2_probe_diagnostic.jsonl` |
+| v0.7 B-2 round 2 (§4.2 after the PI decisions of 2026-10-25) | 1101–1105 (same seeds) | **run** | 54 s total; 10–12 s per seed | `reports/pilots/v07_b2_pilot_r2_seeds1101-1105.json`, `…_r2_derived.json` |
 | v0.8 (§7) | 2101–2110 | **blocked**: driver missing (draft filing note, §9) | — | none; structural check on seed 0 only (`v08_hard_rank_diagnostic_seed0.jsonl`) |
 | v0.9 manipulation check (§3.3) | 3101–3105 | **run, gate passed** | 35 s | `reports/pilots/v09_manipulation_check_seeds3101-3105.json` |
 | v0.9 variance components of D, runtime (§7) | 3101–3105 | **blocked**: driver for arms / grids missing (draft filing note, §9) | — | none |
 
-## v0.7 — B-2 pilot
+## v0.7 — B-2 pilot, round 1 (protocol as drafted on 2026-10-24)
 
 **Command** (`reports/pilots/logs/run_v07.sh`, log `logs/v07_b2_pilot.log`):
 
@@ -99,8 +100,8 @@ classes, every pilot seed would be a technical failure.
 
 | Readout | per-seed SD | UCL80 (df = 4) | exact TOST power at N = 95, μ = 0 / −0.02 | N for 0.80 | label |
 |---------|------------:|---------------:|------------------------------------------:|-----------:|-------|
-| hard (primary, registered) | 0 | 0 | undefined (degenerate: all values identical) | — | none assignable (see finding 1) |
-| Gumbel (E-2g, descriptive only) | 0.01554 | 0.02420 | 1.000 / 1.000 | 4 / 6 | "adequately powered" (descriptive) |
+| hard (primary in round 1) | 0 | 0 | undefined (degenerate: all values identical) | — | none assignable (see finding 1) |
+| Gumbel (E-2g in round 1, descriptive only) | 0.01554 | 0.02420 | 1.000 / 1.000 | 4 / 6 | "adequately powered" (descriptive) |
 
 N stays 95 (§7). The Gumbel row is not the registered computation
 (§6: "the E-2 power is computed on the hard readout"); it is reported
@@ -110,6 +111,64 @@ because the hard row is undefined.
 including start-up and the world check; 1102–1105: 10–11 s each).
 At 11 s per seed, the 95 confirmatory B-2 runs take about 18 min on
 this host.
+
+The derived file was regenerated with the round-2 version of
+`derive_v07_pilot.py`, which reads the primary readout from the pilot
+file; the numbers are unchanged (keys `primary_hard_ross`,
+`gumbel_ross_descriptive`).
+
+## v0.7 — B-2 pilot, round 2 (PI decisions of 2026-10-25)
+
+After seeing round 1, the PI decided (2026-10-25, about 12:10; disclosed
+in the draft header as post-pilot changes of the unfiled draft): (1) the
+Gumbel readout becomes the primary E-2 readout and the hard readout
+becomes descriptive (E-2h); a deterministic soft readout may be added
+later as a declared secondary comparison; (2) the E-2 probe becomes a
+class-balanced multi-window probe, fixed at the source, specified in
+§4.2 (4 classes × 8 windows × 16 frames, blocks tiled from label runs,
+`torch.randperm` with a generator seeded s − 99_999; implemented in
+`bouba_sens.probe`, commit `de68e99`). The pilot was re-run on the same
+seeds.
+
+**Command** (`reports/pilots/logs/run_v07_r2.sh`, log
+`logs/v07_b2_pilot_r2.log`, commit `de68e99`):
+
+```
+BOUBA_SENS_STUDYFORREST_DATA=<cache> nice -n 10 uv run --frozen python -u \
+  scripts/spikes/e1_b2_dimensional_mine.py --preset v07-e2 \
+  --seed-list 1101,1102,1103,1104,1105 \
+  --out reports/pilots/v07_b2_pilot_r2_seeds1101-1105.json
+```
+
+Probe label counts: 128 / 128 / 128 / 128 on every seed. Zero k-NN
+distances in the Gumbel codes: 0 on every seed (pre and post); in the
+hard codes all 512 points still have a zero k-NN distance on every
+seed (one distinct row, except the post-lesion code of 1105, which has
+a few repeated rows).
+
+| Seed | Primary ΔMI-hat (Gumbel, Ross), bit | E-2h (hard, Ross), bit | D_PR (post, Gumbel) |
+|-----:|-----------:|-----------:|------:|
+| 1101 | +0.0466 | 0 | 13.08 |
+| 1102 | +0.0347 | 0 | 12.04 |
+| 1103 | +0.0694 | 0 | 12.38 |
+| 1104 | +0.0789 | 0 | 13.12 |
+| 1105 | +0.6461 | +0.1859 | 3.52 |
+
+**Pilot-derived quantities (§7, `reports/pilots/v07_b2_pilot_r2_derived.json`).**
+
+| Readout | mean | per-seed SD | UCL80 (df = 4) | exact TOST power at N = 95, μ = 0 / −0.02 | N for 0.80, μ = 0 / −0.02 | label |
+|---------|-----:|------------:|---------------:|------------------------------------------:|--------------------------:|-------|
+| Gumbel (primary, registered) | +0.1751 | 0.2639 | 0.4110 | 3.8e-7 / 3.4e-7 | 581 / 1,162 | **"low informativeness"** |
+| hard (E-2h, descriptive) | +0.0372 | 0.0831 | 0.1295 | 0.964 / 0.725 | 59 / 117 | "under-powered" (descriptive) |
+
+N stays 95 (§7). The SD is dominated by seed 1105 (+0.646 bit, with a
+post-lesion participation ratio of 3.5 against 12–13 on the other
+seeds); the rule uses the pilot SD as defined, without exclusion. The
+five pilot values are all positive (descriptive; pilot data are not
+tested).
+
+**Runtime (round 2).** 54 s for the five seeds (1101: 12 s including
+start-up; 1102–1105: 10–11 s each).
 
 **Not done in this pilot (v0.7).** (a) The §11 checklist item "effective
 SNR checked in `metadata.json` of a pilot cell" refers to a B-1 grid

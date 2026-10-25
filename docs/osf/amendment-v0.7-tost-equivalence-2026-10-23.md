@@ -10,9 +10,11 @@
 **Pre-registration id:** **N18** (proposed — PI confirms at filing). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR is 0020, so the verdict ADRs are proposed as ADR-0021 / 0022 / 0023; amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
 **Verdict ADR:** **ADR-0021** (proposed — PI confirms at filing)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
+**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. These changes are stated on the OSF form.
 
-> **Filing note.** This is the machine-readable draft. Nothing in this
-> file has been run. Confirmatory seeds (below) must not be run before
+> **Filing note.** This is the machine-readable draft. Only the B-2
+> pilot (seeds 1101–1105, §4.3) has been run; no confirmatory seed has
+> been run. Confirmatory seeds (below) must not be run before
 > the PI files this text on OSF. The pre-filing code tasks of §4.3 must
 > be merged and frozen first; the commit hash of the analysis code is
 > recorded on the OSF form at filing.
@@ -104,8 +106,8 @@ in true-MI units.
 | **E-1** | μ₁ = mean of the per-seed E-1 value (above) | μ₁ ≤ −0.025 or μ₁ ≥ +0.025 | −0.025 < μ₁ < +0.025 | primary |
 | E-1b | μ₁(ℓ) at each ℓ separately (grid medians) | any ℓ with \|μ₁(ℓ)\| ≥ 0.025 | all five inside ±0.025 (IUT) | confirmatory, step 2 of a fixed sequence |
 | E-1c | μ at the no-lock default (LOCK_AFTER unset) | \|μ\| ≥ 0.025 | \|μ\| < 0.025 | confirmatory, step 3 of a fixed sequence |
-| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator (Ross 2014, k = 3), hard-demodulated probe | μ₂ ≤ −0.05 or μ₂ ≥ +0.05 | −0.05 < μ₂ < +0.05 | primary |
-| E-2g | same quantity and estimator, Gumbel-sampled probe readout (ADR-0019) | — | — | registered secondary, reported alongside E-2, no decision |
+| **E-2** | μ₂ = mean of the per-seed ΔMI, primary estimator (Ross 2014, k = 3), Gumbel-sampled probe readout (ADR-0019), class-balanced probe (§4.2) | μ₂ ≤ −0.05 or μ₂ ≥ +0.05 | −0.05 < μ₂ < +0.05 | primary |
+| E-2h | same quantity and estimator, hard (argmax) probe readout | — | — | descriptive, reported alongside E-2, no decision (input-independent in the pilot) |
 | E-2b | same quantity, secondary estimators (full-probe KSG, MINE, 1-D KSG) and the CC-film bridge | — | — | exploratory, no decision |
 
 **Multiplicity.** E-1 and E-2 are two separate claims about two separate
@@ -117,9 +119,9 @@ equivalence. This controls the family-wise error rate of the
 equivalence claims at 0.05. E-1b is an intersection-union test: the
 claim "equivalent at every tested LOCK_AFTER" needs all five TOSTs to
 pass, and the IUT exemption covers that conjunction only; a single
-lock's TOST is not advertised as a separate finding. E-2g is a
-registered secondary analysis: it is specified here, always reported
-next to E-2, and never changes the E-2 label. E-2b is exploratory and
+lock's TOST is not advertised as a separate finding. E-2h is a
+descriptive analysis: it is specified here, always reported next to
+E-2, and never changes the E-2 label. E-2b is exploratory and
 supports no claim.
 
 ## 4. Protocol
@@ -187,26 +189,59 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
   `steps_lesion = 100`, lesion as in the E1 runner (audio, mode M2) except for the SNR
   schedule: `snr_init` = 0 dB, floor −20 dB, `k_steps` = 50, so −20.00 dB is reached at step 50 and held to step 99 (mean SNR −14.90 dB). **This differs from ADR-0019 E1**, whose runner sets k = `steps_lesion` = 100 and reaches only −19.80 dB at the last step (`capture_probe` in `e1_b2_dimensional_mine.py`; ADR-0020). The runner's `--k-steps 50` option sets it (§4.3 item 6).
 - **Batch sizes, frozen separately:** Phase-1 training batch **16**,
-  Phase-2 lesion batch **16**, probe **N = 512** (`world.sample(512,
-  seed = s − 99_999)`). These match B-1 and v0.8. The runner's legacy
+  Phase-2 lesion batch **16**, probe **N = 512** (class-balanced
+  probe, next item). The batch sizes match B-1 and v0.8. The runner's legacy
   `--batch-size` sets all three (default 512, as in the ADR-0019 E1.3
   runs); confirmatory runs pass `--train-batch 16 --lesion-batch 16
   --probe-n 512` (§4.3 item 2), set together with the rest of the
   frozen configuration by `--preset v07-e2` (E-2) or `--preset v07-e2b`
   (CC-film, E-2b), which refuse any conflicting option (PI decision
   2026-10-24).
-- **Probe demodulation (PI decision 2026-10-24, "both").** Z_pre and
-  Z_post are captured twice on the same checkpoint and the same 512
-  probe rows: (i) **hard** argmax demodulation
-  (`nerve.fuse(hard_demod=True)`, deterministic, no RNG use, as in
-  v0.8), the **primary** readout for E-2; (ii) **Gumbel-softmax**
-  sampling, as in the ADR-0019 E1 runner, the registered secondary
-  readout E-2g. The Gumbel captures are taken where the legacy runner
-  takes them and the hard captures draw no random numbers, so the
-  training trajectory and the Gumbel readout are identical to a
-  legacy run. The runner option is `--probe-demod both` (§4.3
-  item 8). The primary/secondary split was confirmed by the PI on
-  2026-10-24.
+- **Class-balanced probe (PI decision 2026-10-25, after the pilot).**
+  The E-2 probe is built from short windows that cover all four
+  classes equally (`bouba_sens.probe.class_balanced_probe_indices`,
+  runner `--probe-scheme balanced`, set by `--preset v07-e2`):
+  - candidate windows: every label run of the cache is tiled from its
+    first frame into consecutive, non-overlapping blocks of **16**
+    frames; a trailing remainder shorter than 16 is not used, so every
+    block lies inside one run and has one label;
+  - draw: one `torch.Generator` seeded with **s − 99_999** (the legacy
+    probe seed); for each class c = 0, 1, 2, 3 in that order, one
+    `torch.randperm` over that class's blocks (in increasing start
+    order), of which the first **8** are kept, in permutation order;
+  - probe rows: the frames of the 32 chosen blocks, class 0 first,
+    each block in increasing frame order: **512 rows, exactly 128 per
+    class**, no frame twice;
+  - class-coverage rule: a class with fewer than 8 blocks is a
+    technical failure of the world (checked before any seed); on the
+    filing cache the block counts are 10 / 217 / 265 / 65 for classes
+    0–3 (class 0 has 170 + 10 frames in two runs), so the rule holds;
+  - the draw uses only its own generator, so training and the Gumbel
+    readout draw the same random numbers as before.
+  The probe rows are also training frames (v0.7 has no held-out
+  split), as in ADR-0019. The earlier probe, one contiguous window
+  `world.sample(512, seed = s − 99_999)`, was single-label on 3 of the
+  5 pilot seeds (the cache has only 10 label runs), which makes MI
+  zero by construction. **E-2b (CC-film)** keeps the contiguous probe:
+  its 600 frames have 324 label runs, all shorter than 16 frames, so
+  no block exists, and a 512-frame window covers 512 of the 600
+  frames.
+- **Probe demodulation (PI decision 2026-10-24, "both"; primary
+  changed by the PI on 2026-10-25 after the pilot).** Z_pre and Z_post
+  are captured twice on the same checkpoint and the same 512 probe
+  rows: (i) **Gumbel-softmax** sampling, as in the ADR-0019 E1 runner,
+  the **primary** readout for E-2; (ii) **hard** argmax demodulation
+  (`nerve.fuse(hard_demod=True)`, deterministic, no RNG use), the
+  descriptive readout E-2h. The Gumbel captures draw from the global
+  torch RNG, which the runner re-seeds with s before the seed's
+  training (`--seed-list`), so a seed's Gumbel codes are reproducible;
+  they are taken where the legacy runner takes them and the hard
+  captures draw no random numbers, so the training trajectory and the
+  Gumbel readout are identical to a legacy run. The runner option is
+  `--probe-demod both` (§4.3 item 8). In pilot round 1 the hard
+  readout mapped all 512 probe rows to one code on every seed (pre
+  and post), so every k-NN MI difference was 0 by construction; this
+  is why it is no longer primary.
 - **World check:** as in §4.1, the run log must show
   `StudyforrestRealWorld` (or the CC-film world for E-2b); a silent
   fallback to the stub is a technical failure.
@@ -238,7 +273,8 @@ ADR-0019 E1 protocol, with the configuration frozen as follows:
     clips each term at 0; that clipping biases a difference and is not
     used for the primary.)
   - Edge cases: a class with fewer than k + 1 probe points makes the
-    seed a technical failure (§8); zero distances (duplicated codes)
+    seed a technical failure (§8; the balanced E-2 probe has 128
+    points in every class); zero distances (duplicated codes)
     are handled by the same definitions and their count is reported.
   - **Bias behaviour.** Ross validated the estimator on scalar
     continuous variables with known MI. Its bias with 896 ambient
@@ -296,13 +332,17 @@ below the list):
    the script does not forward it. Defaults of the CLI and of
    `m2_snr_schedule` are not changed by this amendment (follow-up in
    ADR-0020).
-8. A `--probe-demod both` option in the E1 runner capturing the hard
-   (primary) and Gumbel (E-2g) probe readouts of §4.2 from one run
-   (added after the PI decision of 2026-10-24).
+8. A `--probe-demod both` option in the E1 runner capturing the
+   Gumbel (primary) and hard (E-2h) probe readouts of §4.2 from one
+   run (added after the PI decision of 2026-10-24; primary changed on
+   2026-10-25).
 9. Presets `--preset v07-e2` / `v07-e2b` that set the frozen
    configuration of §4.2 (world, lock, steps, batch sizes, `k_steps`,
    probe readouts), refuse a conflicting option and check the world
    class before any seed (added after the PI decisions of 2026-10-24).
+10. The class-balanced probe of §4.2 (`bouba_sens.probe`, runner
+    `--probe-scheme balanced`, set by `--preset v07-e2`; added after
+    the PI decision of 2026-10-25).
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
@@ -333,17 +373,17 @@ recorded on the form at filing).**
   Its only confirmatory entry point, `analyse_confirmatory`, refuses
   any input that is not exactly the roster of §8 after documented
   reserve substitutions (in order, at most 4, each with a reason) and
-  any B-2 record that is not from the hard primary readout or lacks
-  the Gumbel value; it reports E-2g next to E-2 without a label (§6).
+  any B-2 record that is not from the Gumbel primary readout or lacks
+  the hard value; it reports E-2h next to E-2 without a label (§6).
   Still to write: the collector that builds its input from the grid
   aggregates (`invariants.b1.median_me7` per seed and lock) and the E1
   runner outputs.
-- Item 8 (probe demodulation, decided 2026-10-24): `--probe-demod
-  both` in the E1 runner captures the hard (primary) and Gumbel
-  (secondary, E-2g) readouts from one run (`capture_probe_readouts`);
-  per-seed outputs `ross_full_delta_bits` / `ksg_full_delta_bits` are
-  the hard readout and the same keys with suffix `_gumbel` are E-2g;
-  the JSON records `primary_readout`. The default `--probe-demod soft`
+- Item 8 (probe demodulation, decided 2026-10-24, primary changed
+  2026-10-25): `--probe-demod both` in the E1 runner captures the
+  Gumbel (primary) and hard (E-2h) readouts from one run
+  (`capture_probe_readouts`); per-seed outputs `ross_full_delta_bits`
+  / `ksg_full_delta_bits` are the Gumbel readout and the same keys
+  with suffix `_hard` are E-2h; the JSON records `primary_readout`. The default `--probe-demod soft`
   keeps the legacy Gumbel-only output. Unit tests in
   `tests/unit/test_e1_runner_v07.py` check that the Gumbel readout and
   training under `both` equal the legacy run bit for bit and that the
@@ -352,6 +392,14 @@ recorded on the form at filing).**
   the E1 runner, unit tests in `tests/unit/test_e1_runner_v07.py`
   (frozen values set, conflicting option refused, stub world refused,
   legacy defaults unchanged without a preset).
+- Item 10 (class-balanced probe, decided 2026-10-25):
+  `class_balanced_probe_indices` and `draw_probe`, unit tests
+  `tests/unit/test_class_balanced_probe.py` (tiling, 512 rows with 128
+  per class and no repeat, single-label blocks, determinism and seed
+  dependence, agreement with the written definition, global RNG
+  untouched, too few blocks refused) and
+  `tests/unit/test_e1_runner_v07.py` (runner draws exactly those rows;
+  presets set the scheme).
 
 **Implementation verification of the primary estimator (pre-filing,
 pass/fail).** The new function must pass all of the following before
@@ -407,6 +455,19 @@ configuration once, to measure the per-seed SD of the primary
 Pilot data are excluded from every confirmatory test. No pilot is
 needed for B-1, whose planning data exist (§7).
 
+*Pilot run (2026-10-25, macM1, `docs/osf/pilot-report-2026-10-25.md`).*
+Round 1 (protocol as drafted on 2026-10-24: hard primary, contiguous
+probe) gave a primary ΔMI-hat of exactly 0 on all five seeds, because
+the hard readout mapped every probe row to one code, and a
+single-label probe on 3 of 5 seeds. After the PI decisions of
+2026-10-25 (header), round 2 re-ran the same five pilot seeds with the
+protocol of §4.2 (Gumbel primary, class-balanced probe, 128 rows per
+class on every seed). Round 2, primary (Gumbel, Ross) ΔMI-hat per seed:
++0.0466, +0.0347, +0.0694, +0.0789, +0.6461 bit (mean +0.1751, SD
+0.2639, UCL80 0.4110); hard readout (E-2h): 0, 0, 0, 0, +0.1859 bit.
+Runtime: 54 s for the five seeds (about 11 s per seed). The §7
+recomputation is below.
+
 ## 5. Equivalence bounds and their justification
 
 **Primary bounds (PI decision, 2026-10-23): ±0.025 (B-1, accuracy
@@ -448,12 +509,12 @@ informativeness of each component is stated there.
   Wilcoxon-based TOST. The data are quantised and may be non-normal. If
   parametric and non-parametric verdicts disagree, both are reported and
   the disagreement is stated in the paper.
-- E-2g (registered secondary): the same TOST, CIs and p-values as E-2,
-  computed on the Gumbel-readout ΔMI-hat of the same 95 seeds, reported
+- E-2h (descriptive): the same TOST, CIs and p-values as E-2,
+  computed on the hard-readout ΔMI-hat of the same 95 seeds, reported
   in the same table as E-2. It carries no label of its own and does not
-  change the E-2 label; a disagreement between E-2 and E-2g is stated
+  change the E-2 label; a disagreement between E-2 and E-2h is stated
   in the paper. The pilot records the per-seed SD of both readouts;
-  the E-2 power is computed on the hard readout.
+  the E-2 power is computed on the Gumbel (primary) readout.
 - Descriptive only: per-modality Me7 at floor SNR, per ℓ; per-seed D
   for B-2; E-2b estimators.
 - Descriptive only, estimator noise (after Knopov & Shvai,
@@ -587,6 +648,13 @@ as equivalence at this N.
   informativeness" (< 0.50). N stays 95 in every case, and an
   inconclusive E-2 is reported with the label and the N that would
   have been needed.
+  *Pilot result (round 2, 2026-10-25,
+  `reports/pilots/v07_b2_pilot_r2_derived.json`):* pilot SD 0.2639 bit,
+  UCL80 (df = 4) 0.4110 bit; exact TOST power at N = 95 is 3.8e-7
+  (μ = 0) and 3.4e-7 (μ = −0.02); N for 0.80 would be 581 (μ = 0) and
+  1,162 (μ = −0.02). Label: **"low informativeness"**. N stays 95. The
+  SD is dominated by one seed (1105, +0.646 bit); the rule uses the
+  pilot SD as defined, without exclusion.
 
 Normal-approximation formula used as a cross-check: for true μ = 0,
 N ≈ ((z₁₋α + z₁₋β/₂) · σ / δ)²; for μ ≠ 0, N ≈ ((z₁₋α + z₁₋β) · σ /
@@ -692,7 +760,8 @@ which concerned a different estimand. All outcomes are publishable.
 - [x] No threshold change.
 - [x] No metric-math change.
 - [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form.
-- [ ] World class (`StudyforrestRealWorld`) confirmed in the pilot logs (§4.1).
+- [x] World class (`StudyforrestRealWorld`) confirmed in the pilot logs (§4.1; preset world check passed and recorded, pilot report 2026-10-25).
+- [ ] Post-pilot design changes of 2026-10-25 (Gumbel primary, class-balanced probe; header) stated on the OSF form as made after the PI saw pilot round 1.
 - [x] Bounds derived from frozen thresholds (half of each), not from data.
 - [x] Seeds disjoint from all previously used seeds.
 - [x] Verdicts to be recorded in a new ADR; ADR-0019 untouched.
@@ -716,6 +785,10 @@ Decided by the PI on 2026-10-24 (no longer open): B-2 probe
 demodulation, "both": hard argmax readout primary (E-2), Gumbel-sampled
 readout as registered secondary E-2g (§3, §4.2, §6); the
 primary/secondary split was confirmed by the PI the same day.
+**Superseded on 2026-10-25** (PI decision after pilot round 1, header):
+Gumbel-sampled readout primary (E-2), hard readout descriptive (E-2h);
+class-balanced multi-window probe for E-2 (§4.2). A deterministic soft
+readout may be added later as a declared secondary comparison.
 
 Decided by the PI on 2026-10-24 (no longer open): B-2 batch sizes
 16 / 16 / 512 (train / lesion / probe), as drafted (§4.2); B-2 primary
