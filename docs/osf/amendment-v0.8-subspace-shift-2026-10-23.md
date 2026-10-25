@@ -89,21 +89,31 @@ For a T2 cell c = (seed s, lock ℓ, lesioned modality m, SNR level f):
    entry. Z_post: the same probe, presented clean on all channels,
    through the network after the 100-step lesion phase. Both are already
    captured as `pre_lesion_codes` / `post_lesion_codes`.
-   **Hard-demodulation probe rule (PI decision 2026-10-23).** Both
-   captures use deterministic argmax demodulation of the carriers
-   (`demodulate(hard=True)`, one-hot code distribution into the
-   codebook), not the Gumbel-softmax sampling used in training. The
-   same checkpoint therefore always yields bit-identical codes, with no
-   random draw in the subspace measurement. Training and lesion-phase
-   steps are unchanged; only the two probe captures use the hard path
-   (`probe_demod="hard"`).
+   **Gumbel probe readout (PI decision 2026-10-25, after the v0.7 B-2
+   pilot; supersedes the hard-demodulation rule of 2026-10-23).** Both
+   captures use the Gumbel-softmax demodulation used in training
+   (`probe_demod="soft"`, `fuse(hard_demod=False)`, τ = 1), as in
+   ADR-0019. The hard (argmax) path mapped every probe row to one code
+   on every v0.7 pilot seed and on a seed-0 check of this protocol
+   (LOCK_AFTER 25 and 175: Z_pre rank 0), which would make every rank
+   check of §3.1 fail (`docs/osf/pilot-report-2026-10-25.md`). The
+   Gumbel draws come from the global torch RNG, which `capture_block`
+   re-seeds with the Phase-2 seed before each arm (item 11); Z_pre is
+   captured before any Phase-2 step, so it is bit-identical across the
+   16 arms of a block (checked in code), and each Z_post draws after
+   its arm's 100 steps. S therefore includes Gumbel sampling noise in
+   both captures; S_split (item 9) is computed on the same Gumbel
+   Z_pre. A deterministic soft (probability-based, non-sampled)
+   readout may be added later as a declared secondary comparison; it
+   is not part of this draft. Training and lesion-phase steps are
+   unchanged.
 3. **Subspaces.** Column-centre each matrix. V_pre, V_post ∈ ℝ^{896×k}
    are the top-k right singular vectors, i.e. the top-k principal
    directions in feature space. **k is fixed on the pilot (PI decision
    2026-10-24)** by this deterministic rule, frozen before any
    confirmatory seed: for every pilot block (s, ℓ) with s in 2101–2110,
    compute the plug-in participation ratio PR = (Σ λ)² / Σ λ² of the
-   centred covariance of its Z_pre (hard-demodulated, 512 × 896);
+   centred covariance of its Z_pre (Gumbel readout, 512 × 896);
    k* = the median of these PRs (mean of the two middle values for an
    even count), rounded half up, clamped to [1, 255] (255 = the centred
    rank bound of a 256-row split half). Non-finite Z_pre is a technical
@@ -627,10 +637,12 @@ outcomes are publishable.
       Chung & Lee, "Estimating Dimensionality of Neural Representations
       from Finite Samples" (arXiv:2509.26560), on the same pilot codes,
       next to the ADR-0019 value 11.7.
-- [x] Probe-size parameter (512, decoupled from batch 16), hard
-      demodulation and the no-lesion control arm implemented (PR #13,
+- [x] Probe-size parameter (512, decoupled from batch 16), probe
+      readout option and the no-lesion control arm implemented (PR #13,
       `lesion_phase(probe_size, probe_seed, probe_demod)`,
-      `subspace_protocol.capture_block`, default `k_steps` = 50).
+      `subspace_protocol.capture_block`, default `k_steps` = 50);
+      `capture_block` uses the Gumbel readout (`PROBE_DEMOD = "soft"`)
+      since the PI decision of 2026-10-25.
 - [x] Rank checks of §3.1 implemented with unit tests (rank-deficient
       control invalidates its 15 cells; 12-of-15 rule; complete-block
       selection; seed roster with reserve replacement), and the Page
@@ -651,7 +663,10 @@ the final configuration are also filing prerequisites.
 
 Decided by the PI on 2026-10-23 and applied above (no longer open):
 hard-demodulation probe captures (§3 item 2); SNR ramp `k_steps` = 50
-(§4, ADR-0020).
+(§4, ADR-0020). **The hard-demodulation rule is superseded** by the PI
+decision of 2026-10-25 (Gumbel readout, §3 item 2), taken after the
+PI had seen the v0.7 B-2 pilot and before any v0.8 pilot seed was run;
+it is stated on the OSF form as a post-pilot change.
 
 Decided by the PI on 2026-10-24 and applied above (no longer open):
 magnitude guard = median S_split, a heuristic guard (§6); k re-estimated

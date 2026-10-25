@@ -108,3 +108,19 @@ def test_phase2_seed_defaults_to_experiment_seed_and_is_overridable() -> None:
     expected = GaussianWorld(seed=0).sample(batch_size=16, seed=555 - 99_999).label
     assert torch.equal(a.probe_labels, expected)
     assert a.phase2_seed == 555
+
+
+# --- PI decision 2026-10-25: Gumbel probe readout -------------------------
+
+
+def test_probe_readout_is_gumbel_and_block_reproducible() -> None:
+    from bouba_sens.subspace_protocol import PROBE_DEMOD
+
+    assert PROBE_DEMOD == "soft"
+    ckpt = _make_loop().pretrain(steps=3, batch_size=4, seed=0)
+    a, b = _block(ckpt), _block(ckpt)
+    assert torch.equal(a.z_pre, b.z_pre) and torch.equal(a.z_control, b.z_control)
+    for key in a.z_post:
+        assert torch.equal(a.z_post[key], b.z_post[key])
+    hard = _block(ckpt, probe_demod="hard")
+    assert not torch.equal(hard.z_pre, a.z_pre)

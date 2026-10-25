@@ -34,6 +34,10 @@ SNR_FLOORS: tuple[float, ...] = (-20.0, -10.0, 10.0)
 # Amendment v0.8 section 4 (ADR-0020, PI decision 2026-10-23): the M2 ramp
 # reaches each floor at lesion step 50 and holds it to step 99.
 K_STEPS = 50
+# Amendment v0.8 section 3 item 2 (PI decision 2026-10-25, after the v0.7
+# B-2 pilot): the probe captures use the Gumbel readout. The hard (argmax)
+# path mapped every probe row to one code (rank 0).
+PROBE_DEMOD = "soft"
 
 CellKey = tuple[Modality, float]  # (lesioned modality, SNR floor in dB)
 
@@ -65,6 +69,7 @@ def capture_block(
     phase2_seed: int | None = None,
     snr_init: float = 20.0,
     k_steps: int = K_STEPS,
+    probe_demod: str = PROBE_DEMOD,
 ) -> BlockCodes:
     """Run the control arm and every lesion cell of one (seed, lock) block.
 
@@ -72,10 +77,12 @@ def capture_block(
     ``constellation_lock_after=lock`` mux); each arm restores ``ckpt`` into
     its own loop. All arms use the same ``phase2_seed`` (default: the
     experiment ``seed``), hence the same probe, the same fresh and replay
-    batches, and deterministic hard-demodulation captures (no Gumbel
-    sampling, PI decision 2026-10-23). Before each arm the global torch RNG is re-seeded with
-    ``phase2_seed`` so the lesion noise stream is reproducible and common
-    across cells. ``lock`` is recorded; the lock itself is applied by
+    batches, and Gumbel-readout captures (``probe_demod="soft"``, PI
+    decision 2026-10-25; ``"hard"`` is kept only for diagnostics).
+    Before each arm the global torch RNG is re-seeded with
+    ``phase2_seed``, so the lesion noise stream and the Gumbel draws are
+    reproducible, and ``Z_pre`` (captured before any Phase-2 step) is
+    common to all arms. ``lock`` is recorded; the lock itself is applied by
     ``make_loop`` / the checkpoint.
 
     Raises ``RuntimeError`` if ``Z_pre`` differs between arms (the shared
@@ -95,7 +102,7 @@ def capture_block(
             seed=p2_seed,
             probe_size=probe_size,
             probe_seed=probe_seed,
-            probe_demod="hard",
+            probe_demod=probe_demod,
         )
 
     control = run(None)
