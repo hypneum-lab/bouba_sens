@@ -73,9 +73,11 @@ reserved on 2026-10-25 as a later comparison; here it is proposed as
 primary because finding 3 shows that sampling noise dominates the
 Gumbel code even after 8 draws. Implementation: a function in
 bouba_sens that recomputes the demodulator logits from the carrier
-(a copy of the `demodulate` arithmetic up to the logits, tested to
-reproduce `demodulate(hard=True)` as its argmax and the Gumbel path's
-expectation as τ → its limits), so nerve-wml is not changed (no
+(a copy of the full `demodulate` arithmetic up to the logits:
+envelope removal, the overlapping Gaussian basis, the least-squares
+recovery and the constellation normalisation, tested against
+`demodulate(hard=True)` for the argmax and, end to end, through the
+codebook, gates and transducers), so nerve-wml is not changed (no
 dependency bump under the HITL policy). The K = 8 Gumbel readout
 stays as a registered secondary readout.
 
@@ -92,10 +94,12 @@ non-degeneracy check (finite codes, non-zero centred variance of
 both matrices).
 
 **(3) Secondary measurement, the principal-subspace shift, with a
-stable k.** S at k_gap, where k_gap is the k (1 ≤ k ≤ 255) with the
-largest eigenvalue ratio λ_k / λ_(k+1) of the pilot Z_pre, median over
+stable k.** S at k_gap, where k_gap is the k with the largest
+eigenvalue ratio λ_k / λ_(k+1) of the pilot Z_pre within
+[⌈PR / 2⌉, 2 PR] (the range of the evidence script; eigenvalues
+below 1e-6 × λ₁ are not eligible as denominators), median over
 pilot blocks (frozen before the confirmatory run). Pilot: k_gap = 14
-in all 70 blocks, ratio 117–1,000. If the pilot median ratio at k_gap
+in all 70 blocks, ratio 117–1,160. If the pilot median ratio at k_gap
 is < 2, S is reported descriptively only. Because the gap may be the
 architectural span of the code, the pilot also reports whether S at
 k_gap varies at all (if S(k_gap) ≈ 0 everywhere it is dropped).
@@ -121,9 +125,9 @@ for a trend of 0.95 SD with g = 0.25; with g = 0.5 and a trend of
 rule.
 
 **(5) Eigengap handling.** For the primary d no subspace is cut. For
-the secondary S the k_gap rule picks a well-separated subspace by
-construction; every matrix's λ_k / λ_(k+1) at the chosen k is
-reported, the share below 1.1 is reported per level, and S-1 is
+the secondary S the k_gap rule picks a well-separated subspace on the
+pilot Z_pre (not guaranteed for every post-lesion matrix); every
+matrix's λ_k / λ_(k+1) at the chosen k is reported, the share below 1.1 is reported per level, and S-1 is
 repeated without the blocks below 1.1 (sensitivity, as now).
 
 **(6) Pilot on fresh seeds.** 10 new pilot seeds **2201–2210** (outside
@@ -148,6 +152,28 @@ representations instead of the fused code).
 3. Guard option (a) 0.5 σ̂ or (b) none?
 4. Fresh pilot seeds 2201–2210?
 
+### A.4 Review notes (Codex, 2026-10-25) to settle before the pilot
+
+- The deterministic soft readout softmax(logits / τ) is a **different
+  readout**, not the expectation of the Gumbel sample (as τ → 0 it
+  tends to the argmax, while the expected Gumbel sample tends to the
+  categorical probabilities); it is registered as such. Whether it
+  varies with the input is measured in the pilot, not assumed.
+- Finding 3 does not isolate readout noise: the Z_pre and Z_post
+  captures use different draw seeds while the lesion and control
+  captures share them, so the low pre / control CKA also reflects
+  random-number coupling. The new pilot adds repeated independent
+  captures of fixed checkpoints and a label-shuffle reliability check.
+- CKA is invariant to orthogonal rotations and isotropic scaling only;
+  it can be high under common noise. Numerical tolerances for the
+  non-degeneracy check are frozen with the code (variance > 1e-12 ×
+  the median pilot variance).
+- Guard option (a) is a convention; the trend of 1.2 SD in the N rule
+  is a planning assumption, not evidence that such an effect exists.
+- Seed namespaces: the proposed pilot seeds 2201–2210 share derived
+  batch seeds (s + t) with existing v0.8 streams; see the open
+  seed-namespace decision (v0.7 §8).
+
 ---
 
 ## B. v0.9 — fusion-gain probe
@@ -156,8 +182,10 @@ representations instead of the fused code).
 
 1. **No headroom.** On the stratified held-out probe (class rates
    0.031 / 0.375 / 0.469 / 0.125), the network's own all-channel
-   accuracy is 0.373–0.506 in 74 of 75 runs, i.e. the rates of
-   always predicting class 1 (0.375) or class 2 (0.469); the best
+   accuracy is 0.373–0.506 in 74 of 75 runs, close to the rates of
+   always predicting class 1 (0.375) or class 2 (0.469) (prediction
+   histograms were not recorded, so a constant prediction is likely but
+   not shown); the best
    single-modality accuracy is equally at those rates (0.375–0.75,
    mostly 0.469). FG = acc_all − max_m acc_m is exactly 0 in **45 of 75
    runs** and D is 0 in 14 of 25 seed × onset cells; σ̂ = 0.0226 comes
@@ -225,6 +253,34 @@ the new pilot SD).
 3001–3044 and 3101–3105): manipulation check, main grid with the new
 outcome, D variance components, N by the rule, headroom gate, runtime
 (the probes add 6 logistic fits per run).
+
+### B.2a Review notes (Codex, 2026-10-25) to settle before the pilot
+
+- **Probe-training allocation** must be specified exactly: eligible
+  rows are original dataset indices of training-split label runs; every
+  candidate block that intersects a held-out row is rejected before
+  drawing (no tiling of a compressed label array); quotas per class,
+  redistribution when class 0 runs out (180 frames in all, 16 held
+  out), and the total, with disjointness assertions for fitting,
+  scaling and evaluation, and a temporal buffer (or a stated
+  limitation) between probe-training and held-out blocks of the same
+  label run.
+- **Headroom** needs more than bacc(h_all) ≥ 0.35: report fused and
+  single-modality per-class recalls, the FG distribution, ceiling
+  effects, and a positive control (a synthetic fused advantage the
+  outcome must detect). With one held-out block of class 0, that class
+  carries a quarter of the balanced accuracy: report class / block
+  uncertainty; freeze class weighting, convergence handling and
+  missing-class behaviour.
+- **Capacity and selection:** the fused code is 896-d and the encoder
+  outputs 128-d at a different stage; fixed C = 1 does not equalise
+  capacity (options: PCA of h_all to 128-d, or nested C selection on
+  training-split folds). max_m on held-out performance adds selection
+  bias: either declare it descriptive or pick the modality on a
+  training-split validation fold.
+- **SESOI:** 0.05 in balanced-accuracy units needs its own
+  justification (it no longer has the raw-accuracy meaning of the B-1
+  threshold).
 
 ### B.3 Decisions needed (v0.9)
 

@@ -7,7 +7,7 @@
 **Tag:** `bouba_sens/v0.7-tost-equivalence` (to be created at filing)
 **Draft date:** 2026-10-23
 **Related audit:** ADR-0020 (SNR floors were nearly identical under default settings), `docs/adr/0020-snr-floors-nearly-identical-under-default-settings.md`, merged in PR #14. This draft corrects the SNR schedule (§4.1, §4.2).
-**Pre-registration id:** **N18** (confirmed by the PI on 2026-10-25, 19:04). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow v0.6, the last amendment on file, and assume filing in that order.
+**Pre-registration id:** **N18** (confirmed by the PI on 2026-10-25, 19:04). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow the local draft series v0.4–v0.6 (never filed) and assume filing in that order.
 **Verdict ADR:** **ADR-0023** (confirmed by the PI on 2026-10-25, 19:04; ADR-0021 and ADR-0022 are used by the Me6 null calibration and paired null, so v0.7 / v0.8 / v0.9 take ADR-0023 / 0024 / 0025)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case; superseded by N = 150 on 2026-10-25, see below); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
 **Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). The power of the robust rule is recomputed from the pilot (round 3, same seeds). **Third set (PI decisions 2026-10-25, 13:32, after round 3):** (vi) **N = 150** (robust-rule power target 0.80; §7, §8); (vii) E-1, E-1b and E-1c also use the robust TOST, with the mean-based t-TOST kept as a reported secondary analysis (§3, §6). These changes are stated on the OSF form.
@@ -856,13 +856,26 @@ on the OSF form.
   same list for B-1 and B-2. An earlier proposal (1001–1100 and
   1106–1155) is withdrawn. The block was checked against the whole
   repository on 2026-10-25: no script, test, report or draft uses a
-  seed in 4001–4154 (the numbers that occur there are sample sizes and
-  hashes), and it is disjoint from the default grid seeds 0–4, Q3/Q3+
+  *base* seed in 4001–4154 (the numbers that occur there are sample
+  sizes and hashes), and the base seeds are disjoint from the default grid seeds 0–4, Q3/Q3+
   {0, 17, 42, 73, 101, 7, 23, 31, 53, 89}, N12 {3, 11, 19, 29, 37, 41,
   47, 59, 67, 79}, every pilot seed (1101–1105, 2101–2110, 3101–3105,
   4201) and the v0.8 (2001–2044) and v0.9 (3001–3044) pools.
 - **Reserve seeds (technical replacement only):** 4151–4154, used in
   order.
+- **Derived seeds are not isolated (Codex review 2026-10-25; open PI
+  decision).** Training batch t of seed s uses `world.sample(16,
+  seed = s + t)` (`loop.pretrain`), so the 200 Phase-1 batches of
+  confirmatory seed s draw from seeds s … s + 199: the block 4001–4154
+  uses batch seeds 4001–4353, which include the SNR pilot seed 4201
+  (and its batch seeds 4201–4400); the same holds across every pool
+  (for example v0.8 2001–2044 vs pilots 2101–2110). Identical batch
+  seeds give identical training windows, not shared outcomes, but the
+  networks are then not independent in their data streams. Options for
+  the PI: accept this (as in every earlier grid), or move each campaign
+  to its own sampling namespace (for example batch seed = 10⁶ · c +
+  1000 · s + t for campaign c), a code change made and tested before
+  filing.
 - **Filing gate:** `analyse_v07_tost.py` accepts only this roster;
   the E1 runner (`--osf-filed`) and `run_grid.sh` (`OSF_FILED`) refuse
   seeds 4001–4154 before filing.
@@ -984,14 +997,21 @@ readout may be added later as a declared secondary comparison.
 Decided by the PI on 2026-10-24 (no longer open): B-2 batch sizes
 16 / 16 / 512 (train / lesion / probe), as drafted (§4.2); B-2 primary
 world Studyforrest, CC-film as E-2b (§4.2). Pre-registration id and
-amendment number: **N18**, verdict ADR **ADR-0023** (shifted twice on 2026-10-25: ADR-0021 and ADR-0022 are now used), amendment v0.7, as proposed in the
-header (proposed — PI confirms at filing).
+amendment number: **N18**, verdict ADR **ADR-0023** (shifted twice on 2026-10-25: ADR-0021 and ADR-0022 are now used), amendment v0.7;
+**confirmed by the PI on 2026-10-25, 19:04**.
 
 Decided by the PI on 2026-10-25 after the pilot (disclosed, header):
 13:12 — K = 8 Gumbel draws (§4.2), robust E-2 with the mean t-TOST as
 a reported secondary (§6), registered secondary E-2s (§4.2, §6);
 13:32 — N = 150 (§7, §8) and the robust E-1, E-1b, E-1c (§6).
 
-No design decision remains open. Filing still needs the prerequisites
+Decided by the PI on 2026-10-25, 19:04 (after the pilots, disclosed in
+the header): standalone pre-registration (no filed parent); seeds
+4001–4150, reserve 4151–4154; dedicated SNR pilot cell (seed 4201);
+world class recorded in every grid output; numbering N18 / ADR-0023
+confirmed; exact sign test as a registered sensitivity analysis.
+**Open (PI):** the seed-namespace policy below (§8, derived seeds).
+
+Filing still needs the prerequisites
 stated above (§4.3 code tasks, calibration, pilot, regenerated E-2
 power) and the PI's confirmation of the proposed numbers.

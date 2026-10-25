@@ -474,8 +474,12 @@ question for the PI.
   (Q6JYN covers dream-of-kiki H1–H4; v0.4–v0.6 never filed); each draft
   is now stated as a standalone pre-registration.
 - **v0.7 confirmatory seeds:** new block 4001–4150, reserve 4151–4154
-  (repository-wide check: no other use); roster, E1 runner and
-  `run_grid.sh` refuse them before filing.
+  (no other use as a base seed; derived batch seeds s + t overlap
+  across pools, an open PI decision, v0.7 §8); the E1 runner
+  (`--osf-filed`) and `run_grid.sh` (`OSF_FILED`) refuse them as base
+  seeds without a filing reference (a user attestation, not a DOI
+  check); the analysis accepts only that roster but has no filing
+  gate.
 - **World class:** every `train` / `lesion` output records it;
   `aggregate_grid.py --require-world` refuses a grid without it or on
   the stub.
