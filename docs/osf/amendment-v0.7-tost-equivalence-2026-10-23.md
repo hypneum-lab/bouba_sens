@@ -381,6 +381,16 @@ below the list):
 10. The class-balanced probe of §4.2 (`bouba_sens.probe`, runner
     `--probe-scheme balanced`, set by `--preset v07-e2`; added after
     the PI decision of 2026-10-25).
+11. K = 8 Gumbel draws in the primary readout (`bouba_sens.readout`,
+    runner `--gumbel-draws`, set to 8 by the presets), the E-2s
+    structure statistics and switch flags per seed; the robust TOST for
+    E-1 / E-1b / E-1c / E-2 with exact signed-rank p-values, the mean
+    t-TOST as a reported secondary, the switch analysis, the N = 150
+    roster and stricter provenance checks in `analyse_v07_tost.py`
+    (added after the PI decisions of 2026-10-25, 13:12 and 13:32). Unit
+    tests: `tests/unit/test_readout.py`,
+    `tests/unit/test_e1_runner_v07.py`,
+    `tests/unit/test_analyse_v07_tost.py`.
 
 Unit tests: the three batch sizes are honoured; `ksg_full_delta_bits`
 equals `me3_delta` on the captured matrices; seed lists reproduce.
