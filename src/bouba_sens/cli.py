@@ -55,6 +55,50 @@ def _seed_everything(seed: int) -> None:
     _torch.use_deterministic_algorithms(True, warn_only=True)
 
 
+PROBE_V2_SUCCESSES_FILE = "per_query_successes_v2.json"
+PROBE_V2_ACCURACY_FILE = "per_query_me1_v2.json"
+PROBE_V2_META_FILE = "probe_v2_meta.json"
+
+
+def _write_probe_v2(loop: object, out: Path, *, seed: int, prefix: str = "") -> None:
+    """ADR-0023 — run the v2 linear probe on the current state and write it.
+
+    Writes ``{prefix}per_query_successes_v2.json`` (``{modality: [0/1] *
+    256}``, item ``i`` is the same held-out world item for every modality),
+    ``{prefix}per_query_me1_v2.json`` (the five held-out accuracies) and
+    ``{prefix}probe_v2_meta.json`` (probe seed, CV accuracy, chosen C,
+    majority-class baseline, training-pool size, distinct codes). Uses no
+    global RNG and changes no module state, so the v1 artefacts written
+    before or after it are unaffected.
+    """
+    from bouba_sens.loop import successes_to_accuracy
+
+    results = loop.probe_v2(seed=seed)  # type: ignore[attr-defined]
+    successes = {m: list(r.fit.successes) for m, r in results.items()}
+    accuracies = {m: successes_to_accuracy(v) for m, v in successes.items()}
+    meta = {
+        "probe": "v2 linear read-out on frozen per-modality hidden state (ADR-0023)",
+        "probe_seed": seed,
+        "modalities": {
+            m: {
+                "accuracy": accuracies[m],
+                "cv_accuracy": r.fit.cv_accuracy,
+                "chosen_c": r.fit.chosen_c,
+                "baseline": r.fit.baseline,
+                "n_train": r.fit.n_train,
+                "n_test": r.fit.n_test,
+                "n_train_dropped": r.n_train_dropped,
+                "n_codes_test": r.n_codes_test,
+            }
+            for m, r in results.items()
+        },
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / f"{prefix}{PROBE_V2_SUCCESSES_FILE}").write_text(json.dumps(successes))
+    (out / f"{prefix}{PROBE_V2_ACCURACY_FILE}").write_text(json.dumps(accuracies, indent=2))
+    (out / f"{prefix}{PROBE_V2_META_FILE}").write_text(json.dumps(meta, indent=2))
+
+
 def _build_world(name: str, seed: int) -> WorldSimulator:
     """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
     import os
@@ -195,6 +239,18 @@ def train(
         None,
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
+    probe_v2: bool = typer.Option(
+        True,
+        "--probe-v2/--no-probe-v2",
+        help="ADR-0023 — also write the v2 linear-probe files (v1 files unchanged).",
+    ),
+    probe_v2_seed: int | None = typer.Option(
+        None,
+        help=(
+            "ADR-0023 — seed of the v2 probe items (held-out test = seed, "
+            "training pool = seed + 1). Default: the run seed + 777."
+        ),
+    ),
     out: Path = typer.Option(..., help="Run directory"),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
@@ -236,8 +292,16 @@ def train(
     head = IntegrationHead(n_classes=4)
     loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
 
+    v2_seed = seed + 777 if probe_v2_seed is None else probe_v2_seed
+    if probe_v2:
+        # ADR-0023 descriptive reference: the same probe on the untrained
+        # network (feature extraction only: no RNG draw, no state change).
+        _write_probe_v2(loop, out, seed=v2_seed, prefix="init_")
     ckpt = loop.pretrain(steps=steps, batch_size=batch_size, seed=seed)
     out.mkdir(parents=True, exist_ok=True)
+    if probe_v2:
+        # ADR-0023 positive control: the intact (pre-lesion) network.
+        _write_probe_v2(loop, out, seed=v2_seed)
     with (out / "checkpoint.pkl").open("wb") as f:
         pickle.dump(ckpt, f)
     with (out / "metadata.json").open("w") as f:
@@ -329,6 +393,18 @@ def lesion(
         None,
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
+    probe_v2: bool = typer.Option(
+        True,
+        "--probe-v2/--no-probe-v2",
+        help="ADR-0023 — also write the v2 linear-probe files (v1 files unchanged).",
+    ),
+    probe_v2_seed: int | None = typer.Option(
+        None,
+        help=(
+            "ADR-0023 — seed of the v2 probe items (held-out test = seed, "
+            "training pool = seed + 1). Default: the run seed + 777."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -415,6 +491,10 @@ def lesion(
         json.dump(per_query_me1, pq_out, indent=2)
     with (out / "per_query_successes.json").open("w") as ps_out:
         json.dump(per_query_successes, ps_out)
+    if probe_v2:
+        # ADR-0023 — v2 probe on the same frozen lesion-adapted state, after
+        # the v1 probe so the v1 outputs are untouched.
+        _write_probe_v2(loop, out, seed=seed + 777 if probe_v2_seed is None else probe_v2_seed)
     with (out / "report.pkl").open("wb") as report_out:
         pickle.dump(report, report_out)
     with (out / "metadata.json").open("w") as meta_out:

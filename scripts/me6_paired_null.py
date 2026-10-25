@@ -119,8 +119,13 @@ class Trio:
         return int(self.successes.shape[-1])
 
 
-def discover_trios(root: Path) -> tuple[list[Trio], list[dict[str, Any]]]:
+def discover_trios(
+    root: Path, *, successes_file: str = SUCCESSES_FILE
+) -> tuple[list[Trio], list[dict[str, Any]]]:
     """Group `per_query_successes.json` files by (seed, timing, snr).
+
+    `successes_file` selects the per-cell file (ADR-0023: pass
+    `per_query_successes_v2.json` for the v2 linear probe).
 
     Same directory-name regex and grouping as `aggregate_grid._compute_me6`;
     only the successes file is required (no `eval_report.json`). Returns the
@@ -135,7 +140,7 @@ def discover_trios(root: Path) -> tuple[list[Trio], list[dict[str, Any]]]:
         match = CELL_RE.match(cell_dir.name)
         if not match:
             continue
-        path = cell_dir / SUCCESSES_FILE
+        path = cell_dir / successes_file
         if not path.exists():
             continue
         body = json.loads(path.read_text())
@@ -328,6 +333,7 @@ def analyse(
     incomplete: list[dict[str, Any]] | None = None,
     root: Path | None = None,
     block: int = 1,
+    successes_file: str = SUCCESSES_FILE,
 ) -> dict[str, Any]:
     """Observed B-3 statistic, paired null, per-trio nulls, binomial reference."""
     t0 = time.perf_counter()
@@ -388,6 +394,7 @@ def analyse(
             "cells_expected_full_grid": 30,
             "complete": n_trios == 30 and not incomplete,
             "block": block,
+            "successes_file": successes_file,
             "null": (
                 "paired sign-flip of s_mq(i) <-> s_qm(i), independent per (trio, pair, item)"
                 if block == 1
@@ -470,6 +477,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--successes-file",
+        default=SUCCESSES_FILE,
+        help=(
+            "per-cell outcome file to read (ADR-0023: per_query_successes_v2.json "
+            "for the v2 linear probe)"
+        ),
+    )
+    parser.add_argument(
         "--no-binomial", action="store_true", help="skip the ADR-0021 iid binomial reference"
     )
     parser.add_argument("--out", type=Path, default=Path("reports/me6_paired_null.json"))
@@ -482,10 +497,10 @@ def main(argv: list[str] | None = None) -> int:
     if not args.root.is_dir():
         print(f"error: --root {args.root} is not a directory", file=sys.stderr)
         return 2
-    trios, incomplete = discover_trios(args.root)
+    trios, incomplete = discover_trios(args.root, successes_file=args.successes_file)
     if not trios:
         print(
-            f"error: no complete (seed, timing, snr) trio with {SUCCESSES_FILE} under {args.root}"
+            f"error: no complete (seed, timing, snr) trio with {args.successes_file} under {args.root}"
             f" ({len(incomplete)} incomplete)",
             file=sys.stderr,
         )
@@ -498,6 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         with_binomial=not args.no_binomial,
         incomplete=incomplete,
         root=args.root,
+        successes_file=args.successes_file,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2) + "\n")

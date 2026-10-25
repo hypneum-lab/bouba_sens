@@ -12,12 +12,14 @@ from __future__ import annotations
 import copy
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
+import numpy as np
 import torch
 from torch import Tensor
 from torch.nn import functional as F  # noqa: N812
 
+from bouba_sens.linear_probe import ProbeFit, fit_linear_probe
 from bouba_sens.nerve import CrossModalNerve, MigrationReport
 from bouba_sens.sensory import MODALITIES, Modality, SensoryWML
 
@@ -65,6 +67,39 @@ class AdaptationReport:
 
 def _deepcopy_state(module: Any) -> dict[str, Tensor]:
     return {k: v.detach().clone() for k, v in module.state_dict().items()}
+
+
+# ADR-0023 — probe v2 sizes (held-out test items, training pool).
+PROBE_V2_TEST_SIZE = 256
+PROBE_V2_TRAIN_SIZE = 512
+
+
+@dataclass(frozen=True)
+class ProbeV2Result:
+    """One modality's v2 probe: the linear fit plus two diagnostics.
+
+    `n_train_dropped` counts training-pool items removed because their raw
+    inputs equal a test item's; `n_codes_test` is the number of distinct
+    argmax codes the modality emits on the test items (1 = the code channel
+    the nerve sees is collapsed, whatever the hidden state carries).
+    """
+
+    fit: ProbeFit
+    n_train_dropped: int
+    n_codes_test: int
+
+
+def _rows_not_in(pool: WorldSample, test: WorldSample) -> np.ndarray:
+    """Boolean mask over `pool` items whose raw inputs differ from every test item."""
+
+    def _rows(sample: WorldSample) -> list[bytes]:
+        flat = torch.cat(
+            [getattr(sample, m).reshape(sample.label.shape[0], -1) for m in MODALITIES], dim=1
+        )
+        return [row.numpy().tobytes() for row in flat]
+
+    test_rows = set(_rows(test))
+    return np.array([row not in test_rows for row in _rows(pool)], dtype=bool)
 
 
 def successes_to_accuracy(successes: Sequence[int]) -> float:
@@ -382,6 +417,92 @@ class AdaptationLoop:
         """
         return successes_to_accuracy(
             self.query_successes(query_modality, batch_size=batch_size, seed=seed)
+        )
+
+    # ------------------------------------------------------------------
+    # ADR-0023 — probe v2: linear read-out of each modality's own frozen
+    # representation. The v1 methods above are left byte-for-byte intact.
+    # ------------------------------------------------------------------
+
+    def modality_features(self, modality: Modality, x: Tensor) -> Tensor:
+        """Frozen pre-quantisation representation of one modality, `(B, d_hidden)`.
+
+        ADR-0023 — the hidden state `core(input_proj(x))` that
+        `SensoryWML.step` computes before the argmax over the 64-code
+        alphabet. It depends on `x` (this modality's clean input) only, so
+        no other modality is touched and the pathway sees exactly the kind
+        of input it was trained on. Deterministic: no dropout, no sampling,
+        no global RNG use; computed under `no_grad`.
+        """
+        sensory = self.sensories[modality]
+        with torch.no_grad():
+            return cast(Tensor, sensory.core(sensory.input_proj(x))).detach()
+
+    def probe_v2(
+        self,
+        *,
+        seed: int = 987_654,
+        test_size: int = PROBE_V2_TEST_SIZE,
+        train_size: int = PROBE_V2_TRAIN_SIZE,
+        modalities: Sequence[Modality] = MODALITIES,
+    ) -> dict[Modality, ProbeV2Result]:
+        """Linear probe per modality on frozen representations (ADR-0023).
+
+        Held-out test items: `world.sample(test_size, seed=seed)`; training
+        pool: `world.sample(train_size, seed=seed + 1)`, minus any item whose
+        raw inputs (all five modalities) equal a test item's (contiguous-
+        window worlds can overlap). For each modality, a cross-validated
+        logistic regression (`linear_probe.fit_linear_probe`) is fit on the
+        training pool's frozen features and scored item by item on the test
+        items. Item `i` is the same world item for every modality, and for
+        every model probed with the same `seed`.
+        """
+        test = self.world.sample(batch_size=test_size, seed=seed)
+        pool = self.world.sample(batch_size=train_size, seed=seed + 1)
+        keep = _rows_not_in(pool, test)
+        y_test = test.label.numpy()
+        y_train = pool.label.numpy()[keep]
+        results: dict[Modality, ProbeV2Result] = {}
+        for m in modalities:
+            f_test = self.modality_features(m, getattr(test, m))
+            f_train = self.modality_features(m, getattr(pool, m))[torch.from_numpy(keep)]
+            fit = fit_linear_probe(f_train.numpy(), y_train, f_test.numpy(), y_test)
+            with torch.no_grad():
+                codes = self.sensories[m].emit_head_pi(f_test).argmax(-1)
+            results[m] = ProbeV2Result(
+                fit=fit,
+                n_train_dropped=int(train_size - int(keep.sum())),
+                n_codes_test=int(codes.unique().numel()),
+            )
+        return results
+
+    def query_successes_v2(
+        self,
+        query_modality: Modality,
+        *,
+        seed: int = 987_654,
+        test_size: int = PROBE_V2_TEST_SIZE,
+        train_size: int = PROBE_V2_TRAIN_SIZE,
+    ) -> list[int]:
+        """Per-item outcomes of the v2 linear probe on `query_modality` (ADR-0023)."""
+        result = self.probe_v2(
+            seed=seed, test_size=test_size, train_size=train_size, modalities=(query_modality,)
+        )
+        return list(result[query_modality].fit.successes)
+
+    def query_accuracy_v2(
+        self,
+        query_modality: Modality,
+        *,
+        seed: int = 987_654,
+        test_size: int = PROBE_V2_TEST_SIZE,
+        train_size: int = PROBE_V2_TRAIN_SIZE,
+    ) -> float:
+        """Held-out accuracy of the v2 linear probe (mean of `query_successes_v2`)."""
+        return successes_to_accuracy(
+            self.query_successes_v2(
+                query_modality, seed=seed, test_size=test_size, train_size=train_size
+            )
         )
 
     # Convenience hook so Checkpoint round-trips in tests.
