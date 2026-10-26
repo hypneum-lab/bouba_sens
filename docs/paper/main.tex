@@ -67,7 +67,12 @@ the production probe size invalidates the reading of the bare
 exceedance of $0.02$, so no compatibility or rejection verdict on
 B-3 is established before a paired calibration of the median (same
 probe for the five queries, shared seeds and worlds; ADR-0021) ---
-B-3 is reported as an uncalibrated magnitude;
+B-3 is reported as an uncalibrated magnitude; with a corrected
+linear probe and a preregistered paired block null, B-3 v2 rejects
+symmetry, but this is an asymmetry built into the worlds (unequally
+informative modalities), not a lesion effect: the preregistered
+criterion is met, H0 was ill-posed, and the residual after removing
+the query-modality effect is at the null level (ADR-0023);
 (ii) B-1 does not survive multi-seed validation --- the
 single-seed $+0.0125$ peak (Sprint 10) inverts to $-0.0250$ on
 the canonical seed and yields a 10-seed sign-test $p=0.62$
@@ -374,6 +379,25 @@ rejection verdict on B-3 is established before a paired calibration
 of the median (same probe for the five queries, shared seeds and
 worlds). The values above stand as reported; B-3 is an uncalibrated
 magnitude.
+
+\paragraph{Paired calibration and probe v2 (ADR-0022, ADR-0023).}
+On fresh grids the zero-masking probe leaves every single-modality
+query at 4-class chance (mean accuracy $0.254$ Gaussian, $0.240$
+mock), and the Gaussian B-3 median is compatible with a paired
+sign-flip null ($p = 0.17$). The probe is therefore replaced by a
+cross-validated logistic read-out of each modality's frozen hidden
+state on held-out items (positive control: vision margin over the
+majority baseline $0.485$ Gaussian, $0.282$ mock). Under a
+preregistered paired block null (new seeds, block length fixed on a
+separate pilot: $1$ Gaussian, $8$ mock), B-3 v2 is $0.414$ and
+$0.332$ ($p = 5\cdot10^{-5}$ on both worlds). This is an asymmetry
+built into the worlds (unequally informative modalities), not a
+lesion effect: the preregistered criterion is met but H0 (symmetry of
+expected performances) was ill-posed, since any query-modality main
+effect violates it, and the residual after removing that effect is at
+the null level (Gaussian $p \approx 0.55$). The networks' code
+channel is collapsed (one argmax code per modality), so the probe
+reads encoder states rather than what the nerve transmits.
 
 % ==================================================================
 

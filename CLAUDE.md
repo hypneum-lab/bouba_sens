@@ -24,7 +24,12 @@ only, issue #20):
 
 - **HEAD ≈ v0.5.9**, ~156 commits, 29 ADR files (numbers 0001–0023,
   seven shared, index `docs/adr/README.md`), 185+ tests.
-- **B-3 uncalibrated** (requalified 2026-10-25, ADR-0021, issue #22):
+- **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
+  (positive control met), the preregistered rejection of symmetry is an
+  asymmetry built by the worlds (unequally informative modalities), no
+  lesion effect; H0 was ill-posed. Lesion × query interaction test is
+  preregistered separately. The v1 reading below is historical.
+- **B-3 v1 uncalibrated** (requalified 2026-10-25, ADR-0021, issue #22):
   the 5–6× magnitude stands but the 0.02 threshold was never compared
   with a null; no compatibility or rejection verdict before a paired
   calibration of the median. The "architectural property" reading is

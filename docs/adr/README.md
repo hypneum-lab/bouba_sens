@@ -57,9 +57,9 @@ not done by a pull request; see the PI action list below.
 | 0019b | `0019-b2-dimensional-mine-criterion.md` | B-2 re-run with MINE at N ≳ f(D); retire "probe batch ≥128" | 2026-06-04 | Accepted |
 | 0020 | `0020-snr-floors-nearly-identical-under-default-settings.md` | SNR floors were nearly identical under default settings | 2026-10-23 | Accepted — factual audit |
 | 0021 | `0021-me6-null-calibration.md` | Me6 null calibration — the B-3 statistic under sampling noise alone | 2026-10-25 | Accepted — validated by the PI |
-| 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Accepted — PI decision 2026-10-25; B-3 Gaussian compatible with the paired null, mock not conclusive, ECG not recomputed |
+| 0022 | `0022-me6-paired-null.md` | Me6 paired null — the B-3 median against a sign-flip null on the saved outcomes | 2026-10-25 | Accepted — PI decision 2026-10-25; B-3 Gaussian compatible with the paired null, mock not conclusive, ECG not recomputed; limit 4 corrected 2026-10-26 |
 
-| 0023 | `0023-b3-probe-v2.md` | B-3 probe v2 — linear read-out of frozen per-modality representations | 2026-10-25 | Proposed — preregistered reading `prereg-b3-probe-v2-20261025` |
+| 0023 | `0023-b3-probe-v2.md` | B-3 probe v2 — linear read-out of frozen per-modality representations | 2026-10-25 | Accepted — PI decision 2026-10-26; B-3 v2 asymmetry built by the worlds, no lesion effect (H0 ill-posed) |
 
 Next free number: **0024**.
 

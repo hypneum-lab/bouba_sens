@@ -1,6 +1,7 @@
 # ADR-0023 — B-3 probe v2: linear read-out of frozen per-modality representations
 
-**Status:** Proposed (2026-10-25; results added 2026-10-26). Awaiting PI decision. This ADR modifies
+**Status:** Accepted — PI decision 2026-10-26 (see §Verdict). Proposed
+2026-10-25, results added 2026-10-26. This ADR modifies
 no past metric, verdict, ADR or locked threshold; the v1 probe
 (`query_accuracy` / `query_successes`) is kept bit for bit.
 **Date:** 2026-10-25
@@ -148,6 +149,21 @@ PR #40 grids stay exploratory.
   already linearly decodable (the `init_*` files report this); the
   positive control therefore shows that the probe can measure, not that
   training produced the information.
+
+## Verdict (PI decision 2026-10-26)
+
+Accepted by the PI on 2026-10-26 with the following wording of B-3
+(original in French):
+
+> « asymétrie construite par les mondes (modalités inégalement informatives), pas d'effet de lésion : le critère préenregistré est atteint mais le H0 était mal posé ; résidu après retrait de l'effet de modalité interrogée au niveau du nul »
+
+In English: B-3 v2 is an asymmetry built into the worlds (unequally informative modalities), no lesion effect: the preregistered criterion is met but H0 was ill-posed; the residual after removing the query-modality effect is at the null level. The B-3 status for both worlds is therefore
+"asymmetry built by the worlds; no lesion effect". The preregistered
+verdict ("asymmetry present", p = 5·10⁻⁵ on both worlds) is recorded as
+met, and the H0 it tested (symmetry of `E[P]`) is recorded as
+ill-posed, because any query-modality main effect violates it
+(ADR-0022 limit 4, corrected 2026-10-26). A test of a lesion effect
+(H0: no lesion × query interaction) is preregistered separately.
 
 ## Known limits
 

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **B-3 v2 (ADR-0023 *Accepted*, PI decision 2026-10-26): asymmetry
+  built by the worlds, no lesion effect.** Linear probe on frozen
+  per-modality representations; positive control met (vision margin
+  0.485 Gaussian, 0.282 mock). Preregistered reading
+  (`prereg-b3-probe-v2-20261025`, new seeds 200-204, pilot-fixed blocks
+  1 / 8): median 0.414 / 0.332, p = 5e-5 on both worlds, so the criterion
+  is met. H0 (symmetry of expected performances) was ill-posed: the
+  rejection is the query-modality main effect, and the residual after
+  removing it is at the null level. ADR-0022 limit 4 corrected.
+
 - **B-3 status (Gaussian world): null, uncalibrated → calibrated:
   compatible with the null** (ADR-0022 *Accepted*, PI decision
   2026-10-25). Observed median 0.156 vs paired-null mean 0.141 / P99
@@ -31,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   script on electron-server); 0.445 stays uncalibrated.
 
 ### Added
+
+- **B-3 probe v2** (`query_successes_v2`, `query_accuracy_v2`,
+  `per_query_successes_v2.json`, `--probe-v2-seed`,
+  `scripts/b3_probe_v2.py`, `scripts/run_grid_probe_v2.sh`,
+  `scripts/me6_paired_null.py --successes-file`); v1 probe unchanged
+  bit for bit.
 
 - **Block sign flips** (`scripts/me6_paired_null.py --block N`): one
   shared sign per block of N consecutive probe items, for contiguous-
