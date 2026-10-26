@@ -1,6 +1,6 @@
 # ADR-0023 — B-3 probe v2: linear read-out of frozen per-modality representations
 
-**Status:** Proposed (2026-10-25). Awaiting PI decision. This ADR modifies
+**Status:** Proposed (2026-10-25; results added 2026-10-26). Awaiting PI decision. This ADR modifies
 no past metric, verdict, ADR or locked threshold; the v1 probe
 (`query_accuracy` / `query_successes`) is kept bit for bit.
 **Date:** 2026-10-25
@@ -162,10 +162,69 @@ PR #40 grids stay exploratory.
    pair (4 with n = 64 in ADR-0022).
 4. Real-ECG world: data cache absent (ADR-0022); not run.
 
-## Results
+## Results (confirmatory, preregistered)
 
-Recorded after the confirmatory runs; see §Results below (filled in
-after the tag `prereg-b3-probe-v2-20261025`).
+Tag `prereg-b3-probe-v2-20261025` created 2026-10-25 19:14:09 +01:00
+(commit `1d96a65`); pilot (seeds 100–101) 19:14–20:32, block lengths
+committed at 20:32:53 (`fd15deb`); confirmatory grids started 20:32:58
+— **after** the tag and the pilot record. Gaussian 20:32–21:26, mock
+21:26–22:02, electron-server, 300/300 cells, 30/30 trios per world,
+0 failure. Files: `reports/b3_probe_v2_{gaussian,mock}.json`; note
+`docs/milestones/2026-10-26-b3-probe-v2-results.md`.
+
+| world | control: vision acc / baseline / margin (≥ 0.10) | block | observed median | null mean | null P99 | p | verdict |
+|---|---|---:|---:|---:|---:|---:|---|
+| Gaussian | 0.729 / 0.244 / **0.485** — pass | 1 | **0.4141** | 0.0794 | 0.0918 | **5·10⁻⁵** (0 / 20 000) | **asymmetry present** |
+| mock | 0.529 / 0.247 / **0.282** — pass | 8 | **0.3320** | 0.1363 | 0.1602 | **5·10⁻⁵** (0 / 20 000) | **asymmetry present** |
+
+Per-criterion: (1) positive control reached on both worlds (per-seed
+vision margins 0.41–0.53 Gaussian, 0.21–0.35 mock); (2) grids complete;
+(3) p < 0.01 on both worlds → « asymétrie présente » by the
+preregistered rule.
+
+### What carries the asymmetry (exploratory, not preregistered)
+
+`reports/b3_probe_v2_decomposition_exploratory.json`:
+
+- Mean accuracy **by query modality** (rows): Gaussian audio 0.691,
+  vision 0.682, tactile 0.571, gravity 0.286, force 0.331; mock audio /
+  vision 0.549, tactile / gravity / force 0.228 (constant zero inputs).
+  **By lesioned modality** (columns): flat — 0.507–0.520 Gaussian,
+  0.355–0.358 mock.
+- The pair attaining the maximum always pairs a high-dimensional (or
+  live) modality with gravity / force (Gaussian) or with a zeroed
+  modality (mock).
+- After removing each trio's additive query effect from P − Pᵀ, the
+  median residual maximum is at its sign-flip null (Gaussian 0.057 vs
+  null 0.058, p ≈ 0.55; mock 0.011 vs 0.089).
+
+So the preregistered rejection of H0 is **entirely a query-modality
+main effect**: gravity (3-d) and force (6-d) projections of the 32-d
+latent carry less label information than the full-rank audio / vision /
+tactile inputs, and the mock world zeroes three modalities. Since
+P[q, m] − P[m, q] contains r_q − r_m, any difference in informativeness
+between modalities violates the H0 written in the preregistration
+(ADR-0022 limit 4 was wrong on this point). **No lesion-specific
+asymmetry is visible**: lesioning a modality does not change what is
+decodable from the others. The untrained reference reaches most of the
+same margins (Gaussian vision 0.283 untrained vs 0.485 intact), and the
+code channel is collapsed to a single code per modality on the intact
+networks of all five confirmatory seeds.
+
+Exploratory v1 statistic on the same new grids: Gaussian 0.156 (null
+mean 0.140, p = 0.13); mock 0.266 at block 8 (null mean 0.238,
+p = 0.058).
+
+### Proposed reading (for the PI)
+
+B-3 v2 is « asymétrie présente » by the preregistered criterion on both
+worlds, but the asymmetry is the trivial one of unequal modality
+informativeness built into the worlds, not an effect of the lesions.
+Neither this nor its absence bears on the perceptive / proprioceptive
+claim of B-3 as stated in the spec; a test of a lesion effect would need
+an H0 that conditions on the query main effect (e.g. the residual of a
+two-way decomposition, or P[q, m] compared with an unlesioned reference
+for the same q), to be preregistered separately.
 
 ## References
 
