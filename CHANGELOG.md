@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Erratum (ADR-0024, PI decision 2026-10-26): with the default
+  settings the network does not learn the task.** Phase-1 loss stays at
+  ln 4 and Me1 at chance on every grid checked. All B-1 / B-2 / B-3 and
+  plasticity-mechanism results are requalified as measured in a regime
+  where the network does not learn; no number is deleted.
+
 - **B-3 v2 (ADR-0023 *Accepted*, PI decision 2026-10-26): asymmetry
   built by the worlds, no lesion effect.** Linear probe on frozen
   per-modality representations; positive control met (vision margin
