@@ -57,7 +57,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -121,6 +121,18 @@ before any new B-3 reading. On the Studyforrest mock (0.305, accuracy
 conclusive; the real-ECG grid was not recomputed. Any downstream anchor
 on B-3 (including the Stratum 4 anchor above) should be read in that
 light.
+
+**F1 update 2 — probe v2 (ADR-0023, accepted by the PI on
+2026-10-26).** The zero-masking probe is replaced by a linear read-out
+of each modality's frozen representation (positive control met on both
+worlds). Under the preregistered paired block null
+(`prereg-b3-probe-v2-20261025`) B-3 v2 rejects symmetry on the Gaussian
+and mock worlds (p = 5·10⁻⁵), but the PI reading is: an asymmetry built
+into the worlds (unequally informative modalities), no lesion effect.
+The preregistered criterion is met but H0 was ill-posed; the residual
+after removing the query-modality effect is at the null level. The
+networks' code channel is collapsed (one argmax code per modality),
+so the probe reads encoder states, not what the nerve transmits.
 
 *Requalification (2026-10-25, PI decision ; ADR-0021 ; Refs #22).*
 The 0.02 threshold was never compared with a null. Under an
