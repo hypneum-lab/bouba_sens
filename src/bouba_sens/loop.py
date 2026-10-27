@@ -167,6 +167,7 @@ class AdaptationLoop:
         batch_size: int = 32,
         seed: int = 0,
         decorrelation: DecorrelationSchedule | None = None,
+        loss_log: list[float] | None = None,
     ) -> Checkpoint:
         """Phase 1: intact training on the world. Returns snapshot.
 
@@ -177,6 +178,9 @@ class AdaptationLoop:
 
         `decorrelation` (v0.9) swaps the batch source inside its window;
         None keeps the original behaviour.
+
+        `loss_log` (ADR-0024 follow-up): if given, the training loss of every
+        step is appended to it; training is unaffected.
         """
         mux_step = getattr(self.mux, "step", None)
         nerve_step = getattr(self.nerve, "step", None)
@@ -194,6 +198,8 @@ class AdaptationLoop:
             self.opt.zero_grad()
             loss.backward()  # type: ignore[no-untyped-call]
             self.opt.step()
+            if loss_log is not None:
+                loss_log.append(float(loss.detach()))
             if callable(mux_step):
                 mux_step()
             if callable(nerve_step):
