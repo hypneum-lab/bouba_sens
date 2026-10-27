@@ -11,11 +11,22 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
+import torch
 from torch import Tensor, nn
+from torch.nn import functional as F  # noqa: N812
 from track_p.multiplexer import GammaThetaMultiplexer
 from track_w.mlp_wml import MlpWML
 
 Modality = Literal["audio", "vision", "tactile", "gravity", "force"]
+# ADR-0024 follow-up — code emission rule of SensoryWML.step.
+# "argmax-bridge" (default) is the historical rule: argmax code plus a 1e-3
+# softmax bridge, under which the task gradient is ~1e-6 and the network does
+# not learn (docs/milestones/2026-10-26-code-collapse-diagnosis.md).
+# "straight-through" sends the same argmax code forward and back-propagates
+# the softmax gradient over the alphabet.
+EMISSIONS: tuple[str, ...] = ("argmax-bridge", "straight-through")
+DEFAULT_EMISSION = "argmax-bridge"
+
 MODALITIES: tuple[Modality, ...] = (
     "audio",
     "vision",
@@ -48,6 +59,7 @@ class SensoryWML(MlpWML):  # type: ignore[misc]  # MlpWML is Any due to nerve-wm
         d_hidden: int = 128,
         alphabet_size: int = 64,
         seed: int | None = None,
+        emission: str = DEFAULT_EMISSION,
     ) -> None:
         super().__init__(
             id=id,
@@ -56,7 +68,10 @@ class SensoryWML(MlpWML):  # type: ignore[misc]  # MlpWML is Any due to nerve-wm
             input_dim=d_hidden,
             seed=seed,
         )
+        if emission not in EMISSIONS:
+            raise ValueError(f"emission must be one of {EMISSIONS}; got {emission!r}")
         self.modality = modality
+        self.emission = emission
         self.input_proj = input_proj
         # Shared mux: bypass nn.Module auto-registration (see class docstring).
         object.__setattr__(self, "mux", mux)
@@ -88,6 +103,8 @@ class SensoryWML(MlpWML):  # type: ignore[misc]  # MlpWML is Any due to nerve-wm
         h = self.input_proj(x)
         h = self.core(h)
         pi_logits = self.emit_head_pi(h)
+        if self.emission == "straight-through":
+            return self._step_straight_through(pi_logits)
         base_code = pi_logits.argmax(-1)  # (B,)
         k = self.mux.cfg.symbols_per_theta
         codes = base_code.unsqueeze(-1).expand(-1, k)  # (B, K)
@@ -100,3 +117,19 @@ class SensoryWML(MlpWML):  # type: ignore[misc]  # MlpWML is Any due to nerve-wm
         soft_iq = soft_probs @ self.mux.constellation  # (B, 2)
         bridge = soft_iq.mean(-1, keepdim=True).expand_as(carrier) * 1e-3
         return cast(Tensor, carrier + bridge)
+
+    def _step_straight_through(self, pi_logits: Tensor) -> Tensor:
+        """Straight-through emission (ADR-0024 follow-up, opt-in).
+
+        Forward: the carrier of the argmax code, exactly as the default rule
+        builds it from the code (no bridge term). Backward: the gradient of
+        the softmax over the alphabet, through the carriers of all codes, so
+        the task loss reaches `emit_head_pi`, the core and the encoder.
+        """
+        soft = pi_logits.softmax(-1)  # (B, A)
+        hard = F.one_hot(soft.argmax(-1), soft.shape[-1]).to(soft.dtype)
+        st = hard + (soft - soft.detach())  # value == one-hot
+        k = self.mux.cfg.symbols_per_theta
+        alphabet = torch.arange(soft.shape[-1], device=soft.device)
+        table = self.mux.forward(alphabet.unsqueeze(-1).expand(-1, k))  # (A, T)
+        return cast(Tensor, st @ table)

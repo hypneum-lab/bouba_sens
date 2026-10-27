@@ -239,6 +239,14 @@ def train(
         None,
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
+    emission: str = typer.Option(
+        "argmax-bridge",
+        help=(
+            "ADR-0024 follow-up — SensoryWML code emission: 'argmax-bridge' "
+            "(default, historical; the network does not learn the task) or "
+            "'straight-through' (argmax forward, softmax gradient backward)."
+        ),
+    ),
     probe_v2: bool = typer.Option(
         True,
         "--probe-v2/--no-probe-v2",
@@ -274,11 +282,15 @@ def train(
     world_obj = _build_world(world, seed)
     mux = GammaThetaMultiplexer(seed=seed, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
-        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
-        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2),
-        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=seed + 3),
-        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
-        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
+        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1, emission=emission),
+        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2, emission=emission),
+        "tactile": SensoryWML(
+            2, "tactile", TactileEncoder(), mux, seed=seed + 3, emission=emission
+        ),
+        "gravity": SensoryWML(
+            3, "gravity", GravityEncoder(), mux, seed=seed + 4, emission=emission
+        ),
+        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5, emission=emission),
     }
     nerve = CrossModalNerve(
         mux,
@@ -297,8 +309,11 @@ def train(
         # ADR-0023 descriptive reference: the same probe on the untrained
         # network (feature extraction only: no RNG draw, no state change).
         _write_probe_v2(loop, out, seed=v2_seed, prefix="init_")
-    ckpt = loop.pretrain(steps=steps, batch_size=batch_size, seed=seed)
+    pretrain_losses: list[float] = []
+    ckpt = loop.pretrain(steps=steps, batch_size=batch_size, seed=seed, loss_log=pretrain_losses)
     out.mkdir(parents=True, exist_ok=True)
+    # ADR-0024 follow-up: Phase-1 loss per step (additive file).
+    (out / "pretrain_losses.json").write_text(json.dumps(pretrain_losses))
     if probe_v2:
         # ADR-0023 positive control: the intact (pre-lesion) network.
         _write_probe_v2(loop, out, seed=v2_seed)
@@ -306,7 +321,13 @@ def train(
         pickle.dump(ckpt, f)
     with (out / "metadata.json").open("w") as f:
         json.dump(
-            {"phase": "pretrain", "steps": steps, "seed": seed, "version": __version__},
+            {
+                "phase": "pretrain",
+                "steps": steps,
+                "seed": seed,
+                "version": __version__,
+                **({"emission": emission} if emission != "argmax-bridge" else {}),
+            },
             f,
             indent=2,
         )
@@ -333,6 +354,7 @@ def train(
                 "steps": steps,
                 "batch_size": batch_size,
                 "version": __version__,
+                **({"emission": emission} if emission != "argmax-bridge" else {}),
             }
         ),
         out / "config.yaml",
@@ -393,6 +415,14 @@ def lesion(
         None,
         help="Sprint 14 — gating mode after transducer_gating_schedule fires.",
     ),
+    emission: str = typer.Option(
+        "argmax-bridge",
+        help=(
+            "ADR-0024 follow-up — SensoryWML code emission: 'argmax-bridge' "
+            "(default, historical; the network does not learn the task) or "
+            "'straight-through' (argmax forward, softmax gradient backward)."
+        ),
+    ),
     probe_v2: bool = typer.Option(
         True,
         "--probe-v2/--no-probe-v2",
@@ -440,11 +470,11 @@ def lesion(
     world_obj = _build_world(world, seed=0)
     mux = GammaThetaMultiplexer(seed=0, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
-        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=1),
-        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=2),
-        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=3),
-        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=4),
-        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=5),
+        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=1, emission=emission),
+        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=2, emission=emission),
+        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=3, emission=emission),
+        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=4, emission=emission),
+        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=5, emission=emission),
     }
     nerve = CrossModalNerve(
         mux,
@@ -509,6 +539,7 @@ def lesion(
                 "snr_floor": snr_floor,
                 "k_steps": k_steps,
                 "version": __version__,
+                **({"emission": emission} if emission != "argmax-bridge" else {}),
             },
             meta_out,
             indent=2,
@@ -548,6 +579,7 @@ def lesion(
                 "world": world,
                 "t1_ckpt": t1_ref,
                 "version": __version__,
+                **({"emission": emission} if emission != "argmax-bridge" else {}),
             }
         ),
         out / "config.yaml",
@@ -577,14 +609,21 @@ def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
 
     seed = int(cfg["seed"])
     world_name = str(cfg.get("world", "gaussian"))
+    # ADR-0024 follow-up: emission mode recorded in config.yaml; configs
+    # written before the option existed used the default rule.
+    emission = str(cfg.get("emission", "argmax-bridge"))
     world_obj = _build_world(world_name, seed)
     mux = GammaThetaMultiplexer(seed=seed)
     sensories = {
-        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
-        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2),
-        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=seed + 3),
-        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
-        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
+        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1, emission=emission),
+        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2, emission=emission),
+        "tactile": SensoryWML(
+            2, "tactile", TactileEncoder(), mux, seed=seed + 3, emission=emission
+        ),
+        "gravity": SensoryWML(
+            3, "gravity", GravityEncoder(), mux, seed=seed + 4, emission=emission
+        ),
+        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5, emission=emission),
     }
     nerve = CrossModalNerve(mux, seed=seed)
     head = IntegrationHead(n_classes=4)
