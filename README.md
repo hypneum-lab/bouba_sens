@@ -231,6 +231,20 @@ Documentary corrections only ; no value, metric or threshold changed.
    the paper the repository cites throughout (Crossref-verified).
    Issue #25.
 
+### Erratum (2026-10-26) — the default regime does not learn the task
+
+6. **With the default settings the network does not learn the task**
+   (ADR-0024; diagnosis PR #42). Phase-1 loss stays at ln 4 = 1.386
+   for all 200 steps; full-network accuracy and Me1 are at 4-class
+   chance (0.25–0.29) on every grid checked, historical included
+   (Sprint 14c: 0.251). Root cause: the argmax emission leaves only a
+   label-agnostic 1e-3 bridge gradient (about 1e-6), which Adam
+   rescales into drift that collapses the code channel. **All B-1 /
+   B-2 / B-3 results above, and the plasticity-mechanism results, were
+   measured in this regime and are requalified accordingly**: they are
+   not evidence for or against cross-modal plasticity in an agent that
+   performs the task. No number is deleted. Issue #22.
+
 ## Quickstart
 
 ```bash
