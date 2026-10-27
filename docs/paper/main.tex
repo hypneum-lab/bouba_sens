@@ -1192,6 +1192,19 @@ builds any module, so two runs of the same cell give byte-identical
 (\texttt{tests/unit/test\_cli\_determinism.py}); outputs may still
 differ across platforms (Appendix~\ref{app:sha}).
 
+\paragraph{Erratum (2026-10-26): the default regime does not learn the
+task.} With the default settings (argmax emission with a $10^{-3}$
+bridge, Adam, 200 + 100 steps) the Phase-1 training loss stays at
+$\ln 4 = 1.386$ and the full-network accuracy and Me1 at 4-class chance
+(0.25--0.29) on every grid checked, historical ones included (ADR-0024).
+The argmax leaves only a label-agnostic bridge gradient of order
+$10^{-6}$, which Adam rescales into drift that collapses the code
+channel. Every B-1, B-2 and B-3 result of this paper, and every
+plasticity-mechanism result, was measured in this regime. They are
+requalified accordingly: they are not evidence for or against
+cross-modal plasticity in an agent that performs the task. All
+numbers are left as reported.
+
 \paragraph{Erratum (2026-10-25).} Earlier versions of this paragraph
 claimed byte-identical outputs on a fresh clone. That did not hold
 for releases up to v0.5.9: the modality encoders and the integration

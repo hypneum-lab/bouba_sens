@@ -61,7 +61,9 @@ not done by a pull request; see the PI action list below.
 
 | 0023 | `0023-b3-probe-v2.md` | B-3 probe v2 — linear read-out of frozen per-modality representations | 2026-10-25 | Accepted — PI decision 2026-10-26; B-3 v2 asymmetry built by the worlds, no lesion effect (H0 ill-posed) |
 
-Next free number: **0024**.
+| 0024 | `0024-erratum-default-regime-does-not-learn.md` | Erratum — with the default settings the network does not learn the task; B-1/B-2/B-3 requalified | 2026-10-26 | Accepted — PI decision 2026-10-26 |
+
+Next free number: **0025**.
 
 ## PI action list (not resolvable by pull request)
 

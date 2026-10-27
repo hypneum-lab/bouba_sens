@@ -22,7 +22,11 @@ only, issue #20):
 
 ## Status
 
-- **HEAD ≈ v0.5.9**, ~156 commits, 29 ADR files (numbers 0001–0023,
+- **ERRATUM ADR-0024 (2026-10-26)**: with the default settings the
+  network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
+  Every B-1/B-2/B-3 result below was measured in that regime; read them
+  as such. No number deleted.
+- **HEAD ≈ v0.5.9**, ~156 commits, 30 ADR files (numbers 0001–0024,
   seven shared, index `docs/adr/README.md`), 185+ tests.
 - **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
   (positive control met), the preregistered rejection of symmetry is an
@@ -60,7 +64,7 @@ only, issue #20):
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
 | `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
-| `docs/adr/` | ADRs 0001–0023 (29 files, index `README.md`) — decisions of record |
+| `docs/adr/` | ADRs 0001–0024 (30 files, index `README.md`) — decisions of record |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
 | `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
 | `docs/milestones/` | Sprint closing notes |
