@@ -1,0 +1,56 @@
+{
+  "root": "../pilot_studyforrest",
+  "criterion": {
+    "loss_threshold": 1.3,
+    "ln4": 1.3862943611198906,
+    "control_modality": "vision",
+    "control_margin": 0.1
+  },
+  "mean_loss_last20": 1.3005591124296187,
+  "mean_control_margin": 0.294921875,
+  "loss_ok": false,
+  "control_ok": true,
+  "learns": false,
+  "seeds": [
+    {
+      "seed": 110,
+      "steps": 200,
+      "loss_first20": 1.3732644140720367,
+      "loss_last20": 1.3479953408241272,
+      "margins": {
+        "audio": 0.37890625,
+        "vision": 0.37890625,
+        "tactile": 0.0,
+        "gravity": 0.0,
+        "force": 0.0
+      },
+      "n_codes_test": {
+        "audio": 3,
+        "vision": 1,
+        "tactile": 1,
+        "gravity": 1,
+        "force": 1
+      }
+    },
+    {
+      "seed": 111,
+      "steps": 200,
+      "loss_first20": 1.3782560527324677,
+      "loss_last20": 1.2531228840351105,
+      "margins": {
+        "audio": 0.21484375,
+        "vision": 0.2109375,
+        "tactile": 0.0,
+        "gravity": 0.0,
+        "force": 0.0
+      },
+      "n_codes_test": {
+        "audio": 1,
+        "vision": 3,
+        "tactile": 1,
+        "gravity": 1,
+        "force": 1
+      }
+    }
+  ]
+}
