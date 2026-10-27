@@ -1,17 +1,17 @@
-# Preregistration (DRAFT, ON HOLD) — B-3 lesion × query interaction
+# Preregistration — B-3 lesion × query interaction (straight-through emission)
 
-**Status:** **Draft — on hold, not tagged, not run.** The code-collapse
-diagnosis of 2026-10-26 (`docs/milestones/2026-10-26-code-collapse-diagnosis.md`,
-branch `diag/code-collapse`) shows that with the default emission the
-network never learns the task: Phase-1 loss stays at ln 4 and the
-sensory states move only through optimiser drift. A lesion × query
-interaction on those states would not test cross-modal reorganisation,
-so this test is not run on default-trained grids. Before it can be
-tagged, two things are needed: (i) the PI chooses an emission fix and
-it passes its own pilot (§2); (ii) this file is amended to name the fix,
-the code commit and the final cost estimate. The annotated tag
-`prereg-b3-lesion-interaction-<date>` is then created **before** any
-run.
+**Status:** Final. Amended 2026-10-27 and frozen by the annotated tag
+`prereg-b3-lesion-interaction-20261027` **before any confirmatory run**.
+The draft of 2026-10-26 was on hold because, with the default emission,
+the network never learns the task (ADR-0024; diagnosis
+`docs/milestones/2026-10-26-code-collapse-diagnosis.md`). PI decision
+2026-10-26 22:28: implement `--emission straight-through` as an option
+(default unchanged), pilot it, and run this test if the pilot learns.
+**Amendments of 2026-10-27** (all made before any confirmatory run):
+the emission mode (§6), the precondition, now the PI's two-part
+criterion fixed before the pilot (§2), the pilot outcome (Gaussian
+learns, mock does not), the exact p-value floor (§5), and the code
+commit and cost (§6).
 **Registration level:** L1 (local, git-dated, not filed on OSF).
 **Builds on:** ADR-0022, ADR-0023 (probe v2, H0 of symmetry ill-posed),
 `docs/prereg/2026-10-25-b3-probe-v2.md`.
@@ -26,16 +26,19 @@ these grids enters this test; any reading of them stays exploratory.
 
 ## 2. Precondition: a network that learns
 
-On a pilot of the chosen emission mode (seeds 100–101, both worlds):
+Criterion fixed by the PI and committed before the pilot
+(`docs/prereg/2026-10-26-emission-pilot-criterion.md`, `b89b9f4`). It
+replaces the three-part draft criterion (seeds 100–101), which was never
+applied. Pilot: seeds 110–111, Phase 1, `--emission straight-through`. A
+world learns if the mean over seeds of the last-20-step Phase-1 loss is
+< 1.30 **and** the mean v2 vision margin is ≥ 0.10.
 
-- Phase-1 mean training loss over the last 20 steps < 1.30 (ln 4 =
-  1.386);
-- full-network accuracy on held-out items above the majority baseline by
-  ≥ 0.10;
-- positive control of probe v2 (vision margin ≥ 0.10).
+Outcome (`docs/prereg/2026-10-27-emission-pilot-result.md`, `5d447f7`):
 
-If the pilot fails, the test is not run and the outcome is reported as
-« non concluant (pas de réseau qui apprend) ».
+- **Gaussian learns** (loss 0.993, margin 0.439).
+- **Mock does not learn** (loss 1.3006, above the 1.30 threshold;
+  margin 0.295). The mock world is therefore « non concluant (pas de
+  réseau qui apprend) » and is not run.
 
 ## 3. Probe and outcome
 
@@ -62,7 +65,9 @@ direct degradation of the lesioned input.
 - **Seed-level sign flip.** Under H0 each `R̄_s` has expectation 0 and,
   as a contrast, is taken as symmetric. Each seed's `R̄_s` is flipped
   as a whole. With 10 seeds there are 2¹⁰ = 1 024 sign patterns,
-  enumerated exactly; p = #{S_null ≥ S_obs} / 1 024 (minimum 0.001). The
+  enumerated exactly; p = #{S_null ≥ S_obs} / 1 024. Because S is a
+  square, the identity and the global flip give the same value, so the
+  minimum attainable p is 2 / 1 024 ≈ 0.002 (< 0.01). The
   test is not affected by dependence between items or between the trios
   of a seed.
 - **Blocks inherited from the B-3 v2 pilot** (block 1 Gaussian, 8 mock)
@@ -72,16 +77,20 @@ direct degradation of the lesioned input.
   stronger H0 "no lesion effect on off-diagonal decodability" (main
   effect b_m included). It is reported and does not enter the decision.
 
-## 6. Runs (when unblocked)
+## 6. Runs
 
-- Seeds **300–309** (10 seeds, 300 cells per world), worlds `gaussian`
-  and `studyforrest` (mock), `run_grid_probe_v2.sh` defaults plus the
-  chosen emission mode. Host electron-server, nice 19, four cells at a
-  time.
-- Cost estimate from the B-3 v2 grids (150 cells: 54 min Gaussian, 36 min
-  mock): about 1.8 h + 1.2 h = **3 h**, within the 6 h ceiling. Above
-  6 h, run the Gaussian world only and report the mock world as not
-  done.
+- Code: the commit tagged `prereg-b3-lesion-interaction-20261027`
+  (straight-through emission `4e1dffc`, analysis
+  `scripts/b3_lesion_interaction.py` `a03142d`).
+- **Gaussian world only.** Seeds **300–309** (10 seeds, 300 cells),
+  `EMISSION=straight-through scripts/run_grid_probe_v2.sh` with its
+  defaults (200 + 100 steps, batch 16, hard gating, probe v2, one probe
+  seed per trio). Host electron-server, nice 19, four cells at a time.
+- Cost estimate: 150 Gaussian cells took 54 min in the B-3 v2 grid, so
+  about **1.8 h** for 300 cells, within the 6 h ceiling.
+- Analysis: `scripts/b3_lesion_interaction.py --world gaussian --block 1
+  --pilot-learns yes` → `reports/b3_lesion_interaction_gaussian.json`.
+  The mock world is reported as « non concluant » with no grid.
 
 ## 7. Decision rule (per world, in this order)
 
