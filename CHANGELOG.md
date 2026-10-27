@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **B-3 final wording (PI decision 2026-10-27).** On the Gaussian world,
+  with a network that learns the task (straight-through emission), no
+  lesion effect is detected: neither a lesion × query interaction
+  (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`,
+  seeds 300-309) nor a lesion-driven asymmetry; only the query-modality
+  effect, built by the world, remains. The mock world stays
+  inconclusive (pilot loss 1.3006 above the 1.30 learning criterion)
+  and is not retried.
+
 - **Erratum (ADR-0024, PI decision 2026-10-26): with the default
   settings the network does not learn the task.** Phase-1 loss stays at
   ln 4 and Me1 at chance on every grid checked. All B-1 / B-2 / B-3 and
@@ -48,6 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`--emission straight-through`** (`SensoryWML`, `bouba-sens train` /
+  `lesion`, `EMISSION` in `scripts/run_grid_probe_v2.sh`): argmax code
+  forward, softmax gradient backward; default `argmax-bridge` unchanged.
+  `train` writes `pretrain_losses.json`. Pilot check
+  `scripts/emission_pilot_check.py`; interaction analysis
+  `scripts/b3_lesion_interaction.py`.
 - **B-3 probe v2** (`query_successes_v2`, `query_accuracy_v2`,
   `per_query_successes_v2.json`, `--probe-v2-seed`,
   `scripts/b3_probe_v2.py`, `scripts/run_grid_probe_v2.sh`,

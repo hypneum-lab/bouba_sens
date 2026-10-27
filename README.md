@@ -57,7 +57,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -121,6 +121,16 @@ before any new B-3 reading. On the Studyforrest mock (0.305, accuracy
 conclusive; the real-ECG grid was not recomputed. Any downstream anchor
 on B-3 (including the Stratum 4 anchor above) should be read in that
 light.
+
+**F1 update 3 — final B-3 wording (PI decision 2026-10-27).**
+On the Gaussian world, with a network that learns the task
+(straight-through emission, Phase-1 loss 0.81–1.13, Me1 0.467), no
+lesion effect is detected: neither a lesion × query interaction
+(exact seed-level test, p = 0.49, tagged preregistration
+`prereg-b3-lesion-interaction-20261027`) nor a lesion-driven
+asymmetry; only the query-modality effect, built by the world,
+remains. The mock world stays inconclusive (its pilot network is below
+the learning criterion) and is not retried.
 
 **F1 update 2 — probe v2 (ADR-0023, accepted by the PI on
 2026-10-26).** The zero-masking probe is replaced by a linear read-out
