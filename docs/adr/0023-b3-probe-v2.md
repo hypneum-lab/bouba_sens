@@ -165,6 +165,17 @@ ill-posed, because any query-modality main effect violates it
 (ADR-0022 limit 4, corrected 2026-10-26). A test of a lesion effect
 (H0: no lesion × query interaction) is preregistered separately.
 
+### Final B-3 wording (PI decision 2026-10-27)
+
+After the erratum ADR-0024 and the preregistered lesion × query
+interaction test (`prereg-b3-lesion-interaction-20261027`, results in
+`docs/milestones/2026-10-27-b3-lesion-interaction-results.md`), the PI
+fixed the final wording of B-3 (original in French):
+
+> « Sur le monde gaussien, avec un réseau qui apprend la tâche (émission straight-through), aucun effet de lésion n'est détecté : ni interaction lésion × modalité interrogée (p = 0,49, préreg taguée), ni asymétrie due aux lésions ; seul subsiste l'effet de la modalité interrogée, construit par le monde. Le monde mock reste non concluant (réseau sous le critère d'apprentissage) et n'est pas retenté. »
+
+In English: On the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected: neither a lesion × query interaction (p = 0.49, tagged preregistration) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.
+
 ## Known limits
 
 1. Linear read-out only; a non-linear probe could find more. Fixed a

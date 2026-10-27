@@ -22,6 +22,10 @@ only, issue #20):
 
 ## Status
 
+- **B-3 final (PI 2026-10-27)**: Gaussian world, network that learns
+  (straight-through emission): no lesion effect (interaction p = 0.49,
+  tag `prereg-b3-lesion-interaction-20261027`), only the query-modality
+  effect built by the world; mock inconclusive, not retried.
 - **ERRATUM ADR-0024 (2026-10-26)**: with the default settings the
   network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
   Every B-1/B-2/B-3 result below was measured in that regime; read them

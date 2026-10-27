@@ -31,17 +31,19 @@ STEPS_TRAIN="${STEPS_TRAIN:-200}"
 STEPS_LESION="${STEPS_LESION:-100}"
 METRICS="${METRICS:-Me1,Me2,Me3}"
 WORLD="${WORLD:-gaussian}"
+# ADR-0024 follow-up: SensoryWML emission (argmax-bridge = historical default).
+EMISSION="${EMISSION:-argmax-bridge}"
 # shellcheck disable=SC2206
 SEEDS=(${SEEDS:?set SEEDS, e.g. "200 201 202 203 204"})
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 SNR_CELLS=("floor:-20.0" "minus10:-10.0" "plus10:10.0")
 
-export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD
+export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
-echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
 
 phase1_job() {
     local seed="$1"
@@ -53,7 +55,7 @@ phase1_job() {
     local t0; t0=$(date +%s)
     uv run bouba-sens train --steps "$STEPS_TRAIN" --batch-size 16 --seed "$seed" \
         --world "$WORLD" --out "$dir" --transducer-gating hard --gumbel-tau 1.0 \
-        --probe-v2 --probe-v2-seed $(( seed * 10000 + 5099 )) \
+        --probe-v2 --probe-v2-seed $(( seed * 10000 + 5099 )) --emission "$EMISSION" \
         > "$LOG_DIR/phase1_seed${seed}.log" 2>&1
     echo "[phase1 seed $seed] done in $(( $(date +%s) - t0 )) s"
 }
@@ -71,7 +73,7 @@ cell_job() {
     local args=(--modality "$modality" --timing "$timing" --steps "$STEPS_LESION"
         --seed $(( seed * 10000 + count )) --snr-floor "$snr_floor" --world "$WORLD"
         --out "$cell_dir" --transducer-gating hard --gumbel-tau 1.0
-        --probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )))
+        --probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )) --emission "$EMISSION")
     {
         if [[ "$timing" == "T1" ]]; then
             uv run bouba-sens lesion "${args[@]}"

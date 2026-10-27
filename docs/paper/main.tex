@@ -1192,6 +1192,17 @@ builds any module, so two runs of the same cell give byte-identical
 (\texttt{tests/unit/test\_cli\_determinism.py}); outputs may still
 differ across platforms (Appendix~\ref{app:sha}).
 
+\paragraph{Final B-3 reading (2026-10-27).} With an opt-in
+straight-through emission (argmax code forward, softmax gradient
+backward) the network learns the task on the Gaussian world (Phase-1
+loss $0.81$--$1.13$, Me1 $0.467$). On that world, no lesion effect is
+detected: neither a lesion $\times$ query interaction (exact seed-level
+sign-flip test, 10 seeds, $p = 0.49$, preregistration tagged before the
+run) nor a lesion-driven asymmetry; only the query-modality effect,
+built by the world, remains. The mock world stays inconclusive (its
+pilot network is below the preregistered learning criterion) and is not
+retried.
+
 \paragraph{Erratum (2026-10-26): the default regime does not learn the
 task.} With the default settings (argmax emission with a $10^{-3}$
 bridge, Adam, 200 + 100 steps) the Phase-1 training loss stays at
