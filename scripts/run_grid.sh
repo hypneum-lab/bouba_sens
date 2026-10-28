@@ -83,6 +83,7 @@ for seed in "${SEEDS[@]}"; do
     # One Phase 1 checkpoint per seed (reused across T2 cells for that seed).
     phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
     ns="$(seed_namespace_for "${seed}")"
+    local_count=0
     if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
         echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
         train_args=(
@@ -113,6 +114,7 @@ for seed in "${SEEDS[@]}"; do
                 eval_json="${cell_dir}/eval_report.json"
 
                 count=$(( count + 1 ))
+                local_count=$(( local_count + 1 ))
 
                 if [[ -f "${eval_json}" ]]; then
                     skipped=$(( skipped + 1 ))
@@ -121,11 +123,16 @@ for seed in "${SEEDS[@]}"; do
 
                 echo "[${count}/${total}] ${cell_name}"
 
+                # Namespaced campaigns: cell seed = seed * 10000 + cell index of
+                # this seed (1-30), so the derived seeds do not depend on the
+                # other seeds of the run; legacy: the run-wide counter.
+                if [[ -n "${ns}" ]]; then cell_seed=$(( seed * 10000 + local_count ))
+                else cell_seed=$(( seed * 10000 + count )); fi
                 lesion_args=(
                     --modality "${modality}"
                     --timing "${timing}"
                     --steps "${STEPS_LESION}"
-                    --seed $(( seed * 10000 + count ))
+                    --seed "${cell_seed}"
                     --snr-floor "${snr_floor}"
                     --world "${WORLD}"
                     --out "${cell_dir}"

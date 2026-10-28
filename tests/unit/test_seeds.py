@@ -43,40 +43,75 @@ def test_codes_are_unique_and_pools_resolve() -> None:
         campaign_code("v09-pilot", 3001)
 
 
-# Draw counts per stream (upper bounds of the frozen protocols).
+# Draw counts per stream, as the frozen protocols execute them.
 _PHASE2 = {"phase2_batch": 100, "replay_init": 16, "replay_fifo": 100, "phase2_probe": 1}
 RANGES = {
-    "v07-b1": None,  # Phase 1 per base seed, Phase 2 per cell seed (seed * 10000 + cell)
     "v07-b2": {"phase1_batch": 200, **_PHASE2, "b2_probe": 1},
     "v08": {"phase1_batch": 200, **_PHASE2},
-    "v09": {"phase1_batch": 450, "donor": 450, "check_anchor": 32, "check_draw": 200},
+    "v09": {"phase1_batch": 450, "donor": 450, "check_anchor": 32},
 }
+N_CELLS = 30  # run_grid.sh: with a namespace, cell seed = seed * 10000 + 1 ... 30
 
 
-def _campaign_seeds(name: str) -> set[int]:
+def _cells(seeds: tuple[int, ...]) -> list[int]:
+    return [s * 10000 + k for s in seeds for k in range(1, N_CELLS + 1)]
+
+
+def _namespaced(name: str) -> set[int]:
+    """Every namespaced seed the campaign's runners draw (no legacy arithmetic)."""
     c = BY_NAME[name]
     prefix = name.rsplit("-", 1)[0]
     if prefix == "v07-b1":
         out = derived_seeds(c.code, c.seeds, {"phase1_batch": 200})
-        cells = [s * 10000 + k for s in c.seeds for k in range(1, 31)]
-        out |= derived_seeds(c.code, cells, {**_PHASE2, "query": 1})
+        out |= derived_seeds(c.code, _cells(c.seeds), _PHASE2)
+        # lesion and eval both draw the per-query probe with seed = cell + 777
+        out |= derived_seeds(c.code, [x + 777 for x in _cells(c.seeds)], {"query": 1})
         return out
-    out = derived_seeds(c.code, c.seeds, RANGES[prefix])  # type: ignore[arg-type]
-    if prefix in ("v07-b2", "v08"):  # K = 8 Gumbel draws (legacy formula, per seed)
+    out = derived_seeds(c.code, c.seeds, RANGES[prefix])
+    if prefix == "v09":  # manipulation-check draws b = 1 ... 200
+        out |= {
+            ns_seed(c.code, s, STREAMS["check_draw"], b) for s in c.seeds for b in range(1, 201)
+        }
+    return out
+
+
+def _legacy_ints(name: str) -> set[int]:
+    """Integer seeds still used directly (model init, global RNG, Gumbel draws)."""
+    c = BY_NAME[name]
+    prefix = name.rsplit("-", 1)[0]
+    out = {s + i for s in c.seeds for i in range(6)}  # torch.manual_seed(s); modules s+1..s+5
+    if prefix == "v07-b1":
+        out |= set(_cells(c.seeds)) | {x + 777 for x in _cells(c.seeds)}
+    if prefix in ("v07-b2", "v08"):
         out |= {
             gumbel_draw_seed(s, p, r) for s in c.seeds for p in (0, 1) for r in range(GUMBEL_DRAWS)
         }
     return out
 
 
-def test_no_derived_seed_is_shared_between_any_two_pools() -> None:
-    sets = {c.name: _campaign_seeds(c.name) for c in CAMPAIGNS}
+def test_no_namespaced_seed_is_shared_between_any_two_pools() -> None:
+    sets = {c.name: _namespaced(c.name) for c in CAMPAIGNS}
     for a, b in itertools.combinations(sets, 2):
         assert not sets[a] & sets[b], (a, b)
-    # sanity: within one campaign the namespaced streams do not collide either
     v08 = BY_NAME["v08-pilot"]
-    n = len(v08.seeds) * sum(RANGES["v08"].values())  # type: ignore[union-attr]
-    assert len(derived_seeds(v08.code, v08.seeds, RANGES["v08"])) == n  # type: ignore[arg-type]
+    n = len(v08.seeds) * sum(RANGES["v08"].values())
+    assert len(derived_seeds(v08.code, v08.seeds, RANGES["v08"])) == n
+
+
+# Deliberate exception: the v0.7 B-1 and B-2 confirmatory campaigns use the
+# same base seeds 4001-4154, hence the same model-initialisation seeds
+# (paired initial networks); every pilot pool is disjoint from every
+# confirmatory pool, and all other pairs are disjoint.
+_SHARED_INIT = {frozenset({"v07-b1-confirmatory", "v07-b2-confirmatory"})}
+
+
+def test_legacy_integer_seeds_are_disjoint_between_pilot_and_confirmatory_pools() -> None:
+    sets = {c.name: _legacy_ints(c.name) for c in CAMPAIGNS}
+    for a, b in itertools.combinations(sets, 2):
+        if frozenset({a, b}) in _SHARED_INIT:
+            assert a.endswith("confirmatory") and b.endswith("confirmatory")
+            continue
+        assert not sets[a] & sets[b], (a, b)
 
 
 class _SpyWorld(GaussianWorld):

@@ -69,3 +69,17 @@ def test_v07_confirmatory_seeds_need_the_filing_reference(tmp_path: Path) -> Non
     other = tmp_path / "c"
     other.mkdir()
     assert len(_run_grid(other, SEEDS="4201")) == 30  # the SNR pilot seed
+
+
+def test_namespaced_pool_gets_per_seed_cell_seeds_and_namespace(tmp_path: Path) -> None:
+    # PI decision 2026-10-25 (19:47): v0.7 B-1 pools run in their namespace;
+    # cell seeds do not depend on the other seeds of the run.
+    lesions = _run_grid(tmp_path, SEEDS="4201", K_STEPS="50")
+    seeds = sorted(int(c[c.index("--seed") + 1]) for c in lesions)
+    assert seeds == [4201 * 10000 + k for k in range(1, 31)]
+    assert all(c[c.index("--seed-namespace") + 1] == "7101" for c in lesions)
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    old = _run_grid(legacy, SEEDS="7 8")
+    assert all("--seed-namespace" not in c for c in old)
+    assert sorted(int(c[c.index("--seed") + 1]) for c in old)[-1] == 8 * 10000 + 60

@@ -82,3 +82,31 @@ def test_cli_writes_world_class_and_snr_trajectory(tmp_path: Path) -> None:
     assert traj[50] == pytest.approx(-20.0) and traj[59] == pytest.approx(-20.0)
     assert traj[49] > -20.0
     assert check_world(tmp_path, "GaussianWorld") == 2
+
+
+def test_namespace_is_recorded_and_used_by_eval(tmp_path: Path) -> None:
+    runner = CliRunner()
+    p1 = tmp_path / "phase1_seed9001"
+    assert runner.invoke(app, ["train", "--steps", "2", "--seed", "9001", "--seed-namespace", "7101",
+                               "--out", str(p1)]).exit_code == 0  # fmt: skip
+    assert json.loads((p1 / "metadata.json").read_text())["seed_namespace"] == 7101
+    cell = tmp_path / "seed9001_T2_audio_floor"
+    r = runner.invoke(app, ["lesion", "--ckpt", str(p1), "--steps", "2", "--seed", "90010001",
+                            "--seed-namespace", "7101", "--out", str(cell)])  # fmt: skip
+    assert r.exit_code == 0, r.output
+    assert "seed_namespace: 7101" in (cell / "config.yaml").read_text()
+    from bouba_sens import cli
+
+    called: dict[str, object] = {}
+    orig = cli._compute_me1
+
+    def spy(*a, **kw):  # type: ignore[no-untyped-def]
+        called.update(kw)
+        return orig(*a, **kw)
+
+    cli._compute_me1 = spy  # type: ignore[assignment]
+    try:
+        cli._load_cell(cell)
+    finally:
+        cli._compute_me1 = orig  # type: ignore[assignment]
+    assert called["seed_namespace"] == 7101

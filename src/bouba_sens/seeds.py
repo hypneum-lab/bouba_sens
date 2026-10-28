@@ -15,9 +15,26 @@ one amendment have different codes), ``s`` the experiment seed,
 ``stream`` the kind of draw (``STREAMS``) and ``t`` its index. Distinct
 ``(code, s, stream, t)`` give distinct SeedSequence entropy and hence
 independent generator states; ``tests/unit/test_seeds.py`` enumerates
-every derived seed of every pool and checks that no two pools share one.
+the namespaced seeds every runner draws (as executed) and checks that no
+two pools share one.
 
 The legacy arithmetic is unchanged when no namespace is set.
+
+Seeds that stay plain integers (not namespaced), and why the test still
+covers them (``test_legacy_integer_seeds_are_disjoint_between_pilot_and_
+confirmatory_pools``):
+
+* model initialisation and the global torch RNG: ``s`` and the module
+  seeds ``s + 1 ... s + 5``; for B-1 lesion cells the cell seed and
+  ``cell + 777`` (lesion / eval). They are disjoint between every pilot
+  and every confirmatory pool; the B-1 and B-2 confirmatory campaigns
+  share base seeds 4001-4154 and hence initial networks (a deliberate
+  pairing, PI to confirm);
+* K = 8 Gumbel draw seeds ``2e9 + 1000 s + 100 p + r`` (disjoint by s);
+* design constants shared on purpose by every pool: the v0.9 held-out
+  probe seed, the probe-training allocation seed, the permutation and
+  simulation generators, and the fixed init seeds 0-5 of the CLI's T1
+  (congenital) cells.
 """
 
 from __future__ import annotations

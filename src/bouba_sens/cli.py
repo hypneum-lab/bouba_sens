@@ -490,6 +490,7 @@ def lesion(
                 "steps": steps,
                 "world": world,
                 "t1_ckpt": t1_ref,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
             }
         ),
@@ -534,7 +535,9 @@ def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
     return mux, sensories, nerve, head, world_obj
 
 
-def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:  # type: ignore[no-untyped-def]
+def _compute_me1(  # type: ignore[no-untyped-def]
+    mux, sensories, nerve, head, world_obj, *, seed: int, seed_namespace: int | None = None
+) -> float:
     """ADR-0007 Phase B — canonical Me1 probe pass.
 
     Wires a fresh `AdaptationLoop` around pre-built components and runs
@@ -559,7 +562,8 @@ def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:
     _np.random.seed(seed + 777)
     _random.seed(seed + 777)
 
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    # PI decision 2026-10-25 (19:47): the cell's seed namespace, as in lesion.
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
     return loop.query_accuracy("audio", seed=seed + 777)
 
 
@@ -587,7 +591,16 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         for m, sd in state["sensory"].items():
             sensories[m].load_state_dict(sd)
         seed_value = int(OmegaConf.select(cfg, "seed"))
-        me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
+        ns_raw = OmegaConf.select(cfg, "seed_namespace", default=None)
+        me1 = _compute_me1(
+            mux,
+            sensories,
+            nerve,
+            head,
+            world_obj,
+            seed=seed_value,
+            seed_namespace=None if ns_raw is None else int(ns_raw),
+        )
         return me1, seed_value, path.name
 
     # Legacy fallback — pre-Phase-B ad-hoc cells.
