@@ -881,7 +881,16 @@ def eval(
         head.load_state_dict(state["head"])
         for m, sd in state["sensory"].items():
             sensories[m].load_state_dict(sd)
-        me1_probe = _compute_me1(mux, sensories, nerve, head, world_obj, seed=int(cfg["seed"]))
+        ns_raw = OmegaConf.select(cfg, "seed_namespace", default=None)
+        me1_probe = _compute_me1(
+            mux,
+            sensories,
+            nerve,
+            head,
+            world_obj,
+            seed=int(cfg["seed"]),
+            seed_namespace=None if ns_raw is None else int(ns_raw),
+        )
 
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:

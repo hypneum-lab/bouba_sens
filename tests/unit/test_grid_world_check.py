@@ -110,3 +110,35 @@ def test_namespace_is_recorded_and_used_by_eval(tmp_path: Path) -> None:
     finally:
         cli._compute_me1 = orig  # type: ignore[assignment]
     assert called["seed_namespace"] == 7101
+
+
+def test_eval_run_draws_the_namespaced_query_seed(tmp_path: Path) -> None:
+    # Codex r7: the grid calls `eval --run`; its me1_probe must use the
+    # cell's namespace and draw ns_seed(7101, cell + 777, query, 0).
+    from bouba_sens.loop import AdaptationLoop
+    from bouba_sens.seeds import STREAMS, ns_seed
+
+    runner = CliRunner()
+    p1 = tmp_path / "phase1_seed9001"
+    assert runner.invoke(app, ["train", "--steps", "2", "--seed", "9001", "--seed-namespace", "7101",
+                               "--no-probe-v2", "--out", str(p1)]).exit_code == 0  # fmt: skip
+    cell = tmp_path / "seed9001_T2_audio_floor"
+    r = runner.invoke(app, ["lesion", "--ckpt", str(p1), "--steps", "2", "--seed", "90010001",
+                            "--seed-namespace", "7101", "--no-probe-v2", "--out", str(cell)])  # fmt: skip
+    assert r.exit_code == 0, r.output
+    drawn: list[int] = []
+    orig = AdaptationLoop._derived_seed
+
+    def spy(self, seed, legacy, stream, index):  # type: ignore[no-untyped-def]
+        out = orig(self, seed, legacy, stream, index)
+        if stream == "query":
+            drawn.append(out)
+        return out
+
+    AdaptationLoop._derived_seed = spy  # type: ignore[method-assign]
+    try:
+        r = runner.invoke(app, ["eval", "--run", str(cell), "--out", str(tmp_path / "e.json")])
+    finally:
+        AdaptationLoop._derived_seed = orig  # type: ignore[method-assign]
+    assert r.exit_code == 0, r.output
+    assert drawn == [ns_seed(7101, 90010001 + 777, STREAMS["query"], 0)]
