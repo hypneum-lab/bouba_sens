@@ -603,3 +603,19 @@ is followed by the decision taken.
 5. **v0.7 B-1 pilot cell** for the SNR `metadata.json` check: which
    seed, if any. → *Open. A timing / SNR check was run on seed 0
    (historical, outside every pool), see "v0.7 B-1 timing check".*
+
+## Rev. C pilots (2026-10-28, `76ebbd8`, macM1)
+
+Design and results: `docs/osf/redesign-proposals-v08-v09-revc-2026-10-28.md`,
+sections D.4–D.5. In brief:
+
+- **v0.8** (2211–2220): stopped at the learning gate (full-network
+  held-out balanced accuracy 0.29–0.33 at every lock).
+- **v0.9 CC-film** (3206–3210, 10 fps): the manipulation check passes,
+  then the run stopped at the learning gate (onsets 100 and 150 fail).
+- **v0.9 Studyforrest** (3206–3210): the manipulation check passes, then
+  the run stopped at the learning gate (seed 3207 at chance at every
+  onset).
+
+No N was derived. Outputs: `reports/pilots/v08_revc_learning_gate.json`
+and `reports/pilots/v09_revc_{ccfilm,studyforrest}_{pilot,n_rule}.json`.

@@ -139,6 +139,10 @@
     "sha256": "c961d26908396429eddf97b69fa5da8ae98363ad2aa5c3a4244e3937d320319e",
     "size": 12998
   },
+  "pilots/v08_revc_learning_gate.json": {
+    "sha256": "e307f3b16184dae2f0e68fc4a3b8cd8193da805ee5ccc67fa53c8831a0417739",
+    "size": 26532
+  },
   "pilots/v09_manipulation_check_seeds3101-3105.json": {
     "sha256": "cd50891cd22cc2efebb2ebfd298d737bd44c0a174c35b16bcc4b0489a02c633a",
     "size": 630
@@ -167,6 +171,14 @@
     "sha256": "9accb942a7bfe60b275e82f8e50b72d24b0b96386050d51da0f024802d613d82",
     "size": 2251
   },
+  "pilots/v09_revc_ccfilm_n_rule.json": {
+    "sha256": "231fd17547a99746572e390e9d6d68a8008a4f3d31c752b90f5f45cfe61c87b0",
+    "size": 130
+  },
+  "pilots/v09_revc_ccfilm_pilot.json": {
+    "sha256": "183bbb491df7042da0e563c499e2b74029c7ae8bc0dac189ec5dd3a43922af6e",
+    "size": 61147
+  },
   "pilots/v09_revc_label_feasibility.json": {
     "sha256": "9fa8bcf61cb763da5bdddac7d083dc340e174b098aa19ebd227e9a42a1888ac0",
     "size": 2328
@@ -174,6 +186,14 @@
   "pilots/v09_revc_label_screen.json": {
     "sha256": "f3063abb19e5b2e6105e4496f1efd6887a58ea62a4d091d2cb7d1a18099bf1c6",
     "size": 3399
+  },
+  "pilots/v09_revc_studyforrest_n_rule.json": {
+    "sha256": "5186c6ff8567a448f4fa6f9f0ea082c92ed3147610f03d54de2c77e4878bbffa",
+    "size": 136
+  },
+  "pilots/v09_revc_studyforrest_pilot.json": {
+    "sha256": "760475cba5f5dfa42496769cdcae37b8a8389c42ccde8b2f702c294bebbb29e6",
+    "size": 61393
   },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",

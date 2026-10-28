@@ -1,0 +1,416 @@
+START commit 76ebbd8fb1aed72fc290edc146489ea104f62bbd 2026-10-28T19:58:06Z 1793217486
+Uninstalled 1 package in 8ms
+Installed 1 package in 3ms
+torch 2.11.0 sklearn 1.8.0 numpy 2.4.4
+System-wide memory free percentage: 88%
+Uninstalled 1 package in 4ms
+Installed 1 package in 3ms
+{
+  "per_setting": {
+    "25": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.484375,
+        "2214": 0.25,
+        "2215": 0.478125,
+        "2216": 0.25,
+        "2217": 0.31354166666666666,
+        "2218": 0.35286458333333337,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.312890625,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.11562500000000003,
+        "2216": 0.0,
+        "2217": 0.037239583333333326,
+        "2218": 0.05104166666666671,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": 0.020390625000000006,
+      "passed": false
+    },
+    "50": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.48125,
+        "2214": 0.25,
+        "2215": 0.3528645833333333,
+        "2216": 0.25,
+        "2217": 0.2526041666666667,
+        "2218": 0.47760416666666666,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.3064322916666667,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.0,
+        "2216": 0.0,
+        "2217": 0.002604166666666685,
+        "2218": 0.006510416666666685,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": 0.000911458333333337,
+      "passed": false
+    },
+    "75": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.4822916666666667,
+        "2214": 0.25,
+        "2215": 0.2526041666666667,
+        "2216": 0.25,
+        "2217": 0.25,
+        "2218": 0.44140625,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.29263020833333336,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.0,
+        "2216": 0.0,
+        "2217": 0.0,
+        "2218": 0.11979166666666669,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": 0.01197916666666667,
+      "passed": false
+    },
+    "100": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.46875,
+        "2214": 0.25,
+        "2215": 0.2484375,
+        "2216": 0.25,
+        "2217": 0.25,
+        "2218": 0.48333333333333334,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.2950520833333333,
+      "min_seed_full_bacc": 0.2484375,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.0,
+        "2216": 0.0,
+        "2217": 0.0,
+        "2218": 0.12864583333333335,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": 0.012864583333333336,
+      "passed": false
+    },
+    "125": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.48333333333333334,
+        "2214": 0.25,
+        "2215": 0.25364583333333335,
+        "2216": 0.25,
+        "2217": 0.49739583333333337,
+        "2218": 0.44244791666666666,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.31768229166666667,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": -0.0078125,
+        "2216": 0.0,
+        "2217": 0.0026041666666667407,
+        "2218": 0.0,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": -0.000520833333333326,
+      "passed": false
+    },
+    "150": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.48333333333333334,
+        "2214": 0.25,
+        "2215": 0.32473958333333336,
+        "2216": 0.25,
+        "2217": 0.4921875,
+        "2218": 0.45052083333333337,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.325078125,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.0,
+        "2216": 0.0,
+        "2217": -0.005468750000000022,
+        "2218": 0.0,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": -0.0005468750000000022,
+      "passed": false
+    },
+    "175": {
+      "per_seed_full_bacc": {
+        "2211": 0.25,
+        "2212": 0.25,
+        "2213": 0.48333333333333334,
+        "2214": 0.25,
+        "2215": 0.265625,
+        "2216": 0.25,
+        "2217": 0.35546875,
+        "2218": 0.44661458333333337,
+        "2219": 0.25,
+        "2220": 0.25
+      },
+      "mean_full_bacc": 0.3051041666666667,
+      "min_seed_full_bacc": 0.25,
+      "per_seed_over_best_single": {
+        "2211": 0.0,
+        "2212": 0.0,
+        "2213": 0.0,
+        "2214": 0.0,
+        "2215": 0.0,
+        "2216": 0.0,
+        "2217": 0.032552083333333315,
+        "2218": 0.0,
+        "2219": 0.0,
+        "2220": 0.0
+      },
+      "mean_over_best_single": 0.0032552083333333313,
+      "passed": false
+    }
+  },
+  "rule": "at every setting: mean >= 0.4, every seed >= 0.3",
+  "n_settings_failed": 7,
+  "passed": false,
+  "wall_s": 375.64703529100007
+}
+learning gate FAILED: stop and report (no capture)
+V08-GATE-DONE 2026-10-28T20:04:26Z 1793217866
+Uninstalled 1 package in 5ms
+Installed 1 package in 3ms
+v0.8 learning gate failed: no capture (stop and report)
+V08-DONE 2026-10-28T20:04:26Z 1793217866
+System-wide memory free percentage: 88%
+Uninstalled 1 package in 4ms
+Installed 1 package in 3ms
+{
+  "source": "ccfilm",
+  "n_frames": 5965,
+  "n_heldout": 995,
+  "n_purged": 384,
+  "held_segments": [
+    11,
+    13,
+    18,
+    19,
+    20
+  ],
+  "min_class_heldout_share": 0.16260162601626016,
+  "heldout_counts": [
+    223,
+    287,
+    285,
+    200
+  ],
+  "usable_counts": [
+    952,
+    1424,
+    1287,
+    923
+  ],
+  "label": {
+    "a": "audio energy (mean standardised log-mel) > median",
+    "b": "vision brightness (mean 16x16 intensity) > median",
+    "prevalence_a": 0.49991617770326907,
+    "prevalence_b": 0.49991617770326907,
+    "phi_ab": -0.17485334399963337,
+    "counts": [
+      1231,
+      1752,
+      1752,
+      1230
+    ]
+  }
+}
+{
+  "passed": true,
+  "delta_k": 0.30575163890057755,
+  "p_value": 9.999000099990002e-05,
+  "k_joint": 0.33033336436157346,
+  "k_decor": 0.02458172546099582,
+  "n_perm": 10000,
+  "reason": "ok",
+  "k_original_mean": 0.3351874335572185
+}
+seed=3206 onset=0 arm=plain full=0.405 bestq=0.250 bacc_all=0.380 best=vision:0.429 ctrl=0.954 wall=5.6s
+seed=3206 onset=50 arm=plain full=0.397 bestq=0.250 bacc_all=0.392 best=vision:0.430 ctrl=0.953 wall=6.4s
+seed=3206 onset=100 arm=plain full=0.400 bestq=0.250 bacc_all=0.389 best=vision:0.428 ctrl=0.955 wall=7.2s
+seed=3206 onset=150 arm=plain full=0.403 bestq=0.374 bacc_all=0.383 best=vision:0.428 ctrl=0.957 wall=7.8s
+seed=3206 onset=200 arm=plain full=0.406 bestq=0.405 bacc_all=0.385 best=vision:0.428 ctrl=0.952 wall=8.5s
+seed=3207 onset=0 arm=plain full=0.485 bestq=0.250 bacc_all=0.672 best=vision:0.522 ctrl=0.966 wall=5.5s
+seed=3207 onset=50 arm=plain full=0.448 bestq=0.250 bacc_all=0.682 best=vision:0.607 ctrl=0.978 wall=6.2s
+seed=3207 onset=100 arm=plain full=0.415 bestq=0.250 bacc_all=0.630 best=vision:0.552 ctrl=0.974 wall=7.1s
+seed=3207 onset=150 arm=plain full=0.478 bestq=0.250 bacc_all=0.646 best=vision:0.550 ctrl=0.976 wall=8.0s
+seed=3207 onset=200 arm=plain full=0.359 bestq=0.266 bacc_all=0.483 best=vision:0.517 ctrl=0.967 wall=8.7s
+seed=3208 onset=0 arm=plain full=0.413 bestq=0.274 bacc_all=0.476 best=vision:0.434 ctrl=0.968 wall=5.6s
+seed=3208 onset=50 arm=plain full=0.457 bestq=0.250 bacc_all=0.468 best=vision:0.459 ctrl=0.956 wall=6.2s
+seed=3208 onset=100 arm=plain full=0.461 bestq=0.250 bacc_all=0.476 best=vision:0.494 ctrl=0.961 wall=7.0s
+seed=3208 onset=150 arm=plain full=0.454 bestq=0.251 bacc_all=0.508 best=vision:0.501 ctrl=0.968 wall=7.9s
+seed=3208 onset=200 arm=plain full=0.466 bestq=0.304 bacc_all=0.450 best=vision:0.479 ctrl=0.952 wall=8.6s
+seed=3209 onset=0 arm=plain full=0.532 bestq=0.488 bacc_all=0.634 best=vision:0.538 ctrl=0.978 wall=5.5s
+seed=3209 onset=50 arm=plain full=0.314 bestq=0.314 bacc_all=0.493 best=vision:0.587 ctrl=0.973 wall=6.3s
+seed=3209 onset=100 arm=plain full=0.307 bestq=0.307 bacc_all=0.285 best=vision:0.390 ctrl=0.974 wall=7.1s
+seed=3209 onset=150 arm=plain full=0.334 bestq=0.334 bacc_all=0.323 best=vision:0.520 ctrl=0.967 wall=7.6s
+seed=3209 onset=200 arm=plain full=0.429 bestq=0.429 bacc_all=0.448 best=vision:0.363 ctrl=0.969 wall=8.3s
+seed=3210 onset=0 arm=plain full=0.404 bestq=0.316 bacc_all=0.367 best=vision:0.400 ctrl=0.964 wall=5.6s
+seed=3210 onset=50 arm=plain full=0.407 bestq=0.400 bacc_all=0.389 best=vision:0.401 ctrl=0.962 wall=6.2s
+seed=3210 onset=100 arm=plain full=0.249 bestq=0.250 bacc_all=0.386 best=vision:0.399 ctrl=0.963 wall=7.1s
+seed=3210 onset=150 arm=plain full=0.266 bestq=0.266 bacc_all=0.378 best=vision:0.399 ctrl=0.964 wall=7.9s
+seed=3210 onset=200 arm=plain full=0.401 bestq=0.401 bacc_all=0.371 best=vision:0.400 ctrl=0.964 wall=8.4s
+{
+  "rule": "at every setting: mean >= 0.4, every seed >= 0.3, mean over best single >= 0.05",
+  "n_settings_failed": 2,
+  "passed": false
+}
+disposition: learning gate failed: stop and report
+System-wide memory free percentage: 88%
+Uninstalled 1 package in 5ms
+Installed 1 package in 3ms
+{
+  "source": "reports/pilots/v09_revc_ccfilm_pilot.json",
+  "N": null,
+  "note": "no N: learning gate failed: stop and report"
+}
+V09-CCFILM-DONE 2026-10-28T20:08:04Z 1793218084
+System-wide memory free percentage: 88%
+Uninstalled 1 package in 4ms
+Installed 1 package in 3ms
+{
+  "source": "studyforrest",
+  "n_frames": 9000,
+  "n_heldout": 1500,
+  "n_purged": 640,
+  "held_segments": [
+    1,
+    6,
+    13,
+    16,
+    22
+  ],
+  "min_class_heldout_share": 0.16656191074795726,
+  "heldout_counts": [
+    446,
+    596,
+    193,
+    265
+  ],
+  "usable_counts": [
+    2024,
+    2686,
+    909,
+    1241
+  ],
+  "label": {
+    "a": "narration-on flag (audio proxy, least squares)",
+    "a_max_rounding_dev": 0.026156531709401406,
+    "b": "force column 4 (respiration first derivative) > 0",
+    "prevalence_a": 0.30522222222222223,
+    "prevalence_b": 0.5743333333333334,
+    "phi_ab": 0.006493338179542118,
+    "counts": [
+      2675,
+      3578,
+      1156,
+      1591
+    ]
+  }
+}
+{
+  "passed": true,
+  "delta_k": 0.08687732925582546,
+  "p_value": 9.999000099990002e-05,
+  "k_joint": 0.10125664458492303,
+  "k_decor": 0.014379315329097583,
+  "n_perm": 10000,
+  "reason": "ok",
+  "k_original_mean": 0.13899097457487186
+}
+seed=3206 onset=0 arm=plain full=0.758 bestq=0.496 bacc_all=0.889 best=audio:0.494 ctrl=0.948 wall=6.6s
+seed=3206 onset=50 arm=plain full=0.436 bestq=0.498 bacc_all=0.798 best=audio:0.493 ctrl=0.943 wall=7.3s
+seed=3206 onset=100 arm=plain full=0.891 bestq=0.500 bacc_all=0.891 best=audio:0.503 ctrl=0.954 wall=8.3s
+seed=3206 onset=150 arm=plain full=0.914 bestq=0.500 bacc_all=0.934 best=audio:0.495 ctrl=0.942 wall=9.0s
+seed=3206 onset=200 arm=plain full=0.961 bestq=0.500 bacc_all=0.966 best=audio:0.498 ctrl=0.970 wall=9.7s
+seed=3207 onset=0 arm=plain full=0.250 bestq=0.250 bacc_all=0.266 best=force:0.607 ctrl=0.978 wall=6.7s
+seed=3207 onset=50 arm=plain full=0.250 bestq=0.250 bacc_all=0.253 best=force:0.604 ctrl=0.978 wall=7.3s
+seed=3207 onset=100 arm=plain full=0.250 bestq=0.250 bacc_all=0.257 best=force:0.603 ctrl=0.977 wall=8.1s
+seed=3207 onset=150 arm=plain full=0.250 bestq=0.250 bacc_all=0.260 best=force:0.599 ctrl=0.979 wall=8.9s
+seed=3207 onset=200 arm=plain full=0.250 bestq=0.250 bacc_all=0.255 best=force:0.599 ctrl=0.979 wall=9.7s
+seed=3208 onset=0 arm=plain full=0.399 bestq=0.399 bacc_all=0.798 best=audio:0.495 ctrl=0.976 wall=6.8s
+seed=3208 onset=50 arm=plain full=0.488 bestq=0.488 bacc_all=0.962 best=audio:0.497 ctrl=0.977 wall=7.4s
+seed=3208 onset=100 arm=plain full=0.490 bestq=0.490 bacc_all=0.982 best=force:0.570 ctrl=0.983 wall=7.9s
+seed=3208 onset=150 arm=plain full=0.489 bestq=0.489 bacc_all=0.979 best=force:0.572 ctrl=0.986 wall=8.9s
+seed=3208 onset=200 arm=plain full=0.461 bestq=0.460 bacc_all=0.955 best=force:0.548 ctrl=0.970 wall=9.6s
+seed=3209 onset=0 arm=plain full=0.427 bestq=0.423 bacc_all=0.866 best=audio:0.504 ctrl=0.965 wall=6.8s
+seed=3209 onset=50 arm=plain full=0.708 bestq=0.411 bacc_all=0.835 best=audio:0.501 ctrl=0.950 wall=7.2s
+seed=3209 onset=100 arm=plain full=0.889 bestq=0.489 bacc_all=0.903 best=audio:0.497 ctrl=0.973 wall=8.0s
+seed=3209 onset=150 arm=plain full=0.908 bestq=0.495 bacc_all=0.929 best=audio:0.497 ctrl=0.970 wall=8.7s
+seed=3209 onset=200 arm=plain full=0.947 bestq=0.500 bacc_all=0.945 best=audio:0.496 ctrl=0.959 wall=9.6s
+seed=3210 onset=0 arm=plain full=0.453 bestq=0.454 bacc_all=0.643 best=audio:0.486 ctrl=0.935 wall=6.9s
+seed=3210 onset=50 arm=plain full=0.479 bestq=0.478 bacc_all=0.724 best=audio:0.486 ctrl=0.939 wall=7.6s
+seed=3210 onset=100 arm=plain full=0.493 bestq=0.493 bacc_all=0.501 best=audio:0.487 ctrl=0.988 wall=8.4s
+seed=3210 onset=150 arm=plain full=0.486 bestq=0.486 bacc_all=0.487 best=force:0.542 ctrl=0.972 wall=9.0s
+seed=3210 onset=200 arm=plain full=0.453 bestq=0.453 bacc_all=0.486 best=force:0.559 ctrl=0.979 wall=9.9s
+{
+  "rule": "at every setting: mean >= 0.4, every seed >= 0.3, mean over best single >= 0.05",
+  "n_settings_failed": 5,
+  "passed": false
+}
+disposition: learning gate failed: stop and report
+System-wide memory free percentage: 88%
+Uninstalled 1 package in 5ms
+Installed 1 package in 3ms
+{
+  "source": "reports/pilots/v09_revc_studyforrest_pilot.json",
+  "N": null,
+  "note": "no N: learning gate failed: stop and report"
+}
+END 2026-10-28T20:12:09Z 1793218329

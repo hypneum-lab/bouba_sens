@@ -548,3 +548,99 @@ pilot gates apply to the trained encoders.
    - per-bit readability (a and b) of every trained encoder on the plain
      arm;
    - a self-donor count for the label-breaking arm.
+
+## D.5 Rev. C pilots (macM1, 2026-10-28, commit `76ebbd8`)
+
+**Run conditions.**
+
+- Host: macM1, torch 2.11.0, scikit-learn 1.8.0, numpy 2.4.4.
+- Every heavy step ran under `/usr/bin/lockf -k ~/scratch/.heavy.lock`,
+  nice 10, and only with ≥ 30 % memory free.
+- Script: `reports/pilots/logs/run_revc_pilots.sh`; log:
+  `reports/pilots/logs/revc_pilots.log`.
+- Wall clock 19:58–20:12 UTC.
+- The earlier 2-fps identity extraction started at 24 % free memory,
+  below the 25 % rule; it was a few seconds of ffmpeg and PIL work.
+  From then on every step waited for ≥ 30 % free.
+
+**Disposition: every rev. C pilot stopped at its learning gate (D.0,
+stop and report).** No v0.8 capture was run and no v0.9 arm other than
+plain. There is no N. All numbers below are descriptive.
+
+### v0.8 (seeds 2211–2220, straight-through)
+
+The gate stage covered the Phase-1 checkpoint and the no-lesion control
+of all 70 blocks, in 376 s (`reports/pilots/v08_revc_learning_gate.json`).
+
+- **The gate fails at all 7 locks.** Mean held-out balanced accuracy of
+  the full network: 0.29–0.33 (rule ≥ 0.40).
+- 6 of 10 seeds sit at chance (0.25) at every lock. Only seeds 2213 and
+  2218 learn at every lock (0.35–0.48). Seeds 2215 and 2217 move between
+  chance and 0.50 from one lock to another.
+- Margin over the best single-modality query: −0.001 to 0.02.
+
+With straight-through emission and the registered 200 + 100 steps on the
+native Studyforrest scene label, the networks mostly do not learn the
+task. The subspace-shift measurement would again measure a non-learning
+regime.
+
+### v0.9 CC-film (PRIMARY; seeds 3206–3210, 10 fps, y = energy × brightness)
+
+Output: `reports/pilots/v09_revc_ccfilm_pilot.json`.
+
+- **Manipulation check: passes** (Δ_K 0.306, p = 1e-4; K_joint 0.330,
+  K_decor 0.025).
+- **Learning gate: fails at onsets 100 and 150.**
+  - Mean full-network balanced accuracy per onset: 0.448, 0.405, 0.366,
+    0.387, 0.412.
+  - Lowest seed per onset: 0.40, 0.31, 0.25, 0.27, 0.36.
+  - Margin over the best query: +0.05 to +0.13.
+  - The other onsets pass.
+- **Descriptive** (plain arm, 25 networks):
+  - The trained encoders separate the bits: audio reads a at 0.98 (b
+    0.61), vision reads b at 0.98 (a 0.51). The audio-derived synthetic
+    channels read a at 0.77–0.81.
+  - Best single modality on y: 0.47 (vision chosen in every run). The
+    positive control (concatenation, no PCA) reaches 0.965: FG_ctrl
+    0.50, lowest 90 % CI lower bound 0.31.
+  - The fused code h_all reaches 0.46: FG_lin −0.006. The headroom
+    exists in the encoders, but the fused code does not use it.
+
+### v0.9 Studyforrest (SECONDARY; seeds 3206–3210, y = narration × respiration sign)
+
+Output: `reports/pilots/v09_revc_studyforrest_pilot.json`.
+
+- **Manipulation check: passes** (Δ_K 0.087, p = 1e-4).
+- **Learning gate: fails at every onset**, because seed 3207 stays at
+  chance (0.25) at all onsets.
+  - Mean full-network accuracy per onset: 0.457, 0.472, 0.603, 0.609,
+    0.614.
+  - Margin over the best query: 0.047–0.182.
+  - The four other seeds learn: up to 0.96 (seed 3206, onset 200) and
+    0.95 (seed 3209).
+- **Descriptive** (plain arm):
+  - Encoders: audio reads a at 1.00, force reads b at 0.97.
+  - Best single modality on y: 0.53. h_all reaches 0.71: **FG_lin
+    +0.18**.
+  - The control reaches 0.967: FG_ctrl 0.44, lowest CI lower bound 0.34.
+  - Mean single-modality query accuracies: audio 0.33, force 0.42,
+    others 0.25.
+
+### What the PI has to decide
+
+- **v0.8:** the straight-through network does not learn the native
+  scene label in 200 Phase-1 steps. Options:
+  - a longer or different training schedule (a new pilot);
+  - the two-channel label of v0.9 as v0.8's task;
+  - dropping v0.8.
+- **v0.9:**
+  - **CC-film:** the gate fails narrowly (2 of 5 onsets, one or two weak
+    seeds). The encoders hold the headroom, but the fused code does not
+    show a fusion gain.
+  - **Studyforrest:** the gate fails only because one seed collapses;
+    otherwise it learns well and shows a fusion gain of +0.18.
+  - Options: keep the rule (the design is not fileable); change the
+    per-seed floor or count collapsed seeds as exclusions with a
+    registered exclusion rate (a design change, decided before new
+    data); lengthen training; or swap primary and secondary back.
+- No undraft, merge or OSF action was taken.
