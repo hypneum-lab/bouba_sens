@@ -83,6 +83,14 @@
     "sha256": "73f9eec3fbdcc98084a8b3242785a5f25427d42a6720511a7d85bd12ead8e448",
     "size": 9989
   },
+  "pilots/v07_snr_pilot_ns3_seed4201_aggregate.json": {
+    "sha256": "0cf1a944fd9a388f3c41ea0fd63e3350523af54d1880241221818cc6ce8572f2",
+    "size": 14265
+  },
+  "pilots/v07_snr_pilot_ns3_seed4201_cells.json": {
+    "sha256": "fad12345775cd93c2abffb1f897427846ae4a3f4c825cfcb5b1abc8c2930987e",
+    "size": 11164
+  },
   "pilots/v07_snr_pilot_ns_seed4201_aggregate.json": {
     "sha256": "7887243d65317646925706621d015d46850b31ccf650ce3756eb9c708a64178b",
     "size": 14253
@@ -156,8 +164,8 @@
     "size": 2251
   },
   "pilots/v09_revc_label_feasibility.json": {
-    "sha256": "913cc2df4d4c11a284251cb686dde544a864b96d3981684c291fb69e20fb1154",
-    "size": 1487
+    "sha256": "9fa8bcf61cb763da5bdddac7d083dc340e174b098aa19ebd227e9a42a1888ac0",
+    "size": 2328
   },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",

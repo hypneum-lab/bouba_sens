@@ -530,7 +530,7 @@ design constants (held-out split, probe-training allocation,
 permutation and simulation generators, init seeds 0–5 of T1 cells) are
 shared by every pool on purpose. After the Codex review of 2026-10-28
 the B-1 evaluation step also uses the namespace and the cell seeds no
-longer depend on the run-wide counter; the SNR cell was re-run again. Pilots affected by the earlier
+longer depend on the run-wide counter; after the Codex review r7 the `eval --run` probe of the grid is namespaced too (`e0e92db`) and the SNR cell was re-run at that commit (`v07_snr_pilot_ns3_seed4201_*`, superseding ns2). Pilots affected by the earlier
 overlap of derived seeds, and what was done:
 
 | Pilot | Overlap with a confirmatory pool (legacy seeds) | Enters a rule? | Action |
@@ -553,8 +553,11 @@ passed.
 **v0.8 rev. B (seeds 2201–2210, 8101) — gate failed.** The deterministic
 soft fused code is constant to float rounding (total variance ≈
 8.6 × 10⁻¹⁵); 0 / 10 complete seeds; no σ̂, no N. The Gumbel code's
-variation is sampling noise (between-class share 0.000; CKA between
-the soft and the Gumbel code 0.02). Capture 65 min; the run was
+variation is most likely sampling noise, but this pilot does not
+isolate it: the probe is one contiguous window, single-label on
+several seeds (between-class share 0 by construction), and the CKA
+between the soft and the Gumbel code (0.02) is computed on matrices
+below tolerance. Capture 65 min; the run was
 interrupted on 2026-10-25 when the summary stopped on a degenerate
 spectrum (log `logs/revb_pilots.log`), fixed in `e7c8a06` and
 summarised on 2026-10-28 (`logs/revb_resume.log`).
