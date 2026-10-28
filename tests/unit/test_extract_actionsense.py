@@ -146,3 +146,32 @@ def test_fetch_resolve_urls_filters_kinds_and_subjects() -> None:
     got = fetch.resolve_urls(html, ["S00", "S02"])
     assert len(got["S00"]) == 4 and got["S02"] == []
     assert not any("worldGaze" in u or "overhead" in u or "PG1" in u for u in got["S00"])
+
+
+def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
+    """A burst confined to one 0.1 s window must land in exactly that frame."""
+    n_chunks = 16
+    n = n_chunks * CHUNK
+    win = SR // 10
+    target = 5  # frame start = T0 + 0.5 s
+    wav = np.zeros(n, dtype=np.float32)
+    rng = np.random.default_rng(1)
+    wav[target * win : (target + 1) * win] = rng.uniform(-0.8, 0.8, win)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, wav, SR, subtype="FLOAT")
+    first = 3
+    starts = T0 + 0.1 * np.arange(first, 13)  # frames 3..12
+
+    def peak(shift_s: float) -> int:
+        # Real convention: timestamp of the LAST sample of each chunk.
+        ts = T0 + shift_s + (np.arange(n_chunks) + 1) * CHUNK / SR
+        h5_path = tmp_path / f"mic_{shift_s}.hdf5"
+        with h5py.File(h5_path, "w") as h5:
+            _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+        mel, covered, _ = extract.audio_frames(wav_path, h5_path, starts)
+        assert covered.all()
+        return int(np.argmax(mel.mean(axis=1))) + first
+
+    assert peak(0.0) == target
+    assert peak(CHUNK / SR) != target  # timestamps one chunk late
+    assert peak(-CHUNK / SR) != target  # timestamps one chunk early
