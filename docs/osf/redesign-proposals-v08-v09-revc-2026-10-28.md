@@ -1,8 +1,10 @@
 # Redesign proposals, rev. C — v0.8 measurement and v0.9 label / world (2026-10-28)
 
-**Status:** PROPOSAL for PI review. PI decision 2026-10-28, about 18:05:
-"pursue both options as a proposal, then STOP for my review before any
-new pilot". No new pilot has been run and nothing here is implemented.
+**Status:** DECIDED by the PI on 2026-10-28 (about 19:05; section D.4),
+with v0.9's primary and secondary inverted; implemented, then piloted on
+macM1 (results in the pilot report). The proposal text below is kept as
+reviewed. Earlier decision (about 18:05): "pursue both options as a
+proposal, then STOP for my review before any new pilot".
 The drafts `amendment-v0.8-*` and `amendment-v0.9-*` only point to this
 file. It follows `redesign-proposals-v08-v09-2026-10-25.md` (sections
 A–C: rev. B and its pilots). It was revised after the Codex review r7
@@ -425,3 +427,93 @@ Gumbel fused code and the held-out log-loss) are **dropped** from v0.9.
    - fresh seeds 3206–3210.
 4. **Next step:** implementation then pilots, or implementation only,
    for review.
+
+## D.4 PI decisions (2026-10-28, about 19:05) and implementation
+
+These decisions were taken after the rev. B pilots and before any rev. C
+pilot; they are recorded as post-pilot decisions of the unfiled drafts.
+
+- **D.0: P1.** Straight-through emission, with the learning gate as in
+  D.0: held-out balanced accuracy on the campaign label ≥ 0.40 (mean)
+  and ≥ 0.30 (every seed); for v0.9, also ≥ +0.05 over the best
+  single-modality query.
+- **v0.8: adopted as proposed.**
+  - (a) encoder 1 − CKA is the primary; (b) sender logits is the
+    secondary;
+  - the five gates, including the drift floor (R ≥ 2 at each end);
+  - guard 0.5 σ̂;
+  - the eigengap secondary is removed;
+  - pilot seeds 2211–2220.
+- **v0.9: the order is inverted. CC-film is PRIMARY**, the Studyforrest
+  two-channel label y = 2a + b is SECONDARY (replication).
+  - The CC-film cache is re-extracted at 10 fps with the existing
+    script; the only new parameters are `--fps` and `--max-seconds`.
+  - CC-film uses a two-channel label screened with the same isolation
+    gates (every modality ≤ 0.65, concatenation − best ≥ 0.20), the
+    positive control, the label-breaking arm and the frozen purged
+    split.
+  - Pilot seeds 3206–3210, CC-film first.
+- **Download (PI approvals 19:14 and 19:21).**
+  - The approved `.mp4` URL returns 404. The PI approved
+    `…/BigBuckBunny_320x180.mp4.zip` instead: downloaded onto macM1 only
+    on 2026-10-28 at 18:22 UTC and unpacked with the system `unzip`.
+    - `.zip`: 64,657,225 bytes, SHA-256 `109e3ede…fceedf`;
+    - `.mp4`: 64,657,027 bytes, SHA-256 `f78f3960…280508`;
+    - licence: CC-BY 3.0, Blender Foundation.
+  - `scripts/extract_ccfilm_features.py` verifies the `.mp4` hash before
+    every extraction and refuses on mismatch.
+  - **Identity check (done first):** a 2-fps / 300-s re-extraction
+    reproduced all six tensor SHA-256 of the existing 2-fps cache
+    exactly.
+  - The 10-fps cache has 5,965 frames (596 s). Its MANIFEST, with the
+    download provenance, is copied to
+    `reports/pilots/ccfilm_real_10fps_MANIFEST.md`.
+
+**Implementation.**
+
+- **v0.8:**
+  - `v08_driver.run_block(design="revc")` (straight-through networks,
+    class-balanced probe rows, encoder and logit readouts, a second
+    control at locks 25 / 175 with Phase-2 seed s + 500 000, learning-gate
+    metrics on the stratified held-out rows);
+  - `metrics/revc_shift.py` (per-block non-degeneracy before scaling,
+    distance, drift floor);
+  - `v08_driver.pilot_quantities_revc`.
+- **v0.9:**
+  - `v09_revc.py`: labels, `SegmentSplitWorld`, `LabelBreakSchedule`,
+    outcome, gates;
+  - `scripts/run_v09_revc.py`.
+- **Learning gate:** `learning_gate.py`.
+- **Seed pools:** `v08-pilot` becomes 2201–2220, `v09-pilot` 3201–3210
+  (codes unchanged). The disjointness tests include the drift-floor
+  seeds.
+
+**Corrections found while implementing (stated, not silently changed).**
+
+1. **Split.** "3 of 30 segments with every class ≥ 15 % held out" is
+   infeasible: 3 / 30 of the frames cannot give every class 15 %.
+   - Implemented instead: 5 of 30 segments, chosen among 2,000 random
+     5-subsets (generator 20261037) as the first that maximises the
+     smallest per-class held-out share.
+   - Achieved shares: CC-film 0.163 (995 held-out rows, 384 purged);
+     Studyforrest 0.167 (1,500 held-out, 640 purged).
+2. **CC-film label** (the proposal named it only as an example):
+   - a = audio energy (mean of the 128 standardised log-mel bands) above
+     its median;
+   - b = vision brightness (mean of the 16 × 16 grid) above its median;
+   - the label-breaking arm breaks the modality that carries b (vision
+     for CC-film, force for Studyforrest).
+3. **Probe training** uses every 4th usable row. The best modality is
+   chosen by grouped 4-fold CV over segments, purging 64 frames around
+   every test row. The positive control is fitted without PCA.
+
+**Raw screen** (no network; `reports/pilots/v09_revc_label_screen.json`,
+64-frame purge):
+
+| world | label counts | best single on y | concatenation | a read by | b read by |
+|---|---|---:|---:|---|---|
+| CC-film 10 fps | 1231 / 1752 / 1752 / 1230, φ = −0.17 | vision 0.536 | 0.943 | audio 0.99; the synthetic tactile/gravity/force 0.74–0.76 (audio-derived) | vision 0.98 |
+| Studyforrest | 2675 / 3578 / 1156 / 1591, φ = 0.006 | force 0.548 | 0.963 | audio 1.00; gravity 0.71 | force 0.99 |
+
+Both labels pass the raw isolation screen (≤ 0.65 and ≥ 0.20) on y. The
+pilot gates apply to the trained encoders.

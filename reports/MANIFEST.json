@@ -27,6 +27,10 @@
     "sha256": "8e27a8672754e402fa4356d4de4a4037e4f5ef1f57f8c30572e0f7193865ab4f",
     "size": 174
   },
+  "pilots/ccfilm_real_10fps_MANIFEST.md": {
+    "sha256": "1c1765eab49caeb5b851a3018a070097d12fd6b93fe3f233c11360d4f07aa534",
+    "size": 2422
+  },
   "pilots/v07_b1_robust_power_n150.json": {
     "sha256": "b3d08695f5188f374f7aacc63ab652536a42cac53e6d671a3cbb5bb620905b99",
     "size": 639
@@ -166,6 +170,10 @@
   "pilots/v09_revc_label_feasibility.json": {
     "sha256": "9fa8bcf61cb763da5bdddac7d083dc340e174b098aa19ebd227e9a42a1888ac0",
     "size": 2328
+  },
+  "pilots/v09_revc_label_screen.json": {
+    "sha256": "f3063abb19e5b2e6105e4496f1efd6887a58ea62a4d091d2cb7d1a18099bf1c6",
+    "size": 3399
   },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",

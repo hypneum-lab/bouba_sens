@@ -1,0 +1,160 @@
+{
+ "ccfilm": {
+  "label": {
+   "a": "audio energy (mean standardised log-mel) > median",
+   "b": "vision brightness (mean 16x16 intensity) > median",
+   "prevalence_a": 0.49991617770326907,
+   "prevalence_b": 0.49991617770326907,
+   "phi_ab": -0.17485334399963337,
+   "counts": [
+    1231,
+    1752,
+    1752,
+    1230
+   ]
+  },
+  "split": {
+   "source": "ccfilm",
+   "n_frames": 5965,
+   "n_heldout": 995,
+   "n_purged": 384,
+   "held_segments": [
+    11,
+    13,
+    18,
+    19,
+    20
+   ],
+   "min_class_heldout_share": 0.16260162601626016,
+   "heldout_counts": [
+    223,
+    287,
+    285,
+    200
+   ],
+   "usable_counts": [
+    952,
+    1424,
+    1287,
+    923
+   ],
+   "label": {
+    "a": "audio energy (mean standardised log-mel) > median",
+    "b": "vision brightness (mean 16x16 intensity) > median",
+    "prevalence_a": 0.49991617770326907,
+    "prevalence_b": 0.49991617770326907,
+    "phi_ab": -0.17485334399963337,
+    "counts": [
+     1231,
+     1752,
+     1752,
+     1230
+    ]
+   }
+  },
+  "raw_bacc_y": {
+   "audio": 0.5093644710435008,
+   "vision": 0.535972004448687,
+   "tactile": 0.4023093209681694,
+   "gravity": 0.4020486062388194,
+   "force": 0.41211725500126706,
+   "concat": 0.9432315419795753
+  },
+  "raw_bacc_a": {
+   "audio": 0.9906114528269179,
+   "vision": 0.519713430881411,
+   "tactile": 0.7612534633434758,
+   "gravity": 0.7408017217170495,
+   "force": 0.7644386263946401,
+   "concat": 0.976193848755737
+  },
+  "raw_bacc_b": {
+   "audio": 0.5601176620568196,
+   "vision": 0.9828996326826756,
+   "tactile": 0.5460458021342942,
+   "gravity": 0.5720449639394081,
+   "force": 0.57506532096816,
+   "concat": 0.9808877288763309
+  }
+ },
+ "studyforrest": {
+  "label": {
+   "a": "narration-on flag (audio proxy, least squares)",
+   "a_max_rounding_dev": 0.026156531709401406,
+   "b": "force column 4 (respiration first derivative) > 0",
+   "prevalence_a": 0.30522222222222223,
+   "prevalence_b": 0.5743333333333334,
+   "phi_ab": 0.006493338179542118,
+   "counts": [
+    2675,
+    3578,
+    1156,
+    1591
+   ]
+  },
+  "split": {
+   "source": "studyforrest",
+   "n_frames": 9000,
+   "n_heldout": 1500,
+   "n_purged": 640,
+   "held_segments": [
+    1,
+    6,
+    13,
+    16,
+    22
+   ],
+   "min_class_heldout_share": 0.16656191074795726,
+   "heldout_counts": [
+    446,
+    596,
+    193,
+    265
+   ],
+   "usable_counts": [
+    2024,
+    2686,
+    909,
+    1241
+   ],
+   "label": {
+    "a": "narration-on flag (audio proxy, least squares)",
+    "a_max_rounding_dev": 0.026156531709401406,
+    "b": "force column 4 (respiration first derivative) > 0",
+    "prevalence_a": 0.30522222222222223,
+    "prevalence_b": 0.5743333333333334,
+    "phi_ab": 0.006493338179542118,
+    "counts": [
+     2675,
+     3578,
+     1156,
+     1591
+    ]
+   }
+  },
+  "raw_bacc_y": {
+   "audio": 0.510324466734803,
+   "vision": 0.24315756992890894,
+   "tactile": 0.3073151530316912,
+   "gravity": 0.3558587986625692,
+   "force": 0.5478173757751457,
+   "concat": 0.9627221324842737
+  },
+  "raw_bacc_a": {
+   "audio": 1.0,
+   "vision": 0.4761323156075473,
+   "tactile": 0.6178003178787251,
+   "gravity": 0.7061548498220672,
+   "force": 0.5274147258969863,
+   "concat": 1.0
+  },
+  "raw_bacc_b": {
+   "audio": 0.5069430841322122,
+   "vision": 0.49878825532551824,
+   "tactile": 0.504407790373701,
+   "gravity": 0.5052675329538953,
+   "force": 0.992078778780735,
+   "concat": 0.9769010271916505
+  }
+ }
+}
