@@ -51,3 +51,15 @@ def test_build_world_actionsense_missing_cache(
     monkeypatch.setenv("BOUBA_SENS_ACTIONSENSE_DATA", str(tmp_path))
     with pytest.raises(typer.BadParameter, match="actionsense cache missing"):
         _build_world("actionsense", 0)
+
+
+def test_build_world_actionsense_valid_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_cache(tmp_path, n=64)
+    torch.save(torch.zeros(64, dtype=torch.long), tmp_path / "subject.pt")
+    torch.save({"time_s": torch.zeros(64, dtype=torch.float64)}, tmp_path / "rows.pt")
+    monkeypatch.setenv("BOUBA_SENS_ACTIONSENSE_DATA", str(tmp_path))
+    world = _build_world("actionsense", 0)
+    assert isinstance(world, ActionSenseWorld)
+    assert world.sample(batch_size=8, seed=1).audio.shape == (8, 128)

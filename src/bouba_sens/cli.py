@@ -163,9 +163,7 @@ def version() -> None:
 
 @app.command()
 def sim(
-    world: str = typer.Option(
-        "gaussian", help="gaussian | xor | sinusoid | studyforrest | ccfilm | actionsense"
-    ),
+    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
     size: int = typer.Option(1024, help="Batch size to sample"),
     seed: int = typer.Option(0, help="World sample seed"),
     out: Path = typer.Option(..., exists=False, help="Output parquet path"),
