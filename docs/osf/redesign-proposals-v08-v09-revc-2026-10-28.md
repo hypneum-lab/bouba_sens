@@ -517,3 +517,34 @@ pilot; they are recorded as post-pilot decisions of the unfiled drafts.
 
 Both labels pass the raw isolation screen (≤ 0.65 and ≥ 0.20) on y. The
 pilot gates apply to the trained encoders.
+
+**Segments.** `numpy.array_split` of all frames into 30 segments:
+
+- Studyforrest: 300 frames each; held-out segments 1, 6, 13, 16, 22.
+- CC-film (5,965 frames): 198–199 frames each, not the 300 of the
+  proposal; held-out segments 11, 13, 18, 19, 20.
+
+**Codex r8 (2026-10-28) fixes, before any rev. C pilot.**
+
+1. The learning gate is applied separately at every lock (v0.8) and at
+   every onset (v0.9). Every setting must pass; nothing is averaged
+   across settings.
+2. The drift-floor gate needs the control of every seed at both ends.
+   - A missing control fails the gate.
+   - An undefined R (invalid control, Y undefined, or F < 1e-9) counts
+     as R = 0 in the median and is never dropped.
+3. The N rule runs only if every prerequisite gate passes. The
+   secondary readout gets its own descriptive guard and N rule.
+4. Gate 5 is the within-seed SD of Y over the locks (> 0 for every
+   complete seed). The ANOVA σ̂ is kept for planning only.
+5. The runs are staged and stop when a prerequisite fails.
+   - v0.8: a learning-gate stage (Phase 1 and the no-lesion control of
+     every block) runs before any capture. The capture refuses to start
+     without a passed gate file.
+   - v0.9: the manipulation check, then the plain arm and the learning
+     gate, then the other arms.
+6. New diagnostics:
+   - a 16-row block-bootstrap 90 % CI of FG_ctrl;
+   - per-bit readability (a and b) of every trained encoder on the plain
+     arm;
+   - a self-donor count for the label-breaking arm.

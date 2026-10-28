@@ -138,3 +138,47 @@ def test_extraction_refuses_a_film_with_another_hash(tmp_path: Path) -> None:
         mod.verify_film(fake)
     assert len(mod.FILM_SHA256) == 64
     assert hashlib.sha256(b"not the film").hexdigest() != mod.FILM_SHA256
+
+
+def test_plain_cells_carry_diagnostics_and_gate_needs_all_seeds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(rc, "ONSETS", (0,))
+    _write(tmp_path, studyforrest=False)
+    w = rc.SegmentSplitWorld("ccfilm", tmp_path)
+    ns = BY_NAME["v09-pilot"].code
+    plain = rc.run_cell_revc(w, 3206, 0, "plain", seed_namespace=ns, width=1, recovery=1, batch=8)
+    decor = rc.run_cell_revc(w, 3206, 0, "decor", seed_namespace=ns, width=1, recovery=1, batch=8)
+    assert set(plain["lin"]["bit_bacc"]["audio"]) == {"a", "b"} and decor["lin"]["bit_bacc"] is None
+    lo, hi = plain["lin"]["fg_control_ci90"]
+    assert lo <= plain["lin"]["fg_control"] + 1e-9 or hi >= plain["lin"]["fg_control"]
+    with pytest.raises(ValueError, match="missing"):
+        rc.plain_learning_gate([plain], [3206, 3207])
+    assert rc.plain_learning_gate([plain], [3206])["per_setting"].keys() == {"0"}
+
+
+def test_label_break_counts_self_donors(tmp_path: Path) -> None:
+    _write(tmp_path, studyforrest=False)
+    w = rc.SegmentSplitWorld("ccfilm", tmp_path)
+    sch = rc.LabelBreakSchedule(DecorrelationWindow(0, 10_000), seed=3206, world=w,
+                                modality="vision", seed_namespace=9101)  # fmt: skip
+    sch.pool = torch.tensor([int(w.sample_with_indices(16, 5)[1][0])])  # single-row pool
+    sch.sample(w, batch_size=16, seed=5, step=0)
+    assert sch.n_self_donor == 1
+
+
+def test_derive_gives_no_n_for_a_stopped_or_failed_revc_run(tmp_path: Path) -> None:
+    import json
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "pilots" / "derive_v09_pilot.py"
+    spec = importlib.util.spec_from_file_location("derive_v09", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for rec in ({"design": "rev. C", "stopped": "learning gate failed: stop and report"},
+                {"design": "rev. C", "all_gates_passed": False,
+                 "variance_components": {"sigma_plan": 0.1}}):  # fmt: skip
+        src, dst = tmp_path / "in.json", tmp_path / "out.json"
+        src.write_text(json.dumps(rec))
+        mod.main(src, dst)
+        assert json.loads(dst.read_text())["N"] is None

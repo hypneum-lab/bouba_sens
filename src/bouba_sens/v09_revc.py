@@ -289,11 +289,12 @@ class LabelBreakSchedule:
             return world.sample(batch_size, seed)  # type: ignore[no-any-return]
         from bouba_sens.seeds import STREAMS, ns_seed
 
-        base, _ = world.sample_with_indices(batch_size, seed)
+        base, anchors = world.sample_with_indices(batch_size, seed)
         gen = torch.Generator().manual_seed(
             ns_seed(self.seed_namespace, self.seed, STREAMS["donor"], step)
         )
         rows = self.pool[torch.randint(0, len(self.pool), (batch_size,), generator=gen)]
+        self.n_self_donor += int((rows == anchors).sum().item())
         out: WorldSample = replace(
             base, **{self.modality: getattr(world.gather(rows), self.modality)}
         )
@@ -324,12 +325,50 @@ def _purged_group_folds(
     return out
 
 
-def _fit_score(
-    x_tr: np.ndarray, y_tr: np.ndarray, x_te: np.ndarray, y_te: np.ndarray
-) -> tuple[float, list[float], bool]:
-    from bouba_sens.fusion_probe import _fit_score as fs
+def _fit_predict(x_tr: np.ndarray, y_tr: np.ndarray, x_te: np.ndarray) -> tuple[np.ndarray, bool]:
+    """Held-out predictions of the frozen rev. B classifier, and convergence."""
+    from sklearn.exceptions import ConvergenceWarning
 
-    return fs(x_tr, y_tr, x_te, y_te)
+    from bouba_sens.fusion_probe import _clf
+
+    clf = _clf()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        clf.fit(x_tr, y_tr)
+    converged = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
+    return clf.predict(x_te), converged
+
+
+def _bacc(pred: np.ndarray, y: np.ndarray) -> float:
+    from bouba_sens.learning_gate import balanced_accuracy
+
+    return balanced_accuracy(pred, y)
+
+
+def _recalls(pred: np.ndarray, y: np.ndarray) -> list[float]:
+    return [float(np.mean(pred[y == c] == c)) if (y == c).any() else 0.0 for c in range(4)]
+
+
+BOOT_BLOCK = 16
+BOOT_N = 2000
+BOOT_SEED = 20261028 + 99
+
+
+def block_bootstrap_ci(
+    pred_a: np.ndarray, pred_b: np.ndarray, y: np.ndarray, *, level: float = 0.90
+) -> list[float]:
+    """Percentile CI of bacc(pred_a) - bacc(pred_b), resampling 16-row held-out blocks."""
+    n_blocks = int(np.ceil(len(y) / BOOT_BLOCK))
+    blocks = [np.arange(i * BOOT_BLOCK, min(len(y), (i + 1) * BOOT_BLOCK)) for i in range(n_blocks)]
+    rng = np.random.default_rng(BOOT_SEED)
+    vals = []
+    for _ in range(BOOT_N):
+        idx = np.concatenate([blocks[j] for j in rng.integers(0, n_blocks, n_blocks)])
+        if len(np.unique(y[idx])) < 2:
+            continue
+        vals.append(_bacc(pred_a[idx], y[idx]) - _bacc(pred_b[idx], y[idx]))
+    lo, hi = np.quantile(vals, [(1 - level) / 2, (1 + level) / 2])
+    return [float(lo), float(hi)]
 
 
 @dataclass(frozen=True)
@@ -341,15 +380,26 @@ class LinearFGRevC:
     bacc_by_modality: dict[str, float]
     cv_bacc_by_modality: dict[str, float]
     fg_control: float
+    fg_control_ci90: list[float]
     bacc_control: float
     recalls_all: list[float]
     recalls_control: list[float]
     converged: bool
     n_train_rows: int
     n_heldout_rows: int
+    bit_bacc: dict[str, dict[str, float]] | None = None
 
 
-def linear_probe_fg_revc(loop: Any, world: SegmentSplitWorld) -> LinearFGRevC:
+def linear_probe_fg_revc(
+    loop: Any, world: SegmentSplitWorld, *, bits: bool = False
+) -> LinearFGRevC:
+    """Rev. C linear-probe outcome (module docstring); ``bits`` adds per-bit readability.
+
+    ``bit_bacc[m]`` = held-out balanced accuracy of bit a (y // 2) and bit
+    b (y % 2) from h_m, same classifier (trained-encoder isolation
+    diagnostic). ``fg_control_ci90``: 16-row block bootstrap of
+    bacc(control) - bacc(h_m*) on the held-out rows.
+    """
     from bouba_sens.fusion_probe import _pca, representations
 
     held_sample, _ = world.probe_sample_with_indices(world.n_probe, 0)
@@ -361,21 +411,32 @@ def linear_probe_fg_revc(loop: Any, world: SegmentSplitWorld) -> LinearFGRevC:
     groups = world.segment_of[rows]
     folds = _purged_group_folds(rows, groups)
     a_tr, a_te = _pca(r_tr["all"], r_te["all"])
-    bacc_all, rec_all, conv = _fit_score(a_tr, y_tr, a_te, y_te)
+    p_all, conv = _fit_predict(a_tr, y_tr, a_te)
     cv: dict[str, float] = {}
     held: dict[str, float] = {}
+    preds: dict[str, np.ndarray] = {}
     for m in MODALITIES:
         scores = []
         for tr, te in folds:
-            scores.append(_fit_score(r_tr[m][tr], y_tr[tr], r_tr[m][te], y_tr[te])[0])
+            p, _ = _fit_predict(r_tr[m][tr], y_tr[tr], r_tr[m][te])
+            scores.append(_bacc(p, y_tr[te]))
         cv[m] = float(np.mean(scores))
-        b, _, c = _fit_score(r_tr[m], y_tr, r_te[m], y_te)
-        held[m] = b
+        preds[m], c = _fit_predict(r_tr[m], y_tr, r_te[m])
+        held[m] = _bacc(preds[m], y_te)
         conv = conv and c
     best = max(MODALITIES, key=lambda m: (cv[m], -MODALITIES.index(m)))
     c_tr = np.concatenate([r_tr[m] for m in MODALITIES], 1)
     c_te = np.concatenate([r_te[m] for m in MODALITIES], 1)
-    bacc_ctrl, rec_ctrl, c = _fit_score(c_tr, y_tr, c_te, y_te)
+    p_ctrl, c = _fit_predict(c_tr, y_tr, c_te)
+    bacc_all, bacc_ctrl = _bacc(p_all, y_te), _bacc(p_ctrl, y_te)
+    bit_bacc: dict[str, dict[str, float]] | None = None
+    if bits:
+        bit_bacc = {}
+        for m in MODALITIES:
+            bit_bacc[m] = {}
+            for name, ytr, yte in (("a", y_tr // 2, y_te // 2), ("b", y_tr % 2, y_te % 2)):
+                p, _ = _fit_predict(r_tr[m], ytr, r_te[m])
+                bit_bacc[m][name] = _bacc(p, yte)
     return LinearFGRevC(
         fg=bacc_all - held[best],
         bacc_all=bacc_all,
@@ -384,12 +445,14 @@ def linear_probe_fg_revc(loop: Any, world: SegmentSplitWorld) -> LinearFGRevC:
         bacc_by_modality=held,
         cv_bacc_by_modality=cv,
         fg_control=bacc_ctrl - held[best],
+        fg_control_ci90=block_bootstrap_ci(p_ctrl, preds[best], y_te),
         bacc_control=bacc_ctrl,
-        recalls_all=rec_all,
-        recalls_control=rec_ctrl,
+        recalls_all=_recalls(p_all, y_te),
+        recalls_control=_recalls(p_ctrl, y_te),
         converged=conv and c,
         n_train_rows=len(rows),
         n_heldout_rows=len(y_te),
+        bit_bacc=bit_bacc,
     )
 
 
@@ -445,7 +508,7 @@ def run_cell_revc(
     held, _ = world.probe_sample_with_indices(world.n_probe, 0)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        lin = linear_probe_fg_revc(loop, world)
+        lin = linear_probe_fg_revc(loop, world, bits=arm == "plain")
     return {
         "seed": seed,
         "onset": onset,
@@ -461,16 +524,27 @@ def run_cell_revc(
 # --- summary ---------------------------------------------------------------------------
 
 
+def plain_learning_gate(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str, Any]:
+    """Learning gate on the plain arm, applied at every onset (D.0, Codex r8)."""
+    from bouba_sens.learning_gate import learning_gate
+
+    per_onset: dict[int, dict[int, dict[str, Any]]] = {}
+    for c in cells:
+        if c["arm"] == "plain" and c["seed"] in seeds:
+            per_onset.setdefault(c["onset"], {})[c["seed"]] = c["task"]
+    for o, d in per_onset.items():
+        if sorted(d) != sorted(seeds):
+            raise ValueError(f"onset {o}: plain cells missing for some seeds")
+    return learning_gate(per_onset, need_over_single=True)
+
+
 def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str, Any]:
     """Gates 1-5 and the D matrix of the pilot grid (proposal D.2 (a))."""
-    from bouba_sens.learning_gate import learning_gate
     from bouba_sens.v09_driver import variance_components
 
     by = {(c["seed"], c["onset"], c["arm"]): c for c in cells}
     plain = [c for c in cells if c["arm"] == "plain"]
-    gate1 = learning_gate(
-        {s: [c["task"] for c in plain if c["seed"] == s] for s in seeds}, need_over_single=True
-    )
+    gate1 = plain_learning_gate(cells, seeds)
     per_mod = {
         m: float(np.mean([c["lin"]["bacc_by_modality"][m] for c in plain])) for m in MODALITIES
     }
@@ -502,8 +576,19 @@ def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str
         "gate4_label_break": bool(drops) and float(np.mean(drops)) >= BREAK_DROP,
         "gate5_headroom": plain_bacc >= PLAIN_BACC_MIN and zero_d < ZERO_D_MAX,
     }
+    bits = {
+        m: {
+            k: float(np.mean([c["lin"]["bit_bacc"][m][k] for c in plain if c["lin"]["bit_bacc"]]))
+            for k in ("a", "b")
+        }
+        for m in MODALITIES
+    }
     return {
         "learning_gate": gate1,
+        "plain_bit_bacc_mean": bits,
+        "plain_fg_control_ci90_lower_min": float(
+            min(c["lin"]["fg_control_ci90"][0] for c in plain)
+        ),
         "plain_bacc_by_modality_mean": per_mod,
         "plain_concat_over_best_single_mean": concat_over,
         "plain_fg_control_mean": fg_ctrl,

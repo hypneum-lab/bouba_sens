@@ -37,6 +37,13 @@ RNG_SEED = 20261023 + 909
 
 def main(src: Path, dst: Path) -> None:
     d = json.loads(src.read_text())
+    revc_fail = d.get("design") == "rev. C" and not d.get("all_gates_passed")
+    if "variance_components" not in d or d.get("stopped") or revc_fail:
+        why = d.get("stopped") or ("a prerequisite gate failed" if revc_fail else "no D matrix")
+        out0 = {"source": str(src), "N": None, "note": f"no N: {why}"}
+        dst.write_text(json.dumps(out0, indent=2) + "\n")
+        print(json.dumps(out0, indent=2))
+        return
     sd = d["variance_components"]["sigma_plan"]
     rng = np.random.default_rng(RNG_SEED)
     rows, chosen = [], None

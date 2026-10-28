@@ -129,24 +129,92 @@ def test_pilot_quantities_revc_gates_on_synthetic_blocks() -> None:
             blocks.append(blk)
     out = drv.pilot_quantities_revc(blocks)
     g = out["gates_primary"]
+    assert out["all_gates_passed"] is (all(g.values()))
     assert g["gate1_learning"] is True and g["gate2_nondegenerate"] is True
     assert g["gate4_drift_floor"] is True and g["gate5_y_nondegenerate"] is True
-    assert set(out["primary_encoder"]["drift_floor"]) == {"25", "175", "control_only_contrast"}
-    assert out["fileable_as_drafted"] is True and out["g_hat"] == 0.5
+    assert set(out["primary_encoder"]["drift_floor"]) == {
+        "25",
+        "175",
+        "control_only_contrast",
+        "missing_controls",
+    }
+    # random synthetic codes have no class structure: gate 3 fails, so no N
+    assert g["gate3_structure"] is False
+    assert out["fileable_as_drafted"] is False and out["g_hat"] == 0.5
     assert out["primary_encoder"]["sigma_hat_df"] == 54
     with pytest.raises(ValueError, match="pilot seeds"):
         drv.pilot_quantities_revc(blocks[:7])
 
 
-def test_learning_gate_rule() -> None:
-    good = {s: [{"full_bacc": 0.5, "best_query_bacc": 0.4}] for s in range(5)}
+def _m(full: float, best: float) -> dict[str, float]:
+    return {"full_bacc": full, "best_query_bacc": best}
+
+
+def test_learning_gate_rule_is_applied_at_every_setting() -> None:
+    good = {lk: {s: _m(0.5, 0.4) for s in range(5)} for lk in (25, 50)}
     assert learning_gate(good, need_over_single=True)["passed"] is True
-    one_low = {**good, 9: [{"full_bacc": 0.29, "best_query_bacc": 0.1}]}
-    assert learning_gate(one_low, need_over_single=False)["passed"] is False
-    no_gain = {s: [{"full_bacc": 0.5, "best_query_bacc": 0.48}] for s in range(5)}
+    one_low = {**good, 75: {**{s: _m(0.5, 0.4) for s in range(4)}, 9: _m(0.29, 0.1)}}
+    res = learning_gate(one_low, need_over_single=False)
+    assert res["passed"] is False and res["n_settings_failed"] == 1
+    no_gain = {25: {s: _m(0.5, 0.48) for s in range(5)}}
     assert learning_gate(no_gain, need_over_single=False)["passed"] is True
     assert learning_gate(no_gain, need_over_single=True)["passed"] is False
+    # Codex r8 counterexample: 0.25 at one setting, 0.75 at another must fail
+    split = {25: {s: _m(0.25, 0.1) for s in range(5)}, 50: {s: _m(0.75, 0.1) for s in range(5)}}
+    assert learning_gate(split, need_over_single=True)["passed"] is False
     assert balanced_accuracy(np.array([0, 0, 0, 0]), np.array([0, 1, 2, 3])) == 0.25
+
+
+def _pilot_blocks(rng: np.random.Generator, **kw) -> list[BlockCodes]:  # type: ignore[no-untyped-def]
+    blocks = []
+    for s in drv.PILOT_SEEDS_REVC:
+        for lk in LOCKS:
+            alt = lk in drv.REVC_FLOOR_LOCKS
+            blk = _block(s, lk, rng, ENCODER_DIMS, alt=alt, **kw)
+            blk.secondary["logits_k0"] = _block(s, lk, rng, LOGIT_DIMS, alt=alt, **kw)
+            blocks.append(blk)
+    return blocks
+
+
+def test_drift_floor_gate_needs_every_endpoint_control() -> None:
+    blocks = _pilot_blocks(np.random.default_rng(4))
+    assert drv.pilot_quantities_revc(blocks)["gates_primary"]["gate4_drift_floor"] is True
+    for b in blocks:
+        if b.lock == 175:
+            b.z_control_alt = None
+    out = drv.pilot_quantities_revc(blocks)
+    assert out["gates_primary"]["gate4_drift_floor"] is False
+    assert len(out["primary_encoder"]["drift_floor"]["missing_controls"]) == 10
+    assert out["fileable_as_drafted"] is False and out["note"]
+
+
+def test_failed_learning_gate_blocks_the_n_rule() -> None:
+    blocks = _pilot_blocks(np.random.default_rng(5))
+    for b in blocks:
+        b.control_metrics = _m(0.26, 0.2)
+    out = drv.pilot_quantities_revc(blocks)
+    assert out["gates_primary"]["gate1_learning"] is False
+    assert out["fileable_as_drafted"] is False
+    assert out["secondary_planning"]["fileable_as_drafted"] is False
+
+
+def test_undefined_y_gives_no_ratio() -> None:
+    rng = np.random.default_rng(6)
+    blk = _block(2211, 25, rng, ENCODER_DIMS, alt=True)
+    for k in list(blk.z_post)[:5]:
+        blk.z_post[k] = torch.zeros_like(blk.z_post[k])
+    res, _ = evaluate_block_revc(blk, ENCODER_DIMS)
+    assert res.y is None and res.n_valid == 10
+    fl = drift_floor(blk, res, ENCODER_DIMS)
+    assert fl["R"] is None and fl["F"] is not None
+
+
+def test_gate5_is_within_seed() -> None:
+    blocks = _pilot_blocks(np.random.default_rng(7))
+    out = drv.pilot_quantities_revc(blocks)
+    within = out["primary_encoder"]["within_seed_sd"]
+    assert len(within) == 10 and all(v > 0 for v in within.values())
+    assert out["primary_encoder"]["gate5_y_nondegenerate"] is True
 
 
 def test_heldout_task_metrics_do_not_touch_the_global_rng() -> None:
@@ -200,3 +268,33 @@ def test_revc_block_end_to_end_and_roundtrip(
     assert got.control_metrics == a.control_metrics
     with pytest.raises(RuntimeError, match="stratified"):
         drv.check_world_revc(StudyforrestRealWorld(seed=0, data_dir=tmp_path))
+
+
+def test_gate_stage_matches_the_capture_control(
+    real_world: StudyforrestRealWorld, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(drv, "STEPS_TRAIN", 2)
+    monkeypatch.setattr(drv, "LOCKS", (25,))
+    gate = drv.revc_gate_stage(real_world, [2211], steps=2, batch_size=4)
+    blk = drv.run_block(real_world, 2211, 25, design="revc", **_SMALL).block
+    assert gate["metrics"]["25"]["2211"] == blk.control_metrics
+    assert set(gate) >= {"passed", "per_setting", "rule"}
+
+
+def test_revc_capture_refuses_without_a_passed_gate(tmp_path: Path) -> None:
+    import argparse
+    import importlib.util
+    import json
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "run_v08_subspace.py"
+    spec = importlib.util.spec_from_file_location("run_v08", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    gate = tmp_path / "gate.json"
+    gate.write_text(json.dumps({"passed": False}))
+    for gf in (None, gate):
+        ns = argparse.Namespace(seeds=[2211], design="revc", gate_file=gf, osf_filed="",
+                                blocks_dir=tmp_path)  # fmt: skip
+        with pytest.raises(SystemExit, match="PASSED learning gate"):
+            mod.capture(ns)

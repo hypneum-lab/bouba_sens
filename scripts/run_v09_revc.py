@@ -7,11 +7,13 @@ label y = 2a + b and the frozen purged segment split
 (``bouba_sens.v09_revc``), straight-through emission and the v09-pilot seed
 namespace (code 9101), pilot seeds 3206-3210 only.
 
-Steps: the world description (label provenance, split counts), the
-manipulation check (section 3.3, 200 draws per seed), then every (seed,
-onset, arm) cell for arms decor / joint / plain / label_break, and the gate
-summary with the D matrix (``v09_revc.summarise``). The N rule is
-``scripts/pilots/derive_v09_pilot.py`` on the output.
+Stages (stop and report on failure, Codex r8): (1) the manipulation check
+(section 3.3, 200 draws per seed); (2) the plain arm at every (seed,
+onset) and the learning gate at every onset; (3) the decor, joint and
+label_break arms, the gate summary and the D matrix
+(``v09_revc.summarise``). A stopped run writes its JSON with ``stopped``
+set. The N rule is ``scripts/pilots/derive_v09_pilot.py`` on the output
+(no N without the D matrix).
 
 Usage:
 
@@ -37,6 +39,7 @@ from bouba_sens.v09_revc import (
     ONSETS,
     PILOT_SEEDS,
     SegmentSplitWorld,
+    plain_learning_gate,
     run_cell_revc,
     summarise,
 )
@@ -67,16 +70,29 @@ def main() -> None:
     }
     print(json.dumps(out["world_description"], indent=2), flush=True)
     t0 = time.monotonic()
+
+    def finish(stopped: str | None) -> None:
+        out["stopped"] = stopped
+        out["wall_s_total"] = time.monotonic() - t0
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(out, indent=2) + "\n")
+        print(f"disposition: {stopped or 'grid complete'}", flush=True)
+
+    # Stage 1: manipulation check (section 3.3); stop and report on failure.
     if not args.skip_check:
         gate, k_orig = run_manipulation_check(world, seeds, seed_namespace=ns)  # type: ignore[arg-type]
         out["manipulation_check"] = {**asdict(gate), "k_original_mean": k_orig}
         print(json.dumps(out["manipulation_check"], indent=2), flush=True)
+        if not gate.passed:
+            return finish("manipulation check failed: stop and report")
     out["check_wall_s"] = time.monotonic() - t0
     onsets = [int(x) for x in args.onsets.split(",")]
-    cells = []
-    for s in seeds:
-        for o in onsets:
-            for arm in ARMS:
+    cells: list[dict[str, object]] = []
+    out["cells"] = cells
+
+    def run(arm: str) -> None:
+        for s in seeds:
+            for o in onsets:
                 c = run_cell_revc(world, s, o, arm, seed_namespace=ns)
                 cells.append(c)
                 print(
@@ -86,13 +102,26 @@ def main() -> None:
                     f"ctrl={c['lin']['bacc_control']:.3f} wall={c['wall_s']:.1f}s",
                     flush=True,
                 )
-    out["wall_s_total"] = time.monotonic() - t0
-    out["cells"] = cells
+
+    # Stage 2: plain arm and the learning gate at every onset (D.0).
+    run("plain")
+    lg = plain_learning_gate(cells, seeds)  # type: ignore[arg-type]
+    out["learning_gate_stage"] = lg
+    print(json.dumps({k: v for k, v in lg.items() if k != "per_setting"}, indent=2), flush=True)
+    if not lg["passed"]:
+        return finish("learning gate failed: stop and report")
+    # Stage 3: the other arms, then the gates and D.
+    for arm in ARMS:
+        if arm != "plain":
+            run(arm)
     if onsets == list(ONSETS):
-        out.update(summarise(cells, seeds))
-        print(json.dumps({k: out[k] for k in ("gates", "learning_gate")}, indent=2), flush=True)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(out, indent=2) + "\n")
+        out.update(summarise(cells, seeds))  # type: ignore[arg-type]
+        print(json.dumps({k: out[k] for k in ("gates",)}, indent=2), flush=True)
+        mc = out.get("manipulation_check")
+        out["all_gates_passed"] = bool(
+            all(out["gates"].values()) and (mc is None or mc["passed"])  # type: ignore[union-attr, index]
+        )
+    finish(None)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,10 @@ secondary). Every check is made on the **unnormalised** blocks:
   modality dominates the CKA.
 
 Drift floor (gate 4): F = 1 - CKA(N(Z_control), N(Z_control')) for the
-second no-lesion control; R = median_c d(c) / F; F < ``FLOOR_MIN`` (1e-9)
-makes R undefined (reported, not substituted).
+second no-lesion control; R = median_c d(c) / F over the valid cells. R is
+undefined if either control is invalid, if Y(s, l) is undefined (< 12
+valid cells) or if F < ``FLOOR_MIN`` (1e-9); the pilot summary counts an
+undefined R as failing (R = 0), never drops it.
 """
 
 from __future__ import annotations
@@ -123,6 +125,8 @@ def drift_floor(
         raise ValueError("block has no drift-floor control")
     if block_failures(block.z_control, dims) or block_failures(block.z_control_alt, dims):
         return {"F": None, "R": None}
+    if res.y is None:  # Y undefined (< 12 valid cells): no ratio (Codex r8)
+        return {"F": distance(block.z_control_alt, block.z_control, dims), "R": None}
     f = distance(block.z_control_alt, block.z_control, dims)
     vals = list(res.delta_s.values())
     if f < FLOOR_MIN or not vals:

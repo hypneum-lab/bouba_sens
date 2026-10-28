@@ -44,6 +44,7 @@ from bouba_sens.v08_driver import (
     pilot_quantities,
     pilot_quantities_revb,
     pilot_quantities_revc,
+    revc_gate_stage,
     run_block,
     save_block,
 )
@@ -53,8 +54,39 @@ def _seeds(text: str) -> list[int]:
     return [int(t) for t in text.replace(" ", "").split(",") if t]
 
 
+def _revc_world(seed: int):  # type: ignore[no-untyped-def]
+    import os
+
+    from bouba_sens.world.studyforrest import StudyforrestRealWorld
+
+    world = StudyforrestRealWorld(
+        seed=seed, data_dir=Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"]), stratified_probe=True
+    )
+    check_world_revc(world)
+    return world
+
+
+def gate(args: argparse.Namespace) -> None:
+    """Rev. C learning gate before any capture (D.0: stop and report on failure)."""
+    if sorted(args.seeds) != sorted(PILOT_SEEDS_REVC):
+        raise SystemExit(f"the rev. C gate stage runs on the pilot seeds {PILOT_SEEDS_REVC}")
+    if args.out.exists():
+        raise SystemExit(f"{args.out} exists; refusing to overwrite")
+    torch.use_deterministic_algorithms(True)
+    out = revc_gate_stage(_revc_world(args.seeds[0]), args.seeds)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(out, indent=2) + "\n")
+    print(json.dumps({k: v for k, v in out.items() if k != "metrics"}, indent=2))
+    if not out["passed"]:
+        raise SystemExit("learning gate FAILED: stop and report (no capture)")
+
+
 def capture(args: argparse.Namespace) -> None:
     seeds = args.seeds
+    if args.design == "revc" and (
+        args.gate_file is None or not json.loads(args.gate_file.read_text())["passed"]
+    ):
+        raise SystemExit("rev. C capture needs --gate-file of a PASSED learning gate")
     pilot_pool = {"revc": PILOT_SEEDS_REVC, "revb": PILOT_SEEDS_REVB}.get(args.design, PILOT_SEEDS)
     if not (set(seeds) <= set(pilot_pool) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.8 pilot seeds or all confirmatory-pool seeds")
@@ -62,16 +94,8 @@ def capture(args: argparse.Namespace) -> None:
         raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
     torch.use_deterministic_algorithms(True)
     if args.design == "revc":
-        import os
-
-        from bouba_sens.world.studyforrest import StudyforrestRealWorld
-
-        world = StudyforrestRealWorld(
-            seed=seeds[0],
-            data_dir=Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"]),
-            stratified_probe=True,
-        )
-        world_class = check_world_revc(world)
+        world = _revc_world(seeds[0])
+        world_class = type(world).__name__
     else:
         world = _build_world("studyforrest", seeds[0])
         world_class = check_world(world)
@@ -116,6 +140,9 @@ def pilot(args: argparse.Namespace) -> None:
         walls[b["seed"]] = walls.get(b["seed"], 0.0) + b["wall_s"]
     out["world_class"] = log["world_class"]
     out["wall_s_per_seed"] = walls
+    if args.design == "revc":
+        sec = args.out.with_name(args.out.stem + "_secondary_planning.json")
+        sec.write_text(json.dumps(out["secondary_planning"], indent=2) + "\n")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k not in ("blocks", "prs")}, indent=2))
@@ -129,12 +156,16 @@ def main() -> None:
     c.add_argument("--blocks-dir", type=Path, required=True)
     c.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
     c.add_argument("--design", choices=("revc", "revb", "legacy"), default="revb")
+    c.add_argument("--gate-file", type=Path, default=None, help="rev. C: passed gate JSON")
+    g = sub.add_parser("gate")
+    g.add_argument("--seeds", type=_seeds, required=True)
+    g.add_argument("--out", type=Path, required=True)
     p = sub.add_parser("pilot")
     p.add_argument("--blocks-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--design", choices=("revc", "revb", "legacy"), default="revb")
     args = ap.parse_args()
-    {"capture": capture, "pilot": pilot}[args.cmd](args)
+    {"capture": capture, "pilot": pilot, "gate": gate}[args.cmd](args)
 
 
 if __name__ == "__main__":

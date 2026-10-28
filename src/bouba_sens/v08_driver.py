@@ -496,24 +496,30 @@ def _revc_readout(
             code_structure(b.z_pre, b.probe_labels)["between_class_share"]
         )
     share_med = {s: float(statistics.median(v)) for s, v in share.items()}
-    floor: dict[int, dict[int, dict[str, Any]]] = {}
-    for b, r in zip(ordered, results, strict=True):
-        if b.z_control_alt is not None:
-            floor.setdefault(b.lock, {})[b.seed] = drift_floor(b, r, dims)
-    floor_summary: dict[str, Any] = {}
-    floor_ok = True
+    floor: dict[int, dict[int, dict[str, Any]]] = {lk: {} for lk in REVC_FLOOR_LOCKS}
+    by_key = {(b.seed, b.lock): (b, r) for b, r in zip(ordered, results, strict=True)}
+    missing: list[str] = []
+    for lk in REVC_FLOOR_LOCKS:
+        for s in seeds:
+            b, r = by_key[(s, lk)]
+            if b.z_control_alt is None:
+                missing.append(f"{s}/{lk}")
+                continue
+            floor[lk][s] = drift_floor(b, r, dims)
+    floor_summary: dict[str, Any] = {"missing_controls": missing}
+    floor_ok = not missing
     for lock, per in sorted(floor.items()):
-        rs = [v["R"] for v in per.values() if v["R"] is not None]
+        # an undefined R counts as failing (R = 0), never dropped (Codex r8)
+        rs = [0.0 if v["R"] is None else float(v["R"]) for v in per.values()]
         med_r = float(statistics.median(rs)) if rs else None
         floor_summary[str(lock)] = {
             "per_seed": {str(s): v for s, v in per.items()},
-            "median_R": med_r,
+            "median_R_undefined_as_0": med_r,
             "n_undefined_R": sum(v["R"] is None for v in per.values()),
         }
         floor_ok = floor_ok and med_r is not None and med_r >= REVC_FLOOR_RATIO
-    locks = sorted(floor)
-    if len(locks) == 2:
-        lo, hi = locks
+    if not missing:
+        lo, hi = REVC_FLOOR_LOCKS
         common = [s for s in seeds if floor[lo].get(s, {}).get("F") is not None
                   and floor[hi].get(s, {}).get("F") is not None]  # fmt: skip
         contrast = [floor[hi][s]["F"] - floor[lo][s]["F"] for s in common]
@@ -544,13 +550,16 @@ def _revc_readout(
     if n_c < MIN_COMPLETE_PILOT_BLOCKS:
         out.update({"sigma_hat": None, "gate5_y_nondegenerate": False})
         return out
+    # gate 5: within-seed SD of Y over the locks > 0 for every complete seed
+    within = {s: float(np.std(agg.y[i], ddof=1)) for i, s in enumerate(agg.seeds_complete)}
     sd, df = anova_residual_sd(agg.y)
     out.update(
         {
+            "within_seed_sd": within,
             "sigma_hat_point": sd,
             "sigma_hat_df": df,
             "sigma_hat_ucl80": sd_ucl_df(sd, df),
-            "gate5_y_nondegenerate": sd > 0,
+            "gate5_y_nondegenerate": all(v > 0 for v in within.values()),
         }
     )
     return out
@@ -573,15 +582,19 @@ def pilot_quantities_revc(
         raise ValueError("pilot blocks do not match the pilot seeds")
     if len(blocks) != len(seeds) * len(LOCKS):
         raise ValueError(f"expected {len(seeds) * len(LOCKS)} blocks; got {len(blocks)}")
-    per_seed: dict[int, list[dict[str, Any]]] = {}
+    per_lock: dict[int, dict[int, dict[str, Any]]] = {}
     for b in blocks:
-        per_seed.setdefault(b.seed, []).append(b.control_metrics)
-    gate1 = learning_gate(per_seed, need_over_single=False)
+        per_lock.setdefault(b.lock, {})[b.seed] = b.control_metrics
+    gate1 = learning_gate(per_lock, need_over_single=False)
     primary = _revc_readout(blocks, seeds, ENCODER_DIMS)
     secondary = _revc_readout([b.secondary["logits_k0"] for b in blocks], seeds, LOGIT_DIMS)
     gates = {
         "gate1_learning": gate1["passed"],
         **{k: v for k, v in primary.items() if k.startswith("gate")},
+    }
+    gates_sec = {
+        "gate1_learning": gate1["passed"],
+        **{k: v for k, v in secondary.items() if k.startswith("gate")},
     }
     out: dict[str, Any] = {
         "design": "rev. C",
@@ -591,11 +604,48 @@ def pilot_quantities_revc(
         "primary_encoder": primary,
         "secondary_logits": secondary,
         "gates_primary": gates,
+        "gates_secondary": gates_sec,
+        "all_gates_passed": all(gates.values()),
         "guard_sd_units": REVB_GUARD_SD,
         "g_hat": REVB_GUARD_SD,
         "q_hat_cp80": primary["q_hat_cp80"],
         "exclusion_model": primary["exclusion_model"],
         "sigma_hat_ucl80": primary.get("sigma_hat_ucl80"),
-        "fileable_as_drafted": bool(primary.get("gate5_y_nondegenerate")),
+        # the N rule runs only if every prerequisite gate passes (Codex r8)
+        "fileable_as_drafted": all(gates.values()),
+        "note": None if all(gates.values()) else "a prerequisite gate failed: no N",
+        # descriptive N rule of the secondary readout (same guard and rule)
+        "secondary_planning": {
+            "g_hat": REVB_GUARD_SD,
+            "q_hat_cp80": secondary["q_hat_cp80"],
+            "exclusion_model": secondary["exclusion_model"],
+            "sigma_hat_ucl80": secondary.get("sigma_hat_ucl80"),
+            "fileable_as_drafted": all(gates_sec.values()),
+            "note": None if all(gates_sec.values()) else "a prerequisite gate failed: no N",
+        },
     }
     return out
+
+
+def revc_gate_stage(world: Any, seeds: Sequence[int], **capture_kw: Any) -> dict[str, Any]:
+    """Learning gate before any capture (D.0 "stop and report", Codex r8).
+
+    For every (seed, lock): the Phase-1 checkpoint and the no-lesion
+    control arm exactly as ``run_block(design="revc")`` runs them (no
+    lesion cell, no drift-floor control), and the held-out task metrics
+    of its end state; then ``learning_gate`` per lock.
+    """
+    from bouba_sens.learning_gate import learning_gate
+
+    per_lock: dict[int, dict[int, dict[str, Any]]] = {}
+    t0 = time.monotonic()
+    for s in seeds:
+        for lk in LOCKS:
+            run = _run_block_revc(
+                world, s, lk, **{**capture_kw, "modalities": (), "floor_seed": None}
+            )
+            per_lock.setdefault(lk, {})[s] = run.block.control_metrics
+    gate = learning_gate(per_lock, need_over_single=False)
+    gate["wall_s"] = time.monotonic() - t0
+    gate["metrics"] = {str(lk): {str(s): m for s, m in d.items()} for lk, d in per_lock.items()}
+    return gate
