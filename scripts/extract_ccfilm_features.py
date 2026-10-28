@@ -18,6 +18,13 @@ ffmpeg at a fixed fps and aligned to the audio frame grid on a common N.
 Usage:
     uv run python scripts/extract_ccfilm_features.py
     uv run python scripts/extract_ccfilm_features.py --keep-tmp
+    uv run python scripts/extract_ccfilm_features.py --mp4 FILM --fps 10 \
+        --max-seconds 600 --out data/ccfilm_real_10fps
+
+The film is verified against ``FILM_SHA256`` before every extraction and
+refused on mismatch (PI decision 2026-10-28, 19:14); ``--fps`` and
+``--max-seconds`` are the only parameters added for the v0.9 rev. C
+re-extraction (defaults reproduce the original 2-fps, 300-s cache).
 """
 
 from __future__ import annotations
@@ -40,7 +47,15 @@ FFMPEG = "/opt/homebrew/bin/ffmpeg"
 FILM_URL = "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4"
 
 SR = 16000
-FPS = 2.0  # frame grid: 2 frames/sec == 0.5s per row == audio hop window
+FPS = 2.0  # default frame grid: 2 frames/sec == 0.5s per row == audio hop window
+# SHA-256 of the film file the extraction accepts. Recorded at download on
+# 2026-10-28 (18:22 UTC, macM1): the plain .mp4 URL above now returns 404,
+# so the film comes from FILM_ZIP_URL (zip SHA-256 FILM_ZIP_SHA256, 64,657,225
+# bytes), unpacked with the system unzip (.mp4: 64,657,027 bytes).
+FILM_ZIP_URL = FILM_URL + ".zip"
+FILM_ZIP_SHA256 = "109e3ede8790bd633f374ca311d9cc61dce8d7f98f5b0797ca98199c9fbceedf"
+FILM_SHA256 = "f78f39603e6774907f2faafabf26a667f4a6fc31769ec304a8a8f7c62d280508"
+FILM_LICENCE = "CC-BY 3.0, (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org"
 N_MELS = 128
 VISION_SHAPE = (16, 16)
 TACTILE_DIM = 32
@@ -114,6 +129,19 @@ def frame_to_grid(img: Image.Image) -> np.ndarray:
     return grid.astype(np.float32)
 
 
+def verify_film(path: Path) -> str:
+    """SHA-256 of the film; refuse (SystemExit) unless it equals ``FILM_SHA256``."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    digest = h.hexdigest()
+    if not FILM_SHA256 or digest != FILM_SHA256:
+        raise SystemExit(f"film SHA-256 {digest} != recorded {FILM_SHA256 or '(none)'}; refusing")
+    print(f"film SHA-256 verified: {digest}", flush=True)
+    return digest
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", type=Path, default=Path("data/ccfilm_real"))
@@ -127,7 +155,9 @@ def main() -> None:
     ap.add_argument(
         "--mp4", type=Path, default=None, help="reuse a pre-downloaded film instead of fetching"
     )
+    ap.add_argument("--fps", type=float, default=FPS, help="frame grid (frames per second)")
     args = ap.parse_args()
+    fps = args.fps
 
     tmp = Path(tempfile.mkdtemp(prefix="ccfilm_"))
     print(f"tmp = {tmp}", flush=True)
@@ -143,6 +173,7 @@ def main() -> None:
         with urllib.request.urlopen(req) as resp, mp4.open("wb") as fh:
             shutil.copyfileobj(resp, fh)
         print(f"  -> {mp4.stat().st_size / 1e6:.1f} MB", flush=True)
+    film_sha = verify_film(mp4)
 
     # --- audio: mp4 -> mono 16k wav ---
     wav_path = tmp / "audio.wav"
@@ -180,14 +211,14 @@ def main() -> None:
             "-t",
             str(args.max_seconds),
             "-vf",
-            f"fps={FPS}",
+            f"fps={fps}",
             str(frame_dir / "%05d.png"),
         ],
         check=True,
         capture_output=True,
     )
     frame_files = sorted(frame_dir.glob("*.png"))
-    print(f"frames: {len(frame_files)} @ {FPS} fps", flush=True)
+    print(f"frames: {len(frame_files)} @ {fps} fps", flush=True)
     if not frame_files:
         raise SystemExit("ffmpeg produced no frames")
 
@@ -250,7 +281,12 @@ def main() -> None:
         "",
         f"- Source film: {FILM_URL}",
         "- License: CC-BY 3.0 (Big Buck Bunny, Blender Foundation 2008)",
-        f"- N frames: {n_frames} @ {FPS} fps  ({n_frames / FPS:.0f}s of film)",
+        f"- N frames: {n_frames} @ {fps} fps  ({n_frames / fps:.0f}s of film)",
+        f"- Film file SHA-256: `{film_sha}` (verified before extraction)",
+        f"- Film obtained from: {FILM_ZIP_URL} (zip SHA-256 `{FILM_ZIP_SHA256}`, "
+        "64,657,225 bytes; .mp4 64,657,027 bytes; downloaded 2026-10-28 18:22 UTC "
+        "on macM1, unpacked with the system unzip)",
+        f"- Film licence: {FILM_LICENCE}",
         f"- Audio: mono {SR} Hz, mel-{N_MELS} (scipy STFT n_fft=1024 hop=256, "
         "HTK mel bank from scratch)",
         f"- Label classes populated: {n_classes}",

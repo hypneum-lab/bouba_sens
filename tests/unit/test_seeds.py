@@ -68,6 +68,8 @@ def _namespaced(name: str) -> set[int]:
         out |= derived_seeds(c.code, [x + 777 for x in _cells(c.seeds)], {"query": 1})
         return out
     out = derived_seeds(c.code, c.seeds, RANGES[prefix])
+    if prefix == "v08":  # rev. C drift-floor control: Phase-2 seed s + 500 000
+        out |= derived_seeds(c.code, [s + 500_000 for s in c.seeds], _PHASE2)
     if prefix == "v09":  # manipulation-check draws b = 1 ... 200
         out |= {
             ns_seed(c.code, s, STREAMS["check_draw"], b) for s in c.seeds for b in range(1, 201)
@@ -86,6 +88,8 @@ def _legacy_ints(name: str) -> set[int]:
         # main's ADR-0023 v2 linear-probe files: held-out seed + 777 and
         # training pool seed + 778, for train (base s) and lesion (cell)
         out |= {x + d for x in (*c.seeds, *cells) for d in (777, 778)}
+    if prefix == "v08":  # rev. C drift-floor control re-seeds the global RNG
+        out |= {s + 500_000 for s in c.seeds}
     if prefix in ("v07-b2", "v08"):
         out |= {
             gumbel_draw_seed(s, p, r) for s in c.seeds for p in (0, 1) for r in range(GUMBEL_DRAWS)

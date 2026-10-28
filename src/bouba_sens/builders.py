@@ -23,7 +23,7 @@ from bouba_sens.encoders import (
 from bouba_sens.head import IntegrationHead
 from bouba_sens.loop import AdaptationLoop
 from bouba_sens.nerve import CrossModalNerve
-from bouba_sens.sensory import Modality, SensoryWML
+from bouba_sens.sensory import DEFAULT_EMISSION, Modality, SensoryWML
 from bouba_sens.world.base import WorldSimulator
 
 N_CLASSES = 4
@@ -36,15 +36,25 @@ def build_loop(
     *,
     lock_after: int | None,
     seed_namespace: int | None = None,
+    emission: str = DEFAULT_EMISSION,
 ) -> AdaptationLoop:
-    """Fresh loop for training seed ``seed``; ``lock_after=None`` = never locked."""
+    """Fresh loop for training seed ``seed``; ``lock_after=None`` = never locked.
+
+    ``emission`` is the SensoryWML code emission (ADR-0024 follow-up):
+    the rev. C designs of v0.8 / v0.9 use "straight-through" (PI decision
+    2026-10-28, P1); the default keeps the historical argmax bridge.
+    """
     mux = GammaThetaMultiplexer(seed=seed, constellation_lock_after=lock_after)
     sensories: dict[Modality, SensoryWML] = {
-        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1),
-        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2),
-        "tactile": SensoryWML(2, "tactile", TactileEncoder(), mux, seed=seed + 3),
-        "gravity": SensoryWML(3, "gravity", GravityEncoder(), mux, seed=seed + 4),
-        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5),
+        "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1, emission=emission),
+        "vision": SensoryWML(1, "vision", VisionEncoder(), mux, seed=seed + 2, emission=emission),
+        "tactile": SensoryWML(
+            2, "tactile", TactileEncoder(), mux, seed=seed + 3, emission=emission
+        ),
+        "gravity": SensoryWML(
+            3, "gravity", GravityEncoder(), mux, seed=seed + 4, emission=emission
+        ),
+        "force": SensoryWML(4, "force", ForceEncoder(), mux, seed=seed + 5, emission=emission),
     }
     nerve = CrossModalNerve(mux, seed=seed, transducer_gating=TRANSDUCER_GATING)
     head = IntegrationHead(n_classes=N_CLASSES)

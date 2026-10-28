@@ -51,6 +51,18 @@ PILOT_SEEDS_REVB: tuple[int, ...] = tuple(range(2201, 2211))
 REVB_PRIMARY_DEMOD = "softmax"
 REVB_SECONDARY: tuple[tuple[str, int], ...] = (("soft", 8),)
 REVB_GUARD_SD = 0.5
+# Rev. C (PI decision 2026-10-28, about 19:05): straight-through emission
+# with the learning gate; encoder representations primary, sender logits
+# secondary; class-balanced probe; drift-floor control at the end locks.
+PILOT_SEEDS_REVC: tuple[int, ...] = tuple(range(2211, 2221))
+REVC_EMISSION = "straight-through"
+REVC_PRIMARY = "encoder"
+REVC_SECONDARY: tuple[tuple[str, int], ...] = (("logits", 0),)
+REVC_FLOOR_LOCKS: tuple[int, ...] = (25, 175)
+REVC_FLOOR_OFFSET = 500_000  # control' Phase-2 seed = s + 500 000 (namespaced)
+REVC_FLOOR_RATIO = 2.0
+REVC_SHARE_MIN = 0.05
+REVC_MIN_SEEDS = 8
 CONFIRMATORY_POOL: tuple[int, ...] = tuple(range(2001, 2045))
 EXPECTED_WORLD = "StudyforrestRealWorld"
 MIN_COMPLETE_PILOT_BLOCKS = 3
@@ -79,11 +91,18 @@ def require_determinism() -> None:
 
 
 def train_checkpoint(
-    world: WorldSimulator, seed: int, lock: int, *, seed_namespace: int | None = None
+    world: WorldSimulator,
+    seed: int,
+    lock: int,
+    *,
+    seed_namespace: int | None = None,
+    emission: str = "argmax-bridge",
 ) -> Checkpoint:
     """Phase-1 checkpoint of block (seed, lock): 200 steps, batch 16, seed s."""
     torch.manual_seed(seed)
-    loop = build_loop(world, seed, lock_after=lock, seed_namespace=seed_namespace)
+    loop = build_loop(
+        world, seed, lock_after=lock, seed_namespace=seed_namespace, emission=emission
+    )
     return loop.pretrain(STEPS_TRAIN, batch_size=TRAIN_BATCH_SIZE, seed=seed)
 
 
@@ -127,6 +146,8 @@ def run_block(
             "extra_readouts": REVB_SECONDARY,
             **capture_kw,
         }
+    elif design == "revc":
+        return _run_block_revc(world, seed, lock, seed_namespace=seed_namespace, **capture_kw)
     elif design == "legacy":
         ns = seed_namespace
     else:
@@ -141,6 +162,61 @@ def run_block(
     return BlockRun(block, time.monotonic() - t0)
 
 
+def revc_probe_rows(world: Any, seed: int, seed_namespace: int) -> torch.Tensor:
+    """Class-balanced probe rows of every block of seed s (rev. C, gate 3).
+
+    ``probe.class_balanced_probe_indices`` on the full label sequence: 8
+    windows of 16 frames per class, each inside one label run, drawn with
+    the generator seed ``ns_seed(code, s, phase2_probe, 0)``.
+    """
+    from bouba_sens.probe import class_balanced_probe_indices
+    from bouba_sens.seeds import STREAMS, ns_seed
+
+    n = int(world.n_train + world.n_probe)
+    labels = world.gather(torch.arange(n)).label
+    return class_balanced_probe_indices(
+        labels, seed=ns_seed(seed_namespace, seed, STREAMS["phase2_probe"], 0)
+    )
+
+
+def check_world_revc(world: object) -> str:
+    """Rev. C needs the real bridge with the stratified held-out rows (learning gate)."""
+    name = check_world(world)
+    if not getattr(world, "stratified", False):
+        raise RuntimeError("rev. C needs StudyforrestRealWorld(stratified_probe=True)")
+    return name
+
+
+def _run_block_revc(
+    world: Any, seed: int, lock: int, *, seed_namespace: int | None = None, **capture_kw: Any
+) -> BlockRun:
+    """Rev. C block: straight-through networks, encoder / logit readouts, drift floor."""
+    from bouba_sens.learning_gate import heldout_task_metrics
+
+    require_determinism()
+    check_world_revc(world)
+    ns = revb_namespace(seed) if seed_namespace is None else seed_namespace
+    t0 = time.monotonic()
+    ckpt = train_checkpoint(world, seed, lock, seed_namespace=ns, emission=REVC_EMISSION)
+
+    def make_loop() -> AdaptationLoop:
+        return build_loop(world, seed, lock_after=lock, seed_namespace=ns, emission=REVC_EMISSION)
+
+    probe = world.gather(revc_probe_rows(world, seed, ns))
+    heldout, _ = world.probe_sample_with_indices(world.n_probe, 0)
+    kw = {
+        "probe_demod": REVC_PRIMARY,
+        "probe_gumbel_draws": 0,
+        "extra_readouts": REVC_SECONDARY,
+        "probe_sample": probe,
+        "floor_seed": seed + REVC_FLOOR_OFFSET if lock in REVC_FLOOR_LOCKS else None,
+        "control_metric": lambda loop: heldout_task_metrics(loop, heldout),
+        **capture_kw,
+    }
+    block = capture_block(make_loop, ckpt, seed=seed, lock=lock, **kw)
+    return BlockRun(block, time.monotonic() - t0)
+
+
 def _block_dict(block: BlockCodes) -> dict[str, Any]:
     return {
         "seed": block.seed,
@@ -151,6 +227,8 @@ def _block_dict(block: BlockCodes) -> dict[str, Any]:
         "z_control": block.z_control,
         "z_post": {f"{m}|{f}": z for (m, f), z in block.z_post.items()},
         "secondary": {name: _block_dict(b) for name, b in block.secondary.items()},
+        "z_control_alt": block.z_control_alt,
+        "control_metrics": block.control_metrics,
     }
 
 
@@ -173,6 +251,8 @@ def _from_dict(d: dict[str, Any]) -> BlockCodes:
         z_control=d["z_control"],
         z_post=z_post,
         secondary={n: _from_dict(b) for n, b in d.get("secondary", {}).items()},
+        z_control_alt=d.get("z_control_alt"),
+        control_metrics=dict(d.get("control_metrics") or {}),
     )
 
 
@@ -381,4 +461,141 @@ def pilot_quantities_revb(
             "fileable_as_drafted": sd > 0,
         }
     )
+    return out
+
+
+def _bootstrap_ci(x: Sequence[float], *, level: float = 0.90, n: int = 10_000) -> list[float]:
+    """Percentile CI of the mean of ``x`` over seeds (generator ``20261028 + 808``)."""
+    a = np.asarray(x, dtype=np.float64)
+    rng = np.random.default_rng(20261028 + 808)
+    means = a[rng.integers(0, len(a), size=(n, len(a)))].mean(1)
+    lo, hi = np.quantile(means, [(1 - level) / 2, (1 + level) / 2])
+    return [float(lo), float(hi)]
+
+
+def _revc_readout(
+    blocks: Sequence[BlockCodes], seeds: Sequence[int], dims: Sequence[int]
+) -> dict[str, Any]:
+    """Gates 2-5 and the planning inputs of one readout (rev. C)."""
+    from bouba_sens.metrics.revc_shift import block_failures, drift_floor, evaluate_block_revc
+    from bouba_sens.readout import code_structure
+
+    ordered = sorted(blocks, key=lambda b: (b.seed, b.lock))
+    evals = [evaluate_block_revc(b, dims) for b in ordered]
+    results = [r for r, _ in evals]
+    agg = aggregate(results, n_confirmatory=len(seeds), expected_seeds=seeds)
+    n_c = len(agg.seeds_complete)
+    undefined = {s: int(np.isnan(agg.y_all[i]).sum()) for i, s in enumerate(agg.seeds_all)}
+    fails = {m: sum(f[m] for _, f in evals) for m in evals[0][1]}
+    share: dict[int, list[float]] = {}
+    pre_bad = 0
+    for b in ordered:
+        if block_failures(b.z_pre, dims):
+            pre_bad += 1
+        share.setdefault(b.seed, []).append(
+            code_structure(b.z_pre, b.probe_labels)["between_class_share"]
+        )
+    share_med = {s: float(statistics.median(v)) for s, v in share.items()}
+    floor: dict[int, dict[int, dict[str, Any]]] = {}
+    for b, r in zip(ordered, results, strict=True):
+        if b.z_control_alt is not None:
+            floor.setdefault(b.lock, {})[b.seed] = drift_floor(b, r, dims)
+    floor_summary: dict[str, Any] = {}
+    floor_ok = True
+    for lock, per in sorted(floor.items()):
+        rs = [v["R"] for v in per.values() if v["R"] is not None]
+        med_r = float(statistics.median(rs)) if rs else None
+        floor_summary[str(lock)] = {
+            "per_seed": {str(s): v for s, v in per.items()},
+            "median_R": med_r,
+            "n_undefined_R": sum(v["R"] is None for v in per.values()),
+        }
+        floor_ok = floor_ok and med_r is not None and med_r >= REVC_FLOOR_RATIO
+    locks = sorted(floor)
+    if len(locks) == 2:
+        lo, hi = locks
+        common = [s for s in seeds if floor[lo].get(s, {}).get("F") is not None
+                  and floor[hi].get(s, {}).get("F") is not None]  # fmt: skip
+        contrast = [floor[hi][s]["F"] - floor[lo][s]["F"] for s in common]
+        floor_summary["control_only_contrast"] = {
+            "mean": float(np.mean(contrast)) if contrast else None,
+            "ci90_seed_bootstrap": _bootstrap_ci(contrast) if len(contrast) > 1 else None,
+            "n_seeds": len(contrast),
+        }
+    out: dict[str, Any] = {
+        "n_complete": n_c,
+        "seeds_complete": agg.seeds_complete,
+        "undefined_levels_per_seed": undefined,
+        "block_failures_by_modality": fails,
+        "z_pre_invalid_blocks": pre_bad,
+        "per_level": [vars(c) for c in agg.per_level],
+        "y_all": agg.y_all.tolist(),
+        "between_class_share_pre_median_per_seed": share_med,
+        "drift_floor": floor_summary,
+        "gate2_nondegenerate": n_c >= REVC_MIN_SEEDS,
+        "gate3_structure": sum(v >= REVC_SHARE_MIN for v in share_med.values()) >= REVC_MIN_SEEDS,
+        "gate4_drift_floor": floor_ok,
+        "q_hat_cp80": clopper_pearson_upper(len(seeds) - n_c, len(seeds)),
+        "exclusion_model": "level" if all(v <= 1 for v in undefined.values()) else "seed",
+        "blocks": [
+            {"seed": r.seed, "lock": r.lock, "n_valid": r.n_valid, "y": r.y} for r in results
+        ],
+    }
+    if n_c < MIN_COMPLETE_PILOT_BLOCKS:
+        out.update({"sigma_hat": None, "gate5_y_nondegenerate": False})
+        return out
+    sd, df = anova_residual_sd(agg.y)
+    out.update(
+        {
+            "sigma_hat_point": sd,
+            "sigma_hat_df": df,
+            "sigma_hat_ucl80": sd_ucl_df(sd, df),
+            "gate5_y_nondegenerate": sd > 0,
+        }
+    )
+    return out
+
+
+def pilot_quantities_revc(
+    blocks: Sequence[BlockCodes], *, seeds: Sequence[int] = PILOT_SEEDS_REVC
+) -> dict[str, Any]:
+    """Rev. C pilot summary: learning gate, gates 2-5 per readout, planning inputs.
+
+    The N rule (gate 5, second half) is applied to the primary readout by
+    ``scripts/pilots/derive_v08_pilot.py`` (keys ``g_hat``, ``q_hat_cp80``,
+    ``exclusion_model``, ``fileable_as_drafted`` at top level).
+    """
+    from bouba_sens.learning_gate import learning_gate
+    from bouba_sens.metrics.revc_shift import ENCODER_DIMS, LOGIT_DIMS
+
+    seeds = list(seeds)
+    if sorted({b.seed for b in blocks}) != sorted(seeds):
+        raise ValueError("pilot blocks do not match the pilot seeds")
+    if len(blocks) != len(seeds) * len(LOCKS):
+        raise ValueError(f"expected {len(seeds) * len(LOCKS)} blocks; got {len(blocks)}")
+    per_seed: dict[int, list[dict[str, Any]]] = {}
+    for b in blocks:
+        per_seed.setdefault(b.seed, []).append(b.control_metrics)
+    gate1 = learning_gate(per_seed, need_over_single=False)
+    primary = _revc_readout(blocks, seeds, ENCODER_DIMS)
+    secondary = _revc_readout([b.secondary["logits_k0"] for b in blocks], seeds, LOGIT_DIMS)
+    gates = {
+        "gate1_learning": gate1["passed"],
+        **{k: v for k, v in primary.items() if k.startswith("gate")},
+    }
+    out: dict[str, Any] = {
+        "design": "rev. C",
+        "emission": REVC_EMISSION,
+        "n_seeds": len(seeds),
+        "learning_gate": gate1,
+        "primary_encoder": primary,
+        "secondary_logits": secondary,
+        "gates_primary": gates,
+        "guard_sd_units": REVB_GUARD_SD,
+        "g_hat": REVB_GUARD_SD,
+        "q_hat_cp80": primary["q_hat_cp80"],
+        "exclusion_model": primary["exclusion_model"],
+        "sigma_hat_ucl80": primary.get("sigma_hat_ucl80"),
+        "fileable_as_drafted": bool(primary.get("gate5_y_nondegenerate")),
+    }
     return out

@@ -262,6 +262,7 @@ class AdaptationLoop:
         probe_demod: str = "soft",
         probe_gumbel_draws: int = 0,
         extra_probe_readouts: tuple[tuple[str, int], ...] = (),
+        probe_sample: WorldSample | None = None,
     ) -> AdaptationReport:
         """Phase 2: lesion-active training + theta-replay buffer.
 
@@ -295,6 +296,14 @@ class AdaptationLoop:
         1 = Z_post) taken under ``readout.gumbel_draw_seed(seed, p, r)``
         inside ``fork_rng``: the captures neither use nor change the
         global RNG stream.
+
+        v0.8 rev. C (PI decision 2026-10-28): the readouts ``"encoder"``
+        (each modality's ``core(input_proj(x))``, concatenated in
+        ``MODALITIES`` order, 5 x 128) and ``"logits"`` (each modality's
+        ``emit_head_pi`` logits, 5 x 64) read the sensory pathways
+        upstream of the emission, deterministically; ``probe_sample``
+        replaces the probe draw (the class-balanced probe rows of the
+        block), so the probe does not depend on ``seed``.
         """
         from bouba_sens.lesion import LesionScheduler  # local import avoids cycle
 
@@ -317,7 +326,7 @@ class AdaptationLoop:
         # the surviving channel. `probe_pool="mean"` restores the legacy
         # 1-D mean-pooled scalar (Sprint 5..17) for reproducibility.
         # Seed stepped far from the Phase-2 training seeds to avoid overlap.
-        demods = ("soft", "hard", "softmax")
+        demods = ("soft", "hard", "softmax", "encoder", "logits")
         for demod, k_draws in ((probe_demod, probe_gumbel_draws), *extra_probe_readouts):
             if demod not in demods:
                 raise ValueError(f"probe_demod must be one of {demods}; got {demod!r}")
@@ -325,6 +334,14 @@ class AdaptationLoop:
                 raise ValueError("Gumbel draws need probe_demod='soft' and K >= 0")
 
         def _capture_once(sample: WorldSample, demod: str) -> Tensor:
+            if demod in ("encoder", "logits"):
+                with torch.no_grad():
+                    parts = []
+                    for m in MODALITIES:
+                        s = self.sensories[m]
+                        h = s.core(s.input_proj(getattr(sample, m)))
+                        parts.append(h if demod == "encoder" else s.emit_head_pi(h))
+                    return torch.cat(parts, dim=1)
             with torch.no_grad():
                 carriers = {m: self.sensories[m].step(getattr(sample, m)) for m in MODALITIES}
                 return self.nerve.fuse(
@@ -357,9 +374,13 @@ class AdaptationLoop:
         legacy_probe = seed - 99_999 if probe_seed is None else probe_seed
         if self.seed_namespace is not None and legacy_probe != seed - 99_999:
             raise ValueError("with a seed namespace the probe seed is derived from seed")
-        probe = self.world.sample(
-            batch_size=batch_size if probe_size is None else probe_size,
-            seed=self._derived_seed(seed, legacy_probe, "phase2_probe", 0),
+        probe = (
+            probe_sample
+            if probe_sample is not None
+            else self.world.sample(
+                batch_size=batch_size if probe_size is None else probe_size,
+                seed=self._derived_seed(seed, legacy_probe, "phase2_probe", 0),
+            )
         )
         fused_pre = _capture(probe, 0)
         extra_pre = _extras(probe, 0)

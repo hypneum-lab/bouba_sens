@@ -88,9 +88,11 @@ CAMPAIGNS: tuple[Campaign, ...] = (
     Campaign("v07-b1-confirmatory", 7102, _r(4001, 4154)),
     Campaign("v07-b2-pilot", 7201, _r(1101, 1105)),
     Campaign("v07-b2-confirmatory", 7202, _r(4001, 4154)),
-    Campaign("v08-pilot", 8101, _r(2201, 2210)),
+    # rev. B pilot 2201-2210, rev. C pilot 2211-2220 (PI 2026-10-28)
+    Campaign("v08-pilot", 8101, _r(2201, 2220)),
     Campaign("v08-confirmatory", 8102, _r(2001, 2044)),
-    Campaign("v09-pilot", 9101, _r(3201, 3205)),
+    # rev. B pilot 3201-3205, rev. C pilot 3206-3210 (PI 2026-10-28)
+    Campaign("v09-pilot", 9101, _r(3201, 3210)),
     Campaign("v09-confirmatory", 9102, _r(3001, 3044)),
 )
 BY_NAME = {c.name: c for c in CAMPAIGNS}

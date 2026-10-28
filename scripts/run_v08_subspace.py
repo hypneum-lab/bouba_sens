@@ -8,6 +8,11 @@ capture: train the Phase-1 checkpoint of every (seed, lock) block and
 pilot: from the 70 pilot blocks, k* and the section 7 planning inputs
     (``bouba_sens.v08_driver.pilot_quantities``).
 
+``--design revc`` (PI decision 2026-10-28): seeds 2211-2220, the real
+bridge with the stratified held-out rows (learning gate), straight-through
+emission, encoder / logit readouts and the drift-floor control
+(``v08_driver.pilot_quantities_revc``).
+
 Usage:
 
   BOUBA_SENS_STUDYFORREST_DATA=... uv run python scripts/run_v08_subspace.py \
@@ -31,11 +36,14 @@ from bouba_sens.v08_driver import (
     CONFIRMATORY_POOL,
     PILOT_SEEDS,
     PILOT_SEEDS_REVB,
+    PILOT_SEEDS_REVC,
     block_path,
     check_world,
+    check_world_revc,
     load_block,
     pilot_quantities,
     pilot_quantities_revb,
+    pilot_quantities_revc,
     run_block,
     save_block,
 )
@@ -47,15 +55,28 @@ def _seeds(text: str) -> list[int]:
 
 def capture(args: argparse.Namespace) -> None:
     seeds = args.seeds
-    pilot_pool = PILOT_SEEDS_REVB if args.design == "revb" else PILOT_SEEDS
+    pilot_pool = {"revc": PILOT_SEEDS_REVC, "revb": PILOT_SEEDS_REVB}.get(args.design, PILOT_SEEDS)
     if not (set(seeds) <= set(pilot_pool) or set(seeds) <= set(CONFIRMATORY_POOL)):
         raise SystemExit("seeds must all be v0.8 pilot seeds or all confirmatory-pool seeds")
     if set(seeds) <= set(CONFIRMATORY_POOL) and not args.osf_filed:
         raise SystemExit("confirmatory seeds need --osf-filed <OSF DOI> (filing gate)")
     torch.use_deterministic_algorithms(True)
-    world = _build_world("studyforrest", seeds[0])
+    if args.design == "revc":
+        import os
+
+        from bouba_sens.world.studyforrest import StudyforrestRealWorld
+
+        world = StudyforrestRealWorld(
+            seed=seeds[0],
+            data_dir=Path(os.environ["BOUBA_SENS_STUDYFORREST_DATA"]),
+            stratified_probe=True,
+        )
+        world_class = check_world_revc(world)
+    else:
+        world = _build_world("studyforrest", seeds[0])
+        world_class = check_world(world)
     log: dict[str, object] = {
-        "world_class": check_world(world),
+        "world_class": world_class,
         "osf_filed": args.osf_filed,
         "design": args.design,
         "blocks": [],
@@ -77,7 +98,11 @@ def capture(args: argparse.Namespace) -> None:
 
 
 def pilot(args: argparse.Namespace) -> None:
-    if args.design == "revb":
+    if args.design == "revc":
+        seeds = PILOT_SEEDS_REVC
+        blocks = [load_block(block_path(args.blocks_dir, s, lk)) for s in seeds for lk in LOCKS]
+        out = pilot_quantities_revc(blocks)
+    elif args.design == "revb":
         seeds = PILOT_SEEDS_REVB
         blocks = [load_block(block_path(args.blocks_dir, s, lk)) for s in seeds for lk in LOCKS]
         out = pilot_quantities_revb(blocks)
@@ -103,11 +128,11 @@ def main() -> None:
     c.add_argument("--seeds", type=_seeds, required=True)
     c.add_argument("--blocks-dir", type=Path, required=True)
     c.add_argument("--osf-filed", default="", help="OSF DOI of the filed amendment")
-    c.add_argument("--design", choices=("revb", "legacy"), default="revb")
+    c.add_argument("--design", choices=("revc", "revb", "legacy"), default="revb")
     p = sub.add_parser("pilot")
     p.add_argument("--blocks-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--design", choices=("revb", "legacy"), default="revb")
+    p.add_argument("--design", choices=("revc", "revb", "legacy"), default="revb")
     args = ap.parse_args()
     {"capture": capture, "pilot": pilot}[args.cmd](args)
 
