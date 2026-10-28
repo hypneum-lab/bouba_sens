@@ -27,7 +27,7 @@ jobs:
         with:
           repository: hypneum-lab/nerve-wml
           path: nerve-wml
-          ref: v1.7.0
+          ref: v1.8.1
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
