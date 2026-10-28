@@ -54,3 +54,11 @@ def test_eigengap_k_finds_the_cliff() -> None:
     assert k == 14 and ratio > 100
     kg = ck.k_gap_from_pilot([z, z])
     assert kg.k == 14 and len(kg.per_matrix) == 2
+
+
+def test_k_gap_skips_degenerate_matrices() -> None:
+    flat = torch.full((64, 20), 0.3, dtype=torch.float64) + 1e-9 * _rand()
+    assert ck.k_gap_from_pilot([flat, flat]).k == 0
+    posts = {(m, f): flat for m in MODALITIES for f in SNR_FLOORS}
+    blk = BlockCodes(9001, 25, 9001, torch.zeros(64, dtype=torch.long), flat, flat, posts)
+    assert ck.evaluate_block_cka(blk).y is None

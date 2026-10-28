@@ -139,9 +139,24 @@ class KGap:
 
 
 def k_gap_from_pilot(z_pres: Sequence[Tensor]) -> KGap:
-    per = tuple(eigengap_k(z) for z in z_pres)
+    """Median eigengap k over the non-degenerate pilot matrices; k = 0 if none qualifies.
+
+    Degenerate matrices (total variance <= ``VAR_TOL``) and matrices with
+    no eligible gap in their window are skipped (their count is
+    len(z_pres) - len(per_matrix)).
+    """
+    per: list[tuple[int, float]] = []
+    for z in z_pres:
+        if total_variance(z) <= VAR_TOL:
+            continue
+        try:
+            per.append(eigengap_k(z))
+        except ValueError:
+            continue
+    if not per:
+        return KGap(0, ())
     med = statistics.median(k for k, _ in per)
-    return KGap(math.floor(med + 0.5), per)
+    return KGap(math.floor(med + 0.5), tuple(per))
 
 
 def ratio_at(z: Tensor, k: int) -> float:

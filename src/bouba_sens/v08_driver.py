@@ -291,6 +291,7 @@ def pilot_quantities_revb(
         k_gap_from_pilot,
         linear_cka,
         ratio_at,
+        total_variance,
     )
     from bouba_sens.readout import code_structure
 
@@ -305,7 +306,7 @@ def pilot_quantities_revb(
     n_c = len(agg.seeds_complete)
     undefined = {s: int(np.isnan(agg.y_all[i]).sum()) for i, s in enumerate(agg.seeds_all)}
     kg = k_gap_from_pilot([b.z_pre for b in ordered])
-    sec_s = [evaluate_block(b, k=kg.k) for b in ordered]
+    sec_s = [evaluate_block(b, k=kg.k) for b in ordered] if kg.k > 0 else []
     sec_g = [
         evaluate_block_cka(b.secondary["soft_k8"]) for b in ordered if "soft_k8" in b.secondary
     ]
@@ -324,11 +325,32 @@ def pilot_quantities_revb(
         "q_hat_cp80": clopper_pearson_upper(len(seeds) - n_c, len(seeds)),
         "exclusion_model": "level" if all(v <= 1 for v in undefined.values()) else "seed",
         "guard_sd_units": REVB_GUARD_SD,
-        "secondary_k_gap": kg.k,
+        "secondary_k_gap": kg.k or None,
+        "secondary_k_gap_n_matrices": len(kg.per_matrix),
         "secondary_k_gap_ratios": [r for _, r in kg.per_matrix],
+        "soft_total_variance_pre_median": med([total_variance(b.z_pre) for b in ordered]),
+        "soft_total_variance_post_median": med(
+            [total_variance(z) for b in ordered for z in b.z_post.values()]
+        ),
+        "gumbel_total_variance_pre_median": med(
+            [
+                total_variance(b.secondary["soft_k8"].z_pre)
+                for b in ordered
+                if "soft_k8" in b.secondary
+            ]
+        ),
+        "gumbel_between_class_share_pre_median": med(
+            [
+                code_structure(b.secondary["soft_k8"].z_pre, b.probe_labels)["between_class_share"]
+                for b in ordered
+                if "soft_k8" in b.secondary
+            ]
+        ),
         "secondary_ratio_at_k_gap_post_share_below_1_1": float(
             np.mean([ratio_at(z, kg.k) < 1.1 for b in ordered for z in b.z_post.values()])
-        ),
+        )
+        if kg.k > 0
+        else None,
         "secondary_S_at_k_gap_block_y": [r.y for r in sec_s],
         "secondary_gumbel_cka_block_y": [r.y for r in sec_g],
         "gate_between_class_share_pre_median": med(
