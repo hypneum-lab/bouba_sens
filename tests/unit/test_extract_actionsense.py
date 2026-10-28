@@ -162,7 +162,7 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
     first = 3
     starts = T0 + 0.1 * np.arange(first, 13)  # frames 3..12
 
-    def peak(shift_s: float) -> int:
+    def energies(shift_s: float) -> np.ndarray:
         # Real convention: timestamp of the LAST sample of each chunk.
         ts = T0 + shift_s + (np.arange(n_chunks) + 1) * CHUNK / SR
         h5_path = tmp_path / f"mic_{shift_s}.hdf5"
@@ -170,8 +170,15 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
         mel, covered, _ = extract.audio_frames(wav_path, h5_path, starts)
         assert covered.all()
-        return int(np.argmax(mel.mean(axis=1))) + first
+        return np.asarray(mel.mean(axis=1))
 
-    assert peak(0.0) == target
+    def peak(shift_s: float) -> int:
+        return int(np.argmax(energies(shift_s))) + first
+
+    e0 = energies(0.0)
+    assert int(np.argmax(e0)) + first == target
+    # Every other frame is exactly silent (log(1e-6)); catches in-chunk offset errors.
+    quiet = np.delete(e0, target - first)
+    np.testing.assert_allclose(quiet, np.log(1e-6), atol=1e-9)
     assert peak(CHUNK / SR) != target  # timestamps one chunk late
     assert peak(-CHUNK / SR) != target  # timestamps one chunk early
