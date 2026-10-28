@@ -75,6 +75,14 @@
     "sha256": "2b962ba30cb44fb2c8d607ab9b0d5f38a089f577ca0166b1079bd5908f09e65a",
     "size": 589
   },
+  "pilots/v07_snr_pilot_ns2_seed4201_aggregate.json": {
+    "sha256": "7887243d65317646925706621d015d46850b31ccf650ce3756eb9c708a64178b",
+    "size": 14253
+  },
+  "pilots/v07_snr_pilot_ns2_seed4201_cells.json": {
+    "sha256": "73f9eec3fbdcc98084a8b3242785a5f25427d42a6720511a7d85bd12ead8e448",
+    "size": 9989
+  },
   "pilots/v07_snr_pilot_ns_seed4201_aggregate.json": {
     "sha256": "7887243d65317646925706621d015d46850b31ccf650ce3756eb9c708a64178b",
     "size": 14253

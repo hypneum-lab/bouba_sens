@@ -317,16 +317,23 @@ summary stopped on a degenerate eigen-spectrum), summary and N rule at
 - **The deterministic soft code is constant.** Its total centred
   variance is about 8.6 × 10⁻¹⁵ (pre and post), i.e. float32 rounding
   level for code values of order 0.1; 63–139 "distinct" rows per matrix
-  differ only in the last bits. Every matrix is degenerate under the
-  frozen tolerance (10⁻¹²), every block is invalid, **0 of 10 seeds are
-  complete** → protocol failure by construction; q̂ = 1.0; no σ̂, no N.
+  differ only in the last bits. Almost every matrix is below the frozen
+  tolerance (10⁻¹²): 3 Z_pre pass it, and the best block (seed 2201,
+  lock 150) has 9 valid cells, short of the 12 required; **no block is
+  defined and 0 of 10 seeds are complete** → protocol failure; q̂ = 1.0;
+  no σ̂, no N.
 - **Why:** `SensoryWML.step` sends the argmax code of each modality
   (plus a 10⁻³ bridge term) on the carrier; in these networks the argmax
   is the same for every probe input (the hard readout had one distinct
   row, PI finding 2026-10-25), so the deterministic readout of the fused
-  code carries essentially nothing; the Gumbel readout's variance
-  (0.026) is sampling noise: its between-class share is 0.000 and the
-  CKA between the soft and the Gumbel Z_pre is 0.02.
+  code carries essentially nothing. The Gumbel readout's variance
+  (0.026) is most likely sampling noise, but the evidence here does not
+  isolate it (Codex review, 2026-10-28): the v0.8 probe is one
+  contiguous window and is single-label on several pilot seeds, where
+  the between-class share is 0 by construction, and the CKA between the
+  soft and the Gumbel Z_pre (0.02) is computed on matrices already
+  below tolerance. Repeated independent captures and per-seed label
+  counts would be needed to attribute the Gumbel variation.
 - Gate (i) of A.2 (6) **fails**. Secondary numbers are reported only for
   completeness (eigengap k = 2 from the 3 matrices above tolerance;
   Gumbel-code 1 − CKA block median 0.077, range 0.068–0.943).
@@ -355,21 +362,36 @@ runs, 4.6–8.4 s each, 484 s) and the N rule. Outputs:
   the probe-training rows was vision in 69 / 75 runs (CV 0.978). The
   **positive control** (all five encoder outputs, PCA 128) scores the
   same as the best single modality: FG_ctrl mean −0.002 (range −0.065 to
-  +0.063). A representation that has every modality gains nothing over
-  vision alone, so no fusion gain of any size is reachable.
+  +0.063). On average the concatenation of every modality gains
+  nothing over vision alone under this split.
 - The fused code (deterministic soft readout, PCA 128 of a near-constant
   matrix after standardisation) scores 0.26–0.94 (plain-arm mean 0.49):
   FG_lin −0.73 to −0.06 (mean −0.46). D (joint − decor) ranges −0.24 to
   +0.34, zero in 0 of 25 cells; σ̂ = 0.113, σ_plan = 0.177; the N rule
   finds **no N ≤ 40** (P(A+ and C+) = 0.21 at N = 40).
-- Headroom gate: plain-arm bacc(h_all) 0.49 ≥ 0.35 passes, zero-D share
-  0 passes, **positive control fails** (FG_ctrl ≈ 0 < SESOI 0.05). The
-  SESOI of 0.05 cannot be justified from this pilot: the attainable
-  fusion gain is about 0.
+- Headroom gate (criterion frozen here, after the run, from section B:
+  plain-arm mean bacc(h_all) ≥ 0.35, fewer than half of the D cells
+  exactly 0, and mean FG_ctrl ≥ SESOI 0.05): bacc(h_all) 0.49 passes,
+  zero-D share 0 passes, **positive control fails** (mean FG_ctrl
+  −0.002). The SESOI of 0.05 cannot be justified from this pilot.
+- **Qualifications (Codex review, 2026-10-28).** (1) This is a ceiling
+  under this split, not proof that fusion gain is impossible in the
+  world: encoder training excludes only the held-out frames, so windows
+  next to a held-out block remain in training, and the grouped CV uses
+  16-frame blocks of the same ten label runs; with one held-out class-0
+  block, temporal dependence may inflate the per-modality scores. (2)
+  The concatenation control followed by unsupervised PCA to 128 dims is
+  not a guaranteed fusion-advantage control: PCA can discard useful
+  dimensions. (3) The fused code h_all is near-constant (C.1); its
+  scores come from standardised features at float-rounding scale and
+  should not be read as fused information. (4) The descriptive outcomes
+  of section B (the K = 8 Gumbel fused code and held-out log-loss) were
+  **not implemented** in this pilot and are withdrawn from the operative
+  design unless the PI keeps them.
 
-**Consequence (PI decision needed):** with the Studyforrest labels and
-these encoders, vision alone is near ceiling, so fusion gain has no
-room in this world whatever the probe. Options: a world or label in
+**Consequence (PI decision needed):** with the Studyforrest labels,
+these encoders and this split, vision alone is near ceiling, so fusion
+gain has no room as measured here. Options: a world or label in
 which no single modality suffices (for example CC-film, or a label
 defined jointly from two channels), a harder held-out task, or dropping
 the fusion-gain outcome. The fused-code readout problem of C.1 applies

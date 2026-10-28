@@ -517,17 +517,28 @@ question for the PI.
 **Seed namespaces.** Every derived data seed is now
 `SeedSequence([code, s, stream, t])` with one code per campaign and
 pool (`bouba_sens.seeds`; 7101 / 7102 v0.7 B-1 pilot / confirmatory,
-7201 / 7202 B-2, 8101 / 8102 v0.8, 9101 / 9102 v0.9);
-`tests/unit/test_seeds.py` enumerates every derived seed of every pool
-and finds no seed shared by two pools. Pilots affected by the earlier
+7201 / 7202 B-2, 8101 / 8102 v0.8, 9101 / 9102 v0.9).
+`tests/unit/test_seeds.py` enumerates the namespaced seeds the runners
+draw (B-1 cells keyed as executed: seed · 10 000 + cell 1–30, per-query
+probe at cell + 777, check draws 1–200) and finds none shared by two
+pools; integer seeds that are not namespaced (model initialisation and
+global RNG s … s + 5, B-1 cell seeds and cell + 777, the K = 8 Gumbel
+draw seeds) are disjoint between every pilot and every confirmatory
+pool; the only shared ones are the base seeds of the B-1 and B-2
+confirmatory campaigns (paired initial networks, PI to confirm). Fixed
+design constants (held-out split, probe-training allocation,
+permutation and simulation generators, init seeds 0–5 of T1 cells) are
+shared by every pool on purpose. After the Codex review of 2026-10-28
+the B-1 evaluation step also uses the namespace and the cell seeds no
+longer depend on the run-wide counter; the SNR cell was re-run again. Pilots affected by the earlier
 overlap of derived seeds, and what was done:
 
 | Pilot | Overlap with a confirmatory pool (legacy seeds) | Enters a rule? | Action |
 |---|---|---|---|
 | v0.7 B-1 SNR cell 4201 | yes (batch seeds 4201–4400 vs 4001–4353) | no (a check) | re-run in 7101: same SNR, world class and namespace recorded |
 | v0.7 B-2 1101–1105 (rounds 1–3) | no | yes (N, label) | re-run as round 4 in 7201; round 4 replaces round 3 for planning |
-| v0.8 2101–2110 | yes (2101–2310 vs 2001–2243) | yes | superseded by the rev. B pilot 2201–2210 in 8101 |
-| v0.9 3101–3105 (grid) | yes (3101–3555 vs 3001–3493) | yes | superseded by the rev. B pilot 3201–3205 in 9101 |
+| v0.8 2101–2110 | yes (2101–2309 vs 2001–2243) | yes | superseded by the rev. B pilot 2201–2210 in 8101 |
+| v0.9 3101–3105 (grid) | yes (3101–3554 vs 3001–3493) | yes | superseded by the rev. B pilot 3201–3205 in 9101 |
 | v0.9 manipulation checks | no (anchors and draws disjoint) | yes (gate) | re-run in 9101 with the rev. B pilot |
 | seed-0 runs | not a pool seed | no | not re-run |
 

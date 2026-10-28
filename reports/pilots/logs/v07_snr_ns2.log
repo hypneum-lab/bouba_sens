@@ -1,0 +1,101 @@
+START 2026-10-28T15:07:20Z 1793200040 commit 8ddc0c44e3f40e1e8f4a69b16db52c68ecf939f3
+Uninstalled 1 package in 5ms
+Installed 1 package in 4ms
+grid: 30 cells -> /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201
+[seed 4201] phase 1 pretrain 200 steps -> /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/phase1_seed4201
+pretrain done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/phase1_seed4201/checkpoint.pkl
+[1/30] seed4201_T1_audio_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_floor/eval_report.json
+[2/30] seed4201_T1_audio_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_minus10/eval_report.json
+[3/30] seed4201_T1_audio_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_audio_plus10/eval_report.json
+[4/30] seed4201_T2_audio_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_floor/eval_report.json
+[5/30] seed4201_T2_audio_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_minus10/eval_report.json
+[6/30] seed4201_T2_audio_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_audio_plus10/eval_report.json
+[7/30] seed4201_T1_vision_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_floor/eval_report.json
+[8/30] seed4201_T1_vision_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_minus10/eval_report.json
+[9/30] seed4201_T1_vision_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_vision_plus10/eval_report.json
+[10/30] seed4201_T2_vision_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_floor/eval_report.json
+[11/30] seed4201_T2_vision_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_minus10/eval_report.json
+[12/30] seed4201_T2_vision_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_vision_plus10/eval_report.json
+[13/30] seed4201_T1_tactile_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_floor/eval_report.json
+[14/30] seed4201_T1_tactile_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_minus10/eval_report.json
+[15/30] seed4201_T1_tactile_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_tactile_plus10/eval_report.json
+[16/30] seed4201_T2_tactile_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_floor/eval_report.json
+[17/30] seed4201_T2_tactile_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_minus10/eval_report.json
+[18/30] seed4201_T2_tactile_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_tactile_plus10/eval_report.json
+[19/30] seed4201_T1_gravity_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_floor/eval_report.json
+[20/30] seed4201_T1_gravity_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_minus10/eval_report.json
+[21/30] seed4201_T1_gravity_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_gravity_plus10/eval_report.json
+[22/30] seed4201_T2_gravity_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_floor/eval_report.json
+[23/30] seed4201_T2_gravity_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_minus10/eval_report.json
+[24/30] seed4201_T2_gravity_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_gravity_plus10/eval_report.json
+[25/30] seed4201_T1_force_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_floor/eval_report.json
+[26/30] seed4201_T1_force_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_minus10/eval_report.json
+[27/30] seed4201_T1_force_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T1_force_plus10/eval_report.json
+[28/30] seed4201_T2_force_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_floor/eval_report.json
+[29/30] seed4201_T2_force_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_minus10/eval_report.json
+[30/30] seed4201_T2_force_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201/seed4201_T2_force_plus10/eval_report.json
+grid done; 30 cells processed, 0 skipped (already had eval_report.json)
+next: python scripts/aggregate_grid.py --root /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns2_seed4201 --out reports/v0.1_aggregate.json
+aggregate: 30 cells -> reports/pilots/v07_snr_pilot_ns2_seed4201_aggregate.json
+31 outputs
+END 2026-10-28T15:10:25Z 1793200225
