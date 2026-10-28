@@ -201,3 +201,47 @@ The 2-modal ECG bridge (ADR-0009 / ADR-0011) remains the canonical
 is needed; the paper's limitations section already declares ECG as a
 narrow proof-of-concept, not a full 5-modal replication. Sprint 9.5 is
 a scope EXTENSION, not a correction.
+
+## Reproducibility status (2026-10-28)
+
+PI decision 2026-10-28 (issue #45): the results computed on the
+4.5-modal real bridge are **not reproducible from the repository**.
+This covers the 17 real-data blocks of `scripts/reproduce_paper_v01.sh`
+(paper v0.1 §4 `v0.4_sf_real`, §5.5 Amedi `v0.5_dr_lock*`, §5.6–5.9
+`v0.5_s11` … `v0.5_s14`) and the verdicts above. Their numbers are kept
+as historical results; none is changed.
+
+- **Tensors lost.** `data/sf_phase2_adapted`, extracted on Studio on
+  2026-04-21 (commit `d7a3645`), disappeared when Studio was
+  re-provisioned on 2026-06-03. Searched without result: GrosMac, macM1,
+  electron-server, kxkm-ai, Zenodo (v0.5.9 holds only the code zip),
+  GitHub releases (no assets), git history (no `.pt`).
+- **Public source moved.** `///studyforrest-data-phase2` no longer
+  resolves on datasets.datalad.org; the working source is
+  `datalad install -s https://github.com/psychoinformatics-de/studyforrest-data-phase2.git`.
+- **Fetch/extract mismatch.** `fetch_studyforrest_phase2.sh` fetched
+  `ses-movie` files, while `extract_phase2_adapted.py` reads
+  `code/stimulus/movie_localizer/videos/movie_localizer.mkv` and
+  `sub-01/ses-localizer/func/sub-01_ses-localizer_task-movielocalizer_run-1_recording-cardresp_physio.tsv.gz`.
+- **Public chain cannot regenerate the tensors.** `movie_localizer.mkv`
+  lasts 12.0 s (ffprobe), so `ffmpeg fps=10` gives 120 frames;
+  `extract_vision` truncated to `n_frames` without padding, so
+  `vision.pt` had 120 rows against 1800 for the five other tensors, and
+  `StudyforrestRealWorld.gather` raises `IndexError: index 1076 is out
+  of bounds for dimension 0 with size 120`. The loading code is the
+  same at `d7a3645`, so the April grids used a 1800-frame `vision.pt`
+  that the public video cannot produce. Its origin is not established
+  (unverified hypothesis: `extract_vision` reused a `_frames/` directory
+  next to the video without clearing it).
+- **Stimulus.** The movielocalizer session alternated `movie_localizer`
+  and `inv_movie_localizer` every 12 s for 4 cycles (96 s); the clip is
+  a flickering field-of-view stimulus, not film footage.
+
+Code changes in the same pull request: `extract_vision` writes frames
+to a fresh temporary directory; `extract_phase2_adapted.py` refuses to
+save tensors whose first dimensions differ (no padding, no tiling);
+`fetch_studyforrest_phase2.sh` uses the GitHub source, fetches the two
+files the extraction reads and never installs tools;
+`reproduce_paper_v01.sh` fetches Studyforrest only for the blocks that
+need it. A replication on a new real dataset is planned in a separate
+design pass.
