@@ -896,12 +896,18 @@ on the OSF form.
   **B-2 confirmatory 7202** (4001–4154). B-1 and B-2 share base seeds
   but not codes. `run_grid.sh` passes `--seed-namespace` from the seed's
   pool and the E1 runner sets it under its presets.
-  `tests/unit/test_seeds.py` enumerates every derived seed of every
-  pilot and confirmatory pool of v0.7–v0.9 and checks that no two pools
-  share one. Model initialisation stays seeded by s (base seeds are
-  disjoint across pools); the K = 8 Gumbel draw seeds 2·10⁹ + 1000 s +
-  100 p + r are disjoint across pools by construction and are included
-  in the test. Earlier, the legacy arithmetic (batch t of seed s →
+  `tests/unit/test_seeds.py` enumerates the namespaced seeds every
+  runner draws, as executed (B-1 cells s · 10 000 + 1 … 30, per-query
+  probe at cell + 777, in lesion and in evaluation), and checks that no
+  two pools of v0.7–v0.9 share one. **Plain integer seeds (PI decision
+  2026-10-28, about 18:05, after the pilots):** model initialisation
+  and the global RNG (s … s + 5; for B-1 cells the cell seed and
+  cell + 777) and the K = 8 Gumbel draw seeds 2·10⁹ + 1000 s + 100 p + r
+  stay un-namespaced; the test checks that they are disjoint between
+  every pilot pool and every confirmatory pool. The B-1 and B-2
+  confirmatory campaigns deliberately share base seeds 4001–4154 and
+  hence their initial networks (**paired initialisation, confirmed by
+  the PI**); their data seeds differ (codes 7102 / 7202). Earlier, the legacy arithmetic (batch t of seed s →
   s + t) made the block 4001–4154 draw batch seeds 4001–4353, which
   include the first SNR pilot seed 4201; both v0.7 pilots were re-run
   in their namespaces (§4.3, §11).

@@ -386,8 +386,8 @@ runs, 4.6–8.4 s each, 484 s) and the N rule. Outputs:
   scores come from standardised features at float-rounding scale and
   should not be read as fused information. (4) The descriptive outcomes
   of section B (the K = 8 Gumbel fused code and held-out log-loss) were
-  **not implemented** in this pilot and are withdrawn from the operative
-  design unless the PI keeps them.
+  **not implemented** in this pilot; **dropped by the PI on 2026-10-28
+  (about 18:05).**
 
 **Consequence (PI decision needed):** with the Studyforrest labels,
 these encoders and this split, vision alone is near ceiling, so fusion
@@ -396,3 +396,7 @@ which no single modality suffices (for example CC-film, or a label
 defined jointly from two channels), a harder held-out task, or dropping
 the fusion-gain outcome. The fused-code readout problem of C.1 applies
 to h_all here too.
+
+**Next:** the PI asked (2026-10-28, about 18:05) for both v0.8
+measurement options and both v0.9 label/world options as proposals:
+`docs/osf/redesign-proposals-v08-v09-revc-2026-10-28.md` (rev. C).

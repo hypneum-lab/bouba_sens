@@ -29,7 +29,7 @@ confirmatory_pools``):
   ``cell + 777`` (lesion / eval). They are disjoint between every pilot
   and every confirmatory pool; the B-1 and B-2 confirmatory campaigns
   share base seeds 4001-4154 and hence initial networks (a deliberate
-  pairing, PI to confirm);
+  pairing, confirmed by the PI on 2026-10-28);
 * K = 8 Gumbel draw seeds ``2e9 + 1000 s + 100 p + r`` (disjoint by s);
 * design constants shared on purpose by every pool: the v0.9 held-out
   probe seed, the probe-training allocation seed, the permutation and

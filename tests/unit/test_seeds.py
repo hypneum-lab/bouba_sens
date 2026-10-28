@@ -104,7 +104,7 @@ def test_no_namespaced_seed_is_shared_between_any_two_pools() -> None:
 
 # Deliberate exception: the v0.7 B-1 and B-2 confirmatory campaigns use the
 # same base seeds 4001-4154, hence the same model-initialisation seeds
-# (paired initial networks); every pilot pool is disjoint from every
+# (paired initial networks, PI decision 2026-10-28); every pilot pool is disjoint from every
 # confirmatory pool, and all other pairs are disjoint.
 _SHARED_INIT = {frozenset({"v07-b1-confirmatory", "v07-b2-confirmatory"})}
 

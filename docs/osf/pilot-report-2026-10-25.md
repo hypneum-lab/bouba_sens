@@ -525,7 +525,7 @@ pools; integer seeds that are not namespaced (model initialisation and
 global RNG s … s + 5, B-1 cell seeds and cell + 777, the K = 8 Gumbel
 draw seeds) are disjoint between every pilot and every confirmatory
 pool; the only shared ones are the base seeds of the B-1 and B-2
-confirmatory campaigns (paired initial networks, PI to confirm). Fixed
+confirmatory campaigns (paired initial networks, confirmed by the PI on 2026-10-28, about 18:05, together with keeping the init and Gumbel seeds un-namespaced but disjoint). Fixed
 design constants (held-out split, probe-training allocation,
 permutation and simulation generators, init seeds 0–5 of T1 cells) are
 shared by every pool on purpose. After the Codex review of 2026-10-28
