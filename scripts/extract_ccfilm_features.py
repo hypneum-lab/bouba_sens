@@ -36,47 +36,17 @@ import torch
 from PIL import Image
 from scipy.signal import stft
 
+from bouba_sens.world.actionsense_features import frame_to_grid, mel_filterbank
+
 FFMPEG = "/opt/homebrew/bin/ffmpeg"
 FILM_URL = "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4"
 
 SR = 16000
 FPS = 2.0  # frame grid: 2 frames/sec == 0.5s per row == audio hop window
 N_MELS = 128
-VISION_SHAPE = (16, 16)
 TACTILE_DIM = 32
 GRAVITY_DIM = 3
 FORCE_DIM = 6
-
-
-# --------------------------------------------------------------------------
-# Mel filter-bank from scratch (HTK mel scale).
-# --------------------------------------------------------------------------
-def hz_to_mel(f: np.ndarray) -> np.ndarray:
-    return 2595.0 * np.log10(1.0 + f / 700.0)
-
-
-def mel_to_hz(m: np.ndarray) -> np.ndarray:
-    return 700.0 * (10.0 ** (m / 2595.0) - 1.0)
-
-
-def mel_filterbank(
-    n_mels: int, n_fft: int, sr: int, fmin: float = 0.0, fmax: float | None = None
-) -> np.ndarray:
-    """(n_mels, n_fft//2+1) triangular mel filter-bank."""
-    fmax = fmax if fmax is not None else sr / 2.0
-    n_bins = n_fft // 2 + 1
-    fft_freqs = np.linspace(0, sr / 2.0, n_bins)
-    mel_pts = np.linspace(
-        hz_to_mel(np.array([fmin]))[0], hz_to_mel(np.array([fmax]))[0], n_mels + 2
-    )
-    hz_pts = mel_to_hz(mel_pts)
-    fb = np.zeros((n_mels, n_bins), dtype=np.float64)
-    for m in range(1, n_mels + 1):
-        lo, ctr, hi = hz_pts[m - 1], hz_pts[m], hz_pts[m + 1]
-        left = (fft_freqs - lo) / max(ctr - lo, 1e-9)
-        right = (hi - fft_freqs) / max(hi - ctr, 1e-9)
-        fb[m - 1] = np.clip(np.minimum(left, right), 0.0, None)
-    return fb
 
 
 def compute_mel(wav: np.ndarray, sr: int, n_frames: int) -> np.ndarray:
@@ -99,19 +69,6 @@ def compute_mel(wav: np.ndarray, sr: int, n_frames: int) -> np.ndarray:
     # Per-band standardise (zero-mean unit-var) — keeps the contract f32.
     out = (out - out.mean(0, keepdims=True)) / (out.std(0, keepdims=True) + 1e-6)
     return out.astype(np.float32)
-
-
-# --------------------------------------------------------------------------
-# Vision: decoded frames -> 16x16 mean-intensity grid.
-# --------------------------------------------------------------------------
-def frame_to_grid(img: Image.Image) -> np.ndarray:
-    g = img.convert("L").resize((VISION_SHAPE[1] * 4, VISION_SHAPE[0] * 4))
-    arr = np.asarray(g, dtype=np.float32) / 255.0
-    h, w = arr.shape
-    ph, pw = h // VISION_SHAPE[0], w // VISION_SHAPE[1]
-    grid = arr[: ph * VISION_SHAPE[0], : pw * VISION_SHAPE[1]]
-    grid = grid.reshape(VISION_SHAPE[0], ph, VISION_SHAPE[1], pw).mean(axis=(1, 3))
-    return grid.astype(np.float32)
 
 
 def main() -> None:

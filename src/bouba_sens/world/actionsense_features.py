@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from scipy.signal import butter, sosfiltfilt  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from PIL import Image
+
+VISION_SHAPE = (16, 16)
 
 FAMILY_RULES: tuple[tuple[str, int], ...] = (
     ("peel", 0),
@@ -170,3 +177,49 @@ def check_aligned(tensors: dict[str, np.ndarray]) -> int:
         desc = ", ".join(f"{k}={v}" for k, v in lengths.items())
         raise ValueError(f"modalities not aligned: {desc}")
     return next(iter(lengths.values()))
+
+
+# --------------------------------------------------------------------------
+# Shared with scripts/extract_ccfilm_features.py (moved here, behaviour kept).
+# --------------------------------------------------------------------------
+def hz_to_mel(f: np.ndarray) -> np.ndarray:
+    """HTK mel scale."""
+    out: np.ndarray = 2595.0 * np.log10(1.0 + f / 700.0)
+    return out
+
+
+def mel_to_hz(m: np.ndarray) -> np.ndarray:
+    """Inverse HTK mel scale."""
+    out: np.ndarray = 700.0 * (10.0 ** (m / 2595.0) - 1.0)
+    return out
+
+
+def mel_filterbank(
+    n_mels: int, n_fft: int, sr: int, fmin: float = 0.0, fmax: float | None = None
+) -> np.ndarray:
+    """(n_mels, n_fft//2+1) triangular mel filter-bank."""
+    fmax = fmax if fmax is not None else sr / 2.0
+    n_bins = n_fft // 2 + 1
+    fft_freqs = np.linspace(0, sr / 2.0, n_bins)
+    mel_pts = np.linspace(
+        hz_to_mel(np.array([fmin]))[0], hz_to_mel(np.array([fmax]))[0], n_mels + 2
+    )
+    hz_pts = mel_to_hz(mel_pts)
+    fb = np.zeros((n_mels, n_bins), dtype=np.float64)
+    for m in range(1, n_mels + 1):
+        lo, ctr, hi = hz_pts[m - 1], hz_pts[m], hz_pts[m + 1]
+        left = (fft_freqs - lo) / max(ctr - lo, 1e-9)
+        right = (hi - fft_freqs) / max(hi - ctr, 1e-9)
+        fb[m - 1] = np.clip(np.minimum(left, right), 0.0, None)
+    return fb
+
+
+def frame_to_grid(img: Image.Image) -> np.ndarray:
+    """Decoded frame -> (16, 16) mean-intensity patch grid in [0, 1]."""
+    g = img.convert("L").resize((VISION_SHAPE[1] * 4, VISION_SHAPE[0] * 4))
+    arr = np.asarray(g, dtype=np.float32) / 255.0
+    h, w = arr.shape
+    ph, pw = h // VISION_SHAPE[0], w // VISION_SHAPE[1]
+    grid = arr[: ph * VISION_SHAPE[0], : pw * VISION_SHAPE[1]]
+    grid = grid.reshape(VISION_SHAPE[0], ph, VISION_SHAPE[1], pw).mean(axis=(1, 3))
+    return np.asarray(grid.astype(np.float32))
