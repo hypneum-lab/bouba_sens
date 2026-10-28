@@ -81,7 +81,11 @@ def _legacy_ints(name: str) -> set[int]:
     prefix = name.rsplit("-", 1)[0]
     out = {s + i for s in c.seeds for i in range(6)}  # torch.manual_seed(s); modules s+1..s+5
     if prefix == "v07-b1":
-        out |= set(_cells(c.seeds)) | {x + 777 for x in _cells(c.seeds)}
+        cells = _cells(c.seeds)
+        out |= set(cells) | {x + 777 for x in cells}
+        # main's ADR-0023 v2 linear-probe files: held-out seed + 777 and
+        # training pool seed + 778, for train (base s) and lesion (cell)
+        out |= {x + d for x in (*c.seeds, *cells) for d in (777, 778)}
     if prefix in ("v07-b2", "v08"):
         out |= {
             gumbel_draw_seed(s, p, r) for s in c.seeds for p in (0, 1) for r in range(GUMBEL_DRAWS)

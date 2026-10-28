@@ -22,9 +22,22 @@ only, issue #20):
 
 ## Status
 
-- **HEAD ≈ v0.5.9**, ~156 commits, 28 ADR files (numbers 0001–0022,
+- **B-3 final (PI 2026-10-27)**: Gaussian world, network that learns
+  (straight-through emission): no lesion effect (interaction p = 0.49,
+  tag `prereg-b3-lesion-interaction-20261027`), only the query-modality
+  effect built by the world; mock inconclusive, not retried.
+- **ERRATUM ADR-0024 (2026-10-26)**: with the default settings the
+  network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
+  Every B-1/B-2/B-3 result below was measured in that regime; read them
+  as such. No number deleted.
+- **HEAD ≈ v0.5.9**, ~156 commits, 30 ADR files (numbers 0001–0024,
   seven shared, index `docs/adr/README.md`), 185+ tests.
-- **B-3 uncalibrated** (requalified 2026-10-25, ADR-0021, issue #22):
+- **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
+  (positive control met), the preregistered rejection of symmetry is an
+  asymmetry built by the worlds (unequally informative modalities), no
+  lesion effect; H0 was ill-posed. Lesion × query interaction test is
+  preregistered separately. The v1 reading below is historical.
+- **B-3 v1 uncalibrated** (requalified 2026-10-25, ADR-0021, issue #22):
   the 5–6× magnitude stands but the 0.02 threshold was never compared
   with a null; no compatibility or rejection verdict before a paired
   calibration of the median. The "architectural property" reading is
@@ -55,7 +68,7 @@ only, issue #20):
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
 | `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
-| `docs/adr/` | ADRs 0001–0022 (28 files, index `README.md`) — decisions of record |
+| `docs/adr/` | ADRs 0001–0024 (30 files, index `README.md`) — decisions of record |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
 | `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
 | `docs/milestones/` | Sprint closing notes |

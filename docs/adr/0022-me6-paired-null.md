@@ -304,6 +304,14 @@ a finding.
    have very different accuracies per modality (ADR-0014's entropy
    reading) and still satisfy H0; conversely, rejecting H0 says nothing
    about the pre-registered 3+2 partition.
+   **Correction (2026-10-26, PI decision on ADR-0023).** The first
+   sentence is wrong. `P[q, m] − P[m, q]` contains the difference of
+   the query-modality main effects `r_q − r_m`, so a grid whose
+   modalities have unequal per-query accuracies **violates** H0 even
+   without any lesion effect. It held on the v1 grids only because
+   every query was at chance. With the v2 probe (ADR-0023), H0 is
+   rejected on both worlds for exactly this reason. A test of a lesion
+   effect needs an H0 of no lesion × query interaction.
 5. **Two fresh grids.** The computation covers fresh Gaussian and
    Studyforrest-mock grids produced for this ADR; the historical grids
    have no per-item files and cannot be re-analysed without re-running

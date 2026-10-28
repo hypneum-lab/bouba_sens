@@ -32,6 +32,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **B-3 final wording (PI decision 2026-10-27).** On the Gaussian world,
+  with a network that learns the task (straight-through emission), no
+  lesion effect is detected: neither a lesion × query interaction
+  (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`,
+  seeds 300-309) nor a lesion-driven asymmetry; only the query-modality
+  effect, built by the world, remains. The mock world stays
+  inconclusive (pilot loss 1.3006 above the 1.30 learning criterion)
+  and is not retried.
+
+- **Erratum (ADR-0024, PI decision 2026-10-26): with the default
+  settings the network does not learn the task.** Phase-1 loss stays at
+  ln 4 and Me1 at chance on every grid checked. All B-1 / B-2 / B-3 and
+  plasticity-mechanism results are requalified as measured in a regime
+  where the network does not learn; no number is deleted.
+
+- **B-3 v2 (ADR-0023 *Accepted*, PI decision 2026-10-26): asymmetry
+  built by the worlds, no lesion effect.** Linear probe on frozen
+  per-modality representations; positive control met (vision margin
+  0.485 Gaussian, 0.282 mock). Preregistered reading
+  (`prereg-b3-probe-v2-20261025`, new seeds 200-204, pilot-fixed blocks
+  1 / 8): median 0.414 / 0.332, p = 5e-5 on both worlds, so the criterion
+  is met. H0 (symmetry of expected performances) was ill-posed: the
+  rejection is the query-modality main effect, and the residual after
+  removing it is at the null level. ADR-0022 limit 4 corrected.
+
 - **B-3 status (Gaussian world): null, uncalibrated → calibrated:
   compatible with the null** (ADR-0022 *Accepted*, PI decision
   2026-10-25). Observed median 0.156 vs paired-null mean 0.141 / P99
@@ -54,6 +79,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   script on electron-server); 0.445 stays uncalibrated.
 
 ### Added
+
+- **`--emission straight-through`** (`SensoryWML`, `bouba-sens train` /
+  `lesion`, `EMISSION` in `scripts/run_grid_probe_v2.sh`): argmax code
+  forward, softmax gradient backward; default `argmax-bridge` unchanged.
+  `train` writes `pretrain_losses.json`. Pilot check
+  `scripts/emission_pilot_check.py`; interaction analysis
+  `scripts/b3_lesion_interaction.py`.
+- **B-3 probe v2** (`query_successes_v2`, `query_accuracy_v2`,
+  `per_query_successes_v2.json`, `--probe-v2-seed`,
+  `scripts/b3_probe_v2.py`, `scripts/run_grid_probe_v2.sh`,
+  `scripts/me6_paired_null.py --successes-file`); v1 probe unchanged
+  bit for bit.
 
 - **Block sign flips** (`scripts/me6_paired_null.py --block N`): one
   shared sign per block of N consecutive probe items, for contiguous-

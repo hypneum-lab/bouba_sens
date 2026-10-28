@@ -1,0 +1,444 @@
+{
+  "schema": "bouba_sens.b3_lesion_interaction.v1",
+  "generated_at": "2026-10-27T07:28:41+00:00",
+  "world": "gaussian",
+  "prereg": "docs/prereg/2026-10-26-b3-lesion-interaction.md",
+  "precondition_learns": true,
+  "positive_control": {
+    "modality": "vision",
+    "threshold_margin": 0.1,
+    "n_seeds": 10,
+    "mean_accuracy": 0.742578125,
+    "mean_baseline": 0.24765625,
+    "mean_margin": 0.494921875,
+    "passes": true,
+    "mean_margin_per_modality": {
+      "audio": 0.47421875,
+      "vision": 0.494921875,
+      "tactile": 0.444921875,
+      "gravity": 0.10859375,
+      "force": 0.13125
+    },
+    "seeds": [
+      {
+        "seed": 300,
+        "margins": {
+          "audio": 0.40234375,
+          "vision": 0.484375,
+          "tactile": 0.4296875,
+          "gravity": 0.125,
+          "force": 0.0546875
+        },
+        "accuracy": {
+          "audio": 0.6640625,
+          "vision": 0.74609375,
+          "tactile": 0.69140625,
+          "gravity": 0.38671875,
+          "force": 0.31640625
+        },
+        "baseline": 0.26171875,
+        "n_codes_test": {
+          "audio": 1,
+          "vision": 1,
+          "tactile": 3,
+          "gravity": 3,
+          "force": 6
+        },
+        "init_margins": {
+          "audio": 0.1875,
+          "vision": 0.2421875,
+          "tactile": 0.234375,
+          "gravity": 0.15234375,
+          "force": -0.02734375
+        }
+      },
+      {
+        "seed": 301,
+        "margins": {
+          "audio": 0.56640625,
+          "vision": 0.58203125,
+          "tactile": 0.56640625,
+          "gravity": 0.03515625,
+          "force": 0.1875
+        },
+        "accuracy": {
+          "audio": 0.80859375,
+          "vision": 0.82421875,
+          "tactile": 0.80859375,
+          "gravity": 0.27734375,
+          "force": 0.4296875
+        },
+        "baseline": 0.2421875,
+        "n_codes_test": {
+          "audio": 6,
+          "vision": 4,
+          "tactile": 5,
+          "gravity": 4,
+          "force": 3
+        },
+        "init_margins": {
+          "audio": 0.30859375,
+          "vision": 0.34375,
+          "tactile": 0.265625,
+          "gravity": 0.03515625,
+          "force": 0.21875
+        }
+      },
+      {
+        "seed": 302,
+        "margins": {
+          "audio": 0.453125,
+          "vision": 0.43359375,
+          "tactile": 0.453125,
+          "gravity": 0.16796875,
+          "force": 0.140625
+        },
+        "accuracy": {
+          "audio": 0.703125,
+          "vision": 0.68359375,
+          "tactile": 0.703125,
+          "gravity": 0.41796875,
+          "force": 0.390625
+        },
+        "baseline": 0.25,
+        "n_codes_test": {
+          "audio": 3,
+          "vision": 3,
+          "tactile": 4,
+          "gravity": 2,
+          "force": 5
+        },
+        "init_margins": {
+          "audio": 0.25,
+          "vision": 0.30859375,
+          "tactile": 0.1953125,
+          "gravity": 0.12890625,
+          "force": 0.15234375
+        }
+      },
+      {
+        "seed": 303,
+        "margins": {
+          "audio": 0.38671875,
+          "vision": 0.4375,
+          "tactile": 0.32421875,
+          "gravity": 0.0703125,
+          "force": 0.05078125
+        },
+        "accuracy": {
+          "audio": 0.671875,
+          "vision": 0.72265625,
+          "tactile": 0.609375,
+          "gravity": 0.35546875,
+          "force": 0.3359375
+        },
+        "baseline": 0.28515625,
+        "n_codes_test": {
+          "audio": 4,
+          "vision": 1,
+          "tactile": 3,
+          "gravity": 5,
+          "force": 2
+        },
+        "init_margins": {
+          "audio": 0.17578125,
+          "vision": 0.2890625,
+          "tactile": 0.09375,
+          "gravity": 0.0859375,
+          "force": 0.01953125
+        }
+      },
+      {
+        "seed": 304,
+        "margins": {
+          "audio": 0.43359375,
+          "vision": 0.50390625,
+          "tactile": 0.375,
+          "gravity": 0.15625,
+          "force": 0.171875
+        },
+        "accuracy": {
+          "audio": 0.66015625,
+          "vision": 0.73046875,
+          "tactile": 0.6015625,
+          "gravity": 0.3828125,
+          "force": 0.3984375
+        },
+        "baseline": 0.2265625,
+        "n_codes_test": {
+          "audio": 3,
+          "vision": 5,
+          "tactile": 4,
+          "gravity": 8,
+          "force": 3
+        },
+        "init_margins": {
+          "audio": 0.26953125,
+          "vision": 0.30078125,
+          "tactile": 0.18359375,
+          "gravity": 0.10546875,
+          "force": 0.1875
+        }
+      },
+      {
+        "seed": 305,
+        "margins": {
+          "audio": 0.6171875,
+          "vision": 0.58203125,
+          "tactile": 0.453125,
+          "gravity": 0.13671875,
+          "force": 0.16796875
+        },
+        "accuracy": {
+          "audio": 0.81640625,
+          "vision": 0.78125,
+          "tactile": 0.65234375,
+          "gravity": 0.3359375,
+          "force": 0.3671875
+        },
+        "baseline": 0.19921875,
+        "n_codes_test": {
+          "audio": 1,
+          "vision": 4,
+          "tactile": 4,
+          "gravity": 2,
+          "force": 1
+        },
+        "init_margins": {
+          "audio": 0.3203125,
+          "vision": 0.359375,
+          "tactile": 0.32421875,
+          "gravity": 0.17578125,
+          "force": 0.140625
+        }
+      },
+      {
+        "seed": 306,
+        "margins": {
+          "audio": 0.4140625,
+          "vision": 0.46484375,
+          "tactile": 0.3984375,
+          "gravity": 0.1328125,
+          "force": 0.09765625
+        },
+        "accuracy": {
+          "audio": 0.67578125,
+          "vision": 0.7265625,
+          "tactile": 0.66015625,
+          "gravity": 0.39453125,
+          "force": 0.359375
+        },
+        "baseline": 0.26171875,
+        "n_codes_test": {
+          "audio": 3,
+          "vision": 3,
+          "tactile": 2,
+          "gravity": 2,
+          "force": 3
+        },
+        "init_margins": {
+          "audio": 0.23046875,
+          "vision": 0.296875,
+          "tactile": 0.24609375,
+          "gravity": 0.0859375,
+          "force": 0.0625
+        }
+      },
+      {
+        "seed": 307,
+        "margins": {
+          "audio": 0.5078125,
+          "vision": 0.5,
+          "tactile": 0.58203125,
+          "gravity": 0.1171875,
+          "force": 0.15234375
+        },
+        "accuracy": {
+          "audio": 0.7421875,
+          "vision": 0.734375,
+          "tactile": 0.81640625,
+          "gravity": 0.3515625,
+          "force": 0.38671875
+        },
+        "baseline": 0.234375,
+        "n_codes_test": {
+          "audio": 7,
+          "vision": 4,
+          "tactile": 5,
+          "gravity": 2,
+          "force": 6
+        },
+        "init_margins": {
+          "audio": 0.2734375,
+          "vision": 0.2890625,
+          "tactile": 0.25390625,
+          "gravity": 0.0859375,
+          "force": 0.16015625
+        }
+      },
+      {
+        "seed": 308,
+        "margins": {
+          "audio": 0.43359375,
+          "vision": 0.44140625,
+          "tactile": 0.40625,
+          "gravity": 0.05859375,
+          "force": 0.05859375
+        },
+        "accuracy": {
+          "audio": 0.72265625,
+          "vision": 0.73046875,
+          "tactile": 0.6953125,
+          "gravity": 0.34765625,
+          "force": 0.34765625
+        },
+        "baseline": 0.2890625,
+        "n_codes_test": {
+          "audio": 3,
+          "vision": 4,
+          "tactile": 2,
+          "gravity": 9,
+          "force": 6
+        },
+        "init_margins": {
+          "audio": 0.29296875,
+          "vision": 0.203125,
+          "tactile": 0.1796875,
+          "gravity": 0.0859375,
+          "force": 0.0703125
+        }
+      },
+      {
+        "seed": 309,
+        "margins": {
+          "audio": 0.52734375,
+          "vision": 0.51953125,
+          "tactile": 0.4609375,
+          "gravity": 0.0859375,
+          "force": 0.23046875
+        },
+        "accuracy": {
+          "audio": 0.75390625,
+          "vision": 0.74609375,
+          "tactile": 0.6875,
+          "gravity": 0.3125,
+          "force": 0.45703125
+        },
+        "baseline": 0.2265625,
+        "n_codes_test": {
+          "audio": 1,
+          "vision": 5,
+          "tactile": 8,
+          "gravity": 1,
+          "force": 6
+        },
+        "init_margins": {
+          "audio": 0.30078125,
+          "vision": 0.24609375,
+          "tactile": 0.1875,
+          "gravity": 0.08203125,
+          "force": 0.20703125
+        }
+      }
+    ],
+    "untrained_reference_mean_margin_per_modality": {
+      "audio": 0.2609375,
+      "vision": 0.287890625,
+      "tactile": 0.21640625,
+      "gravity": 0.10234375,
+      "force": 0.119140625
+    }
+  },
+  "trios": 60,
+  "seeds": [
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309
+  ],
+  "incomplete_trios": [],
+  "complete": true,
+  "primary": {
+    "observed": 0.0003901223076714404,
+    "patterns": 1024,
+    "null_mean": 0.0004101496096010559,
+    "null_p99": 0.000956818757233796,
+    "count_ge_observed": 506,
+    "p_value": 0.494140625
+  },
+  "mean_residual_per_cell": {
+    "q0_m1": -0.002840711805555302,
+    "q0_m2": 0.003791232638889113,
+    "q0_m3": 0.004702690972222203,
+    "q0_m4": -0.005653211805555334,
+    "q1_m0": -0.0013693576388886185,
+    "q1_m2": 0.0056011284722226095,
+    "q1_m3": -0.009698350694444276,
+    "q1_m4": 0.0054665798611114435,
+    "q2_m0": 0.0036089409722222243,
+    "q2_m1": -0.0008051215277776781,
+    "q2_m3": 0.0005533854166665492,
+    "q2_m4": -0.0033572048611110517,
+    "q3_m0": -0.0048546006944444635,
+    "q3_m1": 0.003687065972222321,
+    "q3_m2": -0.00237630208333322,
+    "q3_m4": 0.003543836805555601,
+    "q4_m0": 0.0026150173611111287,
+    "q4_m1": -4.123263888874389e-05,
+    "q4_m2": -0.007016059027777679,
+    "q4_m3": 0.004442274305555472
+  },
+  "mean_P_matrix_rows_query_cols_lesioned": [
+    [
+      0.6599,
+      0.6601,
+      0.6731,
+      0.6576,
+      0.6549
+    ],
+    [
+      0.6773,
+      0.6553,
+      0.6897,
+      0.658,
+      0.6809
+    ],
+    [
+      0.6196,
+      0.6143,
+      0.6232,
+      0.6056,
+      0.6094
+    ],
+    [
+      0.2755,
+      0.2831,
+      0.2835,
+      0.2848,
+      0.2807
+    ],
+    [
+      0.337,
+      0.3334,
+      0.3328,
+      0.3279,
+      0.3313
+    ]
+  ],
+  "secondary_block_permutation": {
+    "observed": 0.034140396118164065,
+    "block": 1,
+    "replicates": 10000,
+    "seed": 25102026,
+    "null_mean": 0.00797396260579427,
+    "null_p99": 0.008926773071289062,
+    "p_value": 9.999000099990002e-05
+  },
+  "verdict": "compatible with no interaction"
+}
