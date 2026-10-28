@@ -291,3 +291,86 @@ outcome, D variance components, N by the rule, headroom gate, runtime
    frames) and the logistic settings as above?
 4. Headroom gate thresholds (bacc ≥ 0.35; < 50 % zero cells)?
 5. Fresh pilot seeds 3201–3205?
+
+---
+
+## C. Rev. B as decided by the PI (2026-10-25, 19:47) and its pilots
+
+**Decisions:** v0.8: deterministic soft readout primary (K = 8 Gumbel
+secondary), 1 − CKA(lesion end state, no-lesion control) primary,
+principal shift at the eigengap k secondary, guard 0.5 σ̂, pilot seeds
+2201–2210. v0.9: linear probe on frozen representations with PCA to 128
+dims fitted on the probe-training rows only, best modality chosen on the
+probe-training rows only (grouped CV), a positive control for the
+headroom gate, stratified probe-training allocation handling class 0,
+SESOI 0.05 to be justified from the pilot, pilot seeds 3201–3205. Seeds:
+per-campaign namespaces (`bouba_sens.seeds`). Implemented in `680e979`
+and `e7c8a06` (CI green); pilots on macM1.
+
+### C.1 v0.8 rev. B pilot (seeds 2201–2210, namespace 8101)
+
+Capture at `680e979` (70 blocks, 336–462 s per seed, 65 min in all;
+the run was interrupted on 2026-10-25 after the capture, when the
+summary stopped on a degenerate eigen-spectrum), summary and N rule at
+`e7c8a06` (2026-10-28). Outputs: `reports/pilots/v08_revb_pilot_*.json`.
+
+- **The deterministic soft code is constant.** Its total centred
+  variance is about 8.6 × 10⁻¹⁵ (pre and post), i.e. float32 rounding
+  level for code values of order 0.1; 63–139 "distinct" rows per matrix
+  differ only in the last bits. Every matrix is degenerate under the
+  frozen tolerance (10⁻¹²), every block is invalid, **0 of 10 seeds are
+  complete** → protocol failure by construction; q̂ = 1.0; no σ̂, no N.
+- **Why:** `SensoryWML.step` sends the argmax code of each modality
+  (plus a 10⁻³ bridge term) on the carrier; in these networks the argmax
+  is the same for every probe input (the hard readout had one distinct
+  row, PI finding 2026-10-25), so the deterministic readout of the fused
+  code carries essentially nothing; the Gumbel readout's variance
+  (0.026) is sampling noise: its between-class share is 0.000 and the
+  CKA between the soft and the Gumbel Z_pre is 0.02.
+- Gate (i) of A.2 (6) **fails**. Secondary numbers are reported only for
+  completeness (eigengap k = 2 from the 3 matrices above tolerance;
+  Gumbel-code 1 − CKA block median 0.077, range 0.068–0.943).
+
+**Consequence (PI decision needed):** the fused code at Phase-2 entry
+does not represent the input in this architecture, under any readout we
+have; v0.8 cannot measure representation reorganisation on it. Options:
+measure the encoder representations core(input_proj(x_m)) (continuous,
+informative: v0.9 below shows vision decodes the label at 0.99), or the
+pre-argmax emitter logits; or drop v0.8.
+
+### C.2 v0.9 rev. B pilot (seeds 3201–3205, namespace 9101)
+
+At `e7c8a06`, 2026-10-28: manipulation check, then the main grid (75
+runs, 4.6–8.4 s each, 484 s) and the N rule. Outputs:
+`reports/pilots/v09_revb_*.json`.
+
+- Manipulation check (namespaced anchors and draws): Δ_K = 0.1213,
+  p = 1 / 10,001, **passed**.
+- Probe-training set: 7 / 16 / 16 / 16 blocks for classes 0–3 (class 0
+  limited by its blocks clear of the held-out rows).
+- **No fusion headroom: one modality decodes the label almost
+  perfectly.** Held-out balanced accuracy of the per-modality encoder
+  representations (mean over runs): vision 0.986, tactile 0.943,
+  gravity 0.765, force 0.298, audio 0.279. The best modality chosen on
+  the probe-training rows was vision in 69 / 75 runs (CV 0.978). The
+  **positive control** (all five encoder outputs, PCA 128) scores the
+  same as the best single modality: FG_ctrl mean −0.002 (range −0.065 to
+  +0.063). A representation that has every modality gains nothing over
+  vision alone, so no fusion gain of any size is reachable.
+- The fused code (deterministic soft readout, PCA 128 of a near-constant
+  matrix after standardisation) scores 0.26–0.94 (plain-arm mean 0.49):
+  FG_lin −0.73 to −0.06 (mean −0.46). D (joint − decor) ranges −0.24 to
+  +0.34, zero in 0 of 25 cells; σ̂ = 0.113, σ_plan = 0.177; the N rule
+  finds **no N ≤ 40** (P(A+ and C+) = 0.21 at N = 40).
+- Headroom gate: plain-arm bacc(h_all) 0.49 ≥ 0.35 passes, zero-D share
+  0 passes, **positive control fails** (FG_ctrl ≈ 0 < SESOI 0.05). The
+  SESOI of 0.05 cannot be justified from this pilot: the attainable
+  fusion gain is about 0.
+
+**Consequence (PI decision needed):** with the Studyforrest labels and
+these encoders, vision alone is near ceiling, so fusion gain has no
+room in this world whatever the probe. Options: a world or label in
+which no single modality suffices (for example CC-film, or a label
+defined jointly from two channels), a harder held-out task, or dropping
+the fusion-gain outcome. The fused-code readout problem of C.1 applies
+to h_all here too.

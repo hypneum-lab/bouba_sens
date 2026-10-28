@@ -10,7 +10,7 @@
 **Pre-registration id:** **N18** (confirmed by the PI on 2026-10-25, 19:04). Basis, read on 2026-10-24: the HYPNEUM-PLANS series ends at N14 (`preregistrations/n14_latin_hypercube_7dim.md`) and its roadmap reserves N15–N17 (`2026-05-11-roadmap-Q2-Q3-2026.md`), so N18 / N19 / N20 are proposed for v0.7 / v0.8 / v0.9 in filing order; the last bouba_sens ADR was then 0020, so the verdict ADRs were proposed as ADR-0021 / 0022 / 0023 (shifted on 2026-10-25 to ADR-0023 / 0024 / 0025, ADR-0021 and ADR-0022 having been used by PRs #19 and #28 / #40 for the Me6 nulls); amendment numbers v0.7 / v0.8 / v0.9 follow the local draft series v0.4–v0.6 (never filed) and assume filing in that order.
 **Verdict ADR:** **ADR-0023** (confirmed by the PI on 2026-10-25, 19:04; ADR-0021 and ADR-0022 are used by the Me6 null calibration and paired null, so v0.7 / v0.8 / v0.9 take ADR-0023 / 0024 / 0025)
 **PI decisions applied (2026-10-23):** N = 95 (smallest N with 0.80 power for E-2 in the planning case; superseded by N = 150 on 2026-10-25, see below); equivalence bounds ±half-threshold (B-1 ±0.025, B-2 ±0.05 bit); B-2 primary estimator = mixed discrete–continuous k-NN MI estimator (Ross 2014).
-**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). The power of the robust rule is recomputed from the pilot (round 3, same seeds). **Third set (PI decisions 2026-10-25, 13:32, after round 3):** (vi) **N = 150** (robust-rule power target 0.80; §7, §8); (vii) E-1, E-1b and E-1c also use the robust TOST, with the mean-based t-TOST kept as a reported secondary analysis (§3, §6). These changes are stated on the OSF form.
+**Post-pilot design changes (PI decisions 2026-10-25, disclosed).** Made after the PI had seen the B-2 pilot (round 1, `docs/osf/pilot-report-2026-10-25.md`), before filing: (i) the Gumbel-sampled readout becomes the primary E-2 readout and the hard readout becomes the descriptive E-2h, because the hard readout was input-independent on every pilot seed; (ii) the E-2 probe becomes a class-balanced multi-window probe (§4.2), because one contiguous window was single-label on 3 of 5 pilot seeds. A deterministic soft (probability-based, non-sampled) readout may be added later as a declared secondary comparison; it is not part of this draft. The pilot was re-run on the same pilot seeds with the changed protocol (round 2). N = 95, the bounds and the estimator are unchanged. **Second set (PI decisions 2026-10-25, 13:12, after pilot round 2 and the seed-1105 diagnosis):** (iii) each seed's primary MI estimate averages over **K = 8 Gumbel draws** with fixed seeds (§4.2); (iv) the E-2 decision uses a **robust TOST** (90 % Hodges–Lehmann CI, §6, §9) instead of the mean-based t-TOST, which is kept as a reported secondary analysis; (v) a registered secondary binary outcome per seed, **"class-separating switch learned"** (E-2s, rule fixed in §4.2 from the pilot, analysis in §6). The power of the robust rule is recomputed from the pilot (round 3, same seeds). **Third set (PI decisions 2026-10-25, 13:32, after round 3):** (vi) **N = 150** (robust-rule power target 0.80; §7, §8); (vii) E-1, E-1b and E-1c also use the robust TOST, with the mean-based t-TOST kept as a reported secondary analysis (§3, §6). **19:04 set:** standalone pre-registration (no filed parent), confirmatory seeds 4001–4150 (reserve 4151–4154), world class recorded in every grid output, a dedicated SNR pilot cell, the exact sign test as a registered sensitivity analysis (§6, §7, §8, §11). **Fourth set (PI decisions 2026-10-25, 19:47):** (viii) per-campaign seed namespaces for every derived data seed (§8); the B-2 pilot was re-run in its namespace (round 4) and its numbers replace round 3 for planning (§7), and the B-1 SNR pilot cell was re-run in its namespace (§11). These changes are stated on the OSF form.
 
 > **Filing note.** This is the machine-readable draft. Only the B-2
 > pilot (seeds 1101–1105, §4.3; rounds 1–3, `docs/osf/pilot-report-2026-10-25.md`)
@@ -697,6 +697,27 @@ in steps of 0.00625, order-statistic CIs of single locks rarely fall
 strictly inside ±0.025. The sign test is therefore an informative
 check of E-1 and E-2 at N = 150 but not of E-1b.
 
+*Pilot round 4 (2026-10-25, PI decision 19:47: the round-3 protocol
+re-run in the B-2 pilot namespace 7201, same seeds 1101–1105, commit
+`680e979`; `reports/pilots/v07_b2_pilot_r4_derived_n150.json`,
+`…/v07_sign_power_r4_n150.json`). These numbers replace round 3 for
+planning.* The namespaced training streams give different networks:
+primary ΔMI-hat per seed −0.0058, −0.0431, +0.0153, −0.0033, −0.0337 bit
+(Hodges–Lehmann −0.0139; mean −0.0141, SD 0.0239, UCL80 0.0372). No
+seed shows the large class-separating MI jump of round-3 seed 1105;
+E-2s flags a switch after the lesion on 1 of 5 seeds (1101, with a
+ΔMI-hat of −0.006: the structure statistics and the MI move
+independently here). Robust rule at N = 150: power **1.000** at μ = 0 and
+at μ = −0.02 (planning law built from these five values), size at the
+bounds 0.023 (θ = +0.05) and 0.003 (θ = −0.05); "adequately powered".
+Mean rule (secondary): exact t-TOST power 1.000, "adequately powered".
+Sign test (sensitivity): B-2 P(equivalent) 1.000 at μ = 0 and 0.772 at
+μ = −0.02 (median-centred law), 0.000 with the median at ±0.05; B-1
+unchanged (P(E-1 and E-1b) = 0.015). N stays 150 (PI decision 13:32):
+the round-4 law is much narrower than round 3's, so N = 150 is
+conservative relative to it; the round-3 law, with its switch tail, is
+the reason N was raised.
+
 *Earlier N (kept for the record).* **Sample size: N = 95 (PI decision, 2026-10-23; superseded).** The PI set N to the
 smallest value giving 0.80 power for E-2 in the planning case (below:
 μ = ±0.02 bit, SD 0.1166). Exact TOST power (normal data, conditioning
@@ -863,19 +884,27 @@ on the OSF form.
   4201) and the v0.8 (2001–2044) and v0.9 (3001–3044) pools.
 - **Reserve seeds (technical replacement only):** 4151–4154, used in
   order.
-- **Derived seeds are not isolated (Codex review 2026-10-25; open PI
-  decision).** Training batch t of seed s uses `world.sample(16,
-  seed = s + t)` (`loop.pretrain`), so the 200 Phase-1 batches of
-  confirmatory seed s draw from seeds s … s + 199: the block 4001–4154
-  uses batch seeds 4001–4353, which include the SNR pilot seed 4201
-  (and its batch seeds 4201–4400); the same holds across every pool
-  (for example v0.8 2001–2044 vs pilots 2101–2110). Identical batch
-  seeds give identical training windows, not shared outcomes, but the
-  networks are then not independent in their data streams. Options for
-  the PI: accept this (as in every earlier grid), or move each campaign
-  to its own sampling namespace (for example batch seed = 10⁶ · c +
-  1000 · s + t for campaign c), a code change made and tested before
-  filing.
+- **Seed namespaces (PI decision 2026-10-25, 19:47, after the pilots;
+  replaces the legacy derived seeds).** Every derived data seed is
+  `SeedSequence([code, s, stream, t])` (`bouba_sens.seeds.ns_seed`):
+  `code` is the campaign code, `s` the experiment seed (for B-1 lesion
+  cells, the cell seed s · 10 000 + cell index of `run_grid.sh`),
+  `stream` the kind of draw (Phase-1 batch, Phase-2 batch, replay
+  initial / refill, Phase-2 probe, per-query probe, B-2 balanced probe)
+  and `t` its index. Campaign codes: **B-1 pilot 7101** (seed 4201),
+  **B-1 confirmatory 7102** (4001–4154), **B-2 pilot 7201** (1101–1105),
+  **B-2 confirmatory 7202** (4001–4154). B-1 and B-2 share base seeds
+  but not codes. `run_grid.sh` passes `--seed-namespace` from the seed's
+  pool and the E1 runner sets it under its presets.
+  `tests/unit/test_seeds.py` enumerates every derived seed of every
+  pilot and confirmatory pool of v0.7–v0.9 and checks that no two pools
+  share one. Model initialisation stays seeded by s (base seeds are
+  disjoint across pools); the K = 8 Gumbel draw seeds 2·10⁹ + 1000 s +
+  100 p + r are disjoint across pools by construction and are included
+  in the test. Earlier, the legacy arithmetic (batch t of seed s →
+  s + t) made the block 4001–4154 draw batch seeds 4001–4353, which
+  include the first SNR pilot seed 4201; both v0.7 pilots were re-run
+  in their namespaces (§4.3, §11).
 - **Filing gate:** `analyse_v07_tost.py` accepts only this roster;
   the E1 runner (`--osf-filed`) and `run_grid.sh` (`OSF_FILED`) refuse
   seeds 4001–4154 before filing.
@@ -963,7 +992,7 @@ which concerned a different estimand. All outcomes are publishable.
       → N = 150 and the robust E-1, E-1b, E-1c.
 - [x] No threshold change.
 - [x] No metric-math change.
-- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form. (Pilot cell, PI decision 2026-10-25 19:04: dedicated B-1 pilot seed **4201**, outside every pool, v0.7 B-1 parameters with `LOCK_AFTER=100`, `K_STEPS=50`, commit `1ec2a0a`: in all 30 cells the recorded SNR is +20 dB at step 0, the floor −20.00 / −10.00 / +10.00 dB at steps 50–99, mean −9.80 / −2.35 / +12.55 dB, as in §4.1; every output records `StudyforrestRealWorld` and `--require-world` passed; `reports/pilots/v07_snr_pilot_seed4201_cells.json`. Remaining: the statement on the OSF form.)
+- [ ] SNR schedule differs from the historical grids (ADR-0020): `K_STEPS=50` / `--k-steps 50` pass-through merged (done on this branch, §4.3), effective SNR (−20 / −10 / +10 dB at step 50) checked in `metadata.json` of a pilot cell, and the change stated on the OSF form. (Pilot cell, PI decision 2026-10-25 19:04: dedicated B-1 pilot seed **4201**, outside every pool, v0.7 B-1 parameters with `LOCK_AFTER=100`, `K_STEPS=50`, commit `1ec2a0a`: in all 30 cells the recorded SNR is +20 dB at step 0, the floor −20.00 / −10.00 / +10.00 dB at steps 50–99, mean −9.80 / −2.35 / +12.55 dB, as in §4.1; every output records `StudyforrestRealWorld` and `--require-world` passed; `reports/pilots/v07_snr_pilot_seed4201_cells.json`. Re-run on 2026-10-25 in the B-1 pilot namespace 7101 (PI decision 19:47), commit `680e979`: the same SNR values in all 30 cells, every output records `StudyforrestRealWorld` and `seed_namespace` 7101, `--require-world` passed; `reports/pilots/v07_snr_pilot_ns_seed4201_cells.json`. Remaining: the statement on the OSF form.)
 - [x] World class (`StudyforrestRealWorld`) confirmed in the pilot logs (§4.1; preset world check passed and recorded, pilot report 2026-10-25).
 - [ ] Post-pilot design changes of 2026-10-25 (Gumbel primary, class-balanced probe; header) stated on the OSF form as made after the PI saw pilot round 1.
 - [x] Bounds derived from frozen thresholds (half of each), not from data.
@@ -1010,7 +1039,8 @@ the header): standalone pre-registration (no filed parent); seeds
 4001–4150, reserve 4151–4154; dedicated SNR pilot cell (seed 4201);
 world class recorded in every grid output; numbering N18 / ADR-0023
 confirmed; exact sign test as a registered sensitivity analysis.
-**Open (PI):** the seed-namespace policy below (§8, derived seeds).
+Decided by the PI on 2026-10-25, 19:47 (after the pilots): per-campaign
+seed namespaces (§8), with the v0.7 pilots re-run in their namespaces.
 
 Filing still needs the prerequisites
 stated above (§4.3 code tasks, calibration, pilot, regenerated E-2

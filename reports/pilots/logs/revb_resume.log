@@ -1,0 +1,620 @@
+START commit e7c8a06466fe1d017a50376a41c9f3059d0d2449 2026-10-28T14:15:12Z 1793196912
+Uninstalled 1 package in 9ms
+Installed 1 package in 5ms
+{
+  "design": "rev. B",
+  "n_seeds": 10,
+  "n_complete": 0,
+  "seeds_complete": [],
+  "undefined_levels_per_seed": {
+    "2201": 7,
+    "2202": 7,
+    "2203": 7,
+    "2204": 7,
+    "2205": 7,
+    "2206": 7,
+    "2207": 7,
+    "2208": 7,
+    "2209": 7,
+    "2210": 7
+  },
+  "per_level": [
+    {
+      "lock": 25,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 50,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 75,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 100,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 125,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 150,
+      "invalid_cells": 141,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    },
+    {
+      "lock": 175,
+      "invalid_cells": 150,
+      "total_cells": 150,
+      "undefined_blocks": 10,
+      "total_blocks": 10
+    }
+  ],
+  "y_all": [
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ]
+  ],
+  "q_hat_cp80": 1.0,
+  "exclusion_model": "seed",
+  "guard_sd_units": 0.5,
+  "secondary_k_gap": 2,
+  "secondary_k_gap_n_matrices": 3,
+  "secondary_k_gap_ratios": [
+    2054.3506320251686,
+    4168.078000853228,
+    3862.162245189786
+  ],
+  "soft_total_variance_pre_median": 8.574501703632763e-15,
+  "soft_total_variance_post_median": 8.266223081802715e-15,
+  "gumbel_total_variance_pre_median": 0.02554176907209977,
+  "gumbel_between_class_share_pre_median": 0.0,
+  "secondary_ratio_at_k_gap_post_share_below_1_1": 0.03619047619047619,
+  "secondary_S_at_k_gap_block_y": [
+    0.0001927945282000909,
+    -0.011956447313199337,
+    0.1308374079942458,
+    -0.2142640269046604,
+    -0.032333725231616595,
+    null,
+    -0.06288020970497565,
+    -0.010860142906066295,
+    0.008555921079424489,
+    -0.02921621992966683,
+    0.06352814045249155,
+    -0.0086747187494427,
+    -0.006369093407895043,
+    0.009729611165577579,
+    -0.053260506567966104,
+    -0.004247008876880898,
+    0.03187050823576154,
+    0.00031075551589188066,
+    0.012801035890853907,
+    -0.0014866261883600407,
+    -0.0014212640777178098,
+    0.049990395830742385,
+    0.020734226006478118,
+    -0.0013696438937726985,
+    0.008024418163420366,
+    0.02028407387350606,
+    -0.0017470709399267648,
+    -0.062289378600039025,
+    -0.015562539513792273,
+    -0.026612629061978255,
+    -0.03412725953513329,
+    0.02920981649146026,
+    0.004743690695201419,
+    0.01338396722116486,
+    0.017567649384591988,
+    -0.010944773886476633,
+    0.03309675890745112,
+    -0.008488519730792232,
+    -0.05661625861774877,
+    0.035008498398399035,
+    -0.011574481220426702,
+    -0.03536511073227544,
+    -0.02915930832326119,
+    -0.0076381462159229585,
+    0.010152602210604433,
+    -0.012398981128949549,
+    0.03920302319411417,
+    -0.06102656872482126,
+    -0.015427022673853319,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    -0.008684364776180953,
+    -0.002328481574783048,
+    0.03242423684751039,
+    -0.017018930177804092,
+    -0.04991892896121586,
+    -0.02882605036934771,
+    0.05843196604604928,
+    -0.07314173879300356,
+    0.01473231495008609,
+    -0.027827651311041812,
+    0.007454658161824446,
+    -0.017593218882924422,
+    -0.055992106104244765,
+    0.004938826533056662
+  ],
+  "secondary_gumbel_cka_block_y": [
+    0.07512620628820277,
+    0.07278966119966523,
+    0.21063192736545922,
+    0.2133776914810842,
+    0.2176305212360884,
+    0.9430867659125631,
+    0.24156258427632393,
+    0.07471091431430943,
+    0.07598351950193682,
+    0.07536989297372998,
+    0.07524310109100962,
+    0.07523244134843377,
+    0.07508003263366891,
+    0.07500858491361373,
+    0.07759308824705369,
+    0.07761777832341665,
+    0.07772340204021178,
+    0.07777833781234511,
+    0.07757071017560158,
+    0.07770279654679368,
+    0.07773021015105719,
+    0.0774613191073723,
+    0.07720749302000018,
+    0.07725330089976612,
+    0.07747462127042826,
+    0.07762560891085502,
+    0.07766517755921865,
+    0.07767441473132031,
+    0.06800629010961456,
+    0.06782896546113515,
+    0.06793647214880183,
+    0.06845113174581396,
+    0.06877115490758756,
+    0.0690262173785311,
+    0.06927903671162972,
+    0.07667561565257686,
+    0.07676923052560791,
+    0.07661453978051658,
+    0.0764305474137037,
+    0.07614906801939192,
+    0.0760075539251599,
+    0.07595512480452815,
+    0.07668694069550064,
+    0.07698830063381867,
+    0.07710871705417854,
+    0.07711042334114881,
+    0.07714331205656699,
+    0.0771395257845644,
+    0.0771039228031909,
+    0.07288523020702464,
+    0.07257706713122158,
+    0.07304153688991644,
+    0.07308409403601512,
+    0.07319237052803906,
+    0.07311402092498509,
+    0.07244113830149967,
+    0.07774086666316182,
+    0.07794889729760668,
+    0.07807168069948323,
+    0.07818187659353737,
+    0.07824225149068476,
+    0.07816322694913436,
+    0.07819881477290536,
+    0.07815374597242264,
+    0.07894353772327078,
+    0.0797030017579744,
+    0.07970891281362424,
+    0.07971163419385174,
+    0.07970888502269913,
+    0.07979180398314756
+  ],
+  "gate_between_class_share_pre_median": 0.0,
+  "gate_cka_pre_control_median": 0.917872456240763,
+  "readout_cka_soft_vs_gumbel_pre_median": 0.020680371023768546,
+  "sigma_hat": null,
+  "fileable_as_drafted": false,
+  "world_class": "StudyforrestRealWorld",
+  "wall_s_per_seed": {
+    "2201": 426.18173699907493,
+    "2202": 431.00538912496995,
+    "2203": 461.8546884569805,
+    "2204": 417.787175625097,
+    "2205": 388.244094998925,
+    "2206": 357.4058149168268,
+    "2207": 360.80432700004894,
+    "2208": 360.94293450016994,
+    "2209": 345.20717333233915,
+    "2210": 336.24809816502966
+  }
+}
+Uninstalled 1 package in 7ms
+Installed 1 package in 4ms
+{
+  "source": "reports/pilots/v08_revb_pilot_quantities.json",
+  "sims": 100000,
+  "rng_seed": 20261831,
+  "N": null,
+  "note": "pilot not fileable as drafted"
+}
+V08-DONE 2026-10-28T14:21:09Z 1793197269
+System-wide memory free percentage: 79%
+Uninstalled 1 package in 5ms
+Installed 1 package in 3ms
+{
+  "amendment": "v0.9 section 3.3 manipulation check (pilot)",
+  "world_class": "StudyforrestRealWorld",
+  "split": "stratified",
+  "design": "revb",
+  "seed_namespace": 9101,
+  "n_frames": 9000,
+  "n_train": 8488,
+  "n_probe": 512,
+  "seeds": [
+    3201,
+    3202,
+    3203,
+    3204,
+    3205
+  ],
+  "n_draws_per_seed": 200,
+  "n_perm": 10000,
+  "gate_seed": 20261023,
+  "gate": {
+    "passed": true,
+    "delta_k": 0.12129603135678248,
+    "p_value": 9.999000099990002e-05,
+    "k_joint": 0.13193605434872865,
+    "k_decor": 0.010640022991946175,
+    "n_perm": 10000,
+    "reason": "ok"
+  },
+  "k_original_mean": 0.18524646717926282,
+  "wall_time_s": 38.074342417000025
+}
+Uninstalled 1 package in 7ms
+Installed 1 package in 4ms
+seed=3201 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5633 bacc_all=0.374 best=tactile ctrl=+0.0625 wall=5.3s
+seed=3201 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.5404 bacc_all=0.445 best=vision ctrl=+0.0146 wall=5.1s
+seed=3201 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.5260 bacc_all=0.464 best=vision ctrl=-0.0521 wall=4.6s
+seed=3201 onset=50 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5951 bacc_all=0.395 best=vision ctrl=-0.0521 wall=5.3s
+seed=3201 onset=50 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4922 bacc_all=0.497 best=vision ctrl=-0.0521 wall=5.4s
+seed=3201 onset=50 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4870 bacc_all=0.503 best=vision ctrl=-0.0521 wall=5.4s
+seed=3201 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4974 bacc_all=0.492 best=vision ctrl=-0.0521 wall=5.9s
+seed=3201 onset=100 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4544 bacc_all=0.535 best=vision ctrl=-0.0521 wall=5.9s
+seed=3201 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4607 bacc_all=0.529 best=vision ctrl=-0.0521 wall=6.4s
+seed=3201 onset=150 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4326 bacc_all=0.557 best=vision ctrl=-0.0521 wall=7.2s
+seed=3201 onset=150 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.3583 bacc_all=0.631 best=vision ctrl=-0.0521 wall=7.3s
+seed=3201 onset=150 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.3727 bacc_all=0.617 best=vision ctrl=-0.0521 wall=7.3s
+seed=3201 onset=200 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4857 bacc_all=0.505 best=vision ctrl=-0.0531 wall=8.0s
+seed=3201 onset=200 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4740 bacc_all=0.517 best=vision ctrl=-0.0531 wall=7.5s
+seed=3201 onset=200 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4716 bacc_all=0.519 best=vision ctrl=-0.0531 wall=7.8s
+seed=3202 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4745 bacc_all=0.463 best=tactile ctrl=+0.0625 wall=5.0s
+seed=3202 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.5432 bacc_all=0.441 best=vision ctrl=-0.0010 wall=5.0s
+seed=3202 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4711 bacc_all=0.511 best=vision ctrl=+0.0177 wall=5.0s
+seed=3202 onset=50 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5714 bacc_all=0.411 best=vision ctrl=+0.0177 wall=5.8s
+seed=3202 onset=50 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.5411 bacc_all=0.441 best=vision ctrl=+0.0177 wall=5.8s
+seed=3202 onset=50 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.5294 bacc_all=0.453 best=vision ctrl=+0.0177 wall=5.8s
+seed=3202 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.6841 bacc_all=0.298 best=vision ctrl=+0.0177 wall=6.2s
+seed=3202 onset=100 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.7016 bacc_all=0.281 best=vision ctrl=+0.0177 wall=6.5s
+seed=3202 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.7016 bacc_all=0.281 best=vision ctrl=+0.0177 wall=6.5s
+seed=3202 onset=150 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5107 bacc_all=0.472 best=vision ctrl=+0.0177 wall=7.2s
+seed=3202 onset=150 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4815 bacc_all=0.501 best=vision ctrl=+0.0177 wall=7.5s
+seed=3202 onset=150 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4896 bacc_all=0.493 best=vision ctrl=+0.0177 wall=7.3s
+seed=3202 onset=200 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5281 bacc_all=0.454 best=vision ctrl=+0.0177 wall=8.1s
+seed=3202 onset=200 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.5320 bacc_all=0.450 best=vision ctrl=+0.0177 wall=7.5s
+seed=3202 onset=200 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.5372 bacc_all=0.445 best=vision ctrl=+0.0177 wall=7.7s
+seed=3203 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.5849 bacc_all=0.401 best=vision ctrl=-0.0646 wall=5.2s
+seed=3203 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.2414 bacc_all=0.746 best=vision ctrl=+0.0125 wall=5.2s
+seed=3203 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.5734 bacc_all=0.417 best=vision ctrl=-0.0073 wall=5.3s
+seed=3203 onset=50 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3911 bacc_all=0.530 best=tactile ctrl=+0.0625 wall=5.5s
+seed=3203 onset=50 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4781 bacc_all=0.508 best=vision ctrl=-0.0031 wall=5.5s
+seed=3203 onset=50 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.6125 bacc_all=0.378 best=vision ctrl=-0.0073 wall=5.6s
+seed=3203 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3190 bacc_all=0.602 best=tactile ctrl=+0.0625 wall=6.3s
+seed=3203 onset=100 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.5560 bacc_all=0.432 best=vision ctrl=-0.0042 wall=6.3s
+seed=3203 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4867 bacc_all=0.504 best=vision ctrl=-0.0073 wall=6.7s
+seed=3203 onset=150 arm=decor FG=-0.0605 acc_all=0.3984 FGlin=-0.5927 bacc_all=0.398 best=vision ctrl=-0.0073 wall=7.2s
+seed=3203 onset=150 arm=joint FG=+0.0000 acc_all=0.3789 FGlin=-0.6167 bacc_all=0.374 best=vision ctrl=-0.0073 wall=7.4s
+seed=3203 onset=150 arm=plain FG=-0.0234 acc_all=0.3770 FGlin=-0.6255 bacc_all=0.365 best=vision ctrl=-0.0073 wall=7.1s
+seed=3203 onset=200 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.6820 bacc_all=0.309 best=vision ctrl=-0.0073 wall=8.4s
+seed=3203 onset=200 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.6430 bacc_all=0.348 best=vision ctrl=-0.0073 wall=8.0s
+seed=3203 onset=200 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.7297 bacc_all=0.261 best=vision ctrl=-0.0073 wall=8.3s
+seed=3204 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.2206 bacc_all=0.700 best=tactile ctrl=+0.0625 wall=4.9s
+seed=3204 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.0625 bacc_all=0.938 best=tactile ctrl=+0.0000 wall=4.7s
+seed=3204 onset=0 arm=plain FG=-0.0078 acc_all=0.4512 FGlin=-0.4789 bacc_all=0.503 best=vision ctrl=+0.0010 wall=4.8s
+seed=3204 onset=50 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4357 bacc_all=0.546 best=vision ctrl=+0.0188 wall=5.5s
+seed=3204 onset=50 arm=joint FG=+0.0059 acc_all=0.4824 FGlin=-0.1526 bacc_all=0.830 best=vision ctrl=-0.0615 wall=5.9s
+seed=3204 onset=50 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.5531 bacc_all=0.428 best=vision ctrl=+0.0021 wall=5.8s
+seed=3204 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4109 bacc_all=0.571 best=vision ctrl=+0.0177 wall=6.5s
+seed=3204 onset=100 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4279 bacc_all=0.554 best=vision ctrl=+0.0177 wall=6.5s
+seed=3204 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4518 bacc_all=0.530 best=vision ctrl=+0.0010 wall=6.4s
+seed=3204 onset=150 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3104 bacc_all=0.671 best=vision ctrl=+0.0188 wall=7.2s
+seed=3204 onset=150 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.3357 bacc_all=0.647 best=vision ctrl=+0.0010 wall=7.3s
+seed=3204 onset=150 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4281 bacc_all=0.554 best=vision ctrl=+0.0010 wall=7.2s
+seed=3204 onset=200 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.4013 bacc_all=0.581 best=vision ctrl=+0.0177 wall=8.0s
+seed=3204 onset=200 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.3307 bacc_all=0.651 best=vision ctrl=+0.0021 wall=7.9s
+seed=3204 onset=200 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.6013 bacc_all=0.380 best=vision ctrl=+0.0021 wall=8.0s
+seed=3205 onset=0 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3141 bacc_all=0.673 best=vision ctrl=+0.0125 wall=5.1s
+seed=3205 onset=0 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.3182 bacc_all=0.669 best=vision ctrl=+0.0125 wall=5.1s
+seed=3205 onset=0 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.3490 bacc_all=0.643 best=vision ctrl=+0.0083 wall=5.1s
+seed=3205 onset=50 arm=decor FG=+0.0215 acc_all=0.4863 FGlin=-0.1578 bacc_all=0.834 best=vision ctrl=-0.0542 wall=5.9s
+seed=3205 onset=50 arm=joint FG=+0.0391 acc_all=0.4961 FGlin=-0.1945 bacc_all=0.795 best=vision ctrl=+0.0104 wall=5.9s
+seed=3205 onset=50 arm=plain FG=+0.0000 acc_all=0.4824 FGlin=-0.3695 bacc_all=0.618 best=vision ctrl=+0.0125 wall=5.8s
+seed=3205 onset=100 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3695 bacc_all=0.620 best=vision ctrl=+0.0104 wall=6.5s
+seed=3205 onset=100 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4091 bacc_all=0.582 best=vision ctrl=+0.0094 wall=6.4s
+seed=3205 onset=100 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.3945 bacc_all=0.596 best=vision ctrl=+0.0094 wall=6.7s
+seed=3205 onset=150 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3977 bacc_all=0.591 best=vision ctrl=+0.0115 wall=7.4s
+seed=3205 onset=150 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.4078 bacc_all=0.581 best=vision ctrl=+0.0115 wall=7.3s
+seed=3205 onset=150 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4013 bacc_all=0.588 best=vision ctrl=+0.0104 wall=6.9s
+seed=3205 onset=200 arm=decor FG=+0.0000 acc_all=0.4688 FGlin=-0.3849 bacc_all=0.605 best=vision ctrl=+0.0104 wall=8.2s
+seed=3205 onset=200 arm=joint FG=+0.0000 acc_all=0.4688 FGlin=-0.3669 bacc_all=0.625 best=vision ctrl=+0.0083 wall=8.1s
+seed=3205 onset=200 arm=plain FG=+0.0000 acc_all=0.4688 FGlin=-0.4323 bacc_all=0.557 best=vision ctrl=+0.0104 wall=7.6s
+{
+  "world_class": "StudyforrestRealWorld",
+  "seeds": [
+    3201,
+    3202,
+    3203,
+    3204,
+    3205
+  ],
+  "osf_filed": "",
+  "design": "revb",
+  "wall_s_total": 484.02549275,
+  "onsets": [
+    0,
+    50,
+    100,
+    150,
+    200
+  ],
+  "D_outcome": "linear",
+  "D": [
+    [
+      0.022916666666666696,
+      0.10286458333333337,
+      0.04296875,
+      0.07421875,
+      0.01171875
+    ],
+    [
+      -0.06874999999999998,
+      0.03020833333333328,
+      -0.017447916666666674,
+      0.029166666666666674,
+      -0.00390625
+    ],
+    [
+      0.34348958333333324,
+      -0.08697916666666661,
+      -0.23697916666666663,
+      -0.023958333333333415,
+      0.0390625
+    ],
+    [
+      0.15807291666666679,
+      0.28307291666666645,
+      -0.01692708333333326,
+      -0.025260416666666785,
+      0.07057291666666676
+    ],
+    [
+      -0.004166666666666652,
+      -0.0367187499999998,
+      -0.039583333333333304,
+      -0.010156250000000089,
+      0.017968749999999978
+    ]
+  ],
+  "variance_components": {
+    "ms_seed": 0.010341014268663191,
+    "ms_residual": 0.012870685831705716,
+    "df_residual": 16.0,
+    "sigma_e2": 0.012870685831705716,
+    "sigma_u2": 0.0,
+    "sigma_hat": 0.11344904508943968,
+    "ucl_multiplier": 1.55757542255663,
+    "sigma_plan": 0.17670544434383018
+  },
+  "D_head_descriptive": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.060546875,
+      0.0
+    ],
+    [
+      0.0,
+      0.005859375,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.017578125,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "headroom": {
+    "plain_bacc_all_mean": 0.4854895833333333,
+    "plain_bacc_best_single_mean": 0.986875,
+    "fg_lin_mean_all_runs": -0.46013194444444444,
+    "fg_control_mean_all_runs": -0.0015416666666666545,
+    "D_zero_fraction": 0.0,
+    "recalls_all_mean": [
+      0.7741666666666667,
+      0.3990972222222222,
+      0.48083333333333333,
+      0.436875
+    ],
+    "best_modality_counts": {
+      "audio": 0,
+      "vision": 69,
+      "tactile": 6,
+      "gravity": 0,
+      "force": 0
+    },
+    "all_converged": true
+  }
+}
+Uninstalled 1 package in 6ms
+Installed 1 package in 4ms
+N=20: P(A+ and C+)=0.1109 lower=0.1089
+N=21: P(A+ and C+)=0.1147 lower=0.1127
+N=22: P(A+ and C+)=0.1207 lower=0.1187
+N=23: P(A+ and C+)=0.1318 lower=0.1296
+N=24: P(A+ and C+)=0.1346 lower=0.1325
+N=25: P(A+ and C+)=0.1380 lower=0.1358
+N=26: P(A+ and C+)=0.1420 lower=0.1398
+N=27: P(A+ and C+)=0.1454 lower=0.1431
+N=28: P(A+ and C+)=0.1481 lower=0.1458
+N=29: P(A+ and C+)=0.1595 lower=0.1572
+N=30: P(A+ and C+)=0.1603 lower=0.1579
+N=31: P(A+ and C+)=0.1656 lower=0.1632
+N=32: P(A+ and C+)=0.1682 lower=0.1659
+N=33: P(A+ and C+)=0.1789 lower=0.1764
+N=34: P(A+ and C+)=0.1779 lower=0.1755
+N=35: P(A+ and C+)=0.1820 lower=0.1795
+N=36: P(A+ and C+)=0.1932 lower=0.1907
+N=37: P(A+ and C+)=0.1960 lower=0.1935
+N=38: P(A+ and C+)=0.1984 lower=0.1958
+N=39: P(A+ and C+)=0.2089 lower=0.2063
+N=40: P(A+ and C+)=0.2060 lower=0.2035
+{
+  "source": "reports/pilots/v09_revb_pilot_main_grid.json",
+  "sims": 100000,
+  "rng_seed": 20261932,
+  "sigma_plan": 0.17670544434383018,
+  "N": null,
+  "rule_outcome": "no N <= 40 qualifies (section 7: PI decides)"
+}
+END 2026-10-28T14:37:57Z 1793198277

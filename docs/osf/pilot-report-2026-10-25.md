@@ -512,6 +512,54 @@ question for the PI.
   Z_control) = 0.97). The new pilots (seeds 2201–2210 and 3201–3205)
   wait for the PI's review.
 
+## PI decisions of 19:47 and the pilots they asked for (2026-10-25 / 28)
+
+**Seed namespaces.** Every derived data seed is now
+`SeedSequence([code, s, stream, t])` with one code per campaign and
+pool (`bouba_sens.seeds`; 7101 / 7102 v0.7 B-1 pilot / confirmatory,
+7201 / 7202 B-2, 8101 / 8102 v0.8, 9101 / 9102 v0.9);
+`tests/unit/test_seeds.py` enumerates every derived seed of every pool
+and finds no seed shared by two pools. Pilots affected by the earlier
+overlap of derived seeds, and what was done:
+
+| Pilot | Overlap with a confirmatory pool (legacy seeds) | Enters a rule? | Action |
+|---|---|---|---|
+| v0.7 B-1 SNR cell 4201 | yes (batch seeds 4201–4400 vs 4001–4353) | no (a check) | re-run in 7101: same SNR, world class and namespace recorded |
+| v0.7 B-2 1101–1105 (rounds 1–3) | no | yes (N, label) | re-run as round 4 in 7201; round 4 replaces round 3 for planning |
+| v0.8 2101–2110 | yes (2101–2310 vs 2001–2243) | yes | superseded by the rev. B pilot 2201–2210 in 8101 |
+| v0.9 3101–3105 (grid) | yes (3101–3555 vs 3001–3493) | yes | superseded by the rev. B pilot 3201–3205 in 9101 |
+| v0.9 manipulation checks | no (anchors and draws disjoint) | yes (gate) | re-run in 9101 with the rev. B pilot |
+| seed-0 runs | not a pool seed | no | not re-run |
+
+**v0.7 round 4 (namespace 7201, `680e979`):** ΔMI-hat −0.0058, −0.0431,
++0.0153, −0.0033, −0.0337 bit (HL −0.0139); switch on 1 / 5 (1101);
+robust power at N = 150 1.000, size at the bounds 0.023 / 0.003; mean
+rule 1.000; N stays 150 (`v07_b2_pilot_r4_derived_n150.json`,
+`v07_sign_power_r4_n150.json`). **SNR cell re-run (7101):** floors and
+means as before, world class and namespace recorded, `--require-world`
+passed.
+
+**v0.8 rev. B (seeds 2201–2210, 8101) — gate failed.** The deterministic
+soft fused code is constant to float rounding (total variance ≈
+8.6 × 10⁻¹⁵); 0 / 10 complete seeds; no σ̂, no N. The Gumbel code's
+variation is sampling noise (between-class share 0.000; CKA between
+the soft and the Gumbel code 0.02). Capture 65 min; the run was
+interrupted on 2026-10-25 when the summary stopped on a degenerate
+spectrum (log `logs/revb_pilots.log`), fixed in `e7c8a06` and
+summarised on 2026-10-28 (`logs/revb_resume.log`).
+
+**v0.9 rev. B (seeds 3201–3205, 9101) — headroom gate failed on the
+positive control.** Manipulation check passed (Δ_K 0.121, p 1e-4).
+Vision alone decodes the label at held-out balanced accuracy 0.986; the
+concatenation of all modalities gains nothing (FG_ctrl mean −0.002); no
+N ≤ 40 qualifies (σ_plan 0.177). Details and options:
+`docs/osf/redesign-proposals-v08-v09-2026-10-25.md`, section C.
+
+Raw v0.8 rev. B code matrices (4.1 GB) stay on macM1
+(`~/hypneum-lab/pilots-pr9/runs/v08_revb_pilot_blocks`); the first v0.8
+pilot's matrices (2.0 GB, superseded) and two seed-0 / old SNR grids were
+deleted on 2026-10-28 to save disk (their summaries are committed).
+
 ## Findings at 11:00 and how they were resolved
 
 The list below is the question list sent to the PI at 11:00; each item

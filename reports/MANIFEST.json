@@ -55,6 +55,14 @@
     "sha256": "f09211fe337d827799b273b719fdc9efea877c91072ee29fb5a32d1967957e26",
     "size": 12043
   },
+  "pilots/v07_b2_pilot_r4_derived_n150.json": {
+    "sha256": "0863b36c2d0a645859685d468b53f80423df2f229948e6a6ef7eb4851376a5ca",
+    "size": 4125
+  },
+  "pilots/v07_b2_pilot_r4_seeds1101-1105.json": {
+    "sha256": "ff6f073ee3d1ca40fc840c7838866354aebb6854f1416c1ffe53b9e9bcf8e106",
+    "size": 12076
+  },
   "pilots/v07_b2_pilot_seeds1101-1105.json": {
     "sha256": "282f43607f5c70b093fc1121d6774bfd1958501eb82e9bfdc1adc002895c552d",
     "size": 6364
@@ -62,6 +70,18 @@
   "pilots/v07_sign_power_n150.json": {
     "sha256": "de8c2567e494cddb0f8b3a3623cec5d2b38c607aac8bb4df799b3775b036bec3",
     "size": 581
+  },
+  "pilots/v07_sign_power_r4_n150.json": {
+    "sha256": "2b962ba30cb44fb2c8d607ab9b0d5f38a089f577ca0166b1079bd5908f09e65a",
+    "size": 589
+  },
+  "pilots/v07_snr_pilot_ns_seed4201_aggregate.json": {
+    "sha256": "7887243d65317646925706621d015d46850b31ccf650ce3756eb9c708a64178b",
+    "size": 14253
+  },
+  "pilots/v07_snr_pilot_ns_seed4201_cells.json": {
+    "sha256": "979535c238bbc27fd0f8421caa54dc784055d55eeff70a5220fc27f8aa246e36",
+    "size": 8261
   },
   "pilots/v07_snr_pilot_seed4201_aggregate.json": {
     "sha256": "379619c00bd6ba2e6991cf1a4464e9ea31c2c8acc0f44901916c3fce3f886ae2",
@@ -87,6 +107,18 @@
     "sha256": "2922151ab8dfb8e3be52735521ab70ff140dc06b58b51deaa781cef30cf8465d",
     "size": 76651
   },
+  "pilots/v08_revb_pilot_capture_log.json": {
+    "sha256": "01850ef194a295dccc78e7a22e82ff0f151a0cdd77ca25df034d266f9d6365a8",
+    "size": 6140
+  },
+  "pilots/v08_revb_pilot_n_rule.json": {
+    "sha256": "3afbead092fadefc0d1f6ce44f87c812990df2ba57c9cca685d7d0f0c9ee3900",
+    "size": 162
+  },
+  "pilots/v08_revb_pilot_quantities.json": {
+    "sha256": "c961d26908396429eddf97b69fa5da8ae98363ad2aa5c3a4244e3937d320319e",
+    "size": 12998
+  },
   "pilots/v09_manipulation_check_seeds3101-3105.json": {
     "sha256": "cd50891cd22cc2efebb2ebfd298d737bd44c0a174c35b16bcc4b0489a02c633a",
     "size": 630
@@ -102,6 +134,18 @@
   "pilots/v09_pilot_n_rule.json": {
     "sha256": "c8224cecfbf2f2fbd08e067d431bc7ca858c8903b03714617ac7f0c9394af585",
     "size": 294
+  },
+  "pilots/v09_revb_manipulation_check_seeds3201-3205.json": {
+    "sha256": "cb62594c3b53d43ade09465d52895c03a6ab57bdd1a1265e433bc9078cb7a144",
+    "size": 676
+  },
+  "pilots/v09_revb_pilot_main_grid.json": {
+    "sha256": "c4013cbe89235e7f9eb06378720e9d9382527900600b15a88f8fe41b2eab5d25",
+    "size": 107502
+  },
+  "pilots/v09_revb_pilot_n_rule.json": {
+    "sha256": "9accb942a7bfe60b275e82f8e50b72d24b0b96386050d51da0f024802d613d82",
+    "size": 2251
   },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",

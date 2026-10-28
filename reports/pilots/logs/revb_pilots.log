@@ -1,0 +1,478 @@
+START commit 680e979e56d8d2e88581774e91267efaf47ffb90 2026-10-25T19:10:27Z 1792955427
+Uninstalled 1 package in 11ms
+Installed 1 package in 6ms
+seed=1101 N=512 d_fused=896 D_PR=6.39 D_2NN=11.92 | Kraskov=+0.0091 bin=-0.0036 MINE1d=+0.0000 MINEfull=-0.0001 Ross=-0.0058 KSGfull=-0.0095
+seed=1102 N=512 d_fused=896 D_PR=12.58 D_2NN=12.24 | Kraskov=+0.0000 bin=+0.0219 MINE1d=+0.0000 MINEfull=+0.0422 Ross=-0.0431 KSGfull=-0.0124
+seed=1103 N=512 d_fused=896 D_PR=12.56 D_2NN=11.15 | Kraskov=-0.0003 bin=+0.0110 MINE1d=+0.0000 MINEfull=-0.0008 Ross=+0.0153 KSGfull=-0.0098
+seed=1104 N=512 d_fused=896 D_PR=13.10 D_2NN=12.60 | Kraskov=+0.0000 bin=-0.0008 MINE1d=+0.0000 MINEfull=+0.0056 Ross=-0.0033 KSGfull=+0.0069
+seed=1105 N=512 d_fused=896 D_PR=13.12 D_2NN=12.01 | Kraskov=+0.0618 bin=+0.0338 MINE1d=+0.0000 MINEfull=+0.0043 Ross=-0.0337 KSGfull=-0.0097
+
+wrote reports/pilots/v07_b2_pilot_r4_seeds1101-1105.json
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "steps_train": 200,
+  "steps_lesion": 100,
+  "snr_init_db": 0.0,
+  "snr_floor_db": -20.0,
+  "seeds": [
+    1101,
+    1102,
+    1103,
+    1104,
+    1105
+  ],
+  "train_batch": 16,
+  "lesion_batch": 16,
+  "probe_n": 512,
+  "k_steps": 50,
+  "probe_demod": "both",
+  "probe_scheme": "balanced",
+  "gumbel_draws": 8,
+  "preset": "v07-e2",
+  "primary_readout": "gumbel_k8",
+  "amendment_b2": true,
+  "D_participation_ratio_mean": 11.550130367279053,
+  "D_twoNN_mean": 11.982601737976074,
+  "kraskov_delta": {
+    "mean": 0.01411509043769198,
+    "ci95": [
+      -0.00012986887615532843,
+      0.038826990072560054
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.012471605834231847,
+    "ci95": [
+      0.0022481627407818896,
+      0.024508724479179362
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": 0.010250293469532507,
+    "ci95": [
+      0.0006923476591333049,
+      0.026106391212791503
+    ],
+    "n": 5
+  },
+  "ross_full_delta": {
+    "mean": -0.014127796742969346,
+    "ci95": [
+      -0.03190530384199565,
+      0.003919776689692016
+    ],
+    "n": 5
+  },
+  "ksg_full_delta": {
+    "mean": -0.006885540946805555,
+    "ci95": [
+      -0.011264135835963885,
+      0.0002760241102744528
+    ],
+    "n": 5
+  },
+  "ross_full_delta_hard": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "ksg_full_delta_hard": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  }
+}
+B2-DONE 2026-10-25T19:13:00Z 1792955580
+Uninstalled 1 package in 7ms
+Installed 1 package in 6ms
+{
+  "source": "reports/pilots/v07_b2_pilot_r4_seeds1101-1105.json",
+  "primary_readout": "gumbel_k8",
+  "probe_scheme": "balanced",
+  "gumbel_draws": 8,
+  "N_fixed": 150,
+  "bound_bits": 0.05,
+  "primary_values": [
+    -0.005849959740212983,
+    -0.043114269143861905,
+    0.015327155180127908,
+    -0.0032778994198790134,
+    -0.033724010591020724
+  ],
+  "primary_hl": -0.013893556981866999,
+  "primary_median": -0.005849959740212983,
+  "robust_primary_power": {
+    "inflation": 1.55757542255663,
+    "support": [
+      0.012528509372544598,
+      -0.04551346309312487,
+      0.04551346309312487,
+      0.01653468731282992,
+      -0.030887427159767264
+    ],
+    "mu=+0.00": {
+      "power_N150": 1.0,
+      "N_for_0.80_grid": 95
+    },
+    "mu=-0.02": {
+      "power_N150": 1.0,
+      "N_for_0.80_grid": 95
+    },
+    "label_planning_case": "adequately powered",
+    "size_at_bound": {
+      "theta=+0.05": 0.02295,
+      "theta=-0.05": 0.00255
+    }
+  },
+  "mean_based_secondary": {
+    "per_seed": [
+      -0.005849959740212983,
+      -0.043114269143861905,
+      0.015327155180127908,
+      -0.0032778994198790134,
+      -0.033724010591020724
+    ],
+    "mean": -0.014127796742969346,
+    "sd": 0.023864535557936398,
+    "sd_ucl80_df4": 0.03717081405577051,
+    "mu=+0.00": {
+      "exact_power_N150": 1.0000000000000153,
+      "N_for_0.80": 7
+    },
+    "mu=-0.02": {
+      "exact_power_N150": 1.0000000000000153,
+      "N_for_0.80": 11
+    },
+    "label_planning_case": "adequately powered"
+  },
+  "gumbel1_descriptive": {
+    "per_seed": [
+      -0.012496888199459044,
+      0.09407974773605514,
+      0.12267157247166233,
+      -0.012603289820440036,
+      0.04722935885877281
+    ],
+    "mean": 0.04777610020931824,
+    "sd": 0.06130285951298379,
+    "sd_ucl80_df4": 0.09548382730986546,
+    "mu=+0.00": {
+      "exact_power_N150": 0.9999978534628362,
+      "N_for_0.80": 33
+    },
+    "mu=-0.02": {
+      "exact_power_N150": 0.9855779155000819,
+      "N_for_0.80": 65
+    },
+    "label_planning_case": "adequately powered"
+  },
+  "hard_descriptive": {
+    "per_seed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.0,
+    "sd": 0.0,
+    "degenerate": "every per-seed value is identical; the SD is 0, its UCL80 is 0 and the normal planning model of section 7 is undefined (any TOST on such data has a zero-width CI)"
+  },
+  "per_draw_delta_sd_within_seed": {
+    "1101": 0.04639890853217034,
+    "1102": 0.01740792500455441,
+    "1103": 0.06720286548883336,
+    "1104": 0.051851975175324506,
+    "1105": 0.03757534283730587
+  },
+  "switch": {
+    "per_seed": {
+      "1101": {
+        "pre": true,
+        "post": true,
+        "post_top1_share": 0.3310958598484549,
+        "post_between_class_share": 0.205997418138637,
+        "pre_top1_share": 0.32280230530659754,
+        "pre_between_class_share": 0.20042202895808825
+      },
+      "1102": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.1151368979461068,
+        "post_between_class_share": 0.0057648995287024295,
+        "pre_top1_share": 0.11735969225982905,
+        "pre_between_class_share": 0.005457301790267571
+      },
+      "1103": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.11587481683777033,
+        "post_between_class_share": 0.005977905682018433,
+        "pre_top1_share": 0.10872551850869916,
+        "pre_between_class_share": 0.006080980497363024
+      },
+      "1104": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.10444993928157024,
+        "post_between_class_share": 0.005394804336513492,
+        "pre_top1_share": 0.10792266677739756,
+        "pre_between_class_share": 0.005619492034517786
+      },
+      "1105": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.10638544440523984,
+        "post_between_class_share": 0.005320755861678276,
+        "pre_top1_share": 0.10539505188340215,
+        "pre_between_class_share": 0.005813268421348072
+      }
+    },
+    "post_count": 1,
+    "proportion": 0.2,
+    "ci95_exact": [
+      0.005050763379468115,
+      0.7164179361180895
+    ]
+  }
+}
+Uninstalled 1 package in 4ms
+Installed 1 package in 4ms
+{
+  "N": 150,
+  "sims_b2": 20000,
+  "sims_b1": 2000,
+  "rng_seed": 20261027,
+  "B-2 sign, P(equivalent)": {
+    "pseudo-median at mu": {
+      "mu=+0.00": 1.0,
+      "mu=-0.02": 0.77255,
+      "mu=+0.05": 0.0,
+      "mu=-0.05": 0.7677
+    },
+    "median at mu": {
+      "mu=+0.00": 1.0,
+      "mu=-0.02": 0.77185,
+      "mu=+0.05": 0.0,
+      "mu=-0.05": 0.0
+    }
+  },
+  "B-1 sign": {
+    "observed per-lock centres": {
+      "P(E-1 sign)": 1.0,
+      "P(E-1 and E-1b sign)": 0.0145
+    },
+    "all centres 0": {
+      "P(E-1 sign)": 1.0,
+      "P(E-1 and E-1b sign)": 0.0235
+    }
+  }
+}
+B2-DERIVE-DONE 2026-10-25T19:13:31Z 1792955611
+Uninstalled 1 package in 6ms
+Installed 1 package in 4ms
+grid: 30 cells -> /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201
+[seed 4201] phase 1 pretrain 200 steps -> /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/phase1_seed4201
+pretrain done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/phase1_seed4201/checkpoint.pkl
+[1/30] seed4201_T1_audio_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_floor/eval_report.json
+[2/30] seed4201_T1_audio_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_minus10/eval_report.json
+[3/30] seed4201_T1_audio_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_audio_plus10/eval_report.json
+[4/30] seed4201_T2_audio_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_floor/eval_report.json
+[5/30] seed4201_T2_audio_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_minus10/eval_report.json
+[6/30] seed4201_T2_audio_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_audio_plus10/eval_report.json
+[7/30] seed4201_T1_vision_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_floor/eval_report.json
+[8/30] seed4201_T1_vision_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_minus10/eval_report.json
+[9/30] seed4201_T1_vision_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_vision_plus10/eval_report.json
+[10/30] seed4201_T2_vision_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_floor/eval_report.json
+[11/30] seed4201_T2_vision_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_minus10/eval_report.json
+[12/30] seed4201_T2_vision_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_vision_plus10/eval_report.json
+[13/30] seed4201_T1_tactile_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_floor/eval_report.json
+[14/30] seed4201_T1_tactile_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_minus10/eval_report.json
+[15/30] seed4201_T1_tactile_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_tactile_plus10/eval_report.json
+[16/30] seed4201_T2_tactile_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_floor/eval_report.json
+[17/30] seed4201_T2_tactile_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_minus10/eval_report.json
+[18/30] seed4201_T2_tactile_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_tactile_plus10/eval_report.json
+[19/30] seed4201_T1_gravity_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_floor/eval_report.json
+[20/30] seed4201_T1_gravity_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_minus10/eval_report.json
+[21/30] seed4201_T1_gravity_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_gravity_plus10/eval_report.json
+[22/30] seed4201_T2_gravity_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_floor/eval_report.json
+[23/30] seed4201_T2_gravity_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_minus10/eval_report.json
+[24/30] seed4201_T2_gravity_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_gravity_plus10/eval_report.json
+[25/30] seed4201_T1_force_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_floor/eval_report.json
+[26/30] seed4201_T1_force_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_minus10/eval_report.json
+[27/30] seed4201_T1_force_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T1_force_plus10/eval_report.json
+[28/30] seed4201_T2_force_floor
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_floor/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_floor/eval_report.json
+[29/30] seed4201_T2_force_minus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_minus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_minus10/eval_report.json
+[30/30] seed4201_T2_force_plus10
+lesion done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_plus10/report.pkl
+eval done; wrote /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201/seed4201_T2_force_plus10/eval_report.json
+grid done; 30 cells processed, 0 skipped (already had eval_report.json)
+next: python scripts/aggregate_grid.py --root /Users/electron/hypneum-lab/pilots-pr9/runs/v07_snr_pilot_ns_seed4201 --out reports/v0.1_aggregate.json
+aggregate: 30 cells -> reports/pilots/v07_snr_pilot_ns_seed4201_aggregate.json
+31 outputs
+SNR-DONE 2026-10-25T19:17:21Z 1792955841
+seed=2201 lock=25 wall=60.4s
+seed=2201 lock=50 wall=59.5s
+seed=2201 lock=75 wall=62.2s
+seed=2201 lock=100 wall=60.9s
+seed=2201 lock=125 wall=60.3s
+seed=2201 lock=150 wall=60.9s
+seed=2201 lock=175 wall=61.9s
+seed=2202 lock=25 wall=61.4s
+seed=2202 lock=50 wall=60.3s
+seed=2202 lock=75 wall=60.8s
+seed=2202 lock=100 wall=53.0s
+seed=2202 lock=125 wall=63.5s
+seed=2202 lock=150 wall=66.7s
+seed=2202 lock=175 wall=65.2s
+seed=2203 lock=25 wall=69.2s
+seed=2203 lock=50 wall=74.5s
+seed=2203 lock=75 wall=71.5s
+seed=2203 lock=100 wall=63.5s
+seed=2203 lock=125 wall=60.7s
+seed=2203 lock=150 wall=60.9s
+seed=2203 lock=175 wall=61.7s
+seed=2204 lock=25 wall=61.7s
+seed=2204 lock=50 wall=58.8s
+seed=2204 lock=75 wall=60.6s
+seed=2204 lock=100 wall=57.9s
+seed=2204 lock=125 wall=61.2s
+seed=2204 lock=150 wall=60.4s
+seed=2204 lock=175 wall=57.1s
+seed=2205 lock=25 wall=58.0s
+seed=2205 lock=50 wall=60.7s
+seed=2205 lock=75 wall=58.1s
+seed=2205 lock=100 wall=57.8s
+seed=2205 lock=125 wall=54.2s
+seed=2205 lock=150 wall=49.6s
+seed=2205 lock=175 wall=49.8s
+seed=2206 lock=25 wall=53.1s
+seed=2206 lock=50 wall=53.4s
+seed=2206 lock=75 wall=51.5s
+seed=2206 lock=100 wall=48.9s
+seed=2206 lock=125 wall=49.1s
+seed=2206 lock=150 wall=50.8s
+seed=2206 lock=175 wall=50.5s
+seed=2207 lock=25 wall=49.9s
+seed=2207 lock=50 wall=51.3s
+seed=2207 lock=75 wall=53.1s
+seed=2207 lock=100 wall=52.7s
+seed=2207 lock=125 wall=50.9s
+seed=2207 lock=150 wall=52.7s
+seed=2207 lock=175 wall=50.2s
+seed=2208 lock=25 wall=52.0s
+seed=2208 lock=50 wall=52.9s
+seed=2208 lock=75 wall=50.3s
+seed=2208 lock=100 wall=50.2s
+seed=2208 lock=125 wall=50.6s
+seed=2208 lock=150 wall=53.0s
+seed=2208 lock=175 wall=52.0s
+seed=2209 lock=25 wall=52.2s
+seed=2209 lock=50 wall=52.3s
+seed=2209 lock=75 wall=49.9s
+seed=2209 lock=100 wall=47.6s
+seed=2209 lock=125 wall=48.3s
+seed=2209 lock=150 wall=47.3s
+seed=2209 lock=175 wall=47.8s
+seed=2210 lock=25 wall=47.6s
+seed=2210 lock=50 wall=47.5s
+seed=2210 lock=75 wall=47.8s
+seed=2210 lock=100 wall=47.6s
+seed=2210 lock=125 wall=48.4s
+seed=2210 lock=150 wall=49.0s
+seed=2210 lock=175 wall=48.4s
+Traceback (most recent call last):
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/scripts/run_v08_subspace.py", line 116, in <module>
+    main()
+    ~~~~^^
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/scripts/run_v08_subspace.py", line 112, in main
+    {"capture": capture, "pilot": pilot}[args.cmd](args)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/scripts/run_v08_subspace.py", line 83, in pilot
+    out = pilot_quantities_revb(blocks)
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/src/bouba_sens/v08_driver.py", line 307, in pilot_quantities_revb
+    kg = k_gap_from_pilot([b.z_pre for b in ordered])
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/src/bouba_sens/metrics/cka_shift.py", line 142, in k_gap_from_pilot
+    per = tuple(eigengap_k(z) for z in z_pres)
+          ^^^^^
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/src/bouba_sens/metrics/cka_shift.py", line 142, in <genexpr>
+    per = tuple(eigengap_k(z) for z in z_pres)
+                ~~~~~~~~~~^^^
+  File "/Users/electron/hypneum-lab/pilots-pr9/bouba_sens/src/bouba_sens/metrics/cka_shift.py", line 131, in eigengap_k
+    raise ValueError("no eligible eigengap in the window")
+ValueError: no eligible eigengap in the window
