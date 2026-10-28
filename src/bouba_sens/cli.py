@@ -138,8 +138,20 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
         from bouba_sens.world.ccfilm import CCFilmWorld
 
         return CCFilmWorld(seed=seed, data_dir=data_dir)
+    if key == "actionsense":
+        # Real ActionSense cache built by scripts/extract_actionsense.py.
+        raw_dir = os.getenv("BOUBA_SENS_ACTIONSENSE_DATA")
+        data_dir = Path(raw_dir) if raw_dir else Path("data/actionsense")
+        if not (data_dir / "audio.pt").exists():
+            raise typer.BadParameter(
+                f"actionsense cache missing at {data_dir}; run scripts/extract_actionsense.py first"
+            )
+        from bouba_sens.world.actionsense import ActionSenseWorld
+
+        return ActionSenseWorld(seed=seed, data_dir=data_dir)
     raise typer.BadParameter(
         f"unknown world '{name}'; pick gaussian | xor | sinusoid | studyforrest | ccfilm"
+        " | actionsense"
     )
 
 
@@ -151,7 +163,9 @@ def version() -> None:
 
 @app.command()
 def sim(
-    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
+    world: str = typer.Option(
+        "gaussian", help="gaussian | xor | sinusoid | studyforrest | ccfilm | actionsense"
+    ),
     size: int = typer.Option(1024, help="Batch size to sample"),
     seed: int = typer.Option(0, help="World sample seed"),
     out: Path = typer.Option(..., exists=False, help="Output parquet path"),
@@ -195,7 +209,9 @@ def train(
     steps: int = typer.Option(100, help="Phase 1 pretrain step count"),
     batch_size: int = typer.Option(16, help="Batch size per step"),
     seed: int = typer.Option(0, help="Training seed"),
-    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
+    world: str = typer.Option(
+        "gaussian", help="gaussian | xor | sinusoid | studyforrest | ccfilm | actionsense"
+    ),
     constellation_lock_after: int | None = typer.Option(
         None,
         help=(
@@ -372,7 +388,9 @@ def lesion(
     snr_init: float = typer.Option(20.0, help="Initial SNR in dB"),
     snr_floor: float = typer.Option(-20.0, help="Floor SNR in dB"),
     k_steps: int = typer.Option(5000, help="SNR ramp length in steps"),
-    world: str = typer.Option("gaussian", help="gaussian | xor | sinusoid"),
+    world: str = typer.Option(
+        "gaussian", help="gaussian | xor | sinusoid | studyforrest | ccfilm | actionsense"
+    ),
     constellation_lock_after: int | None = typer.Option(
         None,
         help=(
