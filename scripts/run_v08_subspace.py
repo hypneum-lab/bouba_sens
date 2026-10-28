@@ -140,10 +140,10 @@ def pilot(args: argparse.Namespace) -> None:
         walls[b["seed"]] = walls.get(b["seed"], 0.0) + b["wall_s"]
     out["world_class"] = log["world_class"]
     out["wall_s_per_seed"] = walls
+    args.out.parent.mkdir(parents=True, exist_ok=True)
     if args.design == "revc":
         sec = args.out.with_name(args.out.stem + "_secondary_planning.json")
         sec.write_text(json.dumps(out["secondary_planning"], indent=2) + "\n")
-    args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k not in ("blocks", "prs")}, indent=2))
 

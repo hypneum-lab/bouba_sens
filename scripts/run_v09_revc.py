@@ -117,9 +117,11 @@ def main() -> None:
     if onsets == list(ONSETS):
         out.update(summarise(cells, seeds))  # type: ignore[arg-type]
         print(json.dumps({k: out[k] for k in ("gates",)}, indent=2), flush=True)
+        # eligibility needs a recorded, passed manipulation check (Codex r9):
+        # a --skip-check run (tests only) is never eligible
         mc = out.get("manipulation_check")
         out["all_gates_passed"] = bool(
-            all(out["gates"].values()) and (mc is None or mc["passed"])  # type: ignore[union-attr, index]
+            all(out["gates"].values()) and mc is not None and mc["passed"]  # type: ignore[union-attr, index]
         )
     finish(None)
 
