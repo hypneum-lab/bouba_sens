@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -64,7 +65,7 @@ def _write_subject(raw: Path, subject: str = "S00") -> Path:
     stem = f"2022-06-07_17-13-41_streamLog_actionNet-microphone_{subject}"
     sf.write(sub / f"{stem}_sink_chunked_data.wav", wav, SR)
     n_chunks = 16
-    ts = T0 + (np.arange(n_chunks) + 1) * CHUNK / SR
+    ts = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / SR
     with h5py.File(sub / f"{stem}.hdf5", "w") as h5:
         _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
     return sub
@@ -163,8 +164,9 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
     starts = T0 + 0.1 * np.arange(first, 13)  # frames 3..12
 
     def energies(shift_s: float) -> np.ndarray:
-        # Real convention: timestamp of the LAST sample of each chunk.
-        ts = T0 + shift_s + (np.arange(n_chunks) + 1) * CHUNK / SR
+        # Exact convention: ts[k] is the time of sample (k+1)*CHUNK-1, so sample j
+        # of the WAV lies at T0 + j / SR (upstream MicrophoneStreamer.py, chunk 2048).
+        ts = T0 + shift_s + ((np.arange(n_chunks) + 1) * CHUNK - 1) / SR
         h5_path = tmp_path / f"mic_{shift_s}.hdf5"
         with h5py.File(h5_path, "w") as h5:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
@@ -182,3 +184,110 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
     np.testing.assert_allclose(quiet, np.log(1e-6), atol=1e-9)
     assert peak(CHUNK / SR) != target  # timestamps one chunk late
     assert peak(-CHUNK / SR) != target  # timestamps one chunk early
+
+
+def test_audio_frames_rejects_off_by_one_timestamp_count(tmp_path: Path) -> None:
+    n_chunks = 16
+    wav = np.zeros(n_chunks * CHUNK, dtype=np.float32)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, wav, SR, subtype="FLOAT")
+    starts = T0 + 0.1 * np.arange(3, 13)
+    for count in (n_chunks - 1, n_chunks + 1):
+        ts = T0 + ((np.arange(count) + 1) * CHUNK - 1) / SR
+        h5_path = tmp_path / f"mic_{count}.hdf5"
+        with h5py.File(h5_path, "w") as h5:
+            _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+        info: dict[str, object] = {}
+        _mel, covered, n_gap = extract.audio_frames(wav_path, h5_path, starts, info)
+        assert not covered.any() and n_gap == 0
+        assert "samples vs" in str(info["error"])
+
+
+def test_session_counts_inconsistent_audio_file(tmp_path: Path) -> None:
+    sub = _write_subject(tmp_path)
+    mic = next(sub.glob("*microphone_S00.hdf5"))
+    with h5py.File(mic, "a") as h5:
+        grp = h5["sink"]["chunk_timestamp"]
+        t = np.asarray(grp["time_s"])[:-1]
+        del grp["time_s"], grp["data"]
+        grp.create_dataset("time_s", data=t)
+        grp.create_dataset("data", data=t)
+    counts: dict[str, int] = {}
+    wear = next(sub.glob("*wearables*"))
+    sess = extract._extract_session(wear, sub, "S00", False, counts, {}, [])
+    assert sess is not None and len(sess["labels"]) == 0
+    assert counts["audio_file_inconsistent"] == 1
+    assert counts["drop:audio:outside_span"] == 10
+
+
+def test_nonmonotonic_wearable_time_skips_session(tmp_path: Path) -> None:
+    sub = _write_subject(tmp_path)
+    wear = next(sub.glob("*wearables*"))
+    with h5py.File(wear, "a") as h5:
+        ds = h5["myo-right"]["acceleration_g"]["time_s"]
+        t = np.asarray(ds)
+        t[50, 0] = t[10, 0]
+        ds[...] = t
+    counts: dict[str, int] = {}
+    report: list[dict[str, object]] = []
+    assert extract._extract_session(wear, sub, "S00", False, counts, {}, report) is None
+    assert counts["session_skipped:nonmonotonic"] == 1
+    assert "backwards steps" in str(report[0]["skipped"])
+
+
+def test_rows_side_file_and_manifest_spans(tmp_path: Path) -> None:
+    import torch
+
+    _write_subject(tmp_path)
+    out = tmp_path / "o"
+    extract.main(["--raw", str(tmp_path), "--out", str(out), "--subjects", "S00", "--no-vision"])
+    rows = torch.load(out / "rows.pt")
+    assert set(rows) == {"time_s", "segment_id", "raw_label_idx"}
+    assert rows["time_s"].dtype == torch.float64
+    assert rows["segment_id"].dtype == torch.long and rows["raw_label_idx"].dtype == torch.long
+    assert all(len(v) == 10 for v in rows.values())
+    np.testing.assert_allclose(np.diff(rows["time_s"].numpy()), 0.1)
+    manifest = (out / "MANIFEST.md").read_text()
+    assert "0. Slice a cucumber" in manifest
+    assert "backwards steps=0" in manifest
+    assert "microphone/" in manifest and "labelled segments" in manifest
+
+
+def _file_hashes(out: Path) -> dict[str, str]:
+    import hashlib
+
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.glob("*.pt"))}
+
+
+def test_extraction_is_deterministic(tmp_path: Path) -> None:
+    _write_subject(tmp_path)
+    hashes = []
+    for k in range(2):
+        out = tmp_path / f"o{k}"
+        extract.main(
+            ["--raw", str(tmp_path), "--out", str(out), "--subjects", "S00", "--no-vision"]
+        )
+        hashes.append(_file_hashes(out))
+    assert hashes[0] == hashes[1]
+    assert {"audio.pt", "tactile.pt", "labels.pt", "rows.pt"} <= set(hashes[0])
+
+
+def test_parse_ffmpeg_version_and_fail_fast(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert extract._parse_ffmpeg_version("ffmpeg version 6.1.1 Copyright") == (6, 1)
+    assert extract._parse_ffmpeg_version("ffmpeg version n7.0 Copyright") == (7, 0)
+    assert extract._parse_ffmpeg_version("ffmpeg version N-1234-gabc") is None
+
+    class Res:
+        stdout = "ffmpeg version 4.4.2 Copyright (c) 2000-2021\n"
+
+    monkeypatch.setattr(extract.subprocess, "run", lambda *a, **k: Res())
+    with pytest.raises(SystemExit, match="too old"):
+        extract.check_ffmpeg()
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not installed")
+def test_decode_grids_reports_ffmpeg_failure(tmp_path: Path) -> None:
+    bad = tmp_path / "broken.mp4"
+    bad.write_bytes(b"not a video")
+    with pytest.raises(extract.FfmpegError, match=r"broken\.mp4"):
+        extract.decode_grids(bad, np.array([0]))

@@ -24,7 +24,8 @@ Real stream names (ActionNet code, recording_data/sensor_streamers):
 Every ``time_s`` is seconds since epoch on the same system clock.
 
 Outputs ``<out>/{audio,vision,tactile,gravity,force,labels,subject}.pt``
-(float32, labels and subject long) and ``MANIFEST.md``. No raw frame and no
+(float32, labels and subject long), the side file ``rows.pt`` (time_s, segment_id,
+raw_label_idx; not part of the world contract) and ``MANIFEST.md``. No raw frame and no
 waveform leaves this script. Data licence: CC BY-NC-SA 4.0.
 
 Usage:
@@ -37,9 +38,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -59,6 +62,7 @@ from bouba_sens.world.actionsense_features import (
     label_family,
     lowpass,
     mel_filterbank,
+    monotonic_violations,
     pool_tactile,
     window_mean,
     window_rms,
@@ -70,6 +74,11 @@ HZ = 10.0
 WIDTH = 0.1  # frame window [t, t + 0.1) seconds
 MAX_GAP = 0.2  # interpolate gaps up to 200 ms, drop otherwise
 N_MELS = 128
+# Microphone chunk size in samples: fixed upstream, see
+# ActionNet recording_data/sensor_streamers/MicrophoneStreamer.py
+# (chunk_size = 2048; WAV and chunk_timestamp are appended together).
+MIC_CHUNK = 2048
+FFMPEG_MIN = (5, 1)  # `-fps_mode` needs ffmpeg >= 5.1
 LOWPASS_CUTOFF_HZ = 0.5
 LOWPASS_MIN_FRAMES = 10  # sosfiltfilt (order 2) needs more than 9 samples
 VISION_DECODE_PX = 64
@@ -105,6 +114,23 @@ def _times(h5: h5py.File, dev: str, stream: str) -> np.ndarray:
     return np.asarray(h5[dev][stream]["time_s"], dtype=np.float64).reshape(-1)
 
 
+class NonMonotonicTimeError(Exception):
+    """A stream's time_s steps backwards: searchsorted lookups would be wrong."""
+
+
+def _checked_times(
+    h5: h5py.File, dev: str, stream: str, spans: dict[str, tuple[float, float, int, int]]
+) -> np.ndarray:
+    """``_times`` plus a monotonic check; records (first, last, n, steps back)."""
+    t = _times(h5, dev, stream)
+    bad = monotonic_violations(t)
+    if len(t):
+        spans[f"{dev}/{stream}"] = (float(t[0]), float(t[-1]), len(t), bad)
+    if bad:
+        raise NonMonotonicTimeError(f"{dev}/{stream}: {bad} backwards steps in time_s")
+    return t
+
+
 def _decode(x: object) -> str:
     return x.decode("utf-8") if isinstance(x, bytes) else str(x)
 
@@ -137,14 +163,20 @@ def _log_mel(frames: np.ndarray, fb: np.ndarray) -> np.ndarray:
 
 
 def audio_frames(
-    wav_path: Path, mic_h5_path: Path, starts: np.ndarray
+    wav_path: Path,
+    mic_h5_path: Path,
+    starts: np.ndarray,
+    info: dict[str, object] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, int]:
     """Log-mel (N, 128) for each frame start covered by this microphone file.
 
     Returns ``(mel, covered, n_gap)``. A chunk timestamp is the time of the
     last sample of its chunk, so sample ``i`` of chunk ``k`` lies at
-    ``ts[k] - (chunk - 1 - i % chunk) / sr``. Frames whose window is not inside
-    the recording, or straddles a timestamp discontinuity, are not covered.
+    ``ts[k] - (MIC_CHUNK - 1 - i % MIC_CHUNK) / sr``. The file is rejected
+    (nothing covered, ``info["error"]`` set) unless ``len(wav) == MIC_CHUNK *
+    len(ts)`` and the timestamps are monotonic. Frames whose window is not
+    inside the recording, or straddles a timestamp discontinuity, are not
+    covered. ``info`` receives ``span`` (first sample time, last time).
     """
     wav, sr = sf.read(str(wav_path), dtype="float32")
     if wav.ndim > 1:
@@ -156,16 +188,28 @@ def audio_frames(
         ts = _times(h5, dev, "chunk_timestamp")
     out = np.zeros((len(starts), N_MELS), dtype=np.float64)
     covered = np.zeros(len(starts), dtype=bool)
-    chunk = round(len(wav) / max(len(ts), 1))
-    if len(ts) < 2 or chunk < 1 or abs(len(wav) - chunk * len(ts)) >= chunk:
-        return out, covered, len(starts)
+    chunk = MIC_CHUNK
+    if len(ts) < 2 or len(wav) != chunk * len(ts):
+        if info is not None:
+            info["error"] = (
+                f"{wav_path.name}: {len(wav)} samples vs {len(ts)} chunk timestamps "
+                f"(expected {chunk} x {len(ts)} = {chunk * len(ts)})"
+            )
+        return out, covered, 0
+    if monotonic_violations(ts):
+        if info is not None:
+            info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
+        return out, covered, 0
+    if info is not None:
+        info["span"] = (float(ts[0] - (chunk - 1) / sr), float(ts[-1]))
     win = round(WIDTH * sr)
     fb = mel_filterbank(N_MELS, win, int(sr))
     k0 = np.searchsorted(ts, starts, side="left")
     k1 = np.searchsorted(ts, starts + WIDTH, side="left")
     inside = (k1 < len(ts)) & (starts + WIDTH <= ts[-1])
     k0c = np.minimum(k0, len(ts) - 1)
-    i0 = (k0c + 1) * chunk - np.rint((ts[k0c] - starts) * sr).astype(np.int64)
+    # Sample index j sits at ts[k] - ((k+1)*chunk - 1 - j) / sr.
+    i0 = (k0c + 1) * chunk - 1 - np.rint((ts[k0c] - starts) * sr).astype(np.int64)
     i1 = i0 + win
     inside &= (k0 < len(ts)) & (i0 >= 0) & (i1 <= len(wav))
     k1c = np.minimum(k1, len(ts) - 1)
@@ -194,15 +238,46 @@ def nearest_frame(
     return idx.astype(np.int64), ok
 
 
+class FfmpegError(RuntimeError):
+    """ffmpeg exited non-zero; the message carries the stderr tail."""
+
+
+def _parse_ffmpeg_version(text: str) -> tuple[int, int] | None:
+    m = re.search(r"ffmpeg version n?(\d+)\.(\d+)", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def ffmpeg_exe() -> str:
+    return shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
+
+
+def check_ffmpeg() -> str:
+    """Fail fast unless ffmpeg >= 5.1; return its version line for the manifest."""
+    try:
+        res = subprocess.run([ffmpeg_exe(), "-version"], capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SystemExit(
+            f"ffmpeg not usable ({exc}); install ffmpeg >= 5.1 or use --no-vision"
+        ) from exc
+    line = res.stdout.splitlines()[0] if res.stdout else ""
+    ver = _parse_ffmpeg_version(line)
+    if ver is not None and ver < FFMPEG_MIN:
+        raise SystemExit(
+            f"ffmpeg {ver[0]}.{ver[1]} is too old: `-fps_mode` needs >= "
+            f"{FFMPEG_MIN[0]}.{FFMPEG_MIN[1]} ({line})"
+        )
+    return line
+
+
 def decode_grids(mp4: Path, wanted: np.ndarray) -> tuple[dict[int, np.ndarray], int]:
     """Stream-decode the video once and keep the (16,16) grid of wanted frames.
 
     ffmpeg writes 64x64 gray frames to a pipe: nothing but the reduced grid is
-    ever kept. Returns ``(grids, n_decoded_frames)``.
+    ever kept. Returns ``(grids, n_decoded_frames)``. Raises ``FfmpegError``
+    (with the stderr tail) when ffmpeg exits non-zero.
     """
-    ffmpeg = shutil.which("ffmpeg") or "/opt/homebrew/bin/ffmpeg"
     cmd = [
-        ffmpeg,
+        ffmpeg_exe(),
         "-v",
         "error",
         "-i",
@@ -221,7 +296,10 @@ def decode_grids(mp4: Path, wanted: np.ndarray) -> tuple[dict[int, np.ndarray], 
     size = VISION_DECODE_PX * VISION_DECODE_PX
     grids: dict[int, np.ndarray] = {}
     n = 0
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
+    with (
+        tempfile.TemporaryFile() as err,
+        subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=err) as proc,
+    ):
         assert proc.stdout is not None
         while True:
             buf = proc.stdout.read(size)
@@ -231,6 +309,11 @@ def decode_grids(mp4: Path, wanted: np.ndarray) -> tuple[dict[int, np.ndarray], 
                 img = Image.frombytes("L", (VISION_DECODE_PX, VISION_DECODE_PX), buf)
                 grids[n] = frame_to_grid(img)
             n += 1
+        rc = proc.wait()
+        err.seek(0)
+        tail = err.read().decode("utf-8", "replace").strip()[-500:]
+    if rc != 0:
+        raise FfmpegError(f"ffmpeg exit {rc} on {mp4.name}: {tail or 'no stderr'}")
     return grids, n
 
 
@@ -264,8 +347,38 @@ def _lowpass_runs(
 
 
 def _extract_session(
-    wear: Path, raw_sub: Path, subject: str, vision: bool, counts: dict[str, int]
+    wear: Path,
+    raw_sub: Path,
+    subject: str,
+    vision: bool,
+    counts: dict[str, int],
+    label_index: dict[str, int],
+    report: list[dict[str, object]],
 ) -> dict[str, np.ndarray] | None:
+    """One wearable file -> kept frames; appends a span/monotonicity report row."""
+    entry: dict[str, object] = {"subject": subject, "file": wear.name, "streams": {}}
+    report.append(entry)
+    try:
+        return _session_body(wear, raw_sub, subject, vision, counts, label_index, entry)
+    except NonMonotonicTimeError as exc:
+        _bump(counts, "session_skipped:nonmonotonic")
+        entry["skipped"] = str(exc)
+        print(f"  skip {wear.name}: {exc}", flush=True)
+        return None
+
+
+def _session_body(
+    wear: Path,
+    raw_sub: Path,
+    subject: str,
+    vision: bool,
+    counts: dict[str, int],
+    label_index: dict[str, int],
+    entry: dict[str, object],
+) -> dict[str, np.ndarray] | None:
+    spans: dict[str, tuple[float, float, int, int]] = {}
+    entry["streams"] = spans
+    inspan: dict[str, np.ndarray] = {}
     prefix = wear.name.split("_streamLog_")[0]
     with h5py.File(wear, "r") as h5:
         missing = _missing_streams(h5)
@@ -274,22 +387,30 @@ def _extract_session(
             print(f"  skip {wear.name}: missing {missing}", flush=True)
             return None
         rows, rtimes = _read_activities(h5)
+        if monotonic_violations(rtimes):
+            raise NonMonotonicTimeError("experiment-activities/activities: time_s steps back")
         for label, kind, _validity in rows:
             if kind == "Start":
                 _bump(counts, f"seen:{label}")
-        segments, seg_counts = activity_segments(rows, rtimes)
+        seg_raw: list[str] = []
+        segments, seg_counts = activity_segments(rows, rtimes, seg_raw)
+        if segments:
+            entry["labelled"] = (min(g[0] for g in segments), max(g[1] for g in segments))
         for k, v in seg_counts.items():
             _bump(counts, k, v)
         # Frames, one run id per segment so filters never cross segments.
-        starts_l, labels_l, run_l = [], [], []
+        starts_l, labels_l, run_l, raw_l = [], [], [], []
         for si, seg in enumerate(segments):
             s, lab = frame_grid([seg], hz=HZ)
             starts_l.append(s)
             labels_l.append(lab)
             run_l.append(np.full(len(s), si, dtype=np.int64))
+            ridx = label_index.setdefault(seg_raw[si], len(label_index))
+            raw_l.append(np.full(len(s), ridx, dtype=np.int64))
         starts = np.concatenate(starts_l) if starts_l else np.zeros(0)
         labels = np.concatenate(labels_l) if labels_l else np.zeros(0, dtype=np.int64)
         run = np.concatenate(run_l) if run_l else np.zeros(0, dtype=np.int64)
+        raw_idx = np.concatenate(raw_l) if raw_l else np.zeros(0, dtype=np.int64)
         n = len(starts)
         _bump(counts, "frames_total", n)
         if n == 0:
@@ -303,7 +424,8 @@ def _extract_session(
             dev = f"tactile-glove-{side}"
             data = np.asarray(h5[dev]["tactile_data"]["data"], dtype=np.float32)
             pooled = pool_tactile(data.reshape(-1, 32, 32))  # pool first: mean is linear
-            m, ok = window_mean(_times(h5, dev, "tactile_data"), pooled, starts, WIDTH, MAX_GAP)
+            tt = _checked_times(h5, dev, "tactile_data", spans)
+            m, ok = window_mean(tt, pooled, starts, WIDTH, MAX_GAP, counts)
             parts.append(m)
             oks.append(ok)
         feats["tactile"] = np.concatenate(parts, axis=1)
@@ -313,16 +435,16 @@ def _extract_session(
         for side in ("left", "right"):
             dev = f"myo-{side}"
             emg = np.asarray(h5[dev]["emg"]["data"], dtype=np.float64)
-            rms, ok = window_rms(_times(h5, dev, "emg"), emg, starts, WIDTH, MAX_GAP)
+            te = _checked_times(h5, dev, "emg", spans)
+            rms, ok = window_rms(te, emg, starts, WIDTH, MAX_GAP, counts)
             parts.append(emg_sectors(rms))
             oks.append(ok)
         feats["force"] = np.concatenate(parts, axis=1)
         reasons["force"] = oks[0] & oks[1]
 
         acc = np.asarray(h5["myo-right"]["acceleration_g"]["data"], dtype=np.float64)
-        grav, gok = window_mean(
-            _times(h5, "myo-right", "acceleration_g"), acc, starts, WIDTH, MAX_GAP
-        )
+        ta = _checked_times(h5, "myo-right", "acceleration_g", spans)
+        grav, gok = window_mean(ta, acc, starts, WIDTH, MAX_GAP, counts)
         feats["gravity"] = grav
         reasons["gravity"] = gok
 
@@ -332,11 +454,21 @@ def _extract_session(
             vok = np.zeros(n, dtype=bool)
             vis = np.zeros((n, 16, 16), dtype=np.float32)
             if mp4.exists() and vdev in h5 and "frame_timestamp" in h5[vdev]:
-                ft = _times(h5, vdev, "frame_timestamp")
+                ft = _checked_times(h5, vdev, "frame_timestamp", spans)
                 if len(ft) >= 2:
+                    inspan["vision"] = (starts >= ft[0] - VISION_TOL_S) & (
+                        starts <= ft[-1] + VISION_TOL_S
+                    )
                     idx, near = nearest_frame(ft, starts)
-                    grids, n_dec = decode_grids(mp4, np.unique(idx[near]))
-                    if n_dec != len(ft):
+                    try:
+                        grids, n_dec = decode_grids(mp4, np.unique(idx[near]))
+                    except FfmpegError as exc:
+                        _bump(counts, "session_vision_ffmpeg_failed")
+                        print(f"  {exc}", flush=True)
+                        grids, n_dec = {}, -1
+                    if n_dec < 0:
+                        pass
+                    elif n_dec != len(ft):
                         _bump(counts, "session_vision_frame_count_mismatch")
                         print(f"  {mp4.name}: {n_dec} decoded vs {len(ft)} timestamps", flush=True)
                     else:
@@ -354,7 +486,16 @@ def _extract_session(
             wav = mic_h5.with_name(mic_h5.stem + "_sink_chunked_data.wav")
             if not wav.exists():
                 continue
-            mel, cov, n_gap = audio_frames(wav, mic_h5, starts)
+            info: dict[str, object] = {}
+            mel, cov, n_gap = audio_frames(wav, mic_h5, starts, info)
+            if "error" in info:
+                _bump(counts, "audio_file_inconsistent")
+                print(f"  audio_file_inconsistent: {info['error']}", flush=True)
+            span = info.get("span")
+            if isinstance(span, tuple):
+                spans[f"microphone/{mic_h5.name}"] = (span[0], span[1], 0, 0)
+                inside = (starts >= span[0]) & (starts + WIDTH <= span[1])
+                inspan["audio"] = inspan.get("audio", np.zeros(n, dtype=bool)) | inside
             take = cov & ~aok
             aud[take] = mel[take]
             aok |= cov
@@ -374,33 +515,58 @@ def _extract_session(
             continue
         bad = valid & ~reasons[name]
         _bump(counts, f"drop:{name}", int(bad.sum()))
+        if name in ("audio", "vision"):
+            ins = inspan.get(name, np.zeros(n, dtype=bool))
+            _bump(counts, f"drop:{name}:outside_span", int((bad & ~ins).sum()))
+            _bump(counts, f"drop:{name}:gap", int((bad & ins).sum()))
         valid &= reasons[name]
     _bump(counts, "frames_kept", int(valid.sum()))
     out = {k: v[valid].astype(np.float32) for k, v in feats.items()}
     out["labels"] = labels[valid].astype(np.int64)
+    # Side-file columns (rows.pt); not part of the world contract.
+    out["time_s"] = starts[valid].astype(np.float64)
+    out["segment_id"] = run[valid].astype(np.int64)
+    out["raw_label_idx"] = raw_idx[valid].astype(np.int64)
     return out
 
 
 def extract_subject_with_counts(
-    raw_dir: Path, subject: str, vision: bool = True
+    raw_dir: Path,
+    subject: str,
+    vision: bool = True,
+    label_index: dict[str, int] | None = None,
+    report: list[dict[str, object]] | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, int]]:
-    """Per-subject raw (not z-scored) tensors and the drop counters."""
+    """Per-subject raw (not z-scored) tensors and the drop counters.
+
+    The arrays also carry the side columns ``time_s``, ``segment_id`` (unique
+    within the subject) and ``raw_label_idx`` (into ``label_index``, filled in
+    first-seen order). ``report`` collects one span/monotonicity row per file.
+    """
+    label_index = {} if label_index is None else label_index
+    report = [] if report is None else report
     raw_sub = raw_dir / subject
     wears = sorted(raw_sub.glob(f"*_streamLog_actionNet-wearables_{subject}.hdf5"))
     if not wears:
         raise FileNotFoundError(f"no wearable HDF5 for {subject} in {raw_sub}")
     counts: dict[str, int] = {}
     sessions: list[dict[str, np.ndarray]] = []
+    seg_offset = 0
     for wear in wears:
         print(f"{subject}: {wear.name}", flush=True)
-        sess = _extract_session(wear, raw_sub, subject, vision, counts)
+        sess = _extract_session(wear, raw_sub, subject, vision, counts, label_index, report)
         if sess is not None and len(sess["labels"]) > 0:
+            sess["segment_id"] = sess["segment_id"] + seg_offset
+            seg_offset = int(sess["segment_id"].max()) + 1
             sessions.append(sess)
     if not sessions:
         keys = ["audio", "tactile", "gravity", "force", "labels"] + (["vision"] if vision else [])
         shapes = {"audio": (0, N_MELS), "tactile": (0, 32), "gravity": (0, 3), "force": (0, 6)}
         empty = {k: np.zeros(shapes.get(k, (0,)), dtype=np.float32) for k in keys}
         empty["labels"] = np.zeros(0, dtype=np.int64)
+        empty["time_s"] = np.zeros(0, dtype=np.float64)
+        empty["segment_id"] = np.zeros(0, dtype=np.int64)
+        empty["raw_label_idx"] = np.zeros(0, dtype=np.int64)
         if vision:
             empty["vision"] = np.zeros((0, 16, 16), dtype=np.float32)
         return empty, counts
@@ -435,6 +601,29 @@ def _input_sha(raw_dir: Path, path: Path) -> str:
     return _sha256(path)
 
 
+def _span_lines(report: list[dict[str, object]]) -> list[str]:
+    lines: list[str] = []
+    for ent in report:
+        lines.append(f"### {ent['subject']} `{ent['file']}`")
+        lines.append("")
+        if "skipped" in ent:
+            lines += [f"SKIPPED: {ent['skipped']}", ""]
+            continue
+        lab = ent.get("labelled")
+        ref = lab[0] if isinstance(lab, tuple) else 0.0
+        if isinstance(lab, tuple):
+            lines.append(f"- labelled segments: {lab[0] - ref:.1f} .. {lab[1] - ref:.1f} s")
+        spans = ent["streams"]
+        assert isinstance(spans, dict)
+        for name in sorted(spans):
+            first, last, n, bad = spans[name]
+            lines.append(
+                f"- `{name}`: {first - ref:.1f} .. {last - ref:.1f} s, n={n}, backwards steps={bad}"
+            )
+        lines.append("")
+    return lines
+
+
 def _manifest(
     raw_dir: Path,
     out: Path,
@@ -444,6 +633,9 @@ def _manifest(
     counts: dict[str, dict[str, int]],
     n_sub: dict[str, int],
     vision: bool,
+    report: list[dict[str, object]],
+    label_list: list[str],
+    ffmpeg_line: str | None,
 ) -> str:
     labels = tensors["labels"].numpy()
     n_all = len(labels)
@@ -481,7 +673,7 @@ def _manifest(
         "",
         "## Label families",
         "",
-        "Substring rules (lower-case, first match wins): "
+        "Prefix rules (lower-cased label starts with; first match wins): "
         + ", ".join(f"`{n}`->{f}" for n, f in FAMILY_RULES),
         "",
         "| family | meaning | raw label strings seen |",
@@ -521,13 +713,36 @@ def _manifest(
             if not k.startswith("seen:"):
                 lines.append(f"- `{k}`: {counts[s][k]}")
         lines.append("")
+    lines += [
+        "## Stream spans and clock checks",
+        "",
+        "Per wearable file: first/last `time_s` of every stream, relative to the "
+        "first labelled segment start (s), sample count and backwards steps (a file "
+        "with any backwards step is skipped). Media spans (world video "
+        "`frame_timestamp`, microphone sample times) are shown against the labelled "
+        "span; `drop:<m>:outside_span` / `drop:<m>:gap` split the media losses.",
+        "",
+    ]
+    lines += _span_lines(report)
+    lines += ["## Raw label index (`raw_label_idx` in rows.pt)", ""]
+    lines += [f"{i}. {name}" for i, name in enumerate(label_list)]
+    lines += [
+        "",
+        "`rows.pt` is a side file (not part of the world contract, ignored by "
+        "ActionSenseWorld): dict of `time_s` float64 (frame start, wearable clock), "
+        "`segment_id` long (unique across subjects) and `raw_label_idx` long, "
+        "aligned row for row with the tensors.",
+        "",
+        f"- ffmpeg: {ffmpeg_line or 'not used (--no-vision)'}",
+        "",
+    ]
     lines += ["## Per-subject z-score statistics", "", "```json", json.dumps(stats), "```", ""]
     lines += ["## SHA256 of the raw inputs", ""]
     for s in subjects:
         for p in list_inputs(raw_dir, s):
             lines.append(f"- `{p.relative_to(raw_dir).as_posix()}`: `{_input_sha(raw_dir, p)}`")
     lines += ["", "## SHA256 of the tensors", ""]
-    for name in tensors:
+    for name in (*tensors, "rows"):
         lines.append(f"- `{name}.pt`: `{_sha256(out / (name + '.pt'))}`")
     return "\n".join(lines) + "\n"
 
@@ -548,13 +763,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = ap.parse_args(argv)
     vision = not args.no_vision
 
+    ffmpeg_line = check_ffmpeg() if vision else None
+    label_index: dict[str, int] = {}
+    report: list[dict[str, object]] = []
+    side: dict[str, list[torch.Tensor]] = {"time_s": [], "segment_id": [], "raw_label_idx": []}
+    seg_base = 0
     cols: dict[str, list[torch.Tensor]] = {}
     stats: dict[str, dict[str, dict[str, list[float]]]] = {}
     counts: dict[str, dict[str, int]] = {}
     n_sub: dict[str, int] = {}
     subj_ids: list[torch.Tensor] = []
     for sid in args.subjects:
-        arrays, cnt = extract_subject_with_counts(args.raw, sid, vision)
+        arrays, cnt = extract_subject_with_counts(args.raw, sid, vision, label_index, report)
         try:
             n = check_aligned(arrays)
         except ValueError as exc:
@@ -565,6 +785,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise SystemExit(2)
         counts[sid] = cnt
         n_sub[sid] = n
+        seg = arrays["segment_id"]
+        side["time_s"].append(torch.from_numpy(arrays["time_s"]))
+        side["segment_id"].append(torch.from_numpy(seg + seg_base))
+        side["raw_label_idx"].append(torch.from_numpy(arrays["raw_label_idx"]))
+        seg_base += int(seg.max()) + 1
         stats[sid] = {}
         for name in MODALITIES:
             if name not in arrays:
@@ -581,8 +806,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     tensors = {k: torch.cat(v, dim=0) for k, v in cols.items()}
     tensors["subject"] = torch.cat(subj_ids)
+    rows = {k: torch.cat(v, dim=0) for k, v in side.items()}
     try:
-        check_aligned({k: v.numpy() for k, v in tensors.items()})
+        check_aligned({k: v.numpy() for k, v in {**tensors, **rows}.items()})
     except ValueError as exc:
         print(f"ABORT: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
@@ -591,7 +817,21 @@ def main(argv: Sequence[str] | None = None) -> None:
     for name, t in tensors.items():
         torch.save(t, args.out / f"{name}.pt")
         print(f"wrote {name}.pt {tuple(t.shape)} {t.dtype}", flush=True)
-    text = _manifest(args.raw, args.out, args.subjects, tensors, stats, counts, n_sub, vision)
+    torch.save(rows, args.out / "rows.pt")
+    print(f"wrote rows.pt {[(k, tuple(v.shape)) for k, v in rows.items()]}", flush=True)
+    text = _manifest(
+        args.raw,
+        args.out,
+        args.subjects,
+        tensors,
+        stats,
+        counts,
+        n_sub,
+        vision,
+        report,
+        sorted(label_index, key=label_index.__getitem__),
+        ffmpeg_line,
+    )
     (args.out / "MANIFEST.md").write_text(text)
     print(f"wrote {args.out}/MANIFEST.md", flush=True)
 
