@@ -11,8 +11,10 @@ from bouba_sens.world.actionsense_features import (
     emg_sectors,
     frame_grid,
     label_family,
+    monotonic_violations,
     pool_tactile,
     window_mean,
+    window_rms,
     zscore,
 )
 
@@ -69,3 +71,67 @@ def test_zscore_constant_channel_is_zero() -> None:
 def test_check_aligned_names_mismatch() -> None:
     with pytest.raises(ValueError, match=r"vision=120"):
         check_aligned({"audio": np.zeros((1800, 128)), "vision": np.zeros((120, 16, 16))})
+
+
+# The 20 activity strings of the ActionNet recording code, with the family each
+# must map to (spec section 6). Source: delpreto/ActionNet,
+# recording_data/sensor_streamers/ExperimentControlStreamer.py, ``self._activities``.
+UPSTREAM_LABELS: tuple[tuple[str, int | None], ...] = (
+    ("Get/replace items from refrigerator/cabinets/drawers", None),
+    ("Clear cutting board", None),
+    ("Peel a cucumber", 0),
+    ("Slice a cucumber", 0),
+    ("Peel a potato", 0),
+    ("Slice a potato", 0),
+    ("Slice bread", 0),
+    ("Spread almond butter on a bread slice", 1),
+    ("Spread jelly on a bread slice", 1),
+    ("Open/close a jar of almond butter", 1),
+    ("Pour water from a pitcher into a glass", 3),
+    ("Clean a plate with a sponge", 2),
+    ("Clean a plate with a towel", 2),
+    ("Clean a pan with a sponge", 2),
+    ("Clean a pan with a towel", 2),
+    (
+        "Get items from cabinets: 3 each large/small plates, bowls, mugs, glasses, "
+        "sets of utensils",
+        None,
+    ),
+    ("Set table: 3 each large/small plates, bowls, mugs, glasses, sets of utensils", 3),
+    ("Stack on table: 3 each large/small plates, bowls", None),
+    ("Load dishwasher: 3 each large/small plates, bowls, mugs, glasses, sets of utensils", 3),
+    ("Unload dishwasher: 3 each large/small plates, bowls, mugs, glasses, sets of utensils", 3),
+)
+
+
+def test_label_family_all_upstream_labels() -> None:
+    assert len(UPSTREAM_LABELS) == 20
+    for label, expected in UPSTREAM_LABELS:
+        assert label_family(label) == expected, label
+
+
+def test_window_mean_masks_nonfinite_samples() -> None:
+    t = np.arange(0.0, 1.0, 0.02)
+    x = np.ones((len(t), 1))
+    x[3, 0] = np.nan
+    x[30, 0] = np.inf
+    counts: dict[str, int] = {}
+    m, valid = window_mean(t, x, np.array([0.0, 0.5, 0.8]), counts=counts)
+    assert counts["nonfinite_samples"] == 2
+    assert np.isfinite(m).all() and valid.all()
+    np.testing.assert_allclose(m, 1.0)
+
+
+def test_window_rms_masks_nonfinite_samples() -> None:
+    t = np.arange(0.0, 1.0, 0.005)
+    x = np.full((len(t), 2), 2.0)
+    x[10] = np.nan
+    counts: dict[str, int] = {}
+    r, valid = window_rms(t, x, np.array([0.0, 0.5]), counts=counts)
+    assert counts["nonfinite_samples"] == 1 and valid.all()
+    np.testing.assert_allclose(r, 2.0)
+
+
+def test_monotonic_violations() -> None:
+    assert monotonic_violations(np.array([0.0, 1.0, 1.0, 2.0])) == 0
+    assert monotonic_violations(np.array([0.0, 2.0, 1.0, 3.0, 2.5])) == 2

@@ -12,16 +12,19 @@ if TYPE_CHECKING:
 
 VISION_SHAPE = (16, 16)
 
+# Prefix rules on the lower-cased label (spec section 6). Matching the leading
+# words, not a substring, keeps "Spread ... on a bread slice" out of cutting.
 FAMILY_RULES: tuple[tuple[str, int], ...] = (
     ("peel", 0),
-    ("slic", 0),
+    ("slice", 0),
     ("spread", 1),
-    ("jar", 1),
+    ("open/close a jar", 1),
     ("clean", 2),
     ("wipe", 2),
     ("pour", 3),
     ("set table", 3),
-    ("dishwasher", 3),
+    ("load dishwasher", 3),
+    ("unload dishwasher", 3),
 )
 
 _EPS = 1e-9
@@ -29,20 +32,23 @@ _EPS = 1e-9
 
 def label_family(label: str) -> int | None:
     """Map an activity label to a family id, or None if unmapped."""
-    low = label.lower()
-    for needle, fam in FAMILY_RULES:
-        if needle in low:
+    low = label.strip().lower()
+    for prefix, fam in FAMILY_RULES:
+        if low.startswith(prefix):
             return fam
     return None
 
 
 def activity_segments(
-    rows: list[tuple[str, str, str]], times: np.ndarray
+    rows: list[tuple[str, str, str]],
+    times: np.ndarray,
+    raw_labels: list[str] | None = None,
 ) -> tuple[list[tuple[float, float, int]], dict[str, int]]:
     """Pair Start/Stop rows into (t_start, t_end, family) segments.
 
     ``times[i]`` is the timestamp of ``rows[i]``. Counts keys: ``unclosed``,
-    ``bad``, ``unmapped:<label>``.
+    ``bad``, ``unmapped:<label>``. When ``raw_labels`` is given, the raw label
+    string of each returned segment is appended to it, in segment order.
     """
     segments: list[tuple[float, float, int]] = []
     counts: dict[str, int] = {"unclosed": 0, "bad": 0}
@@ -62,6 +68,8 @@ def activity_segments(
                 counts["bad"] += 1
             else:
                 segments.append((t0, float(t), fam))
+                if raw_labels is not None:
+                    raw_labels.append(label)
     counts["unclosed"] += len(open_rows)
     return segments, counts
 
@@ -91,10 +99,22 @@ def _window_reduce(
     width: float,
     max_gap: float,
     square: bool,
+    counts: dict[str, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     x = np.asarray(x, dtype=np.float64)
+    t = np.asarray(t, dtype=np.float64)
     if x.ndim == 1:
         x = x[:, None]
+    # Non-finite samples are masked out (treated like missing samples) so one
+    # NaN cannot poison every later cumulative sum.
+    finite = np.isfinite(x).all(axis=1) & np.isfinite(t)
+    n_bad = int((~finite).sum())
+    if n_bad:
+        if counts is not None:
+            counts["nonfinite_samples"] = counts.get("nonfinite_samples", 0) + n_bad
+        t, x = t[finite], x[finite]
+    if len(t) == 0:
+        return np.zeros((len(starts), x.shape[1])), np.zeros(len(starts), dtype=bool)
     lo = np.searchsorted(t, starts, side="left")
     hi = np.searchsorted(t, starts + width, side="left")
     src = x * x if square else x
@@ -124,9 +144,13 @@ def window_mean(
     starts: np.ndarray,
     width: float = 0.1,
     max_gap: float = 0.2,
+    counts: dict[str, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Per-frame mean of x over [start, start+width) with gap interpolation."""
-    return _window_reduce(t, x, starts, width, max_gap, square=False)
+    """Per-frame mean of x over [start, start+width) with gap interpolation.
+
+    Non-finite samples are masked and counted in ``counts["nonfinite_samples"]``.
+    """
+    return _window_reduce(t, x, starts, width, max_gap, square=False, counts=counts)
 
 
 def window_rms(
@@ -135,9 +159,19 @@ def window_rms(
     starts: np.ndarray,
     width: float = 0.1,
     max_gap: float = 0.2,
+    counts: dict[str, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Per-frame RMS of x over [start, start+width) with gap interpolation."""
-    return _window_reduce(t, x, starts, width, max_gap, square=True)
+    """Per-frame RMS of x over [start, start+width) with gap interpolation.
+
+    Non-finite samples are masked and counted in ``counts["nonfinite_samples"]``.
+    """
+    return _window_reduce(t, x, starts, width, max_gap, square=True, counts=counts)
+
+
+def monotonic_violations(t: np.ndarray) -> int:
+    """Number of strictly backwards steps in a timestamp array."""
+    t = np.asarray(t, dtype=np.float64)
+    return int((np.diff(t) < 0).sum()) if len(t) > 1 else 0
 
 
 def pool_tactile(frames: np.ndarray) -> np.ndarray:
