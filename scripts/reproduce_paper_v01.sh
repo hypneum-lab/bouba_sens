@@ -15,6 +15,20 @@
 #
 # Idempotent: cells with an existing `eval_report.json` are skipped
 # by `run_grid.sh`, so a re-run only fills in gaps.
+#
+# Real Studyforrest data (issue #38): only the blocks that pass
+# BOUBA_SENS_STUDYFORREST_DATA (v0.4_sf_real, v0.5_s10_dr, v0.5_s11,
+# v0.5_s12_*, v0.5_s13_*, v0.5_s14_joint) fetch + extract it, and only
+# when they are actually selected (CHOOSE=all or that block). Synthetic
+# and mock blocks never touch the network. BOUBA_SENS_OFFLINE=1 makes a
+# real-data block fail fast when the adapted data dir is empty.
+#
+# Erratum 2026-10-28 (issue #45): the April 2026 tensors are lost and
+# the public chain cannot regenerate them (the 12 s movie_localizer.mkv
+# gives 120 vision frames, not 1800), so the extraction step now stops
+# with an error and those 17 blocks are not reproducible from this
+# repository. See docs/paper/main.tex, Section "Extension to 4.5-modal
+# real biological bridge".
 set -euo pipefail
 
 CHOOSE="${CHOOSE:-all}"
@@ -24,22 +38,32 @@ STUDYFORREST_DATA="${BOUBA_SENS_STUDYFORREST_DATA:-data/sf_phase2_adapted}"
 
 mkdir -p "${OUT_BASE}" "${REPORTS}"
 
-# N3 H9 fix (2026-05-10): ensure ${STUDYFORREST_DATA} exists before
-# any cell tries to load it. Idempotent: skips fetch + extract when
-# the adapted data dir is already populated. Without this, a cold
-# clone of the repo would hit "no such directory" mid-run on the
-# §5.5 Amedi cells.
+# N3 H9 fix (2026-05-10), made lazy for issue #38: ensure
+# ${STUDYFORREST_DATA} exists before a real-data cell tries to load it.
+# Idempotent: skips fetch + extract when the adapted data dir is
+# already populated, and runs at most once per invocation.
 PHASE2_RAW="${BOUBA_SENS_STUDYFORREST_RAW:-data/studyforrest_phase2}"
-if [ ! -d "${STUDYFORREST_DATA}" ] || [ -z "$(ls -A "${STUDYFORREST_DATA}" 2>/dev/null)" ]; then
-    echo "[N3 H9] ${STUDYFORREST_DATA} missing or empty; fetching + extracting..."
-    bash scripts/fetch_studyforrest_phase2.sh "${PHASE2_RAW}"
-    uv run python scripts/extract_phase2_adapted.py \
-        --phase2-root "${PHASE2_RAW}" \
-        --out "${STUDYFORREST_DATA}"
-    echo "[N3 H9] Fetch + extract complete."
-else
-    echo "[N3 H9] ${STUDYFORREST_DATA} populated; skipping fetch."
-fi
+_SF_READY=0
+_ensure_sf_data() {
+    if (( _SF_READY )); then
+        return 0
+    fi
+    if [ -d "${STUDYFORREST_DATA}" ] && [ -n "$(ls -A "${STUDYFORREST_DATA}" 2>/dev/null)" ]; then
+        echo "[N3 H9] ${STUDYFORREST_DATA} populated; skipping fetch."
+    elif [[ "${BOUBA_SENS_OFFLINE:-0}" == "1" ]]; then
+        echo "[N3 H9] ERROR: ${STUDYFORREST_DATA} missing or empty and" \
+            "BOUBA_SENS_OFFLINE=1; this block needs real Studyforrest data." >&2
+        exit 1
+    else
+        echo "[N3 H9] ${STUDYFORREST_DATA} missing or empty; fetching + extracting..."
+        bash scripts/fetch_studyforrest_phase2.sh "${PHASE2_RAW}"
+        uv run python scripts/extract_phase2_adapted.py \
+            --phase2-root "${PHASE2_RAW}" \
+            --out "${STUDYFORREST_DATA}"
+        echo "[N3 H9] Fetch + extract complete."
+    fi
+    _SF_READY=1
+}
 
 # Helper: run_grid.sh wrapper that passes through its env and then
 # aggregates the grid into a named JSON. Honours CHOOSE gating.
@@ -49,6 +73,14 @@ _run() {
     if [[ "${CHOOSE}" != "all" && "${CHOOSE}" != "${label}" ]]; then
         return 0
     fi
+    # Only blocks that pass BOUBA_SENS_STUDYFORREST_DATA need real data.
+    local kv
+    for kv in "$@"; do
+        if [[ "${kv}" == BOUBA_SENS_STUDYFORREST_DATA=* ]]; then
+            _ensure_sf_data
+            break
+        fi
+    done
     echo "=== ${label} -> ${out_json} ==="
     env "$@" bash scripts/run_grid.sh
     # Recover OUT_ROOT from the environment vars passed in.

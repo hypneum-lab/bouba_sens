@@ -2,23 +2,43 @@
 # Sprint 9 / Task 9.1 — fetch the Studyforrest phase-2 subset needed
 # for the 5-modality bridge. Idempotent: re-runs do nothing when the
 # target subtree already exists.
+#
+# Source: the `///studyforrest-data-phase2` handle no longer resolves on
+# datasets.datalad.org (checked 2026-10-25, issue #38); the dataset is
+# installed from its GitHub mirror instead (override with
+# STUDYFORREST_PHASE2_URL).
+#
+# REQUIRED files are exactly the two that scripts/extract_phase2_adapted.py
+# reads. The ses-movie files of the original Sprint 9 plan are kept as
+# OPTIONAL (several no longer exist in phase-2, see ADR-0012).
+#
+# Note (issue #45): the public movie_localizer.mkv lasts 12 s, so the
+# extraction cannot produce the 1800-frame vision tensor used in April
+# 2026; extract_phase2_adapted.py now stops with an explicit error.
 set -euo pipefail
 
 DEST="${1:-data/studyforrest_phase2}"
 SUBJECT="${SUBJECT:-sub-01}"
 RUN="${RUN:-run-1}"
+SOURCE_URL="${STUDYFORREST_PHASE2_URL:-https://github.com/psychoinformatics-de/studyforrest-data-phase2.git}"
 
-# 1. Install datalad + git-annex if missing (Homebrew on macOS only).
-if ! command -v datalad >/dev/null; then
-    if command -v brew >/dev/null; then
-        echo "[fetch] installing datalad via Homebrew"
-        brew install datalad git-annex
-    else
-        echo "[fetch] ERROR: datalad not found and brew unavailable." >&2
-        echo "[fetch]        Install datalad manually (https://www.datalad.org/)" >&2
-        echo "[fetch]        then re-run this script." >&2
-        exit 1
-    fi
+# 1. Require datalad + git-annex. Nothing is installed automatically:
+#    every third-party tool goes through human review first (lab
+#    supply-chain policy), so a missing tool is a hard stop.
+missing=()
+for tool in datalad git-annex; do
+    command -v "${tool}" >/dev/null || missing+=("${tool}")
+done
+if (( ${#missing[@]} > 0 )); then
+    echo "[fetch] ERROR: missing tool(s): ${missing[*]}" >&2
+    echo "[fetch]        This script never installs software. Install a" >&2
+    echo "[fetch]        reviewed, pinned version yourself, for example:" >&2
+    echo "[fetch]          macOS : brew install datalad git-annex" >&2
+    echo "[fetch]          Debian/Ubuntu : apt install datalad git-annex" >&2
+    echo "[fetch]          pip : pip install datalad (git-annex separately)" >&2
+    echo "[fetch]        See https://handbook.datalad.org/en/latest/intro/installation.html" >&2
+    echo "[fetch]        then re-run this script." >&2
+    exit 1
 fi
 
 # Detect the SHA256 tool early so MANIFEST emission cannot silently fail.
@@ -33,22 +53,25 @@ fi
 
 # 2. Install the dataset handle (no payload yet).
 if [[ ! -d "${DEST}" ]]; then
-    echo "[fetch] datalad install ///studyforrest-data-phase2 -> ${DEST}"
-    datalad install -r "///studyforrest-data-phase2" "${DEST}"
+    echo "[fetch] datalad install -s ${SOURCE_URL} -> ${DEST}"
+    datalad install -s "${SOURCE_URL}" "${DEST}"
 fi
 
 cd "${DEST}"
 
 # 3. Get only what we need. File paths follow BIDS conventions.
-#    OPTIONAL items (e.g. video.mkv) may not be resolvable via datalad
-#    on all dataset snapshots; failures are non-fatal.
+#    REQUIRED = the inputs of scripts/extract_phase2_adapted.py.
+#    OPTIONAL items may not be resolvable on every dataset snapshot;
+#    failures are non-fatal.
 REQUIRED=(
+    "code/stimulus/movie_localizer/videos/movie_localizer.mkv"
+    "${SUBJECT}/ses-localizer/func/${SUBJECT}_ses-localizer_task-movielocalizer_${RUN}_recording-cardresp_physio.tsv.gz"
+)
+OPTIONAL=(
     "stimuli/soundtrack/fg_av_ger_stereo.mp3"
     "${SUBJECT}/ses-movie/func/${SUBJECT}_ses-movie_task-movie_${RUN}_bold.nii.gz"
     "${SUBJECT}/ses-movie/func/${SUBJECT}_ses-movie_task-movie_${RUN}_physio.tsv.gz"
     "stimuli/annotations/movie_motion-locations.csv"
-)
-OPTIONAL=(
     "stimuli/movie/fg_av_ger_stereo.mkv"
     "${SUBJECT}/ses-movie/func/${SUBJECT}_ses-movie_task-movie_${RUN}_recording-eyegaze_physio.tsv.gz"
 )
@@ -80,7 +103,7 @@ done
 cat > MANIFEST.md <<EOF
 # Studyforrest phase-2 fetch manifest
 
-- Source: \`///studyforrest-data-phase2\` (Hanke et al. 2014, Scientific Data)
+- Source: \`${SOURCE_URL}\` (Hanke et al. 2014, Scientific Data)
 - Subject: ${SUBJECT}
 - Run: ${RUN}
 - Fetched: $(date -u +%Y-%m-%dT%H:%M:%SZ)

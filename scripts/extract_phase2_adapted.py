@@ -19,6 +19,12 @@ the artefact chain is publishable to Zenodo without copyright bind.
 - labels  : 4-quantile binning of audio RMS per 100 ms window.
 
 The resulting 6 .pt tensors load via `StudyforrestRealWorld`.
+
+All six tensors must share the same first dimension (one row per
+100 ms frame). The script refuses to save a misaligned set and exits
+non-zero instead of padding or tiling (issue #45): the public
+``movie_localizer.mkv`` lasts 12 s, so with the default 180 s duration
+vision yields 120 rows against 1800 for the other modalities.
 """
 
 from __future__ import annotations
@@ -27,6 +33,7 @@ import argparse
 import hashlib
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +60,21 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: fh.read(64 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def check_aligned_lengths(tensors: Mapping[str, torch.Tensor]) -> None:
+    """Raise ``ValueError`` unless every tensor has the same first dimension.
+
+    The message names each modality with its length, so a short stream
+    (e.g. vision from a 12 s video) is visible at a glance.
+    """
+    lengths = {name: int(tensor.shape[0]) for name, tensor in tensors.items()}
+    if len(set(lengths.values())) > 1:
+        detail = ", ".join(f"{name}={n}" for name, n in lengths.items())
+        raise ValueError(
+            f"modalities have different frame counts ({detail}); "
+            "refusing to save a misaligned set (no padding, no tiling)"
+        )
 
 
 def build_audio(n_frames: int) -> torch.Tensor:
@@ -166,7 +188,6 @@ def main() -> None:
     print("[extract] labels <- audio RMS quantiles")
     labels = build_labels(audio)
 
-    args.out.mkdir(parents=True, exist_ok=True)
     tensors = {
         "audio.pt": audio,
         "vision.pt": vision,
@@ -175,6 +196,14 @@ def main() -> None:
         "force.pt": force,
         "labels.pt": labels,
     }
+    try:
+        check_aligned_lengths(tensors)
+    except ValueError as exc:
+        print(f"[extract] FATAL: {exc}", file=sys.stderr)
+        print(f"[extract] nothing written to {args.out}", file=sys.stderr)
+        sys.exit(1)
+
+    args.out.mkdir(parents=True, exist_ok=True)
     for name, tensor in tensors.items():
         torch.save(tensor, args.out / name)
 

@@ -73,6 +73,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared sign per block of N consecutive probe items, for contiguous-
   window probes; `--block 1` (default) reproduces the per-item null.
 
+### Fixed
+
+- **Studyforrest real-data extraction fails loudly instead of silently
+  misaligning** (#45). `extract_vision` writes frames to a fresh
+  temporary directory instead of reusing `_frames/` next to the video.
+  `scripts/extract_phase2_adapted.py` checks that the six tensors share
+  their first dimension before saving and otherwise exits 1, naming each
+  modality and its length (no padding, no tiling); the check
+  `check_aligned_lengths` is unit-tested
+  (`tests/unit/test_extract_phase2_alignment.py`). On the public data it
+  now stops with `vision.pt=120` against 1800 for the other modalities.
+- **`scripts/fetch_studyforrest_phase2.sh`** (#38, #45) installs from
+  `https://github.com/psychoinformatics-de/studyforrest-data-phase2.git`
+  (the `///studyforrest-data-phase2` handle no longer resolves), fetches
+  the two files the extraction reads (`movie_localizer.mkv` and the
+  sub-01 ses-localizer cardresp physio) and keeps the former `ses-movie`
+  files optional. It no longer installs datalad / git-annex through
+  Homebrew: when either is missing it prints install instructions and
+  exits 1 (supply-chain policy, no unreviewed installs).
+- **`scripts/reproduce_paper_v01.sh`** (part of #38) fetches and extracts
+  Studyforrest only when a selected block passes
+  `BOUBA_SENS_STUDYFORREST_DATA` (`CHOOSE=all` or one of the real-data
+  blocks); synthetic and mock blocks stay offline. `BOUBA_SENS_OFFLINE=1`
+  makes a real-data block fail fast when the data dir is empty.
+
+### Erratum
+
+- **Paper v0.1 real-data results are not reproducible from the
+  repository** (PI decision 2026-10-28, #45). The 17 real-data blocks
+  (§4 `v0.4_sf_real`, §5.5 Amedi dose-response, §5.6–5.9 Sprints 11–14)
+  were computed on `data/sf_phase2_adapted` tensors extracted on
+  2026-04-21 (commit `d7a3645`); those tensors are lost, and the public
+  chain cannot rebuild them (12 s video → 120 vision frames vs 1800).
+  The paper carries a dated erratum in the bridge subsection, pointed to
+  from §Artefacts, and ADR-0012 a "Reproducibility status (2026-10-28)"
+  section. No number is changed; the results are kept as historical. A
+  replication on a new real dataset is planned in a separate design pass.
+
 ## [0.5.10] — 2026-10-25 (seeded CLI + reproducibility erratum)
 
 ### Fixed

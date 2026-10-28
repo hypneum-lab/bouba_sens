@@ -486,6 +486,23 @@ worlds at this parameterisation.
 \subsection{Extension to 4.5-modal real biological bridge (ADR-0012)}
 \label{sec:bridge}
 
+\paragraph{Erratum (2026-10-28): the real-data results cannot be
+reproduced from the repository.} This concerns every result computed
+on the 4.5-modal real bridge: the 4.5-modal row of
+Table~\ref{tab:five-world}, the B-2 interval below, and
+Sections~\ref{sec:dose-response}--\ref{sec:sprint14} (the 17
+real-data blocks of \texttt{scripts/reproduce\_paper\_v01.sh}).
+Their input tensors were extracted on 2026-04-21 (commit \texttt{d7a3645}, ADR-0012) on a
+workstation re-provisioned on 2026-06-03; no copy exists on the lab
+machines, on Zenodo, in the release assets or in the git history. The
+public data cannot rebuild them: \texttt{movie\_localizer.mkv} lasts
+12\,s, so sampling at 10\,Hz gives 120 vision frames against 1800 for
+the other modalities, and the unchanged loader then fails. How the
+April grids obtained 1800 vision frames is not established. Their
+numbers are kept as historical results and are not changed; they
+cannot be reproduced from the repository. A replication on a new real
+dataset is planned (issue~\#45).
+
 Amendment v0.5 (\texttt{docs/osf/}, git-dated, never filed on
 OSF) extends the pre-registered grid with a fifth world derived
 from Studyforrest Phase-2
@@ -1230,6 +1247,12 @@ under way and will be reported in the next revision.
 every grid cited in Sections~\ref{sec:results}--\ref{sec:sprint14}
 from the tagged repository; total compute budget
 $\approx 8$\,h on an M3 Ultra.
+
+\paragraph{Erratum (2026-10-28).} The previous sentence does not hold
+for the 17 real-data blocks computed on the 4.5-modal Studyforrest
+bridge (Sections~\ref{sec:bridge}--\ref{sec:sprint14}): their input tensors
+are lost and the public data cannot rebuild them. Their numbers are
+kept as historical results (erratum in Section~\ref{sec:bridge}).
 
 \paragraph{Pre-registration fidelity.}
 The git-dated design specification (2026-04-20) locks the three
