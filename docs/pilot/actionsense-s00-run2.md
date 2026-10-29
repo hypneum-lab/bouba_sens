@@ -1,5 +1,22 @@
 # ActionSense S00 pilot, run 2: go/no-go gate report
 
+> **Null test rule** (PI decision 2026-10-29, fixed before any computation;
+> script `scripts/pilot_actionsense_null.py` committed in `fcd957e` before it
+> was run; results in "Null test (2026-10-29)" at the end):
+>
+> - Statistic S = the maximum cross-correlation over lags in [−200, +200] ms
+>   between tactile.sum(1) onsets and audio-energy onsets on the slicing
+>   frames, computed exactly as in scripts/pilot_actionsense_xcorr.py (same
+>   onset definition, same lag grid, same frame selection by segment).
+> - Null: for each of N = 1000 draws (seed 0, numpy default_rng), circularly
+>   shift the audio-onset series independently within each labelled segment
+>   by a uniform random offset of at least 2 s and at most (segment length −
+>   2 s); segments shorter than 4 s are left unshifted and counted. Compute S
+>   on each draw.
+> - Decision: GO if S_observed > the 95th percentile of the null; otherwise
+>   NO-GO. Report also the empirical p-value (1 + #null ≥ S_obs)/(N + 1), the
+>   null mean and 95th percentile, and the number of unshifted short segments.
+
 Date: 2026-10-29. Spec: `docs/superpowers/specs/2026-10-28-actionsense-world-design.md`,
 section 7 (check 2 as amended on 2026-10-29). Issues: #45, #52. Code: `main` at
 `b0814ab` (#51: piecewise least-squares audio clock fit replaces the 20 ms
@@ -229,3 +246,44 @@ RAW=data/actionsense_raw WORK=$HOME/hypneum-lab/actionsense/pilot \
 
 Data licence of the derived tensors: CC BY-NC-SA 4.0 (ActionSense, DelPreto
 et al., NeurIPS 2022). No tensor is committed.
+
+## Null test (2026-10-29)
+
+Rule: see the quoted block at the top of this report (fixed by the PI before
+any computation; `scripts/pilot_actionsense_null.py` committed in `fcd957e`,
+then run unchanged, sha256
+`779a7be4ad123b1f5e6f31615b80a4361f7725ba0a57839df3a5435149e0d73f`). Data: the
+run-2 cache `out_a` (tensor sha256 under check 4 above); no new extraction.
+Run on macM1, 2.7 s wall time.
+
+Implementation of the rule: the segments, onset series and pooled
+cross-correlation are those of `pilot_actionsense_xcorr.py` (9 slicing
+segments). Segment length L = length of the onset series on the 10 Hz grid;
+offsets are integer frames drawn with `rng.integers(20, L - 20,
+endpoint=True)`, the audio series is rolled with its undefined (NaN) entries,
+the tactile series is never shifted; 95th percentile = `np.percentile`
+(linear).
+
+| quantity | value |
+|---|---|
+| segments (lengths in frames) | 9 (339, 361, 253, 375, 402, 255, 311, 341, 372) |
+| unshifted short segments (< 4 s) | 0 |
+| S_observed | 0.0634 (at +100 ms, as in check 3) |
+| null mean | 0.0236 |
+| null 95th percentile | 0.0482 |
+| null maximum | 0.0956 |
+| null draws ≥ S_observed | 11 of 1000 |
+| empirical p-value (1 + 11) / 1001 | 0.012 |
+
+![null](actionsense-s00-run2-null.png)
+
+**Decision under the rule: GO** (S_observed 0.0634 > null p95 0.0482).
+
+Scope of this result: it says that the tactile/audio onset coupling within
+±200 ms on the S00 slicing frames is larger than what circularly shifted
+audio gives in 98.8 % of draws. The effect stays small in absolute terms
+(0.063 against a null mean of 0.024), rests on one subject and three slicing
+labels, and the 11 null draws at or above it include one at 0.096. The
+check-3 caveats above (trough of -0.106 at +400 ms, 0.056 at +1000 ms) are
+unchanged; the rule does not test them.
+
