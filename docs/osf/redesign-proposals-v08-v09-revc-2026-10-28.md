@@ -447,7 +447,8 @@ pilot; they are recorded as post-pilot decisions of the unfiled drafts.
 - **v0.9: the order is inverted. CC-film is PRIMARY**, the Studyforrest
   two-channel label y = 2a + b is SECONDARY (replication).
   - The CC-film cache is re-extracted at 10 fps with the existing
-    script; the only new parameters are `--fps` and `--max-seconds`.
+    script; the only new parameter is `--fps` (`--max-seconds` already
+    existed and is set to 600).
   - CC-film uses a two-channel label screened with the same isolation
     gates (every modality ≤ 0.65, concatenation − best ≥ 0.20), the
     positive control, the label-breaking arm and the frozen purged

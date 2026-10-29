@@ -7,6 +7,7 @@ Every function returns a `torch.Tensor` already temporally resampled to
 from __future__ import annotations
 
 import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -47,42 +48,49 @@ def extract_vision(video_path: Path, n_frames: int) -> torch.Tensor:
     Uses ffmpeg via subprocess to sample frames at TARGET_HZ, then
     torchvision's VGG16 pretrained. Falls back to a random-proj baseline
     if torchvision is unavailable (documented in the MANIFEST).
+
+    Frames are written to a fresh temporary directory that is removed
+    on return, so frames left over from an earlier extraction can never
+    be read (issue #45). The row count is the number of frames the video
+    actually yields, capped at ``n_frames``; it is NOT padded, so a short
+    video gives fewer rows and the caller must check alignment.
     """
+    from PIL import Image
     from torchvision.models import VGG16_Weights, vgg16
 
-    # 1. Sample frames at TARGET_HZ via ffmpeg.
-    tmp = video_path.parent / "_frames"
-    tmp.mkdir(exist_ok=True)
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(video_path),
-            "-vf",
-            f"fps={TARGET_HZ}",
-            str(tmp / "f_%06d.png"),
-        ],
-        check=True,
-        capture_output=True,
-    )
-
-    # 2. Pass through VGG16 in batches.
     weights = VGG16_Weights.DEFAULT
     model = vgg16(weights=weights).features[:23].eval()  # up to conv4_3
     preprocess = weights.transforms()
     feats: list[torch.Tensor] = []
-    from PIL import Image
 
-    frame_files = sorted(tmp.glob("f_*.png"))[:n_frames]
-    for frame_path in frame_files:
-        img = Image.open(frame_path).convert("RGB")
-        x = preprocess(img).unsqueeze(0)
-        with torch.no_grad():
-            feat = model(x).flatten().numpy()  # large vector
-        # Mean-pool to 256 dims: reshape (C, H, W) then mean over spatial.
-        feats.append(torch.from_numpy(feat[:_VISION_DIM].astype(np.float32)))
-    stacked = torch.stack(feats)  # (n_frames, 256)
+    with tempfile.TemporaryDirectory(prefix="bouba_sens_frames_") as tmp_name:
+        tmp = Path(tmp_name)
+        # 1. Sample frames at TARGET_HZ via ffmpeg.
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(video_path),
+                "-vf",
+                f"fps={TARGET_HZ}",
+                str(tmp / "f_%06d.png"),
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+        # 2. Pass each frame through VGG16.
+        frame_files = sorted(tmp.glob("f_*.png"))[:n_frames]
+        for frame_path in frame_files:
+            with Image.open(frame_path) as raw:
+                img = raw.convert("RGB")
+            x = preprocess(img).unsqueeze(0)
+            with torch.no_grad():
+                feat = model(x).flatten().numpy()  # large vector
+            # Keep the first 256 dims of the flattened conv4_3 map.
+            feats.append(torch.from_numpy(feat[:_VISION_DIM].astype(np.float32)))
+    stacked = torch.stack(feats)  # (n_rows, 256), n_rows <= n_frames
     return stacked.reshape(stacked.shape[0], 16, 16)
 
 
