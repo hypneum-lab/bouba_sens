@@ -84,7 +84,7 @@ the window [*t*, *t* + 100 ms).
 
 | bouba_sens | Source | Reduction to the contract |
 |---|---|---|
-| audio (128) | sink microphone, 48 kHz, cardioid (closest to hand–object sounds) | 128-bin log-mel, window 100 ms, hop 4800 samples, aligned through a least-squares line of the microphone HDF5 chunk timestamps against sample index (changed 2026-10-29, see §7) |
+| audio (128) | sink microphone, 48 kHz, cardioid (closest to hand–object sounds) | 128-bin log-mel, window 100 ms, hop 4800 samples, aligned through a piecewise least-squares line of the microphone HDF5 chunk timestamps against sample index (changed 2026-10-29, see §7) |
 | vision (16,16) | eye-tracking world camera (egocentric), frame nearest to each 10 Hz tick | grayscale, then 16×16 mean-intensity patch grid. Same reduction as `extract_ccfilm_features.py`, with no pretrained network and no weight download |
 | tactile (32) | both gloves, 32×32 pressure matrices | per glove, 4×4 average pooling of the matrix to 16 values; left and right concatenated to 32 |
 | gravity (3) | right Myo `acceleration_g` (3 axes, in g) | mean over the window, then a 0.5 Hz low-pass so the vector tracks forearm orientation relative to gravity |
@@ -137,11 +137,26 @@ chunk timestamps arrive in bursts (steps of ~0, 43 and 85 ms instead of
 a steady 2048 / 48000 = 42.67 ms) while the WAV is continuous. Mapping
 each frame through a single chunk timestamp, with a 20 ms per-span drift
 rejection, dropped 42.3 % of the S00 frames and could place a window
-40–85 ms off its tick. Audio samples are now placed on a per-file linear
-fit of chunk timestamp against sample index; a file is rejected only if
-the implied rate deviates from the WAV rate by more than 2e-3 or a
-residual exceeds 0.5 s (`MIC_RATE_TOL`, `MIC_RESIDUAL_MAX_S` in
-`scripts/extract_actionsense.py`; fit statistics in `MANIFEST.md`).
+40–85 ms off its tick. Audio samples are now placed on a per-file
+piecewise linear fit of chunk timestamp against sample index (chunk *k*
+stamped at sample (*k* + 1)·2048 − 1). Breakpoints are found on the
+residuals of a global fit: the median residual over the 25 chunks
+(~1 s) after a chunk differs from that over the 25 chunks before by
+more than 0.05 s; burst jitter averages out, a clock step or a dropout
+does not. Each segment is fitted on its own; frames whose window lies
+within 1 s of a breakpoint (or in the clock gap between two segments)
+are dropped and counted. A file is rejected only if its WAV length is
+not 2048 × the number of chunk timestamps or its timestamps are not
+monotonic; a segment is rejected only if its implied rate deviates from
+the WAV rate by more than 2e-3 or a residual exceeds 0.2 s
+(`MIC_STEP_WINDOW`, `MIC_STEP_DETECT_S`, `MIC_BREAKPOINT_MARGIN_S`,
+`MIC_RATE_TOL`, `MIC_SEGMENT_RESIDUAL_MAX_S` in
+`scripts/extract_actionsense.py`). Frames of a rejected file or segment
+count as audio gaps, not as outside the audio span. A constant host
+latency between a sound and its timestamp is absorbed into the
+intercept and cannot be detected by this fit. Segments, breakpoints
+(time, step) and per-segment rate and residual statistics are reported
+in `MANIFEST.md`.
 
 ## 8. Experiment (to be pre-registered, amendment v0.7)
 
