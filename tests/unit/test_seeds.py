@@ -48,7 +48,8 @@ _PHASE2 = {"phase2_batch": 100, "replay_init": 16, "replay_fifo": 100, "phase2_p
 RANGES = {
     "v07-b2": {"phase1_batch": 200, **_PHASE2, "b2_probe": 1},
     "v08": {"phase1_batch": 200, **_PHASE2},
-    "v09": {"phase1_batch": 450, "donor": 450, "check_anchor": 32},
+    # rev. D (PI 2026-10-29): up to onset 200 + 50 + R 1,750 = 2,000 steps
+    "v09": {"phase1_batch": 2000, "donor": 2000, "check_anchor": 32},
 }
 N_CELLS = 30  # run_grid.sh: with a namespace, cell seed = seed * 10000 + 1 ... 30
 

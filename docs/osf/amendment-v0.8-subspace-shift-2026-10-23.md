@@ -1,6 +1,11 @@
 # OSF pre-registration (standalone) — bouba_sens v0.8 (subspace shift vs LOCK_AFTER)
 
-**Status:** DRAFT — not yet filed on OSF (to be filed by the PI)
+**Status:** **WITHDRAWN** (PI decision 2026-10-29, 06:10, after three pilot rounds). This draft will not be filed; no further v0.8 work. The code (`v08_driver`, `subspace_protocol`, `metrics/{subspace,cka_shift,revc_shift}`) and every pilot record stay in the repository. The three rounds and why each failed:
+- **Rev. A** (seeds 2101–2110, K = 8 Gumbel readout of the fused code, principal shift at k* = 13). The N rule returned 20 only because the guard (S_split, median 0.074) was not on Y's scale. ĝ came out at 23 SD, while Y ranged from −0.007 to +0.016, and 66 % of matrices had an eigengap ratio below 1.1. The PI ordered a redesign.
+- **Rev. B** (2201–2210, deterministic soft readout, 1 − CKA). The soft fused code is constant to float rounding (variance ≈ 8.6 × 10⁻¹⁵), so 0 / 10 seeds are complete and gate (i) fails.
+- **Rev. C** (2211–2220, straight-through emission, encoder / logit readouts). The learning gate fails at all 7 locks: full-network held-out balanced accuracy is 0.29–0.33 (rule ≥ 0.40), with 6 / 10 seeds at chance. No capture was run.
+
+**Former status:** DRAFT — not yet filed on OSF (to be filed by the PI)
 **Parent pre-registration:** none. **This draft is a standalone pre-registration** (corrected on 2026-10-25, PI decision of 19:04, after the pilots). bouba_sens has no filed pre-registration: OSF `10.17605/OSF.IO/Q6JYN` covers only the dream-of-kiki hypotheses H1–H4 (issue #20), and the bouba_sens amendments v0.4–v0.6 under `docs/osf/` were drafted but never filed. The thresholds 0.05 / 0.10 / 0.02 used here are those of the local, git-dated design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, §1.2); the file name keeps "amendment" for continuity only.
 **Earlier local drafts (never filed):** `amendment-v0.4-studyforrest.md`, `amendment-v0.5-studyforrest-5modal.md`, `amendment-v0.6-sprint10-17.md`
 **Sibling drafts (same date, filed independently):** `amendment-v0.7-tost-equivalence-2026-10-23.md`, `amendment-v0.9-decorrelation-window-2026-10-23.md`

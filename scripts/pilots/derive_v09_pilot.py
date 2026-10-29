@@ -37,7 +37,7 @@ RNG_SEED = 20261023 + 909
 
 def main(src: Path, dst: Path) -> None:
     d = json.loads(src.read_text())
-    revc_fail = d.get("design") == "rev. C" and not d.get("all_gates_passed")
+    revc_fail = d.get("design") in ("rev. C", "rev. D") and not d.get("all_gates_passed")
     if "variance_components" not in d or d.get("stopped") or revc_fail:
         why = d.get("stopped") or ("a prerequisite gate failed" if revc_fail else "no D matrix")
         out0 = {"source": str(src), "N": None, "note": f"no N: {why}"}

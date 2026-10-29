@@ -619,3 +619,17 @@ sections D.4–D.5. In brief:
 
 No N was derived. Outputs: `reports/pilots/v08_revc_learning_gate.json`
 and `reports/pilots/v09_revc_{ccfilm,studyforrest}_{pilot,n_rule}.json`.
+
+## v0.8 withdrawn (PI decision 2026-10-29, 06:10)
+
+v0.8 (subspace shift vs LOCK_AFTER) is **withdrawn** after three pilot
+rounds. The draft header records it, and the code and records are kept.
+
+| Round | Seeds | Measurement | Outcome |
+|---|---|---|---|
+| rev. A | 2101–2110 (legacy seeds) | K = 8 Gumbel fused code, principal shift at k* = 13 | The N rule gave 20 only because the guard (S_split 0.074) was off Y's scale: ĝ = 23 SD, Y −0.007 to +0.016, 66 % of eigengap ratios < 1.1. A redesign was ordered. |
+| rev. B | 2201–2210 (ns 8101) | deterministic soft fused code, 1 − CKA | The code is constant (variance ≈ 8.6e-15); 0 / 10 complete seeds; gate (i) fails. |
+| rev. C | 2211–2220 (ns 8101) | straight-through emission; encoder (primary) / logit (secondary) readouts | The learning gate fails at all 7 locks (mean 0.29–0.33; 6 / 10 seeds at chance). No capture. |
+
+Records: `reports/pilots/v08_pilot_*`, `v08_revb_pilot_*`,
+`v08_revc_learning_gate.json`.

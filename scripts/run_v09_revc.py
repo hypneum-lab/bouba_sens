@@ -5,7 +5,9 @@ One world per call: ``--world ccfilm`` (PRIMARY; the 10-fps cache in
 real bridge in ``BOUBA_SENS_STUDYFORREST_DATA``). Both use the two-channel
 label y = 2a + b and the frozen purged segment split
 (``bouba_sens.v09_revc``), straight-through emission and the v09-pilot seed
-namespace (code 9101), pilot seeds 3206-3210 only.
+namespace (code 9101), pilot seeds only: ``--budget revc`` (recovery R =
+200, seeds 3206-3210) or ``--budget revd`` (PI decision 2026-10-29: R =
+1,750, fresh seeds 3211-3215).
 
 Stages (stop and report on failure, Codex r8): (1) the manipulation check
 (section 3.3, 200 draws per seed); (2) the plain arm at every (seed,
@@ -38,6 +40,9 @@ from bouba_sens.v09_revc import (
     ARMS,
     ONSETS,
     PILOT_SEEDS,
+    PILOT_SEEDS_REVD,
+    RECOVERY,
+    RECOVERY_REVD,
     SegmentSplitWorld,
     plain_learning_gate,
     run_cell_revc,
@@ -51,17 +56,25 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--world", choices=tuple(ENV), required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument(
+        "--budget",
+        choices=("revc", "revd"),
+        required=True,
+        help="revc: R = 200, seeds 3206-3210; revd (PI 2026-10-29): R = 1750, seeds 3211-3215",
+    )
     ap.add_argument("--skip-check", action="store_true", help="tests only")
     ap.add_argument("--onsets", default=",".join(map(str, ONSETS)), help="tests only")
     args = ap.parse_args()
     if args.out.exists():
         raise SystemExit(f"{args.out} exists; refusing to overwrite")
-    seeds = list(PILOT_SEEDS)
+    seeds = list(PILOT_SEEDS if args.budget == "revc" else PILOT_SEEDS_REVD)
+    recovery = RECOVERY if args.budget == "revc" else RECOVERY_REVD
     ns = BY_NAME["v09-pilot"].code
     torch.use_deterministic_algorithms(True)
     world = SegmentSplitWorld(args.world, Path(os.environ[ENV[args.world]]))
     out: dict[str, object] = {
-        "design": "rev. C",
+        "design": "rev. C" if args.budget == "revc" else "rev. D",
+        "recovery": recovery,
         "world": args.world,
         "world_description": world.describe(),
         "seeds": seeds,
@@ -93,7 +106,7 @@ def main() -> None:
     def run(arm: str) -> None:
         for s in seeds:
             for o in onsets:
-                c = run_cell_revc(world, s, o, arm, seed_namespace=ns)
+                c = run_cell_revc(world, s, o, arm, seed_namespace=ns, recovery=recovery)
                 cells.append(c)
                 print(
                     f"seed={s} onset={o} arm={arm} full={c['task']['full_bacc']:.3f} "

@@ -644,3 +644,82 @@ Output: `reports/pilots/v09_revc_studyforrest_pilot.json`.
     registered exclusion rate (a design change, decided before new
     data); lengthen training; or swap primary and secondary back.
 - No undraft, merge or OSF action was taken.
+
+## D.6 PI decisions of 2026-10-29 (06:10) and the v0.9 rev. D budget
+
+These decisions are recorded as post-pilot decisions of the unfiled
+drafts.
+
+1. **v0.8 is WITHDRAWN.** The draft header and the pilot report list the
+   three rounds and their failures. The code and records are kept; there
+   is no further v0.8 work.
+2. **v0.9 keeps the rev. C rule** (CC-film primary, Studyforrest
+   secondary, the learning gate as defined, per-seed floor 0.30
+   unchanged) and **lengthens the training**. The new pilot runs on
+   fresh seeds of the v0.9 pilot namespace.
+
+**Learning curves of rev. C.** The plain arm draws the same batches
+whatever the onset, so its five cells per seed are snapshots of one
+trajectory, at 250 / 300 / 350 / 400 / 450 steps. Each cell below is
+the full-network held-out balanced accuracy, followed by the best
+single-modality query:
+
+| world | seed | 250 | 300 | 350 | 400 | 450 |
+|---|---|---|---|---|---|---|
+| CC-film | 3206 | 0.41 / 0.25 | 0.40 / 0.25 | 0.40 / 0.25 | 0.40 / 0.37 | 0.41 / 0.41 |
+| CC-film | 3207 | 0.49 / 0.25 | 0.45 / 0.25 | 0.41 / 0.25 | 0.48 / 0.25 | 0.36 / 0.27 |
+| CC-film | 3208 | 0.41 / 0.27 | 0.46 / 0.25 | 0.46 / 0.25 | 0.45 / 0.25 | 0.47 / 0.30 |
+| CC-film | 3209 | 0.53 / 0.49 | 0.31 / 0.31 | 0.31 / 0.31 | 0.33 / 0.33 | 0.43 / 0.43 |
+| CC-film | 3210 | 0.40 / 0.32 | 0.41 / 0.40 | 0.25 / 0.25 | 0.27 / 0.27 | 0.40 / 0.40 |
+| Studyforrest | 3206 | 0.76 / 0.50 | 0.44 / 0.50 | 0.89 / 0.50 | 0.91 / 0.50 | 0.96 / 0.50 |
+| Studyforrest | 3207 | 0.25 / 0.25 | 0.25 / 0.25 | 0.25 / 0.25 | 0.25 / 0.25 | 0.25 / 0.25 |
+| Studyforrest | 3208 | 0.40 / 0.40 | 0.49 / 0.49 | 0.49 / 0.49 | 0.49 / 0.49 | 0.46 / 0.46 |
+| Studyforrest | 3209 | 0.43 / 0.42 | 0.71 / 0.41 | 0.89 / 0.49 | 0.91 / 0.50 | 0.95 / 0.50 |
+| Studyforrest | 3210 | 0.45 / 0.45 | 0.48 / 0.48 | 0.49 / 0.49 | 0.49 / 0.49 | 0.45 / 0.45 |
+
+**How to read the table.**
+
+- A network at about 0.5 whose accuracy equals its best single
+  modality has learned one bit of y = 2a + b: it is on the
+  "one-bit plateau".
+- In Studyforrest, two seeds left that plateau. Seed 3209 did so
+  between 250 and 350 steps; seed 3206, whose accuracy is 0.76 at
+  250 steps and falls back to 0.44 at 300, did so between 300 and
+  350 steps. Both reach about 0.95 by 450 steps. Two seeds were still on
+  the plateau at 450 steps, and one (3207) stays at chance throughout.
+- In CC-film, no seed left the plateau by 450 steps, and the values
+  oscillate between 0.25 and 0.53.
+- No curve shows that 450 steps is enough: the plateau seeds had not
+  escaped when the runs ended.
+
+**Proposed budget (rev. D).**
+
+- The recovery R goes from 200 to **1,750 steps**, so each run has
+  onset + 50 + 1,750 = **1,800–2,000 steps**: 4.0–7.2 times the rev. C
+  runs, and at least 4 times the longest observed trajectory.
+- Rationale: escapes, when they happened, took about 50–100 steps after
+  some 250–300 steps on the plateau. A budget of four times the
+  observed horizon gives every plateau seed many such intervals.
+- This is a heuristic choice. No curve shows the escape time of the
+  seeds that did not escape.
+- What stays the same: onsets 0–200, the window w = 50, arms, gates,
+  thresholds, the per-seed floor (0.30), batch 16, and the
+  learning-rate rule.
+- The training loss of every cell is now recorded, as 50-step bin means
+  in `loss_curve`, so the next decision can use full curves.
+
+**Seeds.** Fresh pilot seeds **3211–3215**. The `v09-pilot` pool, code
+9101, becomes 3201–3215. The disjointness test covers up to 2,000 batch
+and donor draws per seed.
+
+**Compute cost (macM1, from the rev. C wall times).**
+
+- About 0.0145 s per step (CC-film) and 0.0155 s per step
+  (Studyforrest), plus about 2 s of probe fitting, so about 29–33 s per
+  cell.
+- Per world, 100 cells: about 50–55 min, plus the 40-s manipulation
+  check. If a world stops at the learning gate, only the 25 plain cells
+  run (about 13 min).
+- Both worlds: about **1 h 45 min** on one core under the heavy lock.
+  Memory stays far below 1 GB per process.
+- Same code path: `scripts/run_v09_revc.py --budget revd`.

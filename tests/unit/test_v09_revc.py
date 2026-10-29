@@ -182,3 +182,13 @@ def test_derive_gives_no_n_for_a_stopped_or_failed_revc_run(tmp_path: Path) -> N
         src.write_text(json.dumps(rec))
         mod.main(src, dst)
         assert json.loads(dst.read_text())["N"] is None
+
+
+def test_cell_records_the_loss_curve_and_honours_the_recovery(tmp_path: Path) -> None:
+    _write(tmp_path, studyforrest=False)
+    w = rc.SegmentSplitWorld("ccfilm", tmp_path)
+    ns = BY_NAME["v09-pilot"].code
+    c = rc.run_cell_revc(w, 3211, 0, "plain", seed_namespace=ns, width=1, recovery=120, batch=8)
+    assert c["steps"] == 121 and len(c["loss_curve"]) == 3  # bins of 50: 50, 50, 21
+    assert rc.RECOVERY_REVD == 1750 and rc.PILOT_SEEDS_REVD == (3211, 3212, 3213, 3214, 3215)
+    assert set(rc.PILOT_SEEDS_REVD) <= set(BY_NAME["v09-pilot"].seeds)

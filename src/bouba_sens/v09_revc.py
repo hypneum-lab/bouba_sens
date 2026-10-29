@@ -58,6 +58,13 @@ PROBE_STRIDE = 4
 CV_FOLDS = 4
 EMISSION = "straight-through"
 PILOT_SEEDS: tuple[int, ...] = (3206, 3207, 3208, 3209, 3210)
+RECOVERY = 200
+# Rev. D (PI decision 2026-10-29, 06:10): same rule, longer training.
+# Recovery R = 1,750 steps (totals 1,800-2,000 = 4.0-7.2x the rev. C runs),
+# fresh pilot seeds 3211-3215 in the v09-pilot namespace (code 9101).
+RECOVERY_REVD = 1750
+PILOT_SEEDS_REVD: tuple[int, ...] = (3211, 3212, 3213, 3214, 3215)
+LOSS_BIN = 50  # the training-loss curve is stored as means over 50-step bins
 ONSETS: tuple[int, ...] = (0, 50, 100, 150, 200)
 ARMS: tuple[str, ...] = ("decor", "joint", "plain", "label_break")
 BREAK_MODALITY = {"ccfilm": "vision", "studyforrest": "force"}  # carries bit b
@@ -467,10 +474,14 @@ def run_cell_revc(
     *,
     seed_namespace: int,
     width: int = 50,
-    recovery: int = 200,
+    recovery: int = RECOVERY,
     batch: int = 16,
 ) -> dict[str, Any]:
-    """One Phase-1 run of (seed, onset, arm): outcome and learning-gate metrics."""
+    """One Phase-1 run of (seed, onset, arm): outcome and learning-gate metrics.
+
+    ``loss_curve``: the Phase-1 training loss as means over ``LOSS_BIN``-step
+    bins (recording it does not change training).
+    """
     from bouba_sens.builders import build_loop
     from bouba_sens.decorrelation import DecorrelationSchedule, DecorrelationWindow
     from bouba_sens.learning_gate import heldout_task_metrics
@@ -503,7 +514,8 @@ def run_cell_revc(
             seed_namespace=seed_namespace,
         )
     steps = onset + width + recovery
-    loop.pretrain(steps, batch_size=batch, seed=seed, decorrelation=sched)
+    losses: list[float] = []
+    loop.pretrain(steps, batch_size=batch, seed=seed, decorrelation=sched, loss_log=losses)
     check_learning_rate(loop)
     held, _ = world.probe_sample_with_indices(world.n_probe, 0)
     with warnings.catch_warnings():
@@ -517,6 +529,9 @@ def run_cell_revc(
         "n_self_donor": sched.n_self_donor,
         "task": heldout_task_metrics(loop, held),
         "lin": asdict(lin),
+        "loss_curve": [
+            float(np.mean(losses[i : i + LOSS_BIN])) for i in range(0, len(losses), LOSS_BIN)
+        ],
         "wall_s": time.monotonic() - t0,
     }
 
