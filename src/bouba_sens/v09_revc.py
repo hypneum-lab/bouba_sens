@@ -65,6 +65,7 @@ RECOVERY = 200
 RECOVERY_REVD = 1750
 PILOT_SEEDS_REVD: tuple[int, ...] = (3211, 3212, 3213, 3214, 3215)
 LOSS_BIN = 50  # the training-loss curve is stored as means over 50-step bins
+CHECKPOINT_EVERY = 250  # plain arm: held-out task metrics every 250 steps
 ONSETS: tuple[int, ...] = (0, 50, 100, 150, 200)
 ARMS: tuple[str, ...] = ("decor", "joint", "plain", "label_break")
 BREAK_MODALITY = {"ccfilm": "vision", "studyforrest": "force"}  # carries bit b
@@ -425,8 +426,9 @@ def linear_probe_fg_revc(
     for m in MODALITIES:
         scores = []
         for tr, te in folds:
-            p, _ = _fit_predict(r_tr[m][tr], y_tr[tr], r_tr[m][te])
+            p, c_cv = _fit_predict(r_tr[m][tr], y_tr[tr], r_tr[m][te])
             scores.append(_bacc(p, y_tr[te]))
+            conv = conv and c_cv
         cv[m] = float(np.mean(scores))
         preds[m], c = _fit_predict(r_tr[m], y_tr, r_te[m])
         held[m] = _bacc(preds[m], y_te)
@@ -442,8 +444,9 @@ def linear_probe_fg_revc(
         for m in MODALITIES:
             bit_bacc[m] = {}
             for name, ytr, yte in (("a", y_tr // 2, y_te // 2), ("b", y_tr % 2, y_te % 2)):
-                p, _ = _fit_predict(r_tr[m], ytr, r_te[m])
+                p, c_bit = _fit_predict(r_tr[m], ytr, r_te[m])
                 bit_bacc[m][name] = _bacc(p, yte)
+                conv = conv and c_bit
     return LinearFGRevC(
         fg=bacc_all - held[best],
         bacc_all=bacc_all,
@@ -515,9 +518,22 @@ def run_cell_revc(
         )
     steps = onset + width + recovery
     losses: list[float] = []
-    loop.pretrain(steps, batch_size=batch, seed=seed, decorrelation=sched, loss_log=losses)
-    check_learning_rate(loop)
     held, _ = world.probe_sample_with_indices(world.n_probe, 0)
+    checkpoints: list[dict[str, Any]] = []
+
+    def on_step(step: int, lp: Any) -> None:
+        # plain arm only: sparse held-out task checkpoints (RNG-isolated, no_grad)
+        if arm == "plain" and (step + 1) % CHECKPOINT_EVERY == 0:
+            m = heldout_task_metrics(lp, held)
+            checkpoints.append(
+                {"step": step + 1, "full_bacc": m["full_bacc"],
+                 "best_query_bacc": m["best_query_bacc"]}
+            )  # fmt: skip
+
+    loop.pretrain(
+        steps, batch_size=batch, seed=seed, decorrelation=sched, loss_log=losses, on_step=on_step
+    )
+    check_learning_rate(loop)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         lin = linear_probe_fg_revc(loop, world, bits=arm == "plain")
@@ -529,6 +545,7 @@ def run_cell_revc(
         "n_self_donor": sched.n_self_donor,
         "task": heldout_task_metrics(loop, held),
         "lin": asdict(lin),
+        "task_checkpoints": checkpoints,
         "loss_curve": [
             float(np.mean(losses[i : i + LOSS_BIN])) for i in range(0, len(losses), LOSS_BIN)
         ],
@@ -553,13 +570,20 @@ def plain_learning_gate(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -
     return learning_gate(per_onset, need_over_single=True)
 
 
-def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str, Any]:
-    """Gates 1-5 and the D matrix of the pilot grid (proposal D.2 (a))."""
-    from bouba_sens.v09_driver import variance_components
+def plain_stage_gates(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str, Any]:
+    """Prerequisite gates computable from the plain arm alone (Codex r10).
 
-    by = {(c["seed"], c["onset"], c["arm"]): c for c in cells}
+    * learning: ``plain_learning_gate`` (every onset);
+    * isolation: in **every** plain cell every single modality <= 0.65
+      held-out balanced accuracy on y, and the concatenation minus the best
+      single modality >= 0.20 as a mean over the plain cells;
+    * positive control: mean FG_ctrl >= 0.10 over the plain cells;
+    * plain bacc(h_all) mean >= 0.35;
+    * converged: every classifier fit of every plain cell converged.
+    """
     plain = [c for c in cells if c["arm"] == "plain"]
     gate1 = plain_learning_gate(cells, seeds)
+    worst = max(max(c["lin"]["bacc_by_modality"].values()) for c in plain)
     per_mod = {
         m: float(np.mean([c["lin"]["bacc_by_modality"][m] for c in plain])) for m in MODALITIES
     }
@@ -569,6 +593,42 @@ def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str
         )
     )
     fg_ctrl = float(np.mean([c["lin"]["fg_control"] for c in plain]))
+    plain_bacc = float(np.mean([c["lin"]["bacc_all"] for c in plain]))
+    gates = {
+        "gate1_learning": gate1["passed"],
+        "gate2_isolation": worst <= ISOLATION_MAX and concat_over >= CONCAT_OVER_BEST,
+        "gate3_positive_control": fg_ctrl >= CONTROL_MIN,
+        "gate5a_plain_bacc": plain_bacc >= PLAIN_BACC_MIN,
+        "gate6_converged": all(c["lin"]["converged"] for c in plain),
+    }
+    bits = {
+        m: {
+            k: float(np.mean([c["lin"]["bit_bacc"][m][k] for c in plain if c["lin"]["bit_bacc"]]))
+            for k in ("a", "b")
+        }
+        for m in MODALITIES
+    }
+    return {
+        "learning_gate": gate1,
+        "plain_worst_single_modality_bacc": worst,
+        "plain_bacc_by_modality_mean": per_mod,
+        "plain_concat_over_best_single_mean": concat_over,
+        "plain_fg_control_mean": fg_ctrl,
+        "plain_fg_control_ci90_lower_min": float(
+            min(c["lin"]["fg_control_ci90"][0] for c in plain)
+        ),
+        "plain_bit_bacc_mean": bits,
+        "plain_bacc_all_mean": plain_bacc,
+        "plain_gates": gates,
+    }
+
+
+def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str, Any]:
+    """All gates and the D matrix of the pilot grid (proposal D.2 (a), Codex r10)."""
+    from bouba_sens.v09_driver import variance_components
+
+    by = {(c["seed"], c["onset"], c["arm"]): c for c in cells}
+    stage = plain_stage_gates(cells, seeds)
     drops = [
         by[(s, o, "joint")]["lin"]["bacc_all"] - by[(s, o, "label_break")]["lin"]["bacc_all"]
         for s in seeds
@@ -581,39 +641,24 @@ def summarise(cells: Sequence[dict[str, Any]], seeds: Sequence[int]) -> dict[str
             for s in seeds
         ]
     )
-    plain_bacc = float(np.mean([c["lin"]["bacc_all"] for c in plain]))
     zero_d = float(np.mean(d == 0.0))
+    pg = stage["plain_gates"]
     gates = {
-        "gate1_learning": gate1["passed"],
-        "gate2_isolation": max(per_mod.values()) <= ISOLATION_MAX
-        and concat_over >= CONCAT_OVER_BEST,
-        "gate3_positive_control": fg_ctrl >= CONTROL_MIN,
+        "gate1_learning": pg["gate1_learning"],
+        "gate2_isolation": pg["gate2_isolation"],
+        "gate3_positive_control": pg["gate3_positive_control"],
         "gate4_label_break": bool(drops) and float(np.mean(drops)) >= BREAK_DROP,
-        "gate5_headroom": plain_bacc >= PLAIN_BACC_MIN and zero_d < ZERO_D_MAX,
-    }
-    bits = {
-        m: {
-            k: float(np.mean([c["lin"]["bit_bacc"][m][k] for c in plain if c["lin"]["bit_bacc"]]))
-            for k in ("a", "b")
-        }
-        for m in MODALITIES
+        "gate5_headroom": pg["gate5a_plain_bacc"] and zero_d < ZERO_D_MAX,
+        "gate6_converged": all(c["lin"]["converged"] for c in cells),
     }
     return {
-        "learning_gate": gate1,
-        "plain_bit_bacc_mean": bits,
-        "plain_fg_control_ci90_lower_min": float(
-            min(c["lin"]["fg_control_ci90"][0] for c in plain)
-        ),
-        "plain_bacc_by_modality_mean": per_mod,
-        "plain_concat_over_best_single_mean": concat_over,
-        "plain_fg_control_mean": fg_ctrl,
+        **{k: v for k, v in stage.items() if k != "plain_gates"},
         "label_break_drop_mean": float(np.mean(drops)) if drops else None,
         "label_break_drops": drops,
-        "plain_bacc_all_mean": plain_bacc,
         "D_zero_fraction": zero_d,
         "onsets": list(ONSETS),
         "D": d.tolist(),
         "variance_components": variance_components(d),
-        "all_converged": all(c["lin"]["converged"] for c in cells),
+        "all_converged": gates["gate6_converged"],
         "gates": gates,
     }

@@ -45,10 +45,19 @@ def main(src: Path, dst: Path) -> None:
         print(json.dumps(out0, indent=2))
         return
     sd = d["variance_components"]["sigma_plan"]
+    # rev. C/D: D is a difference of balanced accuracies on the held-out
+    # segment rows (steps 1/(4 n_c), mixed n_c): no 1/512 grid (Codex r10);
+    # primary = unquantised, sensitivity = the coarsest step 1/(4 min n_c).
+    quantum: float | None = 1 / 512
+    sens_quantum: float | None = None
+    if d.get("design") in ("rev. C", "rev. D"):
+        counts = d["world_description"]["heldout_counts"]
+        quantum, sens_quantum = None, 1 / (4 * min(counts))
     rng = np.random.default_rng(RNG_SEED)
     rows, chosen = [], None
     for n in range(N_MIN, N_MAX + 1):
-        p = float(pw.v09_rule(n, 0.05, "early", sd, 0.0, SIMS, rng)["headline D-1&D-2"])
+        res = pw.v09_rule(n, 0.05, "early", sd, 0.0, SIMS, rng, quantum=quantum)
+        p = float(res["headline D-1&D-2"])
         lower = p - 2 * math.sqrt(p * (1 - p) / SIMS)
         rows.append({"N": n, "p_headline": p, "lower_2se": lower})
         print(f"N={n}: P(A+ and C+)={p:.4f} lower={lower:.4f}", flush=True)
@@ -60,12 +69,21 @@ def main(src: Path, dst: Path) -> None:
         "sims": SIMS,
         "rng_seed": RNG_SEED,
         "sigma_plan": sd,
+        "quantum": quantum,
         "candidates": rows,
         "N": chosen,
         "rule_outcome": (
             "N found" if chosen is not None else "no N <= 40 qualifies (section 7: PI decides)"
         ),
     }
+    if sens_quantum is not None and chosen is not None:
+        r2 = pw.v09_rule(chosen, 0.05, "early", sd, 0.0, SIMS,
+                         np.random.default_rng(RNG_SEED + 1), quantum=sens_quantum)  # fmt: skip
+        out["sensitivity_coarsest_quantum"] = {
+            "quantum": sens_quantum,
+            "N": chosen,
+            "p_headline": float(r2["headline D-1&D-2"]),
+        }
     dst.write_text(json.dumps(out, indent=2) + "\n")
     print(json.dumps({k: v for k, v in out.items() if k != "candidates"}, indent=2))
 

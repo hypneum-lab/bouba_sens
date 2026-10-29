@@ -184,6 +184,7 @@ class AdaptationLoop:
         decorrelation: DecorrelationSchedule | None = None,
         reconstruction: CrossSensorReconstruction | None = None,
         loss_log: list[float] | None = None,
+        on_step: Any = None,
     ) -> Checkpoint:
         """Phase 1: intact training on the world. Returns snapshot.
 
@@ -201,6 +202,10 @@ class AdaptationLoop:
         behaviour.
         `loss_log` (ADR-0024 follow-up): if given, the training loss of every
         step is appended to it; training is unaffected.
+        `on_step(step, loop)` (v0.9 rev. D diagnostics): called after every
+        completed step; it must not draw from the global RNG or change any
+        state (the rev. D task checkpoints run under ``fork_rng`` and
+        ``no_grad``).
         """
         if reconstruction is not None:
             registered = getattr(self, "_aux_modules", [])
@@ -232,6 +237,8 @@ class AdaptationLoop:
                 mux_step()
             if callable(nerve_step):
                 nerve_step()
+            if on_step is not None:
+                on_step(step, self)
         return Checkpoint(
             mux_state=_deepcopy_state(self.mux),
             nerve_state=_deepcopy_state(self.nerve),

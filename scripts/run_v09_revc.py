@@ -11,7 +11,8 @@ namespace (code 9101), pilot seeds only: ``--budget revc`` (recovery R =
 
 Stages (stop and report on failure, Codex r8): (1) the manipulation check
 (section 3.3, 200 draws per seed); (2) the plain arm at every (seed,
-onset) and the learning gate at every onset; (3) the decor, joint and
+onset) and the gates computable from it (learning at every onset,
+isolation, positive control, plain bacc, convergence; Codex r10); (3) the decor, joint and
 label_break arms, the gate summary and the D matrix
 (``v09_revc.summarise``). A stopped run writes its JSON with ``stopped``
 set. The N rule is ``scripts/pilots/derive_v09_pilot.py`` on the output
@@ -44,7 +45,7 @@ from bouba_sens.v09_revc import (
     RECOVERY,
     RECOVERY_REVD,
     SegmentSplitWorld,
-    plain_learning_gate,
+    plain_stage_gates,
     run_cell_revc,
     summarise,
 )
@@ -118,11 +119,12 @@ def main() -> None:
 
     # Stage 2: plain arm and the learning gate at every onset (D.0).
     run("plain")
-    lg = plain_learning_gate(cells, seeds)  # type: ignore[arg-type]
-    out["learning_gate_stage"] = lg
-    print(json.dumps({k: v for k, v in lg.items() if k != "per_setting"}, indent=2), flush=True)
-    if not lg["passed"]:
-        return finish("learning gate failed: stop and report")
+    stage = plain_stage_gates(cells, seeds)  # type: ignore[arg-type]
+    out["plain_stage"] = stage
+    print(json.dumps(stage["plain_gates"], indent=2), flush=True)
+    failed = [k for k, v in stage["plain_gates"].items() if not v]
+    if failed:
+        return finish(f"plain-stage prerequisite failed ({', '.join(failed)}): stop and report")
     # Stage 3: the other arms, then the gates and D.
     for arm in ARMS:
         if arm != "plain":

@@ -682,11 +682,12 @@ single-modality query:
 - A network at about 0.5 whose accuracy equals its best single
   modality has learned one bit of y = 2a + b: it is on the
   "one-bit plateau".
-- In Studyforrest, two seeds left that plateau. Seed 3209 did so
-  between 250 and 350 steps; seed 3206, whose accuracy is 0.76 at
-  250 steps and falls back to 0.44 at 300, did so between 300 and
-  350 steps. Both reach about 0.95 by 450 steps. Two seeds were still on
-  the plateau at 450 steps, and one (3207) stays at chance throughout.
+- In Studyforrest, two seeds reach about 0.95 by 450 steps: seed 3209
+  (already 0.71 at 300 steps) and seed 3206 (0.76 at 250 steps, back
+  to 0.44 at 300, then 0.89 from 350 on). Two seeds are still on the
+  plateau at 450 steps, and one (3207) stays at chance throughout. Five
+  snapshots per seed show late high performance and instability; they
+  do not give an escape-time distribution (Codex r10).
 - In CC-film, no seed left the plateau by 450 steps, and the values
   oscillate between 0.25 and 0.53.
 - No curve shows that 450 steps is enough: the plateau seeds had not
@@ -697,11 +698,11 @@ single-modality query:
 - The recovery R goes from 200 to **1,750 steps**, so each run has
   onset + 50 + 1,750 = **1,800–2,000 steps**: 4.0–7.2 times the rev. C
   runs, and at least 4 times the longest observed trajectory.
-- Rationale: escapes, when they happened, took about 50–100 steps after
-  some 250–300 steps on the plateau. A budget of four times the
-  observed horizon gives every plateau seed many such intervals.
-- This is a heuristic choice. No curve shows the escape time of the
-  seeds that did not escape.
+- Rationale: no plateau seed had escaped by 450 steps, the last
+  snapshot. A budget of at least four times the observed horizon gives
+  the plateau seeds substantially more time.
+- This is a heuristic choice, not an estimate: no curve shows the
+  escape time of the seeds that did not escape.
 - What stays the same: onsets 0–200, the window w = 50, arms, gates,
   thresholds, the per-seed floor (0.30), batch 16, and the
   learning-rate rule.
@@ -723,3 +724,26 @@ and donor draws per seed.
 - Both worlds: about **1 h 45 min** on one core under the heavy lock.
   Memory stays far below 1 GB per process.
 - Same code path: `scripts/run_v09_revc.py --budget revd`.
+
+**Codex r10 fixes (2026-10-29), before the rev. D pilot.**
+
+1. The isolation ceiling (every single modality ≤ 0.65) is applied in
+   **every** plain cell, not to the modality means. The concatenation
+   margin (≥ 0.20) stays a mean over the plain cells.
+2. **N rule.** The N simulation no longer quantises D to 1/512.
+   - In rev. C/D, D is a difference of balanced accuracies on the
+     held-out segment rows, with steps of 1/(4 n_c) for mixed n_c, so the
+     primary simulation is unquantised.
+   - A sensitivity run uses the coarsest step, 1/(4 min n_c).
+3. **Convergence.** Every classifier fit (cross-validation, final,
+   per-bit, control) records convergence. A new gate 6 requires all of
+   them to converge.
+4. **Plain-stage stop.** Isolation, positive control, plain bacc and
+   convergence are checked right after the plain stage. The run stops
+   before the 75 treatment cells if any of them fails.
+5. **Task checkpoints.** Plain cells record held-out task metrics every
+   250 steps (RNG-isolated, `no_grad`; a test shows training is
+   unchanged), next to the loss curve.
+6. The budget narrative above is corrected.
+7. New runner-level and gate tests cover rev. D selection, the
+   plain-stage stop, a skipped check and the per-cell ceiling.

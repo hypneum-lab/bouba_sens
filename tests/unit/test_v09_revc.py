@@ -120,7 +120,7 @@ def test_run_cell_and_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     assert again["lin"] == first["lin"] and again["task"] == first["task"]
     out = rc.summarise(cells, [3206, 3207])
     assert set(out["gates"]) == {"gate1_learning", "gate2_isolation", "gate3_positive_control",
-                                 "gate4_label_break", "gate5_headroom"}  # fmt: skip
+                                 "gate4_label_break", "gate5_headroom", "gate6_converged"}  # fmt: skip
     assert np.array(out["D"]).shape == (2, len(rc.ONSETS))
     assert len(out["label_break_drops"]) == 2 * len(rc.ONSETS)
     assert "sigma_plan" in out["variance_components"]
@@ -176,6 +176,9 @@ def test_derive_gives_no_n_for_a_stopped_or_failed_revc_run(tmp_path: Path) -> N
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     for rec in ({"design": "rev. C", "stopped": "learning gate failed: stop and report"},
+                {"design": "rev. D", "stopped": "plain-stage prerequisite failed"},
+                {"design": "rev. D", "all_gates_passed": False,
+                 "variance_components": {"sigma_plan": 0.1}},
                 {"design": "rev. C", "all_gates_passed": False,
                  "variance_components": {"sigma_plan": 0.1}}):  # fmt: skip
         src, dst = tmp_path / "in.json", tmp_path / "out.json"
@@ -192,3 +195,69 @@ def test_cell_records_the_loss_curve_and_honours_the_recovery(tmp_path: Path) ->
     assert c["steps"] == 121 and len(c["loss_curve"]) == 3  # bins of 50: 50, 50, 21
     assert rc.RECOVERY_REVD == 1750 and rc.PILOT_SEEDS_REVD == (3211, 3212, 3213, 3214, 3215)
     assert set(rc.PILOT_SEEDS_REVD) <= set(BY_NAME["v09-pilot"].seeds)
+
+
+def test_task_checkpoints_do_not_change_training(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write(tmp_path, studyforrest=False)
+    w = rc.SegmentSplitWorld("ccfilm", tmp_path)
+    ns = BY_NAME["v09-pilot"].code
+    kw = {"seed_namespace": ns, "width": 1, "recovery": 40, "batch": 8}
+    monkeypatch.setattr(rc, "CHECKPOINT_EVERY", 10)
+    a = rc.run_cell_revc(w, 3211, 0, "plain", **kw)
+    monkeypatch.setattr(rc, "CHECKPOINT_EVERY", 10_000)
+    b = rc.run_cell_revc(w, 3211, 0, "plain", **kw)
+    assert [c["step"] for c in a["task_checkpoints"]] == [10, 20, 30, 40]
+    assert b["task_checkpoints"] == []
+    assert a["lin"] == b["lin"] and a["task"] == b["task"] and a["loss_curve"] == b["loss_curve"]
+
+
+def _cell(seed: int, onset: int, arm: str, *, single: float, ctrl: float) -> dict:  # type: ignore[type-arg]
+    by_mod = dict.fromkeys(("audio", "vision", "tactile", "gravity", "force"), 0.4)
+    by_mod["vision"] = single
+    return {"seed": seed, "onset": onset, "arm": arm,
+            "task": {"full_bacc": 0.6, "best_query_bacc": 0.4},
+            "lin": {"bacc_by_modality": by_mod, "bacc_control": ctrl, "fg_control": ctrl - single,
+                    "fg_control_ci90": [0.1, 0.3], "bacc_all": 0.5, "fg": 0.0, "converged": True,
+                    "bit_bacc": {m: {"a": 0.5, "b": 0.5} for m in by_mod}}}  # fmt: skip
+
+
+def test_isolation_ceiling_is_applied_per_cell() -> None:
+    seeds = [3211, 3212]
+    cells = [_cell(s, o, "plain", single=0.5, ctrl=0.8) for s in seeds for o in rc.ONSETS]
+    assert rc.plain_stage_gates(cells, seeds)["plain_gates"]["gate2_isolation"] is True
+    cells[0] = _cell(3211, 0, "plain", single=0.9, ctrl=0.8)  # one cell above 0.65
+    g = rc.plain_stage_gates(cells, seeds)
+    assert g["plain_gates"]["gate2_isolation"] is False
+    assert g["plain_worst_single_modality_bacc"] == 0.9
+    cells[1]["lin"]["converged"] = False
+    assert rc.plain_stage_gates(cells, seeds)["plain_gates"]["gate6_converged"] is False
+
+
+def test_runner_rev_d_stops_after_the_plain_stage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import json
+    import sys
+
+    data = tmp_path / "data"
+    data.mkdir()
+    _write(data, studyforrest=False)
+    path = Path(__file__).resolve().parents[2] / "scripts" / "run_v09_revc.py"
+    spec = importlib.util.spec_from_file_location("run_v09_revc", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    monkeypatch.setattr(mod, "RECOVERY_REVD", 5)
+    monkeypatch.setattr(mod, "PILOT_SEEDS_REVD", (3211, 3212))
+    monkeypatch.setenv("BOUBA_SENS_CCFILM_DATA", str(data))
+    out = tmp_path / "out.json"
+    monkeypatch.setattr(sys, "argv", ["x", "--world", "ccfilm", "--budget", "revd", "--out",
+                                      str(out), "--skip-check", "--onsets", "0,3"])  # fmt: skip
+    mod.main()
+    rec = json.loads(out.read_text())
+    assert rec["design"] == "rev. D" and rec["recovery"] == 5 and rec["seeds"] == [3211, 3212]
+    assert {c["arm"] for c in rec["cells"]} == {"plain"}
+    assert rec["stopped"] and "plain-stage prerequisite failed" in rec["stopped"]
+    assert "manipulation_check" not in rec and not rec.get("all_gates_passed")

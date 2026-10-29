@@ -460,7 +460,8 @@ def v09_rule(n, mu0, profile, sd, rho, sims, rng, quantum=1 / 512):
         + rng.normal(0, sd * math.sqrt(rho), (sims, n, 1))
         + rng.normal(0, sd * math.sqrt(1 - rho), (sims, n, 5))
     )
-    d = np.round(d / quantum) * quantum
+    if quantum:  # None / 0: no quantisation (v0.9 rev. C/D balanced accuracy)
+        d = np.round(d / quantum) * quantum
     d0 = d[..., 0]
     t = d0.mean(-1) / (d0.std(-1, ddof=1) / math.sqrt(n))
     harm = t > stats.t.ppf(1 - ALPHA, n - 1)  # D-1
