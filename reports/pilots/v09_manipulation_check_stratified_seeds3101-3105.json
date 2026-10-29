@@ -1,0 +1,29 @@
+{
+  "amendment": "v0.9 section 3.3 manipulation check (pilot)",
+  "world_class": "StudyforrestRealWorld",
+  "split": "stratified",
+  "n_frames": 9000,
+  "n_train": 8488,
+  "n_probe": 512,
+  "seeds": [
+    3101,
+    3102,
+    3103,
+    3104,
+    3105
+  ],
+  "n_draws_per_seed": 200,
+  "n_perm": 10000,
+  "gate_seed": 20261023,
+  "gate": {
+    "passed": true,
+    "delta_k": 0.12058853219617623,
+    "p_value": 9.999000099990002e-05,
+    "k_joint": 0.13035561683554545,
+    "k_decor": 0.009767084639369216,
+    "n_perm": 10000,
+    "reason": "ok"
+  },
+  "k_original_mean": 0.2335361513241904,
+  "wall_time_s": 37.76510016596876
+}

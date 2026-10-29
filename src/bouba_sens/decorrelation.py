@@ -44,6 +44,9 @@ GATE_N_PERM = 10_000
 GATE_SEED = 20_261_023
 GATE_ALPHA = 0.05
 PROBE_ROWS = 512
+V09_PROBE_FRACTION = 0.10  # last 10 % of frames held out (3.4, PI 2026-10-24)
+RECON_WEIGHT = 1.0  # mitigation arm (3.5, PI 2026-10-24): fixed, not tuned
+RECON_EPS = 1e-6
 
 
 class IndexedWorld(Protocol):
@@ -159,7 +162,13 @@ class DecorrelationSchedule:
     """Phase-1 batch source for one (arm, window, training seed)."""
 
     def __init__(
-        self, window: DecorrelationWindow, arm: Arm | str, *, seed: int, world: IndexedWorld
+        self,
+        window: DecorrelationWindow,
+        arm: Arm | str,
+        *,
+        seed: int,
+        world: IndexedWorld,
+        seed_namespace: int | None = None,
     ) -> None:
         if arm not in ARMS:
             raise ValueError(f"unknown arm {arm!r}, expected one of {ARMS}")
@@ -168,15 +177,82 @@ class DecorrelationSchedule:
         self.seed = seed
         self.index = DonorIndex(world.dataset_labels)
         self.n_self_donor = 0  # logged, not expected (3.1)
+        # PI decision 2026-10-25 (19:47): namespaced donor seeds per campaign.
+        self.seed_namespace = seed_namespace
+
+    def donor_seed(self, step: int) -> int:
+        if self.seed_namespace is None:
+            return training_generator_seed(self.seed, step)
+        from bouba_sens.seeds import STREAMS, ns_seed
+
+        return ns_seed(self.seed_namespace, self.seed, STREAMS["donor"], step)
 
     def sample(self, world: IndexedWorld, *, batch_size: int, seed: int, step: int) -> WorldSample:
         """The batch for Phase-1 ``step``; identical to ``world.sample`` outside the window."""
         if self.arm == "plain" or not self.window.active(step):
             return world.sample(batch_size, seed)  # type: ignore[attr-defined, no-any-return]
         _, anchors = world.sample_with_indices(batch_size, seed)
-        donors, n_self = self.index.draw(anchors, training_generator_seed(self.seed, step))
+        donors, n_self = self.index.draw(anchors, self.donor_seed(step))
         self.n_self_donor += n_self
         return build_arm_sample(world, anchors, donors, self.arm)
+
+
+# --- mitigation arm: cross-sensor reconstruction (3.5) ------------------------
+
+
+class CrossSensorReconstruction(torch.nn.Module):
+    """Auxiliary cross-sensor reconstruction objective for Phase 1 (v0.9, 3.5).
+
+    Kleinman, Achille & Soatto (CVPR 2023) report that architectures
+    trained with cross-sensor reconstruction objectives are markedly more
+    resilient to critical periods. Here, for every modality m, a linear
+    decoder maps the mean of the other four modalities' encoder
+    representations (``core(input_proj(x))``, ``(B, d_hidden)``) to m's
+    input, standardised within the batch per feature; the loss is the
+    mean squared error averaged over features and modalities, added to
+    the classification loss with weight ``weight``.
+
+    Decoders are initialised from their own generator, so building the
+    module never touches the global torch RNG; with ``weight = 0`` the
+    training trajectory is bit-identical to no objective.
+    """
+
+    def __init__(
+        self,
+        modality_dims: Mapping[str, tuple[int, ...]],
+        *,
+        d_hidden: int = 128,
+        weight: float = RECON_WEIGHT,
+        seed: int = 0,
+    ) -> None:
+        super().__init__()
+        self.weight = float(weight)
+        gen = torch.Generator().manual_seed(seed)
+        bound = 1.0 / math.sqrt(d_hidden)
+        global_state = torch.get_rng_state()  # nn.Linear init draws from it
+        decoders: dict[str, torch.nn.Module] = {}
+        for m in MODALITIES:
+            out = int(math.prod(modality_dims[m]))
+            lin = torch.nn.Linear(d_hidden, out)
+            with torch.no_grad():
+                lin.weight.copy_((torch.rand(out, d_hidden, generator=gen) * 2 - 1) * bound)
+                lin.bias.copy_((torch.rand(out, generator=gen) * 2 - 1) * bound)
+            decoders[m] = lin
+        torch.set_rng_state(global_state)
+        self.decoders = torch.nn.ModuleDict(decoders)
+
+    def forward(self, loop: AdaptationLoop, sample: WorldSample) -> Tensor:
+        reps = {
+            m: loop.sensories[m].core(loop.sensories[m].input_proj(getattr(sample, m)))
+            for m in MODALITIES
+        }
+        terms = []
+        for m in MODALITIES:
+            others = torch.stack([reps[o] for o in MODALITIES if o != m]).mean(0)
+            x = getattr(sample, m).reshape(len(sample.label), -1)
+            target = (x - x.mean(0)) / (x.std(0, unbiased=False) + RECON_EPS)
+            terms.append(((self.decoders[m](others) - target) ** 2).mean())
+        return torch.stack(terms).mean()
 
 
 # --- within-class linear CKA (3.3) -----------------------------------------------
@@ -264,21 +340,39 @@ def _features(sample: WorldSample) -> dict[str, Tensor]:
     return {m: getattr(sample, m).double().reshape(len(sample.label), -1) for m in MODALITIES}
 
 
-def check_anchors(world: IndexedWorld, train_seed: int) -> tuple[WorldSample, Tensor]:
-    """512 anchors: 32 contiguous windows of 16 (``seed = s + 3e6 + r``)."""
+def _check_seed(train_seed: int, legacy: int, stream: str, index: int, ns: int | None) -> int:
+    if ns is None:
+        return legacy
+    from bouba_sens.seeds import STREAMS, ns_seed
+
+    return ns_seed(ns, train_seed, STREAMS[stream], index)
+
+
+def check_anchors(
+    world: IndexedWorld, train_seed: int, seed_namespace: int | None = None
+) -> tuple[WorldSample, Tensor]:
+    """512 anchors: 32 contiguous windows of 16 (``seed = s + 3e6 + r``, or namespaced)."""
     parts = [
-        world.sample_with_indices(CHECK_WINDOW, train_seed + 3 * 10**6 + r)
+        world.sample_with_indices(
+            CHECK_WINDOW,
+            _check_seed(train_seed, train_seed + 3 * 10**6 + r, "check_anchor", r, seed_namespace),
+        )
         for r in range(CHECK_N_WINDOWS)
     ]
     idx = torch.cat([p[1] for p in parts])
     return world.gather(idx), idx
 
 
-def run_check_draw(world: IndexedWorld, *, train_seed: int, draw: int) -> CheckDraw:
+def run_check_draw(
+    world: IndexedWorld, *, train_seed: int, draw: int, seed_namespace: int | None = None
+) -> CheckDraw:
     """One matched joint/decor draw on the pilot seed's anchors."""
-    original, anchors = check_anchors(world, train_seed)
+    original, anchors = check_anchors(world, train_seed, seed_namespace)
     index = DonorIndex(world.dataset_labels)
-    donors, n_self = index.draw(anchors, check_generator_seed(train_seed, draw))
+    gen_seed = _check_seed(
+        train_seed, check_generator_seed(train_seed, draw), "check_draw", draw, seed_namespace
+    )
+    donors, n_self = index.draw(anchors, gen_seed)
     joint = build_arm_sample(world, anchors, donors, "joint")
     decor = build_arm_sample(world, anchors, donors, "decor")
     labels = original.label
@@ -348,6 +442,7 @@ def run_manipulation_check(
     *,
     n_draws: int = CHECK_N_DRAWS,
     n_perm: int = GATE_N_PERM,
+    seed_namespace: int | None = None,
 ) -> tuple[GateResult, float | None]:
     """Full gate over pilot ``seeds``; also returns mean CKA of the original anchors (reported)."""
     kj = torch.full((len(seeds), n_draws), math.nan, dtype=torch.float64)
@@ -355,7 +450,7 @@ def run_manipulation_check(
     originals: list[float] = []
     for i, s in enumerate(seeds):
         for b in range(1, n_draws + 1):
-            d = run_check_draw(world, train_seed=s, draw=b)
+            d = run_check_draw(world, train_seed=s, draw=b, seed_namespace=seed_namespace)
             if d.k_joint is not None:
                 kj[i, b - 1] = d.k_joint
             if d.k_decor is not None:
@@ -376,9 +471,36 @@ class FusionGain:
     fusion_gain: float
 
 
+def _accuracy(loop: AdaptationLoop, sample: WorldSample) -> float:
+    with torch.no_grad():
+        _, logits = loop._forward(sample)
+    return float((logits.argmax(-1) == sample.label).float().mean().item())
+
+
 def fusion_gain(loop: AdaptationLoop, *, train_seed: int) -> FusionGain:
-    """FG = acc_all - max_m acc_m on the clean probe ``seed = s + 2e6`` (512 rows)."""
+    """FG = acc_all - max_m acc_m on the clean probe ``seed = s + 2e6`` (512 rows).
+
+    When the world holds out probe frames (``n_probe`` > 0, v0.9
+    section 3.4) the probe window is drawn from those frames and every
+    single-modality accuracy is computed on that same window, with the
+    other four modalities zeroed as in ``AdaptationLoop.query_accuracy``.
+    Otherwise the legacy path is used unchanged.
+    """
     probe_seed = train_seed + 2 * 10**6
+    if getattr(loop.world, "n_probe", 0):
+        sample, _ = loop.world.probe_sample_with_indices(PROBE_ROWS, probe_seed)  # type: ignore[attr-defined]
+        acc_all = _accuracy(loop, sample)
+        held: dict[str, float] = {}
+        for m in MODALITIES:
+            masked = replace(
+                sample,
+                **{
+                    k: (getattr(sample, k) if k == m else torch.zeros_like(getattr(sample, k)))
+                    for k in MODALITIES
+                },
+            )
+            held[m] = _accuracy(loop, masked)
+        return FusionGain(acc_all, held, acc_all - max(held.values()))
     sample = loop.world.sample(batch_size=PROBE_ROWS, seed=probe_seed)
     with torch.no_grad():
         _, logits = loop._forward(sample)

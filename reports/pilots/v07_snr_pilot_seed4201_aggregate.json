@@ -1,0 +1,690 @@
+{
+  "cells": {
+    "t1_audio_floor": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.47474747474747475,
+        "ci_low": 0.47474747474747475,
+        "ci_high": 0.47474747474747475
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_audio_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.4696969696969697,
+        "ci_low": 0.4696969696969697,
+        "ci_high": 0.4696969696969697
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_audio_plus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.5151515151515151,
+        "ci_low": 0.5151515151515151,
+        "ci_high": 0.5151515151515151
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_force_floor": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.4895833333333333,
+        "ci_low": 0.4895833333333333,
+        "ci_high": 0.4895833333333333
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_force_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.5170454545454546,
+        "ci_low": 0.5170454545454546,
+        "ci_high": 0.5170454545454546
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_force_plus10": {
+      "me1": {
+        "mean": 0.6,
+        "ci_low": 0.6,
+        "ci_high": 0.6
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.5296717171717171,
+        "ci_low": 0.5296717171717171,
+        "ci_high": 0.5296717171717171
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_gravity_floor": {
+      "me1": {
+        "mean": 0.3,
+        "ci_low": 0.3,
+        "ci_high": 0.3
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.44823232323232326,
+        "ci_low": 0.44823232323232326,
+        "ci_high": 0.44823232323232326
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_gravity_minus10": {
+      "me1": {
+        "mean": 0.2,
+        "ci_low": 0.2,
+        "ci_high": 0.2
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.46275252525252525,
+        "ci_low": 0.46275252525252525,
+        "ci_high": 0.46275252525252525
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_gravity_plus10": {
+      "me1": {
+        "mean": 0.2,
+        "ci_low": 0.2,
+        "ci_high": 0.2
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.4633838383838384,
+        "ci_low": 0.4633838383838384,
+        "ci_high": 0.4633838383838384
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_tactile_floor": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.5252525252525253,
+        "ci_low": 0.5252525252525253,
+        "ci_high": 0.5252525252525253
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_tactile_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.41919191919191917,
+        "ci_low": 0.41919191919191917,
+        "ci_high": 0.41919191919191917
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_tactile_plus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.494949494949495,
+        "ci_low": 0.494949494949495,
+        "ci_high": 0.494949494949495
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_vision_floor": {
+      "me1": {
+        "mean": 0.6,
+        "ci_low": 0.6,
+        "ci_high": 0.6
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.48863636363636365,
+        "ci_low": 0.48863636363636365,
+        "ci_high": 0.48863636363636365
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_vision_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.44507575757575757,
+        "ci_low": 0.44507575757575757,
+        "ci_high": 0.44507575757575757
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t1_vision_plus10": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.4185606060606061,
+        "ci_low": 0.4185606060606061,
+        "ci_high": 0.4185606060606061
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_audio_floor": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.51010101010101,
+        "ci_low": 0.51010101010101,
+        "ci_high": 0.51010101010101
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_audio_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.5006313131313131,
+        "ci_low": 0.5006313131313131,
+        "ci_high": 0.5006313131313131
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_audio_plus10": {
+      "me1": {
+        "mean": 0.6,
+        "ci_low": 0.6,
+        "ci_high": 0.6
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.48169191919191917,
+        "ci_low": 0.48169191919191917,
+        "ci_high": 0.48169191919191917
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_force_floor": {
+      "me1": {
+        "mean": 0.6,
+        "ci_low": 0.6,
+        "ci_high": 0.6
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.48737373737373735,
+        "ci_low": 0.48737373737373735,
+        "ci_high": 0.48737373737373735
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_force_minus10": {
+      "me1": {
+        "mean": 0.7,
+        "ci_low": 0.7,
+        "ci_high": 0.7
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.5404040404040404,
+        "ci_low": 0.5404040404040404,
+        "ci_high": 0.5404040404040404
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_force_plus10": {
+      "me1": {
+        "mean": 0.7,
+        "ci_low": 0.7,
+        "ci_high": 0.7
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.5404040404040404,
+        "ci_low": 0.5404040404040404,
+        "ci_high": 0.5404040404040404
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_gravity_floor": {
+      "me1": {
+        "mean": 0.3,
+        "ci_low": 0.3,
+        "ci_high": 0.3
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.4772727272727273,
+        "ci_low": 0.4772727272727273,
+        "ci_high": 0.4772727272727273
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_gravity_minus10": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.45202020202020204,
+        "ci_low": 0.45202020202020204,
+        "ci_high": 0.45202020202020204
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_gravity_plus10": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.4810606060606061,
+        "ci_low": 0.4810606060606061,
+        "ci_high": 0.4810606060606061
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_tactile_floor": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.51010101010101,
+        "ci_low": 0.51010101010101,
+        "ci_high": 0.51010101010101
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_tactile_minus10": {
+      "me1": {
+        "mean": 0.3,
+        "ci_low": 0.3,
+        "ci_high": 0.3
+      },
+      "me1_probe": {
+        "mean": 1.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0
+      },
+      "me2": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_tactile_plus10": {
+      "me1": {
+        "mean": 0.3,
+        "ci_low": 0.3,
+        "ci_high": 0.3
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.4438131313131313,
+        "ci_low": 0.4438131313131313,
+        "ci_high": 0.4438131313131313
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_vision_floor": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.4741161616161616,
+        "ci_low": 0.4741161616161616,
+        "ci_high": 0.4741161616161616
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_vision_minus10": {
+      "me1": {
+        "mean": 0.5,
+        "ci_low": 0.5,
+        "ci_high": 0.5
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.5202020202020202,
+        "ci_low": 0.5202020202020202,
+        "ci_high": 0.5202020202020202
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    },
+    "t2_vision_plus10": {
+      "me1": {
+        "mean": 0.4,
+        "ci_low": 0.4,
+        "ci_high": 0.4
+      },
+      "me1_probe": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      },
+      "me2": {
+        "mean": 0.5303030303030303,
+        "ci_low": 0.5303030303030303,
+        "ci_high": 0.5303030303030303
+      },
+      "me3_delta": {
+        "mean": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    }
+  },
+  "invariants": {
+    "b1": {
+      "passes": false,
+      "median_me7": 0.0,
+      "threshold": 0.05,
+      "cells_counted": 15
+    },
+    "b2": {
+      "passes": false,
+      "median_me3_delta": 0.0,
+      "threshold": 0.1,
+      "cells_counted": 30
+    },
+    "b3": {
+      "passes": true,
+      "median_me6_max_abs": 1.0,
+      "threshold": 0.02,
+      "cells_counted": 6
+    }
+  },
+  "thresholds": {
+    "b1_me7": 0.05,
+    "b2_me3_delta": 0.1,
+    "b3_me6": 0.02
+  },
+  "world_class": "StudyforrestRealWorld"
+}

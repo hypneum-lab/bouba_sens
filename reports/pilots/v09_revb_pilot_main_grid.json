@@ -1,0 +1,4253 @@
+{
+  "world_class": "StudyforrestRealWorld",
+  "seeds": [
+    3201,
+    3202,
+    3203,
+    3204,
+    3205
+  ],
+  "osf_filed": "",
+  "design": "revb",
+  "wall_s_total": 484.02549275,
+  "cells": [
+    {
+      "seed": 3201,
+      "onset": 0,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.3057060000001,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.56328125,
+        "bacc_all": 0.37421875,
+        "best_modality": "tactile",
+        "bacc_best": 0.9375,
+        "bacc_by_modality": {
+          "audio": 0.265625,
+          "vision": 0.9721354166666667,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.30390625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.48678385416666664,
+          "vision": 0.9561197916666667,
+          "tactile": 0.9625,
+          "gravity": 0.90078125,
+          "force": 0.36842447916666665
+        },
+        "fg_control": 0.0625,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.75,
+          0.265625,
+          0.2,
+          0.28125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 0,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.056637791999947,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5403645833333333,
+        "bacc_all": 0.44505208333333335,
+        "best_modality": "vision",
+        "bacc_best": 0.9854166666666666,
+        "bacc_by_modality": {
+          "audio": 0.26588541666666665,
+          "vision": 0.9854166666666666,
+          "tactile": 0.9375,
+          "gravity": 0.7802083333333334,
+          "force": 0.2924479166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46979166666666666,
+          "vision": 0.96484375,
+          "tactile": 0.9625,
+          "gravity": 0.8674479166666667,
+          "force": 0.3559895833333333
+        },
+        "fg_control": 0.014583333333333393,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.9375,
+          0.18229166666666666,
+          0.31666666666666665,
+          0.34375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 0,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.5865619579999475,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5260416666666667,
+        "bacc_all": 0.46354166666666663,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29140625,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.28671875
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9796223958333333,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35104166666666664
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.6875,
+          0.24479166666666666,
+          0.3125,
+          0.609375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 50,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.263695208000172,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5950520833333334,
+        "bacc_all": 0.39453125,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29010416666666666,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.2986979166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5014973958333333,
+          "vision": 0.9796223958333333,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.34908854166666664
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.4375,
+          0.14583333333333334,
+          0.4166666666666667,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 50,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.44918883299988,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4921875,
+        "bacc_all": 0.49739583333333337,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29010416666666666,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.2986979166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5014973958333333,
+          "vision": 0.9796223958333333,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.34811197916666664
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.8125,
+          0.13020833333333334,
+          0.4375,
+          0.609375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 50,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.413339292000273,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.48697916666666663,
+        "bacc_all": 0.5026041666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29140625,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.29973958333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9796223958333333,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.34908854166666664
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.875,
+          0.125,
+          0.4166666666666667,
+          0.59375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 100,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 5.850956375000351,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.49739583333333337,
+        "bacc_all": 0.4921875,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.2924479166666667,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.30104166666666665
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5024739583333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35065104166666666
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.6875,
+          0.3072916666666667,
+          0.5208333333333334,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 100,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 5.943037542000184,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.45442708333333337,
+        "bacc_all": 0.53515625,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.2924479166666667,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.30104166666666665
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5024739583333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35162760416666666
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.875,
+          0.34375,
+          0.375,
+          0.546875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 100,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.393497042000035,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.46067708333333335,
+        "bacc_all": 0.52890625,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29010416666666666,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.3
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35065104166666666
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.6875,
+          0.2708333333333333,
+          0.5791666666666667,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 150,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.237862957999823,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4325520833333334,
+        "bacc_all": 0.55703125,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29140625,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.29973958333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35162760416666666
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.75,
+          0.3541666666666667,
+          0.5458333333333333,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 150,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.288131917000101,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.3583333333333334,
+        "bacc_all": 0.63125,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29140625,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.2989583333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9786458333333333,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35208333333333336
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          1.0,
+          0.3229166666666667,
+          0.6083333333333333,
+          0.59375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 150,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.330746084000111,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.37265625,
+        "bacc_all": 0.6169270833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.29140625,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.3013020833333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5007161458333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35065104166666666
+        },
+        "fg_control": -0.05208333333333337,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          1.0,
+          0.265625,
+          0.6083333333333333,
+          0.59375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 200,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.980195790999915,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.48567708333333337,
+        "bacc_all": 0.5049479166666666,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.2924479166666667,
+          "vision": 0.990625,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.3
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5024739583333333,
+          "vision": 0.9799479166666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35208333333333336
+        },
+        "fg_control": -0.05312499999999998,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          0.875,
+          0.078125,
+          0.44166666666666665,
+          0.625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 200,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.467437040999812,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.47395833333333337,
+        "bacc_all": 0.5166666666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.2924479166666667,
+          "vision": 0.990625,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.3
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5024739583333333,
+          "vision": 0.9809244791666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35208333333333336
+        },
+        "fg_control": -0.05312499999999998,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          1.0,
+          0.11458333333333333,
+          0.42083333333333334,
+          0.53125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3201,
+      "onset": 200,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.829322499999762,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4716145833333333,
+        "bacc_all": 0.5190104166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.29270833333333335,
+          "vision": 0.990625,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.2986979166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.5016927083333333,
+          "vision": 0.9809244791666667,
+          "tactile": 0.975,
+          "gravity": 0.8916666666666666,
+          "force": 0.35013020833333336
+        },
+        "fg_control": -0.05312499999999998,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          1.0,
+          0.16145833333333334,
+          0.38333333333333336,
+          0.53125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 0,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.95076516600011,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4744791666666667,
+        "bacc_all": 0.4630208333333333,
+        "best_modality": "tactile",
+        "bacc_best": 0.9375,
+        "bacc_by_modality": {
+          "audio": 0.3065104166666667,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.8223958333333333,
+          "force": 0.30338541666666663
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46940104166666663,
+          "vision": 0.97265625,
+          "tactile": 0.975,
+          "gravity": 0.8921874999999999,
+          "force": 0.34817708333333336
+        },
+        "fg_control": 0.0625,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.3802083333333333,
+          0.2375,
+          0.234375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 0,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.017610749999676,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5432291666666667,
+        "bacc_all": 0.44114583333333335,
+        "best_modality": "vision",
+        "bacc_best": 0.984375,
+        "bacc_by_modality": {
+          "audio": 0.2768229166666667,
+          "vision": 0.984375,
+          "tactile": 0.9375,
+          "gravity": 0.7932291666666667,
+          "force": 0.2817708333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.49055989583333326,
+          "vision": 0.9806640625,
+          "tactile": 0.975,
+          "gravity": 0.8960937499999999,
+          "force": 0.34537760416666663
+        },
+        "fg_control": -0.0010416666666666075,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.9375,
+          0.3072916666666667,
+          0.31666666666666665,
+          0.203125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 0,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.999265875000219,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.47109375,
+        "bacc_all": 0.5111979166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3417317708333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.75,
+          0.3645833333333333,
+          0.32083333333333336,
+          0.609375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 50,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.83802254200009,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5713541666666666,
+        "bacc_all": 0.4109375,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3446614583333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.5625,
+          0.40625,
+          0.1125,
+          0.5625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 50,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.844698165999944,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5411458333333333,
+        "bacc_all": 0.44114583333333335,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3446614583333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.6875,
+          0.4635416666666667,
+          0.06666666666666667,
+          0.546875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 50,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.762832625000101,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5294270833333334,
+        "bacc_all": 0.4528645833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46901041666666665,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3417317708333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.6875,
+          0.5260416666666666,
+          0.06666666666666667,
+          0.53125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 100,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.237496167000245,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.6841145833333333,
+        "bacc_all": 0.29817708333333337,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.2557291666666667,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.32942708333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3436848958333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.0625,
+          0.4375,
+          0.14583333333333334,
+          0.546875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 100,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.470835916999931,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.7015625,
+        "bacc_all": 0.2807291666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.2557291666666667,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3427083333333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.0,
+          0.3958333333333333,
+          0.13333333333333333,
+          0.59375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 100,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.468229375000192,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.7015625,
+        "bacc_all": 0.2807291666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3446614583333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.0,
+          0.3072916666666667,
+          0.175,
+          0.640625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 150,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.223958125000081,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5106770833333334,
+        "bacc_all": 0.47161458333333334,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3427083333333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.875,
+          0.3125,
+          0.12083333333333333,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 150,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.532247833999918,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4815104166666667,
+        "bacc_all": 0.50078125,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3446614583333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.9375,
+          0.34375,
+          0.1125,
+          0.609375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 150,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.334460167000088,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4895833333333333,
+        "bacc_all": 0.49270833333333336,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3417317708333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.875,
+          0.3385416666666667,
+          0.11666666666666667,
+          0.640625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 200,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.05229395799961,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.528125,
+        "bacc_all": 0.45416666666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46979166666666666,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3436848958333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.6875,
+          0.0625,
+          0.25416666666666665,
+          0.8125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 200,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.511076875000072,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.53203125,
+        "bacc_all": 0.45026041666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46979166666666666,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3427083333333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.6875,
+          0.1875,
+          0.19166666666666668,
+          0.734375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3202,
+      "onset": 200,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.658821208000063,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5372395833333333,
+        "bacc_all": 0.44505208333333335,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.25677083333333334,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.778125,
+          "force": 0.33333333333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46744791666666663,
+          "vision": 0.9768229166666667,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3427083333333334
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.625,
+          0.21875,
+          0.23333333333333334,
+          0.703125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 0,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.218003209000017,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.466796875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5848958333333333,
+        "bacc_all": 0.4005208333333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9854166666666666,
+        "bacc_by_modality": {
+          "audio": 0.24765625000000002,
+          "vision": 0.9854166666666666,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.75,
+          "force": 0.29973958333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4919921875,
+          "vision": 0.9707682291666666,
+          "tactile": 0.9541666666666666,
+          "gravity": 0.7927083333333333,
+          "force": 0.3854817708333334
+        },
+        "fg_control": -0.06458333333333321,
+        "bacc_control": 0.9208333333333334,
+        "recalls_all": [
+          0.75,
+          0.3125,
+          0.19583333333333333,
+          0.34375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 0,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.17659441700016,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.24140625000000004,
+        "bacc_all": 0.74609375,
+        "best_modality": "vision",
+        "bacc_best": 0.9875,
+        "bacc_by_modality": {
+          "audio": 0.3052083333333333,
+          "vision": 0.9875,
+          "tactile": 0.9375,
+          "gravity": 0.7479166666666666,
+          "force": 0.25286458333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.43854166666666666,
+          "vision": 0.9814453125,
+          "tactile": 0.9625,
+          "gravity": 0.903125,
+          "force": 0.35970052083333326
+        },
+        "fg_control": 0.012499999999999956,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.6875,
+          0.625,
+          0.671875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 0,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.29471941599968,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5734375,
+        "bacc_all": 0.4171875,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.30703125,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.32708333333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.45123697916666666,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.41477864583333335
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.625,
+          0.23958333333333334,
+          0.30416666666666664,
+          0.5
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 50,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.497333666000031,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.3911458333333334,
+        "bacc_all": 0.5296875,
+        "best_modality": "tactile",
+        "bacc_best": 0.9208333333333334,
+        "bacc_by_modality": {
+          "audio": 0.3182291666666667,
+          "vision": 0.9864583333333333,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.8156249999999999,
+          "force": 0.32005208333333335
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.457421875,
+          "vision": 0.9698567708333334,
+          "tactile": 0.975,
+          "gravity": 0.8,
+          "force": 0.3856770833333334
+        },
+        "fg_control": 0.0625,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          1.0,
+          0.3489583333333333,
+          0.31666666666666665,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 50,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.516746083999806,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.478125,
+        "bacc_all": 0.5083333333333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9864583333333333,
+        "bacc_by_modality": {
+          "audio": 0.32005208333333335,
+          "vision": 0.9864583333333333,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7166666666666667,
+          "force": 0.24505208333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4578776041666667,
+          "vision": 0.9779296875,
+          "tactile": 0.9625,
+          "gravity": 0.8677083333333333,
+          "force": 0.36276041666666664
+        },
+        "fg_control": -0.0031249999999999334,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          1.0,
+          0.19270833333333334,
+          0.325,
+          0.515625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 50,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.599807042000066,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.6125,
+        "bacc_all": 0.378125,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.31328125,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.2981770833333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4599609375,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.3798828125
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.625,
+          0.265625,
+          0.2625,
+          0.359375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 100,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.268756958000267,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.31901041666666674,
+        "bacc_all": 0.6018229166666667,
+        "best_modality": "tactile",
+        "bacc_best": 0.9208333333333334,
+        "bacc_by_modality": {
+          "audio": 0.32708333333333334,
+          "vision": 0.9864583333333333,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7124999999999999,
+          "force": 0.2942708333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4458984375,
+          "vision": 0.9715494791666666,
+          "tactile": 0.975,
+          "gravity": 0.8575520833333333,
+          "force": 0.37532552083333337
+        },
+        "fg_control": 0.0625,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          1.0,
+          0.22916666666666666,
+          0.6,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 100,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.325519958999848,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.5559895833333334,
+        "bacc_all": 0.4315104166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9875,
+        "bacc_by_modality": {
+          "audio": 0.3140625,
+          "vision": 0.9875,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.725,
+          "force": 0.325
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4501302083333333,
+          "vision": 0.979296875,
+          "tactile": 0.975,
+          "gravity": 0.8575520833333333,
+          "force": 0.4005208333333333
+        },
+        "fg_control": -0.004166666666666652,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.5,
+          0.2916666666666667,
+          0.45,
+          0.484375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 100,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.727619666999999,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.48671875,
+        "bacc_all": 0.50390625,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.33671875,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.33515625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.44700520833333335,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.41009114583333334
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.875,
+          0.3333333333333333,
+          0.3541666666666667,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 150,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.241095416999997,
+      "fg": {
+        "acc_all": 0.3984375,
+        "acc_by_modality": {
+          "audio": 0.45703125,
+          "vision": 0.4296875,
+          "tactile": 0.458984375,
+          "gravity": 0.435546875,
+          "force": 0.380859375
+        },
+        "fusion_gain": -0.060546875
+      },
+      "lin": {
+        "fg": -0.5927083333333333,
+        "bacc_all": 0.3979166666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.33515625,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.3416666666666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.45162760416666664,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.39479166666666665
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.4375,
+          0.2760416666666667,
+          0.425,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 150,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.3722044999999525,
+      "fg": {
+        "acc_all": 0.37890625,
+        "acc_by_modality": {
+          "audio": 0.376953125,
+          "vision": 0.376953125,
+          "tactile": 0.376953125,
+          "gravity": 0.375,
+          "force": 0.37890625
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.6166666666666667,
+        "bacc_all": 0.37395833333333334,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.32526041666666666,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.33046875
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.45579427083333335,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.4001953125
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.25,
+          0.2760416666666667,
+          0.39166666666666666,
+          0.578125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 150,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.073688624999704,
+      "fg": {
+        "acc_all": 0.376953125,
+        "acc_by_modality": {
+          "audio": 0.400390625,
+          "vision": 0.392578125,
+          "tactile": 0.388671875,
+          "gravity": 0.37109375,
+          "force": 0.361328125
+        },
+        "fusion_gain": -0.0234375
+      },
+      "lin": {
+        "fg": -0.6255208333333333,
+        "bacc_all": 0.3651041666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.33177083333333335,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.28255208333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.450390625,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.3761067708333333
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.4375,
+          0.265625,
+          0.30416666666666664,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 200,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.3718009170002,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.68203125,
+        "bacc_all": 0.30859375,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.3026041666666667,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.3580729166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4395833333333333,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.4029296875
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.375,
+          0.2708333333333333,
+          0.2916666666666667,
+          0.296875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 200,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.028735374999997,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.64296875,
+        "bacc_all": 0.34765625,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.3041666666666667,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.3143229166666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4505859375,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.4116536458333333
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.5,
+          0.3177083333333333,
+          0.2916666666666667,
+          0.28125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3203,
+      "onset": 200,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.282997666000028,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.7296874999999999,
+        "bacc_all": 0.26093750000000004,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.31536458333333334,
+          "vision": 0.990625,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7229166666666667,
+          "force": 0.37239583333333337
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4658854166666666,
+          "vision": 0.980078125,
+          "tactile": 0.975,
+          "gravity": 0.8614583333333333,
+          "force": 0.39993489583333336
+        },
+        "fg_control": -0.007291666666666585,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.1875,
+          0.3541666666666667,
+          0.22083333333333333,
+          0.28125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 0,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.898587417000272,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.22057291666666679,
+        "bacc_all": 0.7002604166666666,
+        "best_modality": "tactile",
+        "bacc_best": 0.9208333333333334,
+        "bacc_by_modality": {
+          "audio": 0.24088541666666669,
+          "vision": 0.9875,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.7135416666666666,
+          "force": 0.30572916666666666
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4979166666666667,
+          "vision": 0.9667317708333334,
+          "tactile": 0.975,
+          "gravity": 0.8979166666666667,
+          "force": 0.35774739583333337
+        },
+        "fg_control": 0.0625,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          1.0,
+          0.65625,
+          0.6291666666666667,
+          0.515625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 0,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.741907125000125,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.0625,
+        "bacc_all": 0.9375,
+        "best_modality": "tactile",
+        "bacc_best": 1.0,
+        "bacc_by_modality": {
+          "audio": 0.2234375,
+          "vision": 0.9752604166666666,
+          "tactile": 1.0,
+          "gravity": 0.5447916666666666,
+          "force": 0.3026041666666667
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47682291666666665,
+          "vision": 0.9313151041666666,
+          "tactile": 0.975,
+          "gravity": 0.8731770833333334,
+          "force": 0.36627604166666666
+        },
+        "fg_control": 0.0,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          1.0,
+          1.0,
+          0.75
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 0,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 4.831795167000109,
+      "fg": {
+        "acc_all": 0.451171875,
+        "acc_by_modality": {
+          "audio": 0.427734375,
+          "vision": 0.443359375,
+          "tactile": 0.44921875,
+          "gravity": 0.4453125,
+          "force": 0.458984375
+        },
+        "fusion_gain": -0.0078125
+      },
+      "lin": {
+        "fg": -0.47890625,
+        "bacc_all": 0.5033854166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24817708333333333,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7749999999999999,
+          "force": 0.24843749999999998
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4629557291666666,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.90234375,
+          "force": 0.35944010416666666
+        },
+        "fg_control": 0.0010416666666667185,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.5625,
+          0.578125,
+          0.5291666666666667,
+          0.34375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 50,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.549672582999847,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4356770833333332,
+        "bacc_all": 0.5455729166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.98125,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.98125,
+          "tactile": 1.0,
+          "gravity": 0.7604166666666666,
+          "force": 0.24505208333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.890625,
+          "force": 0.34160156249999996
+        },
+        "fg_control": 0.018750000000000044,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.75,
+          0.3541666666666667,
+          0.75,
+          0.328125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 50,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.944721458000004,
+      "fg": {
+        "acc_all": 0.482421875,
+        "acc_by_modality": {
+          "audio": 0.458984375,
+          "vision": 0.46484375,
+          "tactile": 0.4765625,
+          "gravity": 0.47265625,
+          "force": 0.447265625
+        },
+        "fusion_gain": 0.005859375
+      },
+      "lin": {
+        "fg": -0.15260416666666676,
+        "bacc_all": 0.8296874999999999,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7395833333333334,
+          "force": 0.2625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.8875,
+          "force": 0.36516927083333334
+        },
+        "fg_control": -0.06145833333333328,
+        "bacc_control": 0.9208333333333334,
+        "recalls_all": [
+          1.0,
+          0.7291666666666666,
+          0.9333333333333333,
+          0.65625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 50,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.756569916999979,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.553125,
+        "bacc_all": 0.428125,
+        "best_modality": "vision",
+        "bacc_best": 0.98125,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.98125,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7749999999999999,
+          "force": 0.24843749999999998
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.90234375,
+          "force": 0.363671875
+        },
+        "fg_control": 0.002083333333333437,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.25,
+          0.5260416666666666,
+          0.6708333333333333,
+          0.265625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 100,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.47466200000008,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.41093750000000007,
+        "bacc_all": 0.5713541666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 1.0,
+          "gravity": 0.7749999999999999,
+          "force": 0.25260416666666663
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88359375,
+          "force": 0.3551432291666667
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.8125,
+          0.640625,
+          0.6291666666666667,
+          0.203125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 100,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.475256791999982,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4278645833333333,
+        "bacc_all": 0.5544270833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 1.0,
+          "gravity": 0.7749999999999999,
+          "force": 0.2513020833333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4613932291666667,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88359375,
+          "force": 0.35514322916666674
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.6875,
+          0.640625,
+          0.6083333333333333,
+          0.28125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 100,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.387454250000246,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.45182291666666663,
+        "bacc_all": 0.53046875,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7749999999999999,
+          "force": 0.25260416666666663
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.35709635416666663
+        },
+        "fg_control": 0.0010416666666667185,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.9375,
+          0.5,
+          0.575,
+          0.109375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 150,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.2222459589997925,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.31041666666666656,
+        "bacc_all": 0.6708333333333334,
+        "best_modality": "vision",
+        "bacc_best": 0.98125,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.98125,
+          "tactile": 1.0,
+          "gravity": 0.7749999999999999,
+          "force": 0.29192708333333334
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4613932291666667,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.3590494791666667
+        },
+        "fg_control": 0.018750000000000044,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.703125,
+          0.7458333333333333,
+          0.234375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 150,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.3479552499998135,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.33567708333333335,
+        "bacc_all": 0.6466145833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 1.0,
+          "gravity": 0.7749999999999999,
+          "force": 0.2700520833333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.3633463541666667
+        },
+        "fg_control": 0.0010416666666667185,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.875,
+          0.65625,
+          0.7583333333333333,
+          0.296875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 150,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.177606959000059,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.428125,
+        "bacc_all": 0.5541666666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7749999999999999,
+          "force": 0.2734375
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4613932291666667,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.3533854166666667
+        },
+        "fg_control": 0.0010416666666667185,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.75,
+          0.4635416666666667,
+          0.675,
+          0.328125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 200,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.953248875000099,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4013020833333334,
+        "bacc_all": 0.5809895833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9822916666666667,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.9822916666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7749999999999999,
+          "force": 0.26875000000000004
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.36725260416666666
+        },
+        "fg_control": 0.017708333333333326,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.6041666666666666,
+          0.45416666666666666,
+          0.265625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 200,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.940237917000104,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.33072916666666663,
+        "bacc_all": 0.6505208333333333,
+        "best_modality": "vision",
+        "bacc_best": 0.98125,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.98125,
+          "tactile": 1.0,
+          "gravity": 0.7749999999999999,
+          "force": 0.27447916666666666
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.46217447916666665,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.88671875,
+          "force": 0.3552083333333333
+        },
+        "fg_control": 0.002083333333333437,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.9375,
+          0.5,
+          0.6333333333333333,
+          0.53125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3204,
+      "onset": 200,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.957529957999668,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.6013020833333333,
+        "bacc_all": 0.37994791666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.98125,
+        "bacc_by_modality": {
+          "audio": 0.24713541666666666,
+          "vision": 0.98125,
+          "tactile": 0.9833333333333334,
+          "gravity": 0.7749999999999999,
+          "force": 0.27109375
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4629557291666666,
+          "vision": 0.9782552083333333,
+          "tactile": 0.975,
+          "gravity": 0.90234375,
+          "force": 0.35247395833333334
+        },
+        "fg_control": 0.002083333333333437,
+        "bacc_control": 0.9833333333333334,
+        "recalls_all": [
+          0.3125,
+          0.609375,
+          0.5666666666666667,
+          0.03125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 0,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.0891899999996895,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.3140625,
+        "bacc_all": 0.6734375,
+        "best_modality": "vision",
+        "bacc_best": 0.9875,
+        "bacc_by_modality": {
+          "audio": 0.22239583333333335,
+          "vision": 0.9875,
+          "tactile": 0.9375,
+          "gravity": 0.765625,
+          "force": 0.3091145833333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.49680989583333335,
+          "vision": 0.9790364583333333,
+          "tactile": 0.975,
+          "gravity": 0.8999999999999999,
+          "force": 0.3563802083333334
+        },
+        "fg_control": 0.012499999999999956,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.53125,
+          0.725,
+          0.4375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 0,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.1093184579999615,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.3182291666666667,
+        "bacc_all": 0.6692708333333334,
+        "best_modality": "vision",
+        "bacc_best": 0.9875,
+        "bacc_by_modality": {
+          "audio": 0.2513020833333333,
+          "vision": 0.9875,
+          "tactile": 0.9208333333333334,
+          "gravity": 0.8218749999999999,
+          "force": 0.26015625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.490234375,
+          "vision": 0.981640625,
+          "tactile": 0.975,
+          "gravity": 0.8707031249999999,
+          "force": 0.35091145833333337
+        },
+        "fg_control": 0.012499999999999956,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.6614583333333334,
+          0.6875,
+          0.328125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 0,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 250,
+      "n_self_donor": 0,
+      "wall_s": 5.130189374999645,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.34895833333333337,
+        "bacc_all": 0.6427083333333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9916666666666667,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9916666666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.2895833333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47434895833333335,
+          "vision": 0.9818359375,
+          "tactile": 0.975,
+          "gravity": 0.9085937500000001,
+          "force": 0.38411458333333337
+        },
+        "fg_control": 0.008333333333333304,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.9375,
+          0.359375,
+          0.5708333333333333,
+          0.703125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 50,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.877078124999571,
+      "fg": {
+        "acc_all": 0.486328125,
+        "acc_by_modality": {
+          "audio": 0.46484375,
+          "vision": 0.453125,
+          "tactile": 0.4453125,
+          "gravity": 0.4296875,
+          "force": 0.455078125
+        },
+        "fusion_gain": 0.021484375
+      },
+      "lin": {
+        "fg": -0.15781250000000013,
+        "bacc_all": 0.8338541666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.9916666666666667,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9916666666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7984374999999999,
+          "force": 0.2828125
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4751302083333333,
+          "vision": 0.979296875,
+          "tactile": 0.9625,
+          "gravity": 0.8796875,
+          "force": 0.37083333333333335
+        },
+        "fg_control": -0.054166666666666696,
+        "bacc_control": 0.9375,
+        "recalls_all": [
+          1.0,
+          0.9947916666666666,
+          0.8875,
+          0.453125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 50,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.863254791000145,
+      "fg": {
+        "acc_all": 0.49609375,
+        "acc_by_modality": {
+          "audio": 0.39453125,
+          "vision": 0.45703125,
+          "tactile": 0.38671875,
+          "gravity": 0.38671875,
+          "force": 0.400390625
+        },
+        "fusion_gain": 0.0390625
+      },
+      "lin": {
+        "fg": -0.19453124999999993,
+        "bacc_all": 0.7950520833333334,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7104166666666667,
+          "force": 0.27265625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4751302083333333,
+          "vision": 0.9779947916666667,
+          "tactile": 0.9625,
+          "gravity": 0.8843749999999999,
+          "force": 0.3784505208333333
+        },
+        "fg_control": 0.01041666666666663,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.8802083333333334,
+          0.8625,
+          0.4375
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 50,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 300,
+      "n_self_donor": 0,
+      "wall_s": 5.80860416600035,
+      "fg": {
+        "acc_all": 0.482421875,
+        "acc_by_modality": {
+          "audio": 0.482421875,
+          "vision": 0.45703125,
+          "tactile": 0.470703125,
+          "gravity": 0.46484375,
+          "force": 0.45703125
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.36953125,
+        "bacc_all": 0.6179687500000001,
+        "best_modality": "vision",
+        "bacc_best": 0.9875,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9875,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.2895833333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4751302083333333,
+          "vision": 0.9795572916666666,
+          "tactile": 0.975,
+          "gravity": 0.9085937500000001,
+          "force": 0.3857421875
+        },
+        "fg_control": 0.012499999999999956,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.5677083333333334,
+          0.7791666666666667,
+          0.125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 100,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.540174666999974,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.36953125,
+        "bacc_all": 0.6200520833333334,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.8171875,
+          "force": 0.29166666666666663
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47434895833333335,
+          "vision": 0.9795572916666666,
+          "tactile": 0.9625,
+          "gravity": 0.8490885416666666,
+          "force": 0.3857421875
+        },
+        "fg_control": 0.01041666666666663,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.484375,
+          0.6833333333333333,
+          0.3125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 100,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.41022029099986,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4091145833333333,
+        "bacc_all": 0.5815104166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.990625,
+          "tactile": 0.9375,
+          "gravity": 0.8302083333333333,
+          "force": 0.2895833333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4751302083333333,
+          "vision": 0.9785807291666666,
+          "tactile": 0.9625,
+          "gravity": 0.8385416666666666,
+          "force": 0.38704427083333337
+        },
+        "fg_control": 0.009375000000000022,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.3958333333333333,
+          0.7583333333333333,
+          0.171875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 100,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 350,
+      "n_self_donor": 0,
+      "wall_s": 6.681766749999952,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.39453125,
+        "bacc_all": 0.59609375,
+        "best_modality": "vision",
+        "bacc_best": 0.990625,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.990625,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.2895833333333333
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47434895833333335,
+          "vision": 0.9818359375,
+          "tactile": 0.9625,
+          "gravity": 0.9085937500000001,
+          "force": 0.3857421875
+        },
+        "fg_control": 0.009375000000000022,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.4947916666666667,
+          0.7333333333333333,
+          0.15625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 150,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.413151541999923,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.39765624999999993,
+        "bacc_all": 0.5908854166666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9885416666666667,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9885416666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7994791666666666,
+          "force": 0.2765625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4764322916666667,
+          "vision": 0.9818359375,
+          "tactile": 0.9625,
+          "gravity": 0.9125000000000001,
+          "force": 0.3886067708333333
+        },
+        "fg_control": 0.011458333333333348,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.4166666666666667,
+          0.775,
+          0.171875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 150,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 7.340882083999986,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4078125,
+        "bacc_all": 0.5807291666666666,
+        "best_modality": "vision",
+        "bacc_best": 0.9885416666666667,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9885416666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7994791666666666,
+          "force": 0.2765625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47565104166666666,
+          "vision": 0.9818359375,
+          "tactile": 0.9625,
+          "gravity": 0.9125000000000001,
+          "force": 0.3886067708333333
+        },
+        "fg_control": 0.011458333333333348,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.390625,
+          0.7916666666666666,
+          0.140625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 150,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 400,
+      "n_self_donor": 0,
+      "wall_s": 6.933984249999867,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.4013020833333334,
+        "bacc_all": 0.58828125,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.2765625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47565104166666666,
+          "vision": 0.9818359375,
+          "tactile": 0.9625,
+          "gravity": 0.9085937500000001,
+          "force": 0.3866536458333333
+        },
+        "fg_control": 0.01041666666666663,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.3958333333333333,
+          0.8166666666666667,
+          0.140625
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 200,
+      "arm": "decor",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.203758834000382,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.3848958333333333,
+        "bacc_all": 0.6046875,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.27890625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47434895833333335,
+          "vision": 0.9738932291666667,
+          "tactile": 0.9625,
+          "gravity": 0.9085937500000001,
+          "force": 0.3876302083333333
+        },
+        "fg_control": 0.01041666666666663,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.4114583333333333,
+          0.6791666666666667,
+          0.328125
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 200,
+      "arm": "joint",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 8.064400916000068,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.36692708333333335,
+        "bacc_all": 0.6247395833333333,
+        "best_modality": "vision",
+        "bacc_best": 0.9916666666666667,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9916666666666667,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.27890625
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.4751302083333333,
+          "vision": 0.979296875,
+          "tactile": 0.9625,
+          "gravity": 0.9085937500000001,
+          "force": 0.3876302083333333
+        },
+        "fg_control": 0.008333333333333304,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          1.0,
+          0.390625,
+          0.8583333333333333,
+          0.25
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    },
+    {
+      "seed": 3205,
+      "onset": 200,
+      "arm": "plain",
+      "recovery": 200,
+      "steps": 450,
+      "n_self_donor": 0,
+      "wall_s": 7.585231125000064,
+      "fg": {
+        "acc_all": 0.46875,
+        "acc_by_modality": {
+          "audio": 0.46875,
+          "vision": 0.46875,
+          "tactile": 0.46875,
+          "gravity": 0.46875,
+          "force": 0.46875
+        },
+        "fusion_gain": 0.0
+      },
+      "lin": {
+        "fg": -0.43229166666666663,
+        "bacc_all": 0.5572916666666667,
+        "best_modality": "vision",
+        "bacc_best": 0.9895833333333334,
+        "bacc_by_modality": {
+          "audio": 0.296875,
+          "vision": 0.9895833333333334,
+          "tactile": 0.9375,
+          "gravity": 0.7786458333333334,
+          "force": 0.27994791666666663
+        },
+        "cv_bacc_by_modality": {
+          "audio": 0.47434895833333335,
+          "vision": 0.9818359375,
+          "tactile": 0.9625,
+          "gravity": 0.9085937500000001,
+          "force": 0.3876302083333333
+        },
+        "fg_control": 0.01041666666666663,
+        "bacc_control": 1.0,
+        "recalls_all": [
+          0.9375,
+          0.3697916666666667,
+          0.75,
+          0.171875
+        ],
+        "converged": true,
+        "per_class_training_blocks": {
+          "0": 7,
+          "1": 16,
+          "2": 16,
+          "3": 16
+        }
+      }
+    }
+  ],
+  "onsets": [
+    0,
+    50,
+    100,
+    150,
+    200
+  ],
+  "D_outcome": "linear",
+  "D": [
+    [
+      0.022916666666666696,
+      0.10286458333333337,
+      0.04296875,
+      0.07421875,
+      0.01171875
+    ],
+    [
+      -0.06874999999999998,
+      0.03020833333333328,
+      -0.017447916666666674,
+      0.029166666666666674,
+      -0.00390625
+    ],
+    [
+      0.34348958333333324,
+      -0.08697916666666661,
+      -0.23697916666666663,
+      -0.023958333333333415,
+      0.0390625
+    ],
+    [
+      0.15807291666666679,
+      0.28307291666666645,
+      -0.01692708333333326,
+      -0.025260416666666785,
+      0.07057291666666676
+    ],
+    [
+      -0.004166666666666652,
+      -0.0367187499999998,
+      -0.039583333333333304,
+      -0.010156250000000089,
+      0.017968749999999978
+    ]
+  ],
+  "variance_components": {
+    "ms_seed": 0.010341014268663191,
+    "ms_residual": 0.012870685831705716,
+    "df_residual": 16.0,
+    "sigma_e2": 0.012870685831705716,
+    "sigma_u2": 0.0,
+    "sigma_hat": 0.11344904508943968,
+    "ucl_multiplier": 1.55757542255663,
+    "sigma_plan": 0.17670544434383018
+  },
+  "D_head_descriptive": [
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.060546875,
+      0.0
+    ],
+    [
+      0.0,
+      0.005859375,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.017578125,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "headroom": {
+    "plain_bacc_all_mean": 0.4854895833333333,
+    "plain_bacc_best_single_mean": 0.986875,
+    "fg_lin_mean_all_runs": -0.46013194444444444,
+    "fg_control_mean_all_runs": -0.0015416666666666545,
+    "D_zero_fraction": 0.0,
+    "recalls_all_mean": [
+      0.7741666666666667,
+      0.3990972222222222,
+      0.48083333333333333,
+      0.436875
+    ],
+    "best_modality_counts": {
+      "audio": 0,
+      "vision": 69,
+      "tactile": 6,
+      "gravity": 0,
+      "force": 0
+    },
+    "all_converged": true
+  }
+}

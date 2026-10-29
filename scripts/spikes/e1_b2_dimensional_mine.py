@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -73,41 +74,210 @@ def build_loop(world_name: str, seed: int, lock_after: int):
 
 
 @torch.no_grad()
-def _full_fused(loop, probe):
+def _full_fused(loop, probe, *, hard: bool = False):
+    """Full fused probe code; ``hard`` = argmax demodulation, no RNG use."""
     carriers = {m: loop.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
-    fused = loop.nerve.fuse(carriers)  # (B, K, d_hidden)
+    fused = loop.nerve.fuse(carriers, hard_demod=hard)  # (B, K, d_hidden)
     return fused.flatten(1).detach().cpu()  # (B, d_fused)
 
 
-def capture_probe(
+def capture_probe(*args, **kwargs):
+    """Legacy Gumbel readout: ``(pre, post, labels)`` (ADR-0019 E1.3).
+
+    See ``capture_probe_readouts`` for the arguments.
+    """
+    labels, readouts = _capture(*args, readouts=("gumbel",), **kwargs)
+    pre, post = readouts["gumbel"]
+    return pre, post, labels
+
+
+def capture_probe_readouts(*args, **kwargs):
+    """Both v0.7 B-2 readouts from one run: ``(labels, {"hard", "gumbel"})``.
+
+    PI decision 2026-10-25 (after the B-2 pilot, which found the hard
+    readout input-independent): the Gumbel-sampled readout (ADR-0019) is
+    primary and the hard (argmax) readout is reported descriptively.
+    Both are captured on the same checkpoint and probe. The Gumbel
+    captures run first, exactly where the legacy runner takes them, and
+    the hard captures use no RNG, so the Gumbel readout and the training
+    trajectory are identical to ``capture_probe``.
+    """
+    return _capture(*args, readouts=("gumbel", "hard"), **kwargs)
+
+
+def _capture(
     world_name: str,
     seed: int,
     lock_after: int,
     steps_train: int,
     steps_lesion: int,
-    batch_size: int,
+    batch_size: int | None = None,
+    *,
+    train_batch: int | None = None,
+    lesion_batch: int | None = None,
+    probe_n: int | None = None,
+    k_steps: int | None = None,
+    rng_seed: int | None = None,
+    readouts: tuple[str, ...] = ("gumbel",),
+    probe_scheme: str = "contiguous",
+    gumbel_k: int = 0,
+    seed_namespace: int | None = None,
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
     Mirrors AdaptationLoop.lesion_phase exactly, except the probe is kept
     at full dimensionality instead of being mean-pooled to (B,).
-    """
-    loop = build_loop(world_name, seed, lock_after)
-    loop.pretrain(steps_train, batch_size=batch_size, seed=seed)
 
-    probe = loop.world.sample(batch_size=batch_size, seed=seed - 99_999)
-    pre_full = _full_fused(loop, probe)
+    Legacy call (ADR-0019 E1.3): one ``batch_size`` sets training, lesion
+    and probe size, and the SNR ramp uses k = ``steps_lesion``. Amendment
+    v0.7 (section 4.3) sets them separately: ``train_batch``,
+    ``lesion_batch`` and ``probe_n`` override ``batch_size`` one by one,
+    and ``k_steps`` overrides the ramp length. ``rng_seed`` re-seeds the
+    global torch RNG first, so a seed's result does not depend on which
+    seeds ran before it in the same process.
+    """
+    tb = batch_size if train_batch is None else train_batch
+    lb = batch_size if lesion_batch is None else lesion_batch
+    pn = batch_size if probe_n is None else probe_n
+    if tb is None or lb is None or pn is None:
+        raise ValueError("give batch_size or all of train_batch, lesion_batch, probe_n")
+    k = steps_lesion if k_steps is None else k_steps
+    if rng_seed is not None:
+        torch.manual_seed(rng_seed)
+
+    loop = build_loop(world_name, seed, lock_after)
+    # PI decision 2026-10-25 (19:47): campaign seed namespace (bouba_sens.seeds).
+    loop.seed_namespace = seed_namespace
+    loop.pretrain(steps_train, batch_size=tb, seed=seed)
+
+    if seed_namespace is None:
+        probe_seed = seed - 99_999
+    else:
+        from bouba_sens.seeds import STREAMS, ns_seed
+
+        probe_seed = ns_seed(seed_namespace, seed, STREAMS["b2_probe"], 0)
+    probe = draw_probe(loop.world, pn, probe_seed, probe_scheme)
+    pre = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
+    pre_k = _k_draws(loop, probe, seed, 0, gumbel_k)
     labels = probe.label.detach().cpu()
 
     lesion = LesionSpec(
         modality="audio",
         mode="M2",
         timing="T1",
-        schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=steps_lesion),
+        schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=k),
     )
-    loop.lesion_phase(lesion, steps=steps_lesion, batch_size=batch_size, seed=seed)
-    post_full = _full_fused(loop, probe)
-    return pre_full.numpy(), post_full.numpy(), labels.numpy()
+    loop.lesion_phase(lesion, steps=steps_lesion, batch_size=lb, seed=seed, probe_size=pn)
+    post = {r: _full_fused(loop, probe, hard=r == "hard") for r in readouts}
+    post_k = _k_draws(loop, probe, seed, 1, gumbel_k)
+    out = {r: (pre[r].numpy(), post[r].numpy()) for r in readouts}
+    if gumbel_k:
+        out["gumbel_k"] = (np.stack(pre_k), np.stack(post_k))
+    return labels.numpy(), out
+
+
+def _k_draws(loop, probe, seed: int, phase: int, k: int) -> list:
+    """K Gumbel captures under their own seeds; the global RNG is left as it was.
+
+    PI decision 2026-10-25 (``bouba_sens.readout``): the primary B-2
+    readout averages the MI estimate over K = 8 Gumbel draws. The draws
+    run inside ``fork_rng``, so training and the legacy single Gumbel
+    capture are unchanged.
+    """
+    from bouba_sens.readout import gumbel_draws
+
+    if not k:
+        return []
+    return [z.numpy() for z in gumbel_draws(lambda: _full_fused(loop, probe), seed, phase, k)]
+
+
+def draw_probe(world, n: int, seed: int, scheme: str):
+    """B-2 probe: legacy contiguous window or the v0.7 class-balanced probe.
+
+    ``balanced`` (amendment v0.7 section 4.2, PI decision 2026-10-25) is
+    ``bouba_sens.probe.class_balanced_probe_indices`` on the world labels
+    with ``seed`` (= s - 99_999): 4 classes x 8 windows x 16 frames, so
+    ``n`` must be 512. Both schemes use only their own generator.
+    """
+    if scheme == "contiguous":
+        return world.sample(batch_size=n, seed=seed)
+    if scheme == "balanced":
+        from bouba_sens.probe import (
+            PROBE_N_CLASSES,
+            PROBE_WINDOW,
+            PROBE_WINDOWS_PER_CLASS,
+            class_balanced_probe_indices,
+        )
+
+        size = PROBE_N_CLASSES * PROBE_WINDOWS_PER_CLASS * PROBE_WINDOW
+        if n != size:
+            raise ValueError(f"the balanced probe has {size} rows; got probe_n={n}")
+        return world.gather(class_balanced_probe_indices(world.dataset_labels, seed=seed))
+    raise ValueError(f"unknown probe scheme {scheme!r}")
+
+
+def full_probe_b2(pre: np.ndarray, post: np.ndarray, labels: np.ndarray) -> dict[str, float]:
+    """Amendment v0.7 B-2 outputs on the full (N, d_fused) probe, in bits.
+
+    Primary: Ross (2014) mixed discrete-continuous k-NN, k = 3, no
+    clipping (section 4.2). Secondary: full-probe KSG, computed exactly as
+    ``me3_delta`` on the same matrices.
+    """
+    from bouba_sens.metrics.mi_migration import me3_delta
+    from bouba_sens.metrics.mi_ross import mi_ross_discrete_continuous, ross_n_zero_distance
+
+    r_pre = mi_ross_discrete_continuous(pre, labels, k=3)
+    r_post = mi_ross_discrete_continuous(post, labels, k=3)
+    ksg = me3_delta(torch.from_numpy(pre), torch.from_numpy(post), torch.from_numpy(labels))
+    return {
+        "ross_full_delta_bits": r_post - r_pre,
+        "ross_full_pre_bits": r_pre,
+        "ross_full_post_bits": r_post,
+        "ross_n_zero_distance_pre": ross_n_zero_distance(pre),
+        "ross_n_zero_distance_post": ross_n_zero_distance(post),
+        "ksg_full_delta_bits": ksg,
+    }
+
+
+def b2_readout_fields(readouts, labels: np.ndarray) -> dict:
+    """Per-seed B-2 fields: primary unsuffixed, other readouts suffixed.
+
+    PI decisions 2026-10-25 (after the pilot): the Gumbel readout is
+    primary; with ``gumbel_k`` draws (``--gumbel-draws``, preset K = 8)
+    the primary fields are the averages over the K draws of each
+    per-draw field (Ross / KSG pre, post and delta), the single legacy
+    Gumbel capture is reported with a ``_gumbel1`` suffix, and the
+    code-structure statistics and the switch outcome
+    (``bouba_sens.readout``) are added. The hard readout, when captured,
+    is reported with a ``_hard`` suffix. No other readout changes the
+    primary label.
+    """
+    if "gumbel_k" in readouts:
+        from bouba_sens.readout import mean_structure, switch_detected
+
+        pre_k, post_k = readouts["gumbel_k"]
+        per = [full_probe_b2(a, b, labels) for a, b in zip(pre_k, post_k, strict=True)]
+        out = {key: float(np.mean([d[key] for d in per])) for key in per[0]}
+        out["gumbel_draws"] = len(per)
+        out["ross_full_delta_bits_per_draw"] = [d["ross_full_delta_bits"] for d in per]
+        y = torch.from_numpy(labels)
+        pre_s = mean_structure([torch.from_numpy(z) for z in pre_k], y)
+        post_s = mean_structure([torch.from_numpy(z) for z in post_k], y)
+        out.update({f"pre_{k}": v for k, v in pre_s.items()})
+        out.update({f"post_{k}": v for k, v in post_s.items()})
+        out["switch_pre"] = switch_detected(pre_s)
+        out["switch_post"] = switch_detected(post_s)
+        out.update(
+            {f"{k}_gumbel1": v for k, v in full_probe_b2(*readouts["gumbel"], labels).items()}
+        )
+        primary = f"gumbel_k{len(per)}"
+    else:
+        out = dict(full_probe_b2(*readouts["gumbel"], labels))
+        primary = "gumbel"
+    if "hard" in readouts:
+        out.update({f"{k}_hard": v for k, v in full_probe_b2(*readouts["hard"], labels).items()})
+    out["primary_readout"] = primary
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -172,19 +342,177 @@ def mi_binning_bits(x: np.ndarray, y: np.ndarray, n_bins: int) -> float:
     return mi_nats / math.log(2)
 
 
-def main() -> None:
+def _seed_list(text: str) -> list[int]:
+    return [int(tok) for tok in text.replace(" ", "").split(",") if tok]
+
+
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--world", default="gaussian")
-    ap.add_argument("--seeds", type=int, default=5)
+    seeds = ap.add_mutually_exclusive_group()
+    seeds.add_argument("--seeds", type=int, default=5, help="legacy: seeds 0..N-1")
+    seeds.add_argument(
+        "--seed-list",
+        type=_seed_list,
+        default=None,
+        help="explicit comma-separated seeds (amendment v0.7); each seed re-seeds torch",
+    )
     ap.add_argument("--lock-after", type=int, default=100)
     ap.add_argument("--steps-train", type=int, default=200)
     ap.add_argument("--steps-lesion", type=int, default=100)
     ap.add_argument(
         "--batch-size", type=int, default=512, help="probe batch N (E2 sets this from f(D))"
     )
+    ap.add_argument("--train-batch", type=int, default=None, help="Phase-1 batch (v0.7: 16)")
+    ap.add_argument("--lesion-batch", type=int, default=None, help="Phase-2 batch (v0.7: 16)")
+    ap.add_argument("--probe-n", type=int, default=None, help="probe rows (v0.7: 512)")
+    ap.add_argument(
+        "--k-steps", type=int, default=None, help="SNR ramp length (default steps-lesion; v0.7: 50)"
+    )
+    ap.add_argument(
+        "--probe-demod",
+        choices=("soft", "both"),
+        default="soft",
+        help="soft = Gumbel readout only; both = v0.7 Gumbel primary + hard (descriptive)",
+    )
+    ap.add_argument(
+        "--gumbel-draws",
+        type=int,
+        default=0,
+        help="K Gumbel draws averaged in the primary readout (0 = legacy; v0.7: 8)",
+    )
+    ap.add_argument(
+        "--probe-scheme",
+        choices=("contiguous", "balanced"),
+        default="contiguous",
+        help="contiguous = legacy 1 window; balanced = v0.7 E-2 class-balanced probe",
+    )
+    ap.add_argument(
+        "--preset",
+        choices=("v07-e2", "v07-e2b"),
+        default=None,
+        help="frozen v0.7 configuration (E-2: studyforrest, E-2b: ccfilm)",
+    )
+    ap.add_argument(
+        "--osf-filed",
+        default="",
+        help="OSF DOI of the filed v0.7 amendment (needed for seeds 4001-4154)",
+    )
     ap.add_argument("--bootstrap", type=int, default=500)
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
-    args = ap.parse_args()
+    return ap
+
+
+_V07_FROZEN = {
+    "lock_after": 100,
+    "steps_train": 200,
+    "steps_lesion": 100,
+    "train_batch": 16,
+    "lesion_batch": 16,
+    "probe_n": 512,
+    "k_steps": 50,
+    "probe_demod": "both",
+    "gumbel_draws": 8,  # PI decision 2026-10-25
+}
+PRESETS = {
+    # Amendment v0.7, PI decisions 2026-10-23/24: E-2 on Studyforrest,
+    # E-2b on the CC-film bridge, same frozen configuration otherwise.
+    # PI decision 2026-10-25: E-2 uses the class-balanced probe; CC-film
+    # (600 frames, label runs shorter than 16) keeps the contiguous probe,
+    # which covers 512 of its 600 frames.
+    "v07-e2": {"world": "studyforrest", "probe_scheme": "balanced", **_V07_FROZEN},
+    "v07-e2b": {"world": "ccfilm", "probe_scheme": "contiguous", **_V07_FROZEN},
+}
+_EXPECTED_WORLD = {
+    "studyforrest": "StudyforrestRealWorld",
+    "ccfilm": "CCFilmWorld",
+}
+
+
+def _explicit_options(argv: list[str]) -> set[str]:
+    """Destinations the user actually typed (defaults suppressed)."""
+    ap = build_parser()
+    for action in ap._actions:
+        action.default = argparse.SUPPRESS
+    return set(vars(ap.parse_args(argv)))
+
+
+def apply_preset(args: argparse.Namespace, argv: list[str] | None = None) -> None:
+    """Fill the frozen v0.7 configuration; refuse any typed option that conflicts.
+
+    ``argv`` is the command line; an option typed by the user that differs
+    from the preset is refused even if it equals the parser default.
+    """
+    if args.preset is None:
+        return
+    explicit = _explicit_options(sys.argv[1:] if argv is None else argv)
+    for key, val in PRESETS[args.preset].items():
+        given = getattr(args, key)
+        if key in explicit and given != val:
+            raise SystemExit(f"--preset {args.preset} fixes {key}={val!r}; got {given!r}")
+        setattr(args, key, val)
+
+
+def amendment_b2_fields(args: argparse.Namespace, readouts, labels: np.ndarray) -> dict:
+    """v0.7 full-probe B-2 fields, only on the amendment path (preset or both).
+
+    The legacy runner output (no preset, ``--probe-demod soft``) is left
+    unchanged, so legacy runs never reach the Ross estimator and its
+    minimum class size.
+    """
+    if args.preset is None and args.probe_demod != "both":
+        return {}
+    return b2_readout_fields(readouts, labels)
+
+
+def check_world(world_name: str, seed: int) -> None:
+    """Refuse a silent fallback (e.g. the 2-modal Studyforrest stub)."""
+    from bouba_sens.cli import _build_world
+
+    expected = _EXPECTED_WORLD.get(world_name.lower().strip())
+    if expected is None:
+        return
+    got = type(_build_world(world_name, seed)).__name__
+    if got != expected:
+        raise SystemExit(f"--world {world_name} built {got}, expected {expected}")
+
+
+V07_CONFIRMATORY_POOL = range(4001, 4155)  # 4001-4150 + reserve 4151-4154
+
+
+def namespace_for(args: argparse.Namespace, seed: int) -> int | None:
+    """v07-b2 campaign code under a preset (pilot or confirmatory pool); else legacy."""
+    if args.preset is None:
+        return None
+    from bouba_sens.seeds import resolve_campaign
+
+    return resolve_campaign("v07-b2", seed).code
+
+
+def resolve_seeds(args: argparse.Namespace) -> list[int]:
+    seeds = list(args.seed_list) if args.seed_list is not None else list(range(args.seeds))
+    if any(s in V07_CONFIRMATORY_POOL for s in seeds) and not getattr(args, "osf_filed", ""):
+        raise SystemExit("seeds 4001-4154 are v0.7 confirmatory seeds: pass --osf-filed")
+    return seeds
+
+
+def configure_determinism(args: argparse.Namespace) -> None:
+    """Pin deterministic kernels on the confirmatory ``--seed-list`` path.
+
+    On Linux x86 the default CPU ``torch.linalg.lstsq`` can differ by
+    ~1 ulp between calls on identical input, so a listed seed would not
+    reproduce bit for bit. The legacy ``--seeds`` path is left unchanged.
+    """
+    if args.seed_list is not None:
+        torch.use_deterministic_algorithms(True)
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    apply_preset(args, sys.argv[1:])
+    configure_determinism(args)
+    if args.preset is not None:
+        check_world(args.world, seed=resolve_seeds(args)[0])
 
     from nerve_wml.methodology import mi_kraskov_ksg_continuous
 
@@ -194,15 +522,26 @@ def main() -> None:
     per_seed = []
     d_pr_list, d_2nn_list = [], []
 
-    for seed in range(args.seeds):
-        pre, post, labels = capture_probe(
+    for seed in resolve_seeds(args):
+        labels, readouts = _capture(
             args.world,
             seed,
             args.lock_after,
             args.steps_train,
             args.steps_lesion,
             args.batch_size,
+            train_batch=args.train_batch,
+            lesion_batch=args.lesion_batch,
+            probe_n=args.probe_n,
+            k_steps=args.k_steps,
+            rng_seed=seed if args.seed_list is not None else None,
+            readouts=("gumbel", "hard") if args.probe_demod == "both" else ("gumbel",),
+            probe_scheme=args.probe_scheme,
+            gumbel_k=args.gumbel_draws,
+            seed_namespace=namespace_for(args, seed),
         )
+        # Legacy estimators run on the primary (Gumbel) readout.
+        pre, post = readouts["gumbel"]
         n_samples, d_fused = pre.shape
 
         # --- E1.1 dimensionality of the Me3 probe representation ---
@@ -243,9 +582,15 @@ def main() -> None:
         mf_post = me3_mi_mine(post, labels.reshape(-1, 1), batch_size=min(256, n_samples))
         mine_full_delta = mf_post - mf_pre
 
+        # Amendment v0.7: primary Ross and secondary KSG on the full probe.
+        full_b2 = amendment_b2_fields(args, readouts, labels)
+
         per_seed.append(
             {
                 "seed": seed,
+                "probe_label_counts": {
+                    str(c): int(n) for c, n in zip(*np.unique(labels, return_counts=True), strict=True)
+                },
                 "N": n_samples,
                 "d_fused": d_fused,
                 "D_participation_ratio": d_pr,
@@ -258,13 +603,20 @@ def main() -> None:
                 "kraskov_post": k_post,
                 "mine_full_pre": mf_pre,
                 "mine_full_post": mf_post,
+                **full_b2,
             }
         )
         print(
             f"seed={seed} N={n_samples} d_fused={d_fused} "
             f"D_PR={d_pr:.2f} D_2NN={d_2nn:.2f} | "
             f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
-            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}",
+            f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}"
+            + (
+                f" Ross={full_b2['ross_full_delta_bits']:+.4f}"
+                f" KSGfull={full_b2['ksg_full_delta_bits']:+.4f}"
+                if full_b2
+                else ""
+            ),
             flush=True,
         )
 
@@ -282,13 +634,44 @@ def main() -> None:
     summary = {
         "world": args.world,
         "lock_after": args.lock_after,
-        "seeds": args.seeds,
+        "steps_train": args.steps_train,
+        "steps_lesion": args.steps_lesion,
+        # The lesion SNR ramp of _capture (fixed in code: 0 dB -> -20 dB).
+        "snr_init_db": 0.0,
+        "snr_floor_db": -20.0,
+        "seeds": args.seeds if args.seed_list is None else list(args.seed_list),
+        "train_batch": args.batch_size if args.train_batch is None else args.train_batch,
+        "lesion_batch": args.batch_size if args.lesion_batch is None else args.lesion_batch,
+        "probe_n": args.batch_size if args.probe_n is None else args.probe_n,
+        "k_steps": args.steps_lesion if args.k_steps is None else args.k_steps,
+        "probe_demod": args.probe_demod,
+        "probe_scheme": args.probe_scheme,
+        "gumbel_draws": args.gumbel_draws,
+        "preset": args.preset,
+        "primary_readout": f"gumbel_k{args.gumbel_draws}" if args.gumbel_draws else "gumbel",
+        "amendment_b2": bool(per_seed and "ross_full_delta_bits" in per_seed[0]),
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
         "binning_delta": ci([s["binning_delta_bits"] for s in per_seed]),
         "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in per_seed]),
         "mine_full_delta": ci([s["mine_full_delta_bits"] for s in per_seed]),
+        **(
+            {
+                "ross_full_delta": ci([s["ross_full_delta_bits"] for s in per_seed]),
+                "ksg_full_delta": ci([s["ksg_full_delta_bits"] for s in per_seed]),
+            }
+            if per_seed and "ross_full_delta_bits" in per_seed[0]
+            else {}
+        ),
+        **(
+            {
+                "ross_full_delta_hard": ci([s["ross_full_delta_bits_hard"] for s in per_seed]),
+                "ksg_full_delta_hard": ci([s["ksg_full_delta_bits_hard"] for s in per_seed]),
+            }
+            if args.probe_demod == "both"
+            else {}
+        ),
         "per_seed": per_seed,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

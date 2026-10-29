@@ -1,0 +1,4 @@
+Uninstalled 1 package in 7ms
+Installed 1 package in 6ms
+observed per-lock centres {"P(E-1 equivalent)": 1.0, "P(E-1 and E-1b)": 0.938, "P(E-1 and E-1b) on grid": {"150": 0.934, "300": 1.0, "500": 1.0}}
+all centres 0 {"P(E-1 equivalent)": 1.0, "P(E-1 and E-1b)": 0.951, "P(E-1 and E-1b) on grid": {"150": 0.968, "300": 1.0, "500": 1.0}}

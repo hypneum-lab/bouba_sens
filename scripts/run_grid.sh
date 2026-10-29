@@ -29,6 +29,11 @@ CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 # HARD during Phase 1 (0..200), GUMBEL during Phase 2 (200..300) for T2 cells.
 GATING_SCHEDULE="${GATING_SCHEDULE:-}"
 GATING_TARGET="${GATING_TARGET:-}"
+# ADR-0020 / amendments v0.7-v0.8: M2 SNR ramp length, forwarded as
+# --k-steps to every lesion cell (frozen at 50 for the v0.7 and v0.8
+# confirmatory grids). Empty = CLI default (5000), as in the historical
+# grids, whose floors only reached 19.21 / 19.41 / 19.80 dB.
+K_STEPS="${K_STEPS:-}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -40,6 +45,24 @@ if [[ -n "${SEEDS:-}" ]]; then
 else
     SEEDS=(0 1 2 3 4)
 fi
+# PI decision 2026-10-25: the v0.7 confirmatory seeds 4001-4150 and their
+# reserves 4151-4154 run only after filing (OSF_FILED=<OSF DOI>).
+for s in "${SEEDS[@]}"; do
+    if [[ "${s}" =~ ^[0-9]+$ ]] && (( s >= 4001 && s <= 4154 )) && [[ -z "${OSF_FILED:-}" ]]; then
+        echo "seed ${s} is a v0.7 confirmatory seed: set OSF_FILED=<OSF DOI> after filing" >&2
+        exit 2
+    fi
+done
+# PI decision 2026-10-25 (19:47): per-campaign seed namespaces
+# (bouba_sens.seeds). v0.7 B-1: confirmatory 4001-4154 -> 7102, pilot
+# 4201 -> 7101; other seeds keep the legacy derived seeds.
+seed_namespace_for() {
+    local s="$1"
+    if [[ "${s}" =~ ^[0-9]+$ ]] && (( s >= 4001 && s <= 4154 )); then echo 7102
+    elif [[ "${s}" == "4201" ]]; then echo 7101
+    else echo ""
+    fi
+}
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 
@@ -59,6 +82,8 @@ skipped=0
 for seed in "${SEEDS[@]}"; do
     # One Phase 1 checkpoint per seed (reused across T2 cells for that seed).
     phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
+    ns="$(seed_namespace_for "${seed}")"
+    local_count=0
     if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
         echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
         train_args=(
@@ -69,6 +94,7 @@ for seed in "${SEEDS[@]}"; do
             --out "${phase1_dir}"
         )
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
+        [[ -n "${ns}" ]] && train_args+=(--seed-namespace "${ns}")
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
         [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
@@ -88,6 +114,7 @@ for seed in "${SEEDS[@]}"; do
                 eval_json="${cell_dir}/eval_report.json"
 
                 count=$(( count + 1 ))
+                local_count=$(( local_count + 1 ))
 
                 if [[ -f "${eval_json}" ]]; then
                     skipped=$(( skipped + 1 ))
@@ -96,11 +123,16 @@ for seed in "${SEEDS[@]}"; do
 
                 echo "[${count}/${total}] ${cell_name}"
 
+                # Namespaced campaigns: cell seed = seed * 10000 + cell index of
+                # this seed (1-30), so the derived seeds do not depend on the
+                # other seeds of the run; legacy: the run-wide counter.
+                if [[ -n "${ns}" ]]; then cell_seed=$(( seed * 10000 + local_count ))
+                else cell_seed=$(( seed * 10000 + count )); fi
                 lesion_args=(
                     --modality "${modality}"
                     --timing "${timing}"
                     --steps "${STEPS_LESION}"
-                    --seed $(( seed * 10000 + count ))
+                    --seed "${cell_seed}"
                     --snr-floor "${snr_floor}"
                     --world "${WORLD}"
                     --out "${cell_dir}"
@@ -111,6 +143,8 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
                 [[ -n "${GATING_TARGET}" ]] && lesion_args+=(--transducer-gating-target "${GATING_TARGET}")
+                [[ -n "${K_STEPS}" ]] && lesion_args+=(--k-steps "${K_STEPS}")
+                [[ -n "${ns}" ]] && lesion_args+=(--seed-namespace "${ns}")
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"

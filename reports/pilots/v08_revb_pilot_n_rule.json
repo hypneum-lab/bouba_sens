@@ -1,0 +1,7 @@
+{
+  "source": "reports/pilots/v08_revb_pilot_quantities.json",
+  "sims": 100000,
+  "rng_seed": 20261831,
+  "N": null,
+  "note": "pilot not fileable as drafted"
+}

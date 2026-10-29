@@ -1,0 +1,151 @@
+{
+  "source": "reports/pilots/v07_b2_pilot_r4_seeds1101-1105.json",
+  "primary_readout": "gumbel_k8",
+  "probe_scheme": "balanced",
+  "gumbel_draws": 8,
+  "N_fixed": 150,
+  "bound_bits": 0.05,
+  "primary_values": [
+    -0.005849959740212983,
+    -0.043114269143861905,
+    0.015327155180127908,
+    -0.0032778994198790134,
+    -0.033724010591020724
+  ],
+  "primary_hl": -0.013893556981866999,
+  "primary_median": -0.005849959740212983,
+  "robust_primary_power": {
+    "inflation": 1.55757542255663,
+    "support": [
+      0.012528509372544598,
+      -0.04551346309312487,
+      0.04551346309312487,
+      0.01653468731282992,
+      -0.030887427159767264
+    ],
+    "mu=+0.00": {
+      "power_N150": 1.0,
+      "N_for_0.80_grid": 95
+    },
+    "mu=-0.02": {
+      "power_N150": 1.0,
+      "N_for_0.80_grid": 95
+    },
+    "label_planning_case": "adequately powered",
+    "size_at_bound": {
+      "theta=+0.05": 0.02295,
+      "theta=-0.05": 0.00255
+    }
+  },
+  "mean_based_secondary": {
+    "per_seed": [
+      -0.005849959740212983,
+      -0.043114269143861905,
+      0.015327155180127908,
+      -0.0032778994198790134,
+      -0.033724010591020724
+    ],
+    "mean": -0.014127796742969346,
+    "sd": 0.023864535557936398,
+    "sd_ucl80_df4": 0.03717081405577051,
+    "mu=+0.00": {
+      "exact_power_N150": 1.0000000000000153,
+      "N_for_0.80": 7
+    },
+    "mu=-0.02": {
+      "exact_power_N150": 1.0000000000000153,
+      "N_for_0.80": 11
+    },
+    "label_planning_case": "adequately powered"
+  },
+  "gumbel1_descriptive": {
+    "per_seed": [
+      -0.012496888199459044,
+      0.09407974773605514,
+      0.12267157247166233,
+      -0.012603289820440036,
+      0.04722935885877281
+    ],
+    "mean": 0.04777610020931824,
+    "sd": 0.06130285951298379,
+    "sd_ucl80_df4": 0.09548382730986546,
+    "mu=+0.00": {
+      "exact_power_N150": 0.9999978534628362,
+      "N_for_0.80": 33
+    },
+    "mu=-0.02": {
+      "exact_power_N150": 0.9855779155000819,
+      "N_for_0.80": 65
+    },
+    "label_planning_case": "adequately powered"
+  },
+  "hard_descriptive": {
+    "per_seed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mean": 0.0,
+    "sd": 0.0,
+    "degenerate": "every per-seed value is identical; the SD is 0, its UCL80 is 0 and the normal planning model of section 7 is undefined (any TOST on such data has a zero-width CI)"
+  },
+  "per_draw_delta_sd_within_seed": {
+    "1101": 0.04639890853217034,
+    "1102": 0.01740792500455441,
+    "1103": 0.06720286548883336,
+    "1104": 0.051851975175324506,
+    "1105": 0.03757534283730587
+  },
+  "switch": {
+    "per_seed": {
+      "1101": {
+        "pre": true,
+        "post": true,
+        "post_top1_share": 0.3310958598484549,
+        "post_between_class_share": 0.205997418138637,
+        "pre_top1_share": 0.32280230530659754,
+        "pre_between_class_share": 0.20042202895808825
+      },
+      "1102": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.1151368979461068,
+        "post_between_class_share": 0.0057648995287024295,
+        "pre_top1_share": 0.11735969225982905,
+        "pre_between_class_share": 0.005457301790267571
+      },
+      "1103": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.11587481683777033,
+        "post_between_class_share": 0.005977905682018433,
+        "pre_top1_share": 0.10872551850869916,
+        "pre_between_class_share": 0.006080980497363024
+      },
+      "1104": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.10444993928157024,
+        "post_between_class_share": 0.005394804336513492,
+        "pre_top1_share": 0.10792266677739756,
+        "pre_between_class_share": 0.005619492034517786
+      },
+      "1105": {
+        "pre": false,
+        "post": false,
+        "post_top1_share": 0.10638544440523984,
+        "post_between_class_share": 0.005320755861678276,
+        "pre_top1_share": 0.10539505188340215,
+        "pre_between_class_share": 0.005813268421348072
+      }
+    },
+    "post_count": 1,
+    "proportion": 0.2,
+    "ci95_exact": [
+      0.005050763379468115,
+      0.7164179361180895
+    ]
+  }
+}

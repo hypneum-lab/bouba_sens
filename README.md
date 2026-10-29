@@ -80,6 +80,16 @@ locked. Honest scope ; no overselling.
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
 - Pre-registration : **local, git-dated** — design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, 2026-04-20) ; amendments v0.4–v0.6 under `docs/osf/` (drafted as OSF amendments, **never filed on OSF**). No bouba_sens hypothesis is registered on OSF : `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only (issue #20, Erratum below).
+- Draft OSF amendments v0.7–v0.9 (2026-10-23), **DRAFT — not yet filed
+  on OSF (to be filed by the PI)**: TOST equivalence for B-1/B-2
+  (`docs/osf/amendment-v0.7-tost-equivalence-2026-10-23.md`),
+  subspace shift vs `LOCK_AFTER`
+  (`docs/osf/amendment-v0.8-subspace-shift-2026-10-23.md`),
+  decorrelation-window lesion
+  (`docs/osf/amendment-v0.9-decorrelation-window-2026-10-23.md`).
+  Each is a standalone pre-registration (no filed parent); none alters
+  the design spec or ADR-0019; power analysis in
+  `scripts/power_prereg_2026_10.py`.
 - Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
 
 ## Headline findings (v0.5.5)

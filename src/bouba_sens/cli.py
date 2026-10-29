@@ -274,6 +274,10 @@ def train(
         ),
     ),
     out: Path = typer.Option(..., help="Run directory"),
+    seed_namespace: int | None = typer.Option(
+        None,
+        help="campaign seed-namespace code (bouba_sens.seeds); None = legacy derived seeds",
+    ),
 ) -> None:
     """Phase 1 pretrain on the selected world, save Checkpoint."""
     import pickle
@@ -316,7 +320,7 @@ def train(
         transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
 
     v2_seed = seed + 777 if probe_v2_seed is None else probe_v2_seed
     if probe_v2:
@@ -339,6 +343,11 @@ def train(
                 "phase": "pretrain",
                 "steps": steps,
                 "seed": seed,
+                "world": world,
+                # PI decision 2026-10-25: every grid output records the world
+                # class, so a silent fallback to the stub is visible.
+                "world_class": type(world_obj).__name__,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
             },
@@ -452,6 +461,10 @@ def lesion(
         ),
     ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
+    seed_namespace: int | None = typer.Option(
+        None,
+        help="campaign seed-namespace code (bouba_sens.seeds); None = legacy derived seeds",
+    ),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
     skips pretrain for T1 congenital runs (ckpt=None).
@@ -502,7 +515,7 @@ def lesion(
         transducer_gating_target=transducer_gating_target,
     )
     head = IntegrationHead(n_classes=4)
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
 
     # T2 late-acquired: restore checkpoint. T1 congenital: skip pretrain.
     if ckpt is not None and timing.upper() == "T2":
@@ -554,6 +567,11 @@ def lesion(
                 "snr_init": snr_init,
                 "snr_floor": snr_floor,
                 "k_steps": k_steps,
+                # Effective SNR (dB) at every lesion step (v0.7 section 4.1 check).
+                "snr_trajectory_db": [float(schedule(t)) for t in range(steps)],
+                "world": world,
+                "world_class": type(world_obj).__name__,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
             },
@@ -594,6 +612,7 @@ def lesion(
                 "steps": steps,
                 "world": world,
                 "t1_ckpt": t1_ref,
+                "seed_namespace": seed_namespace,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
             }
@@ -646,7 +665,9 @@ def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
     return mux, sensories, nerve, head, world_obj
 
 
-def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:  # type: ignore[no-untyped-def]
+def _compute_me1(  # type: ignore[no-untyped-def]
+    mux, sensories, nerve, head, world_obj, *, seed: int, seed_namespace: int | None = None
+) -> float:
     """ADR-0007 Phase B — canonical Me1 probe pass.
 
     Wires a fresh `AdaptationLoop` around pre-built components and runs
@@ -671,7 +692,8 @@ def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:
     _np.random.seed(seed + 777)
     _random.seed(seed + 777)
 
-    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head)
+    # PI decision 2026-10-25 (19:47): the cell's seed namespace, as in lesion.
+    loop = AdaptationLoop(world_obj, mux, sensories, nerve, head, seed_namespace=seed_namespace)
     return loop.query_accuracy("audio", seed=seed + 777)
 
 
@@ -699,7 +721,16 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         for m, sd in state["sensory"].items():
             sensories[m].load_state_dict(sd)
         seed_value = int(OmegaConf.select(cfg, "seed"))
-        me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
+        ns_raw = OmegaConf.select(cfg, "seed_namespace", default=None)
+        me1 = _compute_me1(
+            mux,
+            sensories,
+            nerve,
+            head,
+            world_obj,
+            seed=seed_value,
+            seed_namespace=None if ns_raw is None else int(ns_raw),
+        )
         return me1, seed_value, path.name
 
     # Legacy fallback — pre-Phase-B ad-hoc cells.
@@ -866,7 +897,16 @@ def eval(
         head.load_state_dict(state["head"])
         for m, sd in state["sensory"].items():
             sensories[m].load_state_dict(sd)
-        me1_probe = _compute_me1(mux, sensories, nerve, head, world_obj, seed=int(cfg["seed"]))
+        ns_raw = OmegaConf.select(cfg, "seed_namespace", default=None)
+        me1_probe = _compute_me1(
+            mux,
+            sensories,
+            nerve,
+            head,
+            world_obj,
+            seed=int(cfg["seed"]),
+            seed_namespace=None if ns_raw is None else int(ns_raw),
+        )
 
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:

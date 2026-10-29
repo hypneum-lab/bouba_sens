@@ -15,8 +15,16 @@
 
 ``aggregate`` keeps *complete* seed blocks (``Y`` defined at all 7 levels),
 counts invalid cells and undefined blocks per level with their
-denominators, and flags a protocol failure below 80 % complete blocks.
-``verdict`` applies the ordered decision rule of section 6.
+denominators, and flags a protocol failure below 70 % complete blocks
+(PI decision 2026-10-24; was 80 %). It also keeps every block (``y_all``,
+NaN where ``Y`` is undefined) for the selection safeguard: rank
+exclusions are outcome-dependent, so an analysis of complete blocks
+alone can be biased (Codex rounds 2-3). ``worst_case_page_test`` runs
+the Page test on all blocks, each undefined ``Y`` completed in the way
+that minimises its block's Page contribution (conservative under any
+exclusion mechanism), and ``verdict`` requires the Page test and the
+magnitude guard to pass on both the complete blocks and the worst-case
+analysis.
 """
 
 from __future__ import annotations
@@ -28,6 +36,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import torch
 
+from bouba_sens.metrics.page_trend import N_PERM, PERM_SEED, PageResult, page_worst_case_test
 from bouba_sens.metrics.subspace import (
     K_DEFAULT,
     SubspaceRankError,
@@ -41,7 +50,7 @@ from bouba_sens.subspace_protocol import BlockCodes, CellKey
 LOCKS: tuple[int, ...] = (25, 50, 75, 100, 125, 150, 175)
 N_CELLS = 15  # 5 lesioned modalities x 3 SNR levels
 MIN_VALID_CELLS = 12
-MIN_COMPLETE_FRACTION = 0.8  # applied in integer form: 5 * complete >= 4 * N
+MIN_COMPLETE_FRACTION = 0.7  # applied in integer form: 10 * complete >= 7 * N
 MAX_TECHNICAL_REPLACEMENTS = 4
 
 
@@ -142,6 +151,8 @@ class AggregateResult:
     per_level: list[LevelCounts]
     complete_fraction: float
     protocol_failure: bool
+    seeds_all: list[int] = field(default_factory=list)
+    y_all: np.ndarray = field(default_factory=lambda: np.empty((0, 0)))  # NaN = undefined
 
 
 def aggregate(
@@ -151,7 +162,7 @@ def aggregate(
     locks: Sequence[int] = LOCKS,
     expected_seeds: Sequence[int] | None = None,
 ) -> AggregateResult:
-    """Keep complete seed blocks, count exclusions per level, test the 80 % rule.
+    """Keep complete seed blocks, count exclusions per level, test the 70 % rule.
 
     ``blocks`` must hold every (seed, lock) result of exactly
     ``n_confirmatory`` seeds, technical replacements already applied;
@@ -207,8 +218,39 @@ def aggregate(
         locks=locks,
         per_level=per_level,
         complete_fraction=n_complete / n_confirmatory,
-        protocol_failure=5 * n_complete < 4 * n_confirmatory,
+        protocol_failure=10 * n_complete < 7 * n_confirmatory,
+        seeds_all=sorted(by_seed),
+        y_all=np.array(
+            [
+                [np.nan if by_seed[s][lk].y is None else by_seed[s][lk].y for lk in locks]
+                for s in sorted(by_seed)
+            ],
+            dtype=np.float64,
+        ).reshape(len(by_seed), len(locks)),
     )
+
+
+def worst_case_page_test(
+    agg: AggregateResult, *, n_perm: int = N_PERM, seed: int = PERM_SEED
+) -> PageResult:
+    """Selection safeguard: Page test on all N blocks with worst-case completion.
+
+    Every undefined ``Y`` is completed in the way that minimises its
+    block's Page contribution (``page_trend.page_worst_case_test``), so
+    the p-value is conservative whatever the exclusion mechanism.
+    """
+    return page_worst_case_test(agg.y_all, n_perm=n_perm, seed=seed)
+
+
+def worst_case_endpoint_contrast(agg: AggregateResult) -> float:
+    """Median over all blocks of ``Y(175) - Y(25)`` on the imputed matrix.
+
+    An undefined endpoint makes the block's contrast -inf.
+    """
+    lo, hi = agg.locks.index(min(agg.locks)), agg.locks.index(max(agg.locks))
+    diff = agg.y_all[:, hi] - agg.y_all[:, lo]
+    diff[np.isnan(diff)] = -np.inf
+    return float(np.median(diff))
 
 
 class SeedRoster:
@@ -252,19 +294,31 @@ class SeedRoster:
         return replacement
 
 
-def verdict(agg: AggregateResult, *, p_value: float, alpha: float = 0.05) -> str:
-    """Ordered decision rule of section 6.
+def verdict(
+    agg: AggregateResult, *, p_value: float, p_value_worst_case: float, alpha: float = 0.05
+) -> str:
+    """Ordered decision rule of section 6, with the selection safeguard.
 
-    Returns ``protocol_failure``, ``supported``, ``detectable_sub_floor`` or
-    ``not_demonstrated``. The magnitude guard is the (heuristic) strict
-    inequality: median over complete blocks of ``Y(175) - Y(25)`` greater than
-    the median ``S_split`` over complete blocks and all levels.
+    ``p_value`` is the Page permutation p-value on the complete blocks,
+    ``p_value_worst_case`` that of ``worst_case_page_test(agg)`` (all
+    blocks, worst-case completion). Returns ``protocol_failure``,
+    ``not_demonstrated`` (complete-block Page fails),
+    ``not_robust_to_exclusions`` (complete blocks reject, the worst-case
+    analysis does not), ``supported``
+    (both Page tests and both guards pass) or ``detectable_sub_floor``.
+    The magnitude guard is the (heuristic) strict inequality: median
+    endpoint contrast greater than the median ``S_split`` over complete
+    blocks and all levels; in the worst-case analysis an undefined
+    endpoint counts as -inf.
     """
     if agg.protocol_failure:
         return "protocol_failure"
     if not p_value < alpha:
         return "not_demonstrated"
+    if not p_value_worst_case < alpha:
+        return "not_robust_to_exclusions"
     lo, hi = agg.locks.index(min(agg.locks)), agg.locks.index(max(agg.locks))
     contrast = float(np.median(agg.y[:, hi] - agg.y[:, lo]))
     floor = float(np.median(agg.s_split))
-    return "supported" if contrast > floor else "detectable_sub_floor"
+    guard_ok = contrast > floor and worst_case_endpoint_contrast(agg) > floor
+    return "supported" if guard_ok else "detectable_sub_floor"

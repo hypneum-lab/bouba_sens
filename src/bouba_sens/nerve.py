@@ -269,7 +269,13 @@ class CrossModalNerve(nn.Module):
             return self._transducer_gating_target
         return self.transducer_gating
 
-    def fuse(self, letters: dict[Modality, Tensor], *, hard_demod: bool = False) -> Tensor:
+    def fuse(
+        self,
+        letters: dict[Modality, Tensor],
+        *,
+        hard_demod: bool = False,
+        softmax_demod: bool = False,
+    ) -> Tensor:
         """Fuse 5 modality carriers into a shared `(B, K, d_hidden)` tensor.
 
         Args:
@@ -279,6 +285,9 @@ class CrossModalNerve(nn.Module):
                 code distribution to the codebook: no Gumbel sampling, no RNG
                 use, same carriers -> same output. Default False keeps the
                 stochastic Gumbel-softmax training behaviour unchanged.
+            softmax_demod: deterministic soft probe path (amendment v0.8 rev.
+                B, PI decision 2026-10-25): ``softmax(logits / 1)`` of the
+                demodulator logits (``bouba_sens.demod``), no Gumbel sample.
 
         Returns:
             fused: `(B, K, d_hidden)` float32. Gradient flows back through
@@ -287,7 +296,13 @@ class CrossModalNerve(nn.Module):
             AND through every active transducer.
         """
         # 1. Soft demod each carrier to (B, K, A) distribution.
-        if hard_demod:
+        if hard_demod and softmax_demod:
+            raise ValueError("hard_demod and softmax_demod are exclusive")
+        if softmax_demod:
+            from bouba_sens.demod import softmax_readout
+
+            soft = {m: softmax_readout(self.mux, letters[m]) for m in MODALITIES}
+        elif hard_demod:
             n_alpha = self.mux.cfg.alphabet_size
             soft = {
                 m: F.one_hot(self.mux.demodulate(letters[m], hard=True), n_alpha).to(

@@ -21,6 +21,8 @@ from bouba_sens.metrics.subspace_aggregate import (
     aggregate,
     evaluate_block,
     verdict,
+    worst_case_endpoint_contrast,
+    worst_case_page_test,
 )
 from bouba_sens.sensory import MODALITIES
 from bouba_sens.subspace_protocol import SNR_FLOORS, BlockCodes
@@ -42,7 +44,7 @@ def _block(
     bad_cells: int = 0,
     pre_rank: int = 8,
     ctrl_rank: int = 8,
-    seed: int = 2001,
+    seed: int = 9001,  # outside every amendment seed pool
     lock: int = 25,
     n: int = 64,
 ) -> BlockCodes:
@@ -69,11 +71,11 @@ def test_frozen_constants() -> None:
 def test_all_valid_block() -> None:
     b = _block()
     r = evaluate_block(b, k=K)
-    assert (r.seed, r.lock, r.n_cells, r.n_valid) == (2001, 25, 15, 15)
+    assert (r.seed, r.lock, r.n_cells, r.n_valid) == (9001, 25, 15, 15)
     c = subspace_shift(b.z_pre, b.z_control, K)
     expected = [subspace_shift(b.z_pre, b.z_post[key], K) - c for key in KEYS]
     assert r.y == pytest.approx(float(np.median(expected)))
-    assert r.s_split == pytest.approx(split_half_noise_floor(b.z_pre, K, seed=2001))
+    assert r.s_split == pytest.approx(split_half_noise_floor(b.z_pre, K, seed=9001))
     assert all(r.cell_valid.values())
     assert r.delta_s[KEYS[0]] == pytest.approx(expected[0])
 
@@ -199,7 +201,14 @@ def test_invalid_cells_counted_with_denominator() -> None:
 
 @pytest.mark.parametrize(
     ("n", "complete", "failure"),
-    [(20, 16, False), (20, 15, True), (30, 24, False), (30, 23, True)],
+    [
+        (20, 14, False),
+        (20, 13, True),
+        (30, 21, False),
+        (30, 20, True),
+        (40, 28, False),
+        (40, 27, True),
+    ],
 )
 def test_protocol_failure_threshold(n: int, complete: int, failure: bool) -> None:
     undefined = {i: [25] for i in range(n - complete)}
@@ -289,18 +298,76 @@ def _verdict_agg(endpoint_gain: float, s_split: float = 0.1, drop: int = 0):
 
 
 def test_verdict_protocol_failure_has_priority() -> None:
-    assert verdict(_verdict_agg(1.0, drop=5), p_value=0.001) == "protocol_failure"
+    agg = _verdict_agg(1.0, drop=7)
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "protocol_failure"
 
 
 def test_verdict_supported() -> None:
-    assert verdict(_verdict_agg(0.5), p_value=0.049) == "supported"
+    assert verdict(_verdict_agg(0.5), p_value=0.049, p_value_worst_case=0.049) == "supported"
 
 
 def test_verdict_detectable_but_sub_floor() -> None:
-    assert verdict(_verdict_agg(0.05), p_value=0.001) == "detectable_sub_floor"
+    agg = _verdict_agg(0.05)
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "detectable_sub_floor"
     # strict inequality: contrast equal to the floor does not pass the guard
-    assert verdict(_verdict_agg(0.5, s_split=0.5), p_value=0.001) == "detectable_sub_floor"
+    agg = _verdict_agg(0.5, s_split=0.5)
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.001) == "detectable_sub_floor"
 
 
 def test_verdict_not_demonstrated() -> None:
-    assert verdict(_verdict_agg(0.5), p_value=0.05) == "not_demonstrated"
+    agg = _verdict_agg(0.5)
+    assert verdict(agg, p_value=0.05, p_value_worst_case=0.001) == "not_demonstrated"
+
+
+# ------------------------------------------- selection safeguard (Codex round 2)
+
+
+def test_aggregate_keeps_every_block_for_the_sensitivity_analysis() -> None:
+    agg = aggregate(_grid(20, undefined={0: [25], 1: [175, 100]}), n_confirmatory=20)
+    assert agg.y_all.shape == (20, 7)
+    assert np.isnan(agg.y_all[0, 0]) and np.isnan(agg.y_all[1, 3]) and np.isnan(agg.y_all[1, 6])
+    assert agg.seeds_all == list(range(2001, 2021))
+    assert np.array_equal(agg.y_all[2:], agg.y)
+
+
+def test_worst_case_p_value_uses_every_block_and_is_conservative() -> None:
+    agg = aggregate(_grid(20, undefined={0: [100], 1: [125, 150]}), n_confirmatory=20)
+    res = worst_case_page_test(agg, n_perm=2_000)
+    assert res.n_blocks == 20  # incomplete blocks are not dropped
+    full = aggregate(_grid(20), n_confirmatory=20)
+    assert res.l_obs <= worst_case_page_test(full, n_perm=2_000).l_obs
+
+
+def test_no_exclusion_makes_both_analyses_identical() -> None:
+    from bouba_sens.metrics.page_trend import page_l
+
+    agg = aggregate(_grid(20), n_confirmatory=20)
+    assert worst_case_page_test(agg, n_perm=1_000).l_obs == page_l(agg.y)
+
+
+def test_verdict_requires_robustness_to_excluded_blocks() -> None:
+    agg = _verdict_agg(0.5, drop=3)
+    assert verdict(agg, p_value=0.001, p_value_worst_case=0.2) == "not_robust_to_exclusions"
+    with pytest.raises(TypeError):
+        verdict(agg, p_value=0.001)  # type: ignore[call-arg]
+
+
+def test_worst_case_guard_counts_excluded_endpoints_as_minus_infinity() -> None:
+    # 9 of 20 blocks lose the 175 level: the adversarial median endpoint
+    # contrast still passes (11 finite > floor) but 11 losses would fail it.
+    agg = aggregate(
+        [
+            replace(r, s_split=None if r.y is None else 0.1)
+            for r in _grid(20, undefined={i: [175] for i in range(9)})
+        ],
+        n_confirmatory=20,
+    )
+    assert worst_case_endpoint_contrast(agg) > 0.1
+    agg = aggregate(
+        [
+            replace(r, s_split=None if r.y is None else 0.1)
+            for r in _grid(20, undefined={i: [175] for i in range(11)})
+        ],
+        n_confirmatory=20,
+    )
+    assert worst_case_endpoint_contrast(agg) == -np.inf

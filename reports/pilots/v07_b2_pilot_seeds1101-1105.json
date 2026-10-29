@@ -1,0 +1,227 @@
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": [
+    1101,
+    1102,
+    1103,
+    1104,
+    1105
+  ],
+  "train_batch": 16,
+  "lesion_batch": 16,
+  "probe_n": 512,
+  "k_steps": 50,
+  "probe_demod": "both",
+  "preset": "v07-e2",
+  "primary_readout": "hard",
+  "amendment_b2": true,
+  "D_participation_ratio_mean": 1.0000001668930054,
+  "D_twoNN_mean": null,
+  "kraskov_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 1.4511036166549478e-08,
+    "ci95": [
+      0.0,
+      3.3859084388615446e-08
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": 1.1810303921496421e-07,
+    "ci95": [
+      -4.3533108499648435e-08,
+      3.833311899779916e-07
+    ],
+    "n": 5
+  },
+  "ross_full_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "ksg_full_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "ross_full_delta_gumbel": {
+    "mean": 0.00990807646131222,
+    "ci95": [
+      0.0,
+      0.021992091031636272
+    ],
+    "n": 5
+  },
+  "ksg_full_delta_gumbel": {
+    "mean": 0.00039301649358695624,
+    "ci95": [
+      -0.018901748656737154,
+      0.02008079813749802
+    ],
+    "n": 5
+  },
+  "per_seed": [
+    {
+      "seed": 1101,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 1.000000238418579,
+      "D_twoNN": NaN,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 2.4185060277582465e-08,
+      "mine_full_delta_bits": -7.25551808327474e-08,
+      "kraskov_pre": 11.995379398114219,
+      "kraskov_post": 11.995379398114219,
+      "mine_full_pre": 7.25551808327474e-08,
+      "mine_full_post": 0.0,
+      "ross_full_delta_bits": 0.0,
+      "ross_full_pre_bits": -7.6644709974808105,
+      "ross_full_post_bits": -7.6644709974808105,
+      "ross_n_zero_distance_pre": 512,
+      "ross_n_zero_distance_post": 512,
+      "ksg_full_delta_bits": 0.0,
+      "ross_full_delta_bits_gumbel": 0.0,
+      "ross_full_pre_bits_gumbel": 0.0,
+      "ross_full_post_bits_gumbel": 0.0,
+      "ross_n_zero_distance_pre_gumbel": 0,
+      "ross_n_zero_distance_post_gumbel": 0,
+      "ksg_full_delta_bits_gumbel": 0.0,
+      "primary_readout": "hard"
+    },
+    {
+      "seed": 1102,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 1.000000238418579,
+      "D_twoNN": NaN,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": 6.630703769075684e-07,
+      "kraskov_pre": 11.995379398114219,
+      "kraskov_post": 11.995379398114219,
+      "mine_full_pre": 5.823094066648075e-06,
+      "mine_full_post": 6.486164443555643e-06,
+      "ross_full_delta_bits": 0.0,
+      "ross_full_pre_bits": -6.54971344284729,
+      "ross_full_post_bits": -6.54971344284729,
+      "ross_n_zero_distance_pre": 512,
+      "ross_n_zero_distance_post": 512,
+      "ksg_full_delta_bits": 0.0,
+      "ross_full_delta_bits_gumbel": 0.01405776783395244,
+      "ross_full_pre_bits_gumbel": 0.03966576012664953,
+      "ross_full_post_bits_gumbel": 0.05372352796060197,
+      "ross_n_zero_distance_pre_gumbel": 0,
+      "ross_n_zero_distance_post_gumbel": 0,
+      "ksg_full_delta_bits_gumbel": 0.033467996895830035,
+      "primary_readout": "hard"
+    },
+    {
+      "seed": 1103,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 1.0000001192092896,
+      "D_twoNN": NaN,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 4.837012055516493e-08,
+      "mine_full_delta_bits": 0.0,
+      "kraskov_pre": 11.995379398114219,
+      "kraskov_post": 11.995379398114219,
+      "mine_full_pre": 0.0,
+      "mine_full_post": 0.0,
+      "ross_full_delta_bits": 0.0,
+      "ross_full_pre_bits": -7.6644709974808105,
+      "ross_full_post_bits": -7.6644709974808105,
+      "ross_n_zero_distance_pre": 512,
+      "ross_n_zero_distance_post": 512,
+      "ksg_full_delta_bits": 0.0,
+      "ross_full_delta_bits_gumbel": 0.0,
+      "ross_full_pre_bits_gumbel": 0.0,
+      "ross_full_post_bits_gumbel": 0.0,
+      "ross_n_zero_distance_pre_gumbel": 0,
+      "ross_n_zero_distance_post_gumbel": 0,
+      "ksg_full_delta_bits_gumbel": 0.0,
+      "primary_readout": "hard"
+    },
+    {
+      "seed": 1104,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 1.0000001192092896,
+      "D_twoNN": NaN,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": 0.0,
+      "kraskov_pre": 11.995379398114219,
+      "kraskov_post": 11.995379398114219,
+      "mine_full_pre": 0.0,
+      "mine_full_post": 0.0,
+      "ross_full_delta_bits": 0.0,
+      "ross_full_pre_bits": -6.115687920626921,
+      "ross_full_post_bits": -6.115687920626921,
+      "ross_n_zero_distance_pre": 512,
+      "ross_n_zero_distance_post": 512,
+      "ksg_full_delta_bits": 0.0,
+      "ross_full_delta_bits_gumbel": 0.035482614472608656,
+      "ross_full_pre_bits_gumbel": -0.02044210520224416,
+      "ross_full_post_bits_gumbel": 0.015040509270364497,
+      "ross_n_zero_distance_pre_gumbel": 0,
+      "ross_n_zero_distance_post_gumbel": 0,
+      "ksg_full_delta_bits_gumbel": -0.031502914427895254,
+      "primary_readout": "hard"
+    },
+    {
+      "seed": 1105,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 1.0000001192092896,
+      "D_twoNN": NaN,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": 0.0,
+      "kraskov_pre": 11.995379398114219,
+      "kraskov_post": 11.995379398114219,
+      "mine_full_pre": 0.0,
+      "mine_full_post": 0.0,
+      "ross_full_delta_bits": 0.0,
+      "ross_full_pre_bits": -7.6644709974808105,
+      "ross_full_post_bits": -7.6644709974808105,
+      "ross_n_zero_distance_pre": 512,
+      "ross_n_zero_distance_post": 512,
+      "ksg_full_delta_bits": 0.0,
+      "ross_full_delta_bits_gumbel": 0.0,
+      "ross_full_pre_bits_gumbel": 0.0,
+      "ross_full_post_bits_gumbel": 0.0,
+      "ross_n_zero_distance_pre_gumbel": 0,
+      "ross_n_zero_distance_post_gumbel": 0,
+      "ksg_full_delta_bits_gumbel": 0.0,
+      "primary_readout": "hard"
+    }
+  ]
+}
