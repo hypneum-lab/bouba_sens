@@ -170,7 +170,7 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
         h5_path = tmp_path / f"mic_{shift_s}.hdf5"
         with h5py.File(h5_path, "w") as h5:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
-        mel, covered, _ = extract.audio_frames(wav_path, h5_path, starts)
+        mel, covered = extract.audio_frames(wav_path, h5_path, starts)
         assert covered.all()
         return np.asarray(mel.mean(axis=1))
 
@@ -198,9 +198,112 @@ def test_audio_frames_rejects_off_by_one_timestamp_count(tmp_path: Path) -> None
         with h5py.File(h5_path, "w") as h5:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
         info: dict[str, object] = {}
-        _mel, covered, n_gap = extract.audio_frames(wav_path, h5_path, starts, info)
-        assert not covered.any() and n_gap == 0
+        _mel, covered = extract.audio_frames(wav_path, h5_path, starts, info)
+        assert not covered.any()
         assert "samples vs" in str(info["error"])
+
+
+def _bursty_stamps(n_chunks: int, sr: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
+    """True last-sample times and burst-stamped times centred on them.
+
+    Chunks are stamped in groups of 1-3 sharing the mean true time of the
+    group, as in the S00 microphone files (steps ~0, ~43, ~85 ms at 48 kHz).
+    """
+    true = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / sr
+    rng = np.random.default_rng(seed)
+    stamps = np.empty(n_chunks)
+    k = 0
+    while k < n_chunks:
+        g = min(int(rng.integers(1, 4)), n_chunks - k)
+        stamps[k : k + g] = true[k : k + g].mean()
+        k += g
+    return true, stamps
+
+
+def test_audio_bursty_timestamps_kept(tmp_path: Path) -> None:
+    """Burst-stamped chunks: no frame dropped, the burst lands in its frame."""
+    sr = 48000
+    n_chunks = 200  # 8.5 s: long enough for the fitted rate to settle
+    win = sr // 10
+    target = 42
+    wav = np.zeros(n_chunks * CHUNK, dtype=np.float32)
+    rng = np.random.default_rng(2)
+    # Burst in the central 50 ms of the target window: a placement error of
+    # 25 ms (the old per-chunk mapping was off by up to ~85 ms) would leak.
+    lo, hi = target * win + win // 4, (target + 1) * win - win // 4
+    wav[lo:hi] = rng.uniform(-0.8, 0.8, hi - lo)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, wav, sr, subtype="FLOAT")
+    _true, ts = _bursty_stamps(n_chunks, sr, seed=3)
+    steps = np.diff(ts)
+    assert (steps == 0).any() and (steps > 1.5 * CHUNK / sr).any()  # really bursty
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    first = 1
+    starts = T0 + 0.1 * np.arange(first, 84)
+    info: dict[str, object] = {}
+    mel, covered = extract.audio_frames(wav_path, h5_path, starts, info)
+    assert "error" not in info
+    assert covered.all()  # nothing dropped despite 0 / 85 ms steps
+    e = np.asarray(mel.mean(axis=1))
+    assert int(np.argmax(e)) + first == target
+    np.testing.assert_allclose(np.delete(e, target - first), np.log(1e-6), atol=1e-9)
+    fit = info["fit"]
+    assert isinstance(fit, dict)
+    assert fit["rate_dev"] <= extract.MIC_RATE_TOL
+    assert CHUNK / sr / 2 < fit["res_max"] < 2 * CHUNK / sr  # jitter is seen, not fatal
+
+
+def test_audio_bad_rate_rejected(tmp_path: Path) -> None:
+    """Timestamps implying 44.1 kHz against a 48 kHz WAV: file rejected."""
+    sr = 48000
+    n_chunks = 64
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="FLOAT")
+    ts = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / 44100
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 20), info)
+    assert not covered.any() and info.get("fit_rejected") is True
+    assert "implied rate 44100.0 Hz" in str(info["error"])
+
+    # Same rate error through a session: the counter and the manifest line.
+    sub = _write_subject(tmp_path / "raw")
+    mic = next(sub.glob("*microphone_S00.hdf5"))
+    with h5py.File(mic, "a") as h5:
+        ds = h5["sink"]["chunk_timestamp"]["time_s"]
+        t = np.asarray(ds)
+        ds[...] = T0 + (t - T0) * (48000 / 44100)
+    counts: dict[str, int] = {}
+    report: list[dict[str, object]] = []
+    wear = next(sub.glob("*wearables*"))
+    sess = extract._extract_session(wear, sub, "S00", False, counts, {}, report)
+    assert sess is not None and len(sess["labels"]) == 0
+    assert counts["audio_file_bad_clock_fit"] == 1
+    assert "audio_file_inconsistent" not in counts
+    assert "REJECTED" in "\n".join(extract._span_lines(report))
+
+
+def test_audio_clock_jump_rejected(tmp_path: Path) -> None:
+    """A 2 s clock jump mid-file breaks the residual bound, not the rate one."""
+    sr = 1000  # low rate keeps a long (8192 s) file small
+    n_chunks = 4000
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="PCM_16")
+    ts = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / sr
+    ts[n_chunks // 2 :] += 2.0
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 20), info)
+    assert not covered.any() and info.get("fit_rejected") is True
+    assert "residual" in str(info["error"])
+    fit = info["fit"]
+    assert isinstance(fit, dict) and fit["rate_dev"] <= extract.MIC_RATE_TOL
 
 
 def test_session_counts_inconsistent_audio_file(tmp_path: Path) -> None:
@@ -251,6 +354,7 @@ def test_rows_side_file_and_manifest_spans(tmp_path: Path) -> None:
     assert "0. Slice a cucumber" in manifest
     assert "backwards steps=0" in manifest
     assert "microphone/" in manifest and "labelled segments" in manifest
+    assert "microphone clock fit" in manifest and ": accepted" in manifest
 
 
 def _file_hashes(out: Path) -> dict[str, str]:

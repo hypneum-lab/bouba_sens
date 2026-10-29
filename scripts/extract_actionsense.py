@@ -78,6 +78,14 @@ N_MELS = 128
 # ActionNet recording_data/sensor_streamers/MicrophoneStreamer.py
 # (chunk_size = 2048; WAV and chunk_timestamp are appended together).
 MIC_CHUNK = 2048
+# Microphone clock-fit acceptance (pilot S00, 2026-10-29: chunk stamps come
+# in bursts, steps ~0/43/85 ms, max 141 ms; 3660.3 s of stamps vs 3658.1 s
+# of samples over the 18-11-04 file, i.e. ~6e-4). A file is rejected when
+# the fitted rate deviates from the WAV rate by more than MIC_RATE_TOL
+# (relative; 44.1 vs 48 kHz is 8e-2) or any residual exceeds
+# MIC_RESIDUAL_MAX_S (a real gap or clock jump, not burst jitter).
+MIC_RATE_TOL = 2e-3
+MIC_RESIDUAL_MAX_S = 0.5
 FFMPEG_MIN = (5, 1)  # `-fps_mode` needs ffmpeg >= 5.1
 LOWPASS_CUTOFF_HZ = 0.5
 LOWPASS_MIN_FRAMES = 10  # sosfiltfilt (order 2) needs more than 9 samples
@@ -162,21 +170,52 @@ def _log_mel(frames: np.ndarray, fb: np.ndarray) -> np.ndarray:
     return np.log(power @ fb.T + 1e-6)
 
 
+def mic_clock_fit(ts: np.ndarray, chunk: int, sr: float) -> dict[str, float]:
+    """Least-squares line through the chunk timestamps against sample index.
+
+    Chunk ``k`` is stamped at its last sample, index ``(k + 1) * chunk - 1``,
+    so the fit is ``ts[k] = a + b * ((k + 1) * chunk - 1)`` and sample ``j``
+    lies at ``a + b * j``. Returns ``a``, ``b``, the implied sample rate
+    ``1 / b``, its relative deviation from ``sr`` and the median, p99 and
+    max of ``|residual|`` (s). Bursty stamping (steps of 0, 43, 85 ms around
+    a steady clock) only adds residuals; the line follows the true clock.
+    """
+    idx = (np.arange(len(ts), dtype=np.float64) + 1.0) * chunk - 1.0
+    t_rel = ts - ts[0]  # keep the epoch offset out of the regression
+    im, tm = idx.mean(), t_rel.mean()
+    b = float(((idx - im) * (t_rel - tm)).sum() / ((idx - im) ** 2).sum())
+    a_rel = float(tm - b * im)
+    res = np.abs(t_rel - (a_rel + b * idx))
+    rate = 1.0 / b if b > 0 else float("nan")
+    return {
+        "a": float(ts[0]) + a_rel,
+        "b": b,
+        "rate": rate,
+        "rate_dev": abs(rate - sr) / sr if b > 0 else float("inf"),
+        "res_median": float(np.median(res)),
+        "res_p99": float(np.percentile(res, 99)),
+        "res_max": float(res.max()),
+    }
+
+
 def audio_frames(
     wav_path: Path,
     mic_h5_path: Path,
     starts: np.ndarray,
     info: dict[str, object] | None = None,
-) -> tuple[np.ndarray, np.ndarray, int]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Log-mel (N, 128) for each frame start covered by this microphone file.
 
-    Returns ``(mel, covered, n_gap)``. A chunk timestamp is the time of the
-    last sample of its chunk, so sample ``i`` of chunk ``k`` lies at
-    ``ts[k] - (MIC_CHUNK - 1 - i % MIC_CHUNK) / sr``. The file is rejected
-    (nothing covered, ``info["error"]`` set) unless ``len(wav) == MIC_CHUNK *
-    len(ts)`` and the timestamps are monotonic. Frames whose window is not
-    inside the recording, or straddles a timestamp discontinuity, are not
-    covered. ``info`` receives ``span`` (first sample time, last time).
+    Returns ``(mel, covered)``. Samples are placed on a linear fit of the
+    chunk timestamps against sample index (``mic_clock_fit``): sample ``j``
+    lies at ``a + b * j``, and the window of frame start ``s`` begins at
+    sample ``rint((s - a) / b)``. The file is rejected (nothing covered,
+    ``info["error"]`` set) unless ``len(wav) == MIC_CHUNK * len(ts)``, the
+    timestamps are monotonic, the implied rate is within ``MIC_RATE_TOL`` of
+    the WAV rate and ``max |residual| <= MIC_RESIDUAL_MAX_S``. Frames whose
+    window is not inside the WAV are not covered. ``info`` receives ``span``
+    (first, last sample time) and ``fit`` (see ``mic_clock_fit``) when the
+    fit is computed.
     """
     wav, sr = sf.read(str(wav_path), dtype="float32")
     if wav.ndim > 1:
@@ -189,39 +228,43 @@ def audio_frames(
     out = np.zeros((len(starts), N_MELS), dtype=np.float64)
     covered = np.zeros(len(starts), dtype=bool)
     chunk = MIC_CHUNK
+    info = {} if info is None else info
     if len(ts) < 2 or len(wav) != chunk * len(ts):
-        if info is not None:
-            info["error"] = (
-                f"{wav_path.name}: {len(wav)} samples vs {len(ts)} chunk timestamps "
-                f"(expected {chunk} x {len(ts)} = {chunk * len(ts)})"
-            )
-        return out, covered, 0
+        info["error"] = (
+            f"{wav_path.name}: {len(wav)} samples vs {len(ts)} chunk timestamps "
+            f"(expected {chunk} x {len(ts)} = {chunk * len(ts)})"
+        )
+        return out, covered
     if monotonic_violations(ts):
-        if info is not None:
-            info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
-        return out, covered, 0
-    if info is not None:
-        info["span"] = (float(ts[0] - (chunk - 1) / sr), float(ts[-1]))
+        info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
+        return out, covered
+    fit = mic_clock_fit(ts, chunk, float(sr))
+    info["fit"] = fit
+    if not fit["rate_dev"] <= MIC_RATE_TOL:
+        info["error"] = (
+            f"{mic_h5_path.name}: implied rate {fit['rate']:.1f} Hz vs WAV {sr} Hz "
+            f"(|dev| {fit['rate_dev']:.2e} > {MIC_RATE_TOL:g})"
+        )
+        info["fit_rejected"] = True
+        return out, covered
+    if fit["res_max"] > MIC_RESIDUAL_MAX_S:
+        info["error"] = (
+            f"{mic_h5_path.name}: max |residual| {fit['res_max']:.3f} s > {MIC_RESIDUAL_MAX_S:g} s"
+        )
+        info["fit_rejected"] = True
+        return out, covered
+    a, b = fit["a"], fit["b"]
+    info["span"] = (a, a + b * (len(wav) - 1))
     win = round(WIDTH * sr)
     fb = mel_filterbank(N_MELS, win, int(sr))
-    k0 = np.searchsorted(ts, starts, side="left")
-    k1 = np.searchsorted(ts, starts + WIDTH, side="left")
-    inside = (k1 < len(ts)) & (starts + WIDTH <= ts[-1])
-    k0c = np.minimum(k0, len(ts) - 1)
-    # Sample index j sits at ts[k] - ((k+1)*chunk - 1 - j) / sr.
-    i0 = (k0c + 1) * chunk - 1 - np.rint((ts[k0c] - starts) * sr).astype(np.int64)
-    i1 = i0 + win
-    inside &= (k0 < len(ts)) & (i0 >= 0) & (i1 <= len(wav))
-    k1c = np.minimum(k1, len(ts) - 1)
-    drift = np.abs((ts[k1c] - ts[k0c]) - (k1c - k0c) * chunk / sr)
-    n_gap = int((inside & (drift > 0.02)).sum())
-    ok = np.flatnonzero(inside & (drift <= 0.02))
+    i0 = np.rint((starts - a) / b).astype(np.int64)
+    ok = np.flatnonzero((i0 >= 0) & (i0 + win <= len(wav)))
     for lo in range(0, len(ok), 2048):
         sel = ok[lo : lo + 2048]
         idx = i0[sel, None] + np.arange(win)[None, :]
         out[sel] = _log_mel(wav[idx].astype(np.float64), fb)
     covered[ok] = True
-    return out, covered, n_gap
+    return out, covered
 
 
 # --------------------------------------------------------------------------
@@ -487,8 +530,16 @@ def _session_body(
             if not wav.exists():
                 continue
             info: dict[str, object] = {}
-            mel, cov, n_gap = audio_frames(wav, mic_h5, starts, info)
-            if "error" in info:
+            mel, cov = audio_frames(wav, mic_h5, starts, info)
+            fit = info.get("fit")
+            if isinstance(fit, dict):
+                fits = entry.setdefault("mic_fits", {})
+                assert isinstance(fits, dict)
+                fits[mic_h5.name] = (fit, "error" not in info)
+            if info.get("fit_rejected"):
+                _bump(counts, "audio_file_bad_clock_fit")
+                print(f"  audio_file_bad_clock_fit: {info['error']}", flush=True)
+            elif "error" in info:
                 _bump(counts, "audio_file_inconsistent")
                 print(f"  audio_file_inconsistent: {info['error']}", flush=True)
             span = info.get("span")
@@ -499,7 +550,6 @@ def _session_body(
             take = cov & ~aok
             aud[take] = mel[take]
             aok |= cov
-            _bump(counts, "audio_timestamp_gap", n_gap)
         feats["audio"] = aud
         reasons["audio"] = aok
 
@@ -620,6 +670,16 @@ def _span_lines(report: list[dict[str, object]]) -> list[str]:
             lines.append(
                 f"- `{name}`: {first - ref:.1f} .. {last - ref:.1f} s, n={n}, backwards steps={bad}"
             )
+        fits = ent.get("mic_fits", {})
+        assert isinstance(fits, dict)
+        for name in sorted(fits):
+            fit, accepted = fits[name]
+            lines.append(
+                f"- microphone clock fit `{name}`: implied rate {fit['rate']:.3f} Hz "
+                f"(|dev| {fit['rate_dev']:.2e}), |residual| median {fit['res_median']:.4f} s, "
+                f"p99 {fit['res_p99']:.4f} s, max {fit['res_max']:.4f} s: "
+                + ("accepted" if accepted else "REJECTED")
+            )
         lines.append("")
     return lines
 
@@ -658,8 +718,11 @@ def _manifest(
         f"{MAX_GAP:g} s interpolated, otherwise the frame is dropped.",
         "- audio: sink microphone WAV, window of 0.1 s (= hop), Hann, power spectrum "
         f"of n_fft = window samples, {N_MELS}-bin HTK mel bank, log(x + 1e-6); frames "
-        "located through the microphone HDF5 `chunk_timestamp` (time of the last "
-        "sample of each chunk).",
+        "located through a least-squares line of the microphone HDF5 `chunk_timestamp` "
+        "(time of the last sample of each chunk) against sample index; a file is "
+        f"rejected if the implied rate deviates from the WAV rate by more than "
+        f"{MIC_RATE_TOL:g} (relative) or any |residual| exceeds {MIC_RESIDUAL_MAX_S:g} s "
+        "(fit per file under Stream spans).",
         "- vision: world video frame nearest to the tick (|dt| <= "
         f"{VISION_TOL_S:g} s), ffmpeg gray {VISION_DECODE_PX}x{VISION_DECODE_PX} "
         "area-scaled, then 16x16 mean intensity (`frame_to_grid`). "
