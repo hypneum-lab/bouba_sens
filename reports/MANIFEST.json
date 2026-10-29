@@ -27,6 +27,38 @@
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",
     "size": 286
   },
+  "v0.1_aggregate.json": {
+    "sha256": "16793ed9555c25e77e4fe50d4c72f47d2911ea064707efb67f05ed0870b31f35",
+    "size": 16926
+  },
+  "v0.3_sinusoid_aggregate.json": {
+    "sha256": "b837097e9fc9dd530b3d8538399c7fd6471837b9c27261b0c309a0fb33819dd1",
+    "size": 16842
+  },
+  "v0.3_xor_aggregate.json": {
+    "sha256": "7495e153f598f264adb25d468e96eeab64f87a06f35c64d1d0dc0582639689e1",
+    "size": 16928
+  },
+  "v0.4_b1_ecg_lock_aggregate.json": {
+    "sha256": "97acb7e088cf7c90b96e89eea74a15c7aabb1af44b11081c9f93c3fff1b7784a",
+    "size": 16903
+  },
+  "v0.4_b1_recovery_aggregate.json": {
+    "sha256": "66fab37160d6894ac3f594515217b2c4e16490f233187923aa07c3c82dc43a2c",
+    "size": 16847
+  },
+  "v0.4_b1_sinusoid_lock_aggregate.json": {
+    "sha256": "0ec40bdf4d9a32d0c43feb8bf9541ae462e6b72ceb70410e53efbfaf5f36ed23",
+    "size": 16857
+  },
+  "v0.4_b1_xor_lock_aggregate.json": {
+    "sha256": "e9d335d3c541c3ed6506e5e1ba08d55e041fbc08d80079f68640a271a025623c",
+    "size": 16867
+  },
+  "v0.4_studyforrest_aggregate.json": {
+    "sha256": "5a7ffffa854e3b1534d47524d97bedddfd5466d4ba38a4cff19508f0b84e8b1d",
+    "size": 17032
+  },
   "v0.5_amedi_curve_multiseed_10seed_final.json": {
     "sha256": "38a35fbf29c239bd4b827ba2a4711af3ee3d5ad78f5d2040a06139442f590bdd",
     "size": 3873

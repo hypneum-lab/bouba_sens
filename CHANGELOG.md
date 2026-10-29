@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Lock-matrix tables regenerated with the seeded CLI (PI decision
+  2026-10-29).** `tab:lock-b1` and `tab:lock-b3` (and the matching
+  synthetic and mock rows of `tab:within-cluster` and `tab:five-world`)
+  now carry the values of the seeded regeneration (CLI v0.5.10, code
+  `f645053`, nerve-wml v1.7.0, CPU). The claim that `lock=200` brings
+  B-1 "exactly" to 0 becomes "within one quantum (1/160) of 0".
+  Verdicts are unchanged (B-1 and B-2 fail, B-3 passes). The 8
+  aggregates are committed under `reports/` and listed in
+  `reports/MANIFEST.json`. Real-data numbers are untouched (erratum
+  2026-10-28). Refs #35, #36.
 - **B-3 final wording (PI decision 2026-10-27).** On the Gaussian world,
   with a network that learns the task (straight-through emission), no
   lesion effect is detected: neither a lesion × query interaction
