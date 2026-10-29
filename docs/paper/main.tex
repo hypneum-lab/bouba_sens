@@ -337,7 +337,7 @@ trio yields a $5 \times 5$ matrix $P$;
     Invariant & Gaussian & XOR & Sinusoid \\
     \midrule
     B-1 Me7 & $0.0000$ & $-0.0062$ & $+0.0062$ \\
-    B-2 Me3 delta & $+0.0275$ & $+0.0034$ & $+0.0019$ \\
+    B-2 Me3 delta & $+0.0464$ & $+0.0287$ & $-0.0069$ \\
     B-3 Me6 & $0.1406$ & $0.1406$ & $0.1406$ \\
     \bottomrule
   \end{tabular}
@@ -349,8 +349,8 @@ sign); B-2 under-threshold 3/3.
 
 \subsection{Out-of-cluster mock (ADR-0008)}
 
-Studyforrest AR(1) mock: B-3 $= \mathbf{0.3125}$ ($15.6\times$,
-$+2\times$ amplification), B-1 $= 0.0000$, B-2 $= -0.0288$
+Studyforrest AR(1) mock: B-3 $= \mathbf{0.3047}$ ($15.2\times$,
+$+2\times$ amplification), B-1 $= +0.0063$, B-2 $= +0.0005$
 (artefact of zero-ed tactile, gravity, and force channels).
 
 \subsection{Real biological signal (ADR-0009)}
@@ -364,7 +364,7 @@ B-2 $= +0.0111$.
 
 \textbf{Descriptive observation; interpretation withdrawn.} The
 raw B-3 median grows with input complexity: $7\times$ (synthetic
-cluster) $\to$ $15.6\times$ (AR(1) mock) $\to$ $22.3\times$ (real
+cluster) $\to$ $15.2\times$ (AR(1) mock) $\to$ $22.3\times$ (real
 ECG). Consistent with the abstract, this is \emph{not} read as a
 perceptive/proprioceptive architectural property: the partition
 control places the pre-registered split among random alternatives
@@ -429,7 +429,7 @@ in the benchmark.
     Gaussian & $0.0000$ & $+0.0063$ & $+0.0063$ \\
     XOR      & $-0.0062$ (inverted) & $-0.0062$ & $0.0000$ \\
     Sinusoid & $+0.0062$ (correct sign) & $0.0000$ & $-0.0062$ \\
-    real ECG & $+0.0063$ & $-0.0187$ & $-0.0250$ \\
+    Studyforrest mock & $+0.0063$ & $-0.0187$ & $-0.0250$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -445,7 +445,7 @@ in the benchmark.
     Gaussian & $0.1406$ ($7.0\times$) & $0.1406$ ($7.0\times$) \\
     XOR      & $0.1406$ ($7.0\times$) & $0.1484$ ($7.4\times$) \\
     Sinusoid & $0.1406$ ($7.0\times$) & $0.1562$ ($7.8\times$) \\
-    real ECG & $0.3047$ ($15.2\times$) & $0.2969$ ($14.8\times$) \\
+    Studyforrest mock & $0.3047$ ($15.2\times$) & $0.2969$ ($14.8\times$) \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -456,11 +456,14 @@ Tables~\ref{tab:within-cluster} and~\ref{tab:five-world}) were
 regenerated with the seeded CLI (v0.5.10, code \texttt{f645053},
 nerve-wml v1.7.0, CPU); the aggregates are committed under
 \texttt{reports/}. The April values differed by up to one quantum
-($1/160 = 0.00625$) on B-1; see issue~\#35. The ``real ECG'' row of
+($1/160 = 0.00625$) on B-1; see issue~\#35. The last row of
 these two tables is the Studyforrest block run without the real data
-(mock). All verdicts are unchanged: B-1 and B-2 fail, B-3 passes in
-every world. The within-cluster B-2 row and the real-data numbers are
-not regenerated here.
+(mock; labelled ``real ECG'' before 2026-10-29). All verdicts are unchanged: B-1 and B-2 fail, B-3 passes in
+every world. The AR(1) mock text of Section~\ref{sec:results} follows the same
+block. Not regenerated: the MIT-BIH ECG numbers (B-3 $0.4453$,
+$22.3\times$, B-1 $-0.0062$, B-2 $+0.0111$; ADR-0009), which come from
+a world with no block in \texttt{reproduce\_paper\_v01.sh}, and the
+real-data numbers.
 
 \subsection{Interpretation --- the lock is homogenising, not recovering}
 
@@ -475,7 +478,7 @@ Three regimes emerge from the $4 \times 2$ matrix
         moves $\mathrm{me7} = +0.0062$ to $0.0000$, within one
         quantum of $0$. The one-quantum gap that pre-existed
         disappears. The lock does not selectively favour T1.
-  \item \textbf{Real ECG (mock block):} lock shifts
+  \item \textbf{Studyforrest mock:} lock shifts
         $\mathrm{me7}$ from $+0.0063$ to $-0.0187$, still far below
         threshold and without a T1/T2 differential. The
         three zero-ed modalities dominate the architecture's
@@ -540,7 +543,7 @@ redistributable).
     Gaussian & $0.0000$ & $+0.0063$ & $0.1406$ & $0.1406$ \\
     XOR      & $-0.0062$ & $-0.0062$ & $0.1406$ & $0.1484$ \\
     Sinusoid & $+0.0062$ & $0.0000$ & $0.1406$ & $0.1562$ \\
-    ECG 2-modal & $+0.0063$ & $-0.0187$ & $0.3047$ & $0.2969$ \\
+    Studyforrest mock & $+0.0063$ & $-0.0187$ & $0.3047$ & $0.2969$ \\
     \textbf{4.5-modal real} & $\mathbf{0.0000}$ & $\mathbf{+0.0063}$ & $\mathbf{0.1016}$ & $\mathbf{0.1250}$ \\
     \bottomrule
   \end{tabular}

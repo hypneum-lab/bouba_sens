@@ -150,7 +150,7 @@ independent binomial null at the production probe size (n = 64),
 the median-of-30 Me6 is 0.13–0.16 (P99 0.15–0.19) : an independent
 binomial null invalidates the reading of the bare exceedance of
 0.02. The synthetic-world medians (0.141–0.148) lie inside that
-range ; mock (0.3125) and ECG (0.4453) exceed it, but the iid
+range ; mock (0.3047) and ECG (0.4453) exceed it, but the iid
 reference is not the null of their contiguous probes. No
 compatibility or rejection verdict on B-3 is established before a
 paired calibration of the median (same probe for the five queries,
