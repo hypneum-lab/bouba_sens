@@ -170,7 +170,7 @@ def test_audio_frames_chunk_timestamp_alignment(tmp_path: Path) -> None:
         h5_path = tmp_path / f"mic_{shift_s}.hdf5"
         with h5py.File(h5_path, "w") as h5:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
-        mel, covered, _ = extract.audio_frames(wav_path, h5_path, starts)
+        mel, covered = extract.audio_frames(wav_path, h5_path, starts)
         assert covered.all()
         return np.asarray(mel.mean(axis=1))
 
@@ -198,9 +198,180 @@ def test_audio_frames_rejects_off_by_one_timestamp_count(tmp_path: Path) -> None
         with h5py.File(h5_path, "w") as h5:
             _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
         info: dict[str, object] = {}
-        _mel, covered, n_gap = extract.audio_frames(wav_path, h5_path, starts, info)
-        assert not covered.any() and n_gap == 0
+        _mel, covered = extract.audio_frames(wav_path, h5_path, starts, info)
+        assert not covered.any()
         assert "samples vs" in str(info["error"])
+
+
+def _bursty_stamps(
+    n_chunks: int, sr: int, seed: int, chunk: int = CHUNK
+) -> tuple[np.ndarray, list[int]]:
+    """Burst-stamped chunk times centred on the true clock, and group starts.
+
+    Chunks are stamped in groups of 1-3 sharing the mean true time of the
+    group, as in the S00 microphone files (steps ~0, ~43, ~85 ms at 48 kHz).
+    """
+    true = T0 + ((np.arange(n_chunks) + 1) * chunk - 1) / sr
+    rng = np.random.default_rng(seed)
+    stamps = np.empty(n_chunks)
+    groups: list[int] = []
+    k = 0
+    while k < n_chunks:
+        g = min(int(rng.integers(1, 4)), n_chunks - k)
+        stamps[k : k + g] = true[k : k + g].mean()
+        groups.append(k)
+        k += g
+    return stamps, groups
+
+
+def _segments(info: dict[str, object]) -> list[dict[str, float]]:
+    segs = info["segments"]
+    assert isinstance(segs, list)
+    return segs
+
+
+def test_audio_bursty_timestamps_kept(tmp_path: Path) -> None:
+    """Burst-stamped chunks: no frame dropped, the burst lands in its frame."""
+    sr = 48000
+    n_chunks = 200  # 8.5 s: long enough for the fitted rate to settle
+    win = sr // 10
+    target = 42
+    wav = np.zeros(n_chunks * CHUNK, dtype=np.float32)
+    rng = np.random.default_rng(2)
+    # Burst in the central 50 ms of the target window: a placement error of
+    # 25 ms (the old per-chunk mapping was off by up to ~85 ms) would leak.
+    lo, hi = target * win + win // 4, (target + 1) * win - win // 4
+    wav[lo:hi] = rng.uniform(-0.8, 0.8, hi - lo)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, wav, sr, subtype="FLOAT")
+    ts, _groups = _bursty_stamps(n_chunks, sr, seed=3)
+    steps = np.diff(ts)
+    assert (steps == 0).any() and (steps > 1.5 * CHUNK / sr).any()  # really bursty
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    first = 1
+    starts = T0 + 0.1 * np.arange(first, 84)
+    info: dict[str, object] = {}
+    mel, covered = extract.audio_frames(wav_path, h5_path, starts, info)
+    assert "error" not in info
+    assert covered.all()  # nothing dropped despite 0 / 85 ms steps
+    e = np.asarray(mel.mean(axis=1))
+    assert int(np.argmax(e)) + first == target
+    np.testing.assert_allclose(np.delete(e, target - first), np.log(1e-6), atol=1e-9)
+    (seg,) = _segments(info)  # jitter alone opens no breakpoint
+    assert seg["accepted"] and seg["rate_dev"] <= extract.MIC_RATE_TOL
+    assert CHUNK / sr / 2 < seg["res_max"] < 2 * CHUNK / sr  # jitter is seen, not fatal
+    assert info["n_breakpoint_drop"] == 0
+
+
+def test_audio_subsecond_jump_segmented(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A 0.9 s clock step: two segments, bursts placed on both sides.
+
+    A single global line would pass the old gates on a long file (residual
+    ~J/2, rate change ~1.5 J/T) and misplace audio by several frames.
+    """
+    sr, chunk = 8000, 256  # 32 ms chunks, close to the real 42.7 ms
+    monkeypatch.setattr(extract, "MIC_CHUNK", chunk)
+    n_chunks = 3750  # 120 s of samples
+    jump = 0.9
+    stamps, groups = _bursty_stamps(n_chunks, sr, seed=5, chunk=chunk)
+    s = min(groups, key=lambda g: abs(g - n_chunks // 2))  # step between groups
+    stamps[s:] += jump  # e.g. 0.9 s of audio lost by the recorder
+    wav = np.zeros(n_chunks * chunk, dtype=np.float32)
+    rng = np.random.default_rng(6)
+    win = sr // 10
+    # Bursts in the central 50 ms of the frames starting at wall 30.0 s
+    # (before the step) and 90.0 s (after it: the WAV lags the wall clock
+    # by `jump`).
+    for wall, lag in ((30.0, 0.0), (90.0, jump)):
+        lo = round((wall - lag) * sr) + win // 4
+        wav[lo : lo + win // 2] = rng.uniform(-0.8, 0.8, win // 2)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, wav, sr, subtype="FLOAT")
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", stamps, stamps[:, None])
+    rel = 0.1 * np.arange(1, 1200)  # frame starts, wall seconds after T0
+    info: dict[str, object] = {}
+    mel, covered = extract.audio_frames(wav_path, h5_path, T0 + rel, info)
+
+    first, second = _segments(info)
+    assert first["accepted"] and second["accepted"]
+    assert int(second["k0"]) == s
+    assert abs(second["step"] - jump) < 0.05
+    # Frames near the step (margin 1 s each side plus the 0.9 s clock gap)
+    # are dropped and counted; frames clear of it are all kept.
+    t_step = s * chunk / sr
+    clear = (rel + 0.1 <= t_step - 1.05) | (rel >= t_step + jump + 1.05)
+    clear &= rel + 0.1 <= n_chunks * chunk / sr + jump - 0.05
+    zone = (rel + 0.1 > t_step - 0.95) & (rel < t_step + jump + 0.95)
+    assert covered[clear].all()
+    assert not covered[zone].any()
+    assert info["n_breakpoint_drop"] == int((~covered & ~clear).sum()) >= zone.sum()
+    e = np.asarray(mel.mean(axis=1))
+    loud = np.flatnonzero(covered & (e > np.log(1e-6) + 1.0))
+    np.testing.assert_allclose(rel[loud], [30.0, 90.0])
+    quiet = covered.copy()
+    quiet[loud] = False
+    np.testing.assert_allclose(e[quiet], np.log(1e-6), atol=1e-9)
+
+
+def test_audio_bad_rate_rejected(tmp_path: Path) -> None:
+    """Timestamps implying 44.1 kHz against a 48 kHz WAV: rejected, counted."""
+    sr = 48000
+    n_chunks = 64
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="FLOAT")
+    ts = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / 44100
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 20), info)
+    (seg,) = _segments(info)
+    assert not covered.any() and not seg["accepted"]
+    assert seg["rate"] == pytest.approx(44100.0)
+
+    # Same rate error through a session: the counters and the manifest line.
+    sub = _write_subject(tmp_path / "raw")
+    mic = next(sub.glob("*microphone_S00.hdf5"))
+    with h5py.File(mic, "a") as h5:
+        ds = h5["sink"]["chunk_timestamp"]["time_s"]
+        t = np.asarray(ds)
+        ds[...] = T0 + (t - T0) * (48000 / 44100)
+    counts: dict[str, int] = {}
+    report: list[dict[str, object]] = []
+    wear = next(sub.glob("*wearables*"))
+    sess = extract._extract_session(wear, sub, "S00", False, counts, {}, report)
+    assert sess is not None and len(sess["labels"]) == 0
+    assert counts["audio_segment_bad_clock_fit"] == 1
+    assert "audio_file_inconsistent" not in counts
+    # The microphone did record there: a gap, not outside its span.
+    assert counts["drop:audio:gap"] == 10
+    assert counts.get("drop:audio:outside_span", 0) == 0
+    assert "REJECTED" in "\n".join(extract._span_lines(report))
+
+
+def test_audio_clock_jump_segmented(tmp_path: Path) -> None:
+    """A 2 s clock step mid-file splits it into two accepted segments."""
+    sr = 1000  # low rate keeps a long (8192 s) file small
+    n_chunks = 4000
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="PCM_16")
+    ts = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / sr
+    ts[n_chunks // 2 :] += 2.0
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 20), info)
+    assert covered.all() and "error" not in info
+    first, second = _segments(info)
+    assert int(second["k0"]) == n_chunks // 2
+    assert second["step"] == pytest.approx(2.0, abs=1e-3)
+    for seg in (first, second):
+        assert seg["accepted"] and seg["res_max"] < 1e-6 and seg["rate_dev"] < 1e-9
 
 
 def test_session_counts_inconsistent_audio_file(tmp_path: Path) -> None:
@@ -217,7 +388,9 @@ def test_session_counts_inconsistent_audio_file(tmp_path: Path) -> None:
     sess = extract._extract_session(wear, sub, "S00", False, counts, {}, [])
     assert sess is not None and len(sess["labels"]) == 0
     assert counts["audio_file_inconsistent"] == 1
-    assert counts["drop:audio:outside_span"] == 10
+    # The chunk timestamps still cover these frames: counted as a gap.
+    assert counts["drop:audio:gap"] == 10
+    assert counts.get("drop:audio:outside_span", 0) == 0
 
 
 def test_nonmonotonic_wearable_time_skips_session(tmp_path: Path) -> None:
@@ -251,6 +424,7 @@ def test_rows_side_file_and_manifest_spans(tmp_path: Path) -> None:
     assert "0. Slice a cucumber" in manifest
     assert "backwards steps=0" in manifest
     assert "microphone/" in manifest and "labelled segments" in manifest
+    assert "microphone clock fit" in manifest and ": accepted" in manifest
 
 
 def _file_hashes(out: Path) -> dict[str, str]:

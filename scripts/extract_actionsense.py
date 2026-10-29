@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import re
 import shutil
@@ -78,6 +79,24 @@ N_MELS = 128
 # ActionNet recording_data/sensor_streamers/MicrophoneStreamer.py
 # (chunk_size = 2048; WAV and chunk_timestamp are appended together).
 MIC_CHUNK = 2048
+# Microphone clock fit (pilot S00, 2026-10-29: chunk stamps come in bursts,
+# steps ~0/43/85 ms, max 141 ms; 3660.3 s of stamps vs 3658.1 s of samples
+# over the 18-11-04 file). Samples are placed on a piecewise linear fit of
+# chunk timestamp against sample index. Breakpoints are found on the
+# residuals of a global fit: the median residual of the MIC_STEP_WINDOW
+# chunks (~1 s at 48 kHz) after chunk k minus that of the window before
+# moves by more than MIC_STEP_DETECT_S (burst jitter averages out, a clock
+# step or dropout does not). Each segment is fitted on its own and rejected
+# when its rate deviates from the WAV rate by more than MIC_RATE_TOL
+# (relative; 44.1 vs 48 kHz is 8e-2) or a residual exceeds
+# MIC_SEGMENT_RESIDUAL_MAX_S. Frames within MIC_BREAKPOINT_MARGIN_S of a
+# breakpoint are dropped. A constant host latency between the sound and
+# its timestamp is absorbed into the intercept and cannot be detected.
+MIC_STEP_WINDOW = 25
+MIC_STEP_DETECT_S = 0.05
+MIC_RATE_TOL = 2e-3
+MIC_SEGMENT_RESIDUAL_MAX_S = 0.2
+MIC_BREAKPOINT_MARGIN_S = 1.0
 FFMPEG_MIN = (5, 1)  # `-fps_mode` needs ffmpeg >= 5.1
 LOWPASS_CUTOFF_HZ = 0.5
 LOWPASS_MIN_FRAMES = 10  # sosfiltfilt (order 2) needs more than 9 samples
@@ -162,21 +181,137 @@ def _log_mel(frames: np.ndarray, fb: np.ndarray) -> np.ndarray:
     return np.log(power @ fb.T + 1e-6)
 
 
+def _line_fit(
+    ts: np.ndarray, chunk: int, sr: float, k0: int, k1: int
+) -> tuple[dict[str, float], np.ndarray]:
+    """Least-squares ``ts[k] = a + b * ((k + 1) * chunk - 1)`` on chunks k0..k1-1.
+
+    Chunk ``k`` is stamped at its last sample, so sample ``j`` lies at
+    ``a + b * j``. Returns the fit (``a``, ``b``, implied ``rate = 1 / b``,
+    ``rate_dev = |rate - sr| / sr``, |residual| ``res_median``, ``res_p99``,
+    ``res_max``) and the signed residuals.
+    """
+    idx = (np.arange(k0, k1, dtype=np.float64) + 1.0) * chunk - 1.0
+    t_rel = ts[k0:k1] - ts[k0]  # keep the epoch offset out of the regression
+    im, tm = idx.mean(), t_rel.mean()
+    den = ((idx - im) ** 2).sum()
+    b = float(((idx - im) * (t_rel - tm)).sum() / den) if den > 0 else 0.0
+    a_rel = float(tm - b * im)
+    res = t_rel - (a_rel + b * idx)
+    absr = np.abs(res)
+    ok = b > 0
+    return {
+        "a": float(ts[k0]) + a_rel,
+        "b": b,
+        "rate": 1.0 / b if ok else float("nan"),
+        "rate_dev": abs(1.0 / b - sr) / sr if ok else float("inf"),
+        "res_median": float(np.median(absr)),
+        "res_p99": float(np.percentile(absr, 99)),
+        "res_max": float(absr.max()),
+    }, res
+
+
+def mic_breakpoints(
+    res: np.ndarray, w: int = MIC_STEP_WINDOW, thr: float = MIC_STEP_DETECT_S
+) -> list[tuple[int, float]]:
+    """Clock steps in a residual series: ``(first chunk after the step, step s)``.
+
+    ``d[k] = median(res[k:k+w]) - median(res[k-w:k])``; each run of
+    ``|d| > thr`` gives one step, located at the split of the
+    ``[k* - w, k* + w)`` neighbourhood of the run's peak ``k*`` that assigns
+    every chunk to the nearer of the two far-side median levels.
+    """
+    n = len(res)
+    if n < 2 * w + 1:
+        return []
+    med = np.median(np.lib.stride_tricks.sliding_window_view(res, w), axis=1)
+    ks = np.arange(w, n - w + 1)
+    d = med[ks] - med[ks - w]
+    hot = np.abs(d) > thr
+    out: list[tuple[int, float]] = []
+    j = 0
+    while j < len(ks):
+        if not hot[j]:
+            j += 1
+            continue
+        e = j
+        while e + 1 < len(ks) and hot[e + 1]:
+            e += 1
+        pk = int(ks[j + int(np.argmax(np.abs(d[j : e + 1])))])
+        lo, hi = max(pk - w, 1), min(pk + w, n - 1)
+        m_left = float(np.median(res[max(lo - w, 0) : lo + 1]))
+        m_right = float(np.median(res[hi - 1 : min(hi + w, n)]))
+        cand = np.arange(lo, hi + 1)
+        seg = res[lo:hi]
+        dl = np.abs(seg - m_left)
+        dr = np.abs(seg - m_right)
+        # cost(s) = sum_{k<s} dl + sum_{k>=s} dr over the neighbourhood
+        cost = np.concatenate([[0.0], np.cumsum(dl)]) + (
+            dr.sum() - np.concatenate([[0.0], np.cumsum(dr)])
+        )
+        s = int(cand[int(np.argmin(cost))])
+        if not out or s > out[-1][0]:
+            out.append((s, m_right - m_left))
+        j = e + 1
+    return out
+
+
+def mic_clock_segments(ts: np.ndarray, chunk: int, sr: float) -> list[dict[str, float]]:
+    """Piecewise clock fit: one dict per segment between detected breakpoints.
+
+    Each dict holds ``k0``, ``k1`` (chunk range), the ``_line_fit`` keys,
+    ``step`` (clock step at its start from the two neighbouring fits, the
+    detection estimate if a neighbour is too short, 0 for the first),
+    ``t0``/``t1`` (time
+    of its first/last sample on its own fit) and ``accepted`` (1.0 / 0.0)
+    after the ``MIC_RATE_TOL`` and ``MIC_SEGMENT_RESIDUAL_MAX_S`` gates.
+    """
+    _glob, res = _line_fit(ts, chunk, sr, 0, len(ts))
+    bps = mic_breakpoints(res)
+    edges = [0, *(k for k, _ in bps), len(ts)]
+    steps = [0.0, *(st for _, st in bps)]
+    segs: list[dict[str, float]] = []
+    for i in range(len(edges) - 1):
+        k0, k1 = edges[i], edges[i + 1]
+        if k1 - k0 >= 2:
+            fit, _r = _line_fit(ts, chunk, sr, k0, k1)
+            good = fit["rate_dev"] <= MIC_RATE_TOL and fit["res_max"] <= MIC_SEGMENT_RESIDUAL_MAX_S
+        else:
+            fit = {"a": float(ts[k0]), "b": 1.0 / sr, "rate": float("nan")}
+            fit |= {"rate_dev": float("inf"), "res_median": 0.0, "res_p99": 0.0}
+            fit["res_max"] = 0.0
+            good = False
+        fit |= {"k0": float(k0), "k1": float(k1), "step": steps[i]}
+        fit["t0"] = fit["a"] + fit["b"] * k0 * chunk
+        fit["t1"] = fit["a"] + fit["b"] * (k1 * chunk - 1)
+        fit["accepted"] = 1.0 if good else 0.0
+        if segs and k1 - k0 >= 2 and edges[i - 1] + 2 <= k0:
+            # Step = this segment's time of its first sample minus the
+            # previous segment's line extrapolated to that sample.
+            prev = segs[-1]
+            fit["step"] = fit["t0"] - (prev["a"] + prev["b"] * k0 * chunk)
+        segs.append(fit)
+    return segs
+
+
 def audio_frames(
     wav_path: Path,
     mic_h5_path: Path,
     starts: np.ndarray,
     info: dict[str, object] | None = None,
-) -> tuple[np.ndarray, np.ndarray, int]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Log-mel (N, 128) for each frame start covered by this microphone file.
 
-    Returns ``(mel, covered, n_gap)``. A chunk timestamp is the time of the
-    last sample of its chunk, so sample ``i`` of chunk ``k`` lies at
-    ``ts[k] - (MIC_CHUNK - 1 - i % MIC_CHUNK) / sr``. The file is rejected
-    (nothing covered, ``info["error"]`` set) unless ``len(wav) == MIC_CHUNK *
-    len(ts)`` and the timestamps are monotonic. Frames whose window is not
-    inside the recording, or straddles a timestamp discontinuity, are not
-    covered. ``info`` receives ``span`` (first sample time, last time).
+    Returns ``(mel, covered)``. The file is rejected (nothing covered,
+    ``info["error"]`` set) unless ``len(wav) == MIC_CHUNK * len(ts)`` and the
+    chunk timestamps are monotonic. Samples are then placed on the piecewise
+    fit of ``mic_clock_segments``: in a segment fitted as ``a + b * j``, the
+    window of frame start ``s`` begins at sample ``rint((s - a) / b)``. A
+    frame is covered only if its window lies inside one accepted segment,
+    at least ``MIC_BREAKPOINT_MARGIN_S`` from any breakpoint, and in no other
+    segment. ``info`` receives ``span`` (first, last chunk time), and, once
+    fitted, ``segments`` and ``n_breakpoint_drop`` (frames lost to the
+    breakpoint margins and the clock gaps between segments).
     """
     wav, sr = sf.read(str(wav_path), dtype="float32")
     if wav.ndim > 1:
@@ -189,39 +324,55 @@ def audio_frames(
     out = np.zeros((len(starts), N_MELS), dtype=np.float64)
     covered = np.zeros(len(starts), dtype=bool)
     chunk = MIC_CHUNK
-    if len(ts) < 2 or len(wav) != chunk * len(ts):
-        if info is not None:
-            info["error"] = (
-                f"{wav_path.name}: {len(wav)} samples vs {len(ts)} chunk timestamps "
-                f"(expected {chunk} x {len(ts)} = {chunk * len(ts)})"
-            )
-        return out, covered, 0
-    if monotonic_violations(ts):
-        if info is not None:
-            info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
-        return out, covered, 0
-    if info is not None:
+    info = {} if info is None else info
+    if len(ts) >= 2:
+        # Nominal span, also for a rejected file: its frames are a gap, not
+        # outside the recording.
         info["span"] = (float(ts[0] - (chunk - 1) / sr), float(ts[-1]))
+    if len(ts) < 2 or len(wav) != chunk * len(ts):
+        info["error"] = (
+            f"{wav_path.name}: {len(wav)} samples vs {len(ts)} chunk timestamps "
+            f"(expected {chunk} x {len(ts)} = {chunk * len(ts)})"
+        )
+        return out, covered
+    if monotonic_violations(ts):
+        info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
+        return out, covered
+    segs = mic_clock_segments(ts, chunk, float(sr))
+    info["segments"] = segs
     win = round(WIDTH * sr)
+    margin = round(MIC_BREAKPOINT_MARGIN_S * sr)
     fb = mel_filterbank(N_MELS, win, int(sr))
-    k0 = np.searchsorted(ts, starts, side="left")
-    k1 = np.searchsorted(ts, starts + WIDTH, side="left")
-    inside = (k1 < len(ts)) & (starts + WIDTH <= ts[-1])
-    k0c = np.minimum(k0, len(ts) - 1)
-    # Sample index j sits at ts[k] - ((k+1)*chunk - 1 - j) / sr.
-    i0 = (k0c + 1) * chunk - 1 - np.rint((ts[k0c] - starts) * sr).astype(np.int64)
-    i1 = i0 + win
-    inside &= (k0 < len(ts)) & (i0 >= 0) & (i1 <= len(wav))
-    k1c = np.minimum(k1, len(ts) - 1)
-    drift = np.abs((ts[k1c] - ts[k0c]) - (k1c - k0c) * chunk / sr)
-    n_gap = int((inside & (drift > 0.02)).sum())
-    ok = np.flatnonzero(inside & (drift <= 0.02))
+    i0_all = np.zeros(len(starts), dtype=np.int64)
+    n_hit = np.zeros(len(starts), dtype=np.int64)
+    usable = np.zeros(len(starts), dtype=bool)
+    for i, seg in enumerate(segs):
+        lo, hi = int(seg["k0"]) * chunk, int(seg["k1"]) * chunk
+        i0 = np.rint((starts - seg["a"]) / seg["b"]).astype(np.int64)
+        hit = (i0 >= lo) & (i0 + win <= hi)
+        n_hit += hit
+        if not seg["accepted"]:
+            continue
+        lo_m = lo + (margin if i > 0 else 0)
+        hi_m = hi - (margin if i < len(segs) - 1 else 0)
+        inner = (i0 >= lo_m) & (i0 + win <= hi_m)
+        i0_all[inner] = i0[inner]
+        usable |= inner
+    ok = np.flatnonzero(usable & (n_hit == 1))
     for lo in range(0, len(ok), 2048):
         sel = ok[lo : lo + 2048]
-        idx = i0[sel, None] + np.arange(win)[None, :]
+        idx = i0_all[sel, None] + np.arange(win)[None, :]
         out[sel] = _log_mel(wav[idx].astype(np.float64), fb)
     covered[ok] = True
-    return out, covered, n_gap
+    # Frames lost to a breakpoint: window within the margin of a segment
+    # boundary, in the clock gap between two segments, or claimed twice.
+    near = np.zeros(len(starts), dtype=bool)
+    for prev, nxt in itertools.pairwise(segs):
+        z0 = min(prev["t1"], nxt["t0"]) - MIC_BREAKPOINT_MARGIN_S
+        z1 = max(prev["t1"], nxt["t0"]) + MIC_BREAKPOINT_MARGIN_S
+        near |= (starts + WIDTH > z0) & (starts < z1)
+    info["n_breakpoint_drop"] = int((near & ~covered).sum())
+    return out, covered
 
 
 # --------------------------------------------------------------------------
@@ -487,7 +638,24 @@ def _session_body(
             if not wav.exists():
                 continue
             info: dict[str, object] = {}
-            mel, cov, n_gap = audio_frames(wav, mic_h5, starts, info)
+            mel, cov = audio_frames(wav, mic_h5, starts, info)
+            segs = info.get("segments")
+            if isinstance(segs, list):
+                fits = entry.setdefault("mic_fits", {})
+                assert isinstance(fits, dict)
+                fits[mic_h5.name] = segs
+                for seg in segs:
+                    if not seg["accepted"]:
+                        _bump(counts, "audio_segment_bad_clock_fit")
+                        print(
+                            f"  audio_segment_bad_clock_fit: {mic_h5.name} chunks "
+                            f"{int(seg['k0'])}..{int(seg['k1'])}, rate {seg['rate']:.1f} Hz, "
+                            f"max |residual| {seg['res_max']:.3f} s",
+                            flush=True,
+                        )
+                _bump(counts, "audio_breakpoints", len(segs) - 1)
+                n_bp = info.get("n_breakpoint_drop", 0)
+                _bump(counts, "audio_breakpoint_drop", n_bp if isinstance(n_bp, int) else 0)
             if "error" in info:
                 _bump(counts, "audio_file_inconsistent")
                 print(f"  audio_file_inconsistent: {info['error']}", flush=True)
@@ -499,7 +667,6 @@ def _session_body(
             take = cov & ~aok
             aud[take] = mel[take]
             aok |= cov
-            _bump(counts, "audio_timestamp_gap", n_gap)
         feats["audio"] = aud
         reasons["audio"] = aok
 
@@ -620,6 +787,23 @@ def _span_lines(report: list[dict[str, object]]) -> list[str]:
             lines.append(
                 f"- `{name}`: {first - ref:.1f} .. {last - ref:.1f} s, n={n}, backwards steps={bad}"
             )
+        fits = ent.get("mic_fits", {})
+        assert isinstance(fits, dict)
+        for name in sorted(fits):
+            segs = fits[name]
+            bps = [f"{sg['t0'] - ref:.1f} s (step {sg['step']:+.3f} s)" for sg in segs[1:]]
+            lines.append(
+                f"- microphone clock fit `{name}`: {len(segs)} segment(s); breakpoints: "
+                + (", ".join(bps) or "none")
+            )
+            for sg in segs:
+                lines.append(
+                    f"  - chunks {int(sg['k0'])}..{int(sg['k1'])} "
+                    f"({sg['t0'] - ref:.1f} .. {sg['t1'] - ref:.1f} s): implied rate "
+                    f"{sg['rate']:.3f} Hz (|dev| {sg['rate_dev']:.2e}), |residual| median "
+                    f"{sg['res_median']:.4f} s, p99 {sg['res_p99']:.4f} s, max "
+                    f"{sg['res_max']:.4f} s: " + ("accepted" if sg["accepted"] else "REJECTED")
+                )
         lines.append("")
     return lines
 
@@ -658,8 +842,16 @@ def _manifest(
         f"{MAX_GAP:g} s interpolated, otherwise the frame is dropped.",
         "- audio: sink microphone WAV, window of 0.1 s (= hop), Hann, power spectrum "
         f"of n_fft = window samples, {N_MELS}-bin HTK mel bank, log(x + 1e-6); frames "
-        "located through the microphone HDF5 `chunk_timestamp` (time of the last "
-        "sample of each chunk).",
+        "located through a piecewise least-squares line of the microphone HDF5 "
+        "`chunk_timestamp` (time of the last sample of each chunk) against sample index. "
+        f"Breakpoints: the {MIC_STEP_WINDOW}-chunk median residual of the global fit "
+        f"steps by more than {MIC_STEP_DETECT_S:g} s; frames within "
+        f"{MIC_BREAKPOINT_MARGIN_S:g} s of a breakpoint are dropped. A segment is "
+        f"rejected if its rate deviates from the WAV rate by more than {MIC_RATE_TOL:g} "
+        f"(relative) or a |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s; a file is "
+        "rejected if its WAV length is not 2048 x the chunk count or its timestamps are "
+        "not monotonic. A constant host latency is absorbed into the intercept "
+        "(fits per file under Stream spans).",
         "- vision: world video frame nearest to the tick (|dt| <= "
         f"{VISION_TOL_S:g} s), ffmpeg gray {VISION_DECODE_PX}x{VISION_DECODE_PX} "
         "area-scaled, then 16x16 mean intensity (`frame_to_grid`). "

@@ -84,7 +84,7 @@ the window [*t*, *t* + 100 ms).
 
 | bouba_sens | Source | Reduction to the contract |
 |---|---|---|
-| audio (128) | sink microphone, 48 kHz, cardioid (closest to hand–object sounds) | 128-bin log-mel, window 100 ms, hop 4800 samples, aligned through the chunk timestamps of the microphone HDF5 |
+| audio (128) | sink microphone, 48 kHz, cardioid (closest to hand–object sounds) | 128-bin log-mel, window 100 ms, hop 4800 samples, aligned through a piecewise least-squares line of the microphone HDF5 chunk timestamps against sample index (changed 2026-10-29, see §7) |
 | vision (16,16) | eye-tracking world camera (egocentric), frame nearest to each 10 Hz tick | grayscale, then 16×16 mean-intensity patch grid. Same reduction as `extract_ccfilm_features.py`, with no pretrained network and no weight download |
 | tactile (32) | both gloves, 32×32 pressure matrices | per glove, 4×4 average pooling of the matrix to 16 values; left and right concatenated to 32 |
 | gravity (3) | right Myo `acceleration_g` (3 axes, in g) | mean over the window, then a 0.5 Hz low-pass so the vector tracks forearm orientation relative to gravity |
@@ -113,14 +113,50 @@ extraction:
 
 1. All six tensors have the same length. The extraction script aborts
    otherwise, using the check added for #45.
-2. Clock agreement: the start and end of the video and audio fall
-   inside the wearable recording, and frame timestamps are monotonic.
+2. Clock agreement: the labelled span falls inside the video and audio
+   spans, and all timestamp series are monotonic; offsets between media
+   and wearable starts/ends are reported.
 3. Physical sanity: tactile pressure onsets and audio energy onsets
    cross-correlate with a peak within ±200 ms on at least one
    contact-heavy activity (slicing). The figure is saved.
 4. Determinism: two extractions give identical sha256 for all tensors.
 5. One smoke cell (`train` 20 steps, `lesion` T2 20 steps, `eval`) runs
    on `ActionSenseWorld`, and two runs give identical sha256 (#35).
+
+*Changed 2026-10-29 (PI decision, after the S00 pilot,
+`docs/pilot/actionsense-s00.md`):* check 2 previously required the
+start and end of the video and audio to fall inside the wearable
+recording. On S00 the video starts 9.0 s and the microphone 36.5 s
+before the first wearable sample (and the video ends 2.9 s after the
+last one), margins that only concern unlabelled time. The check now
+tests what the extraction relies on, the labelled span covered by the
+media, and reports the offsets instead of failing on them.
+
+*Changed 2026-10-29 (PI decision, same pilot):* the S00 microphone
+chunk timestamps arrive in bursts (steps of ~0, 43 and 85 ms instead of
+a steady 2048 / 48000 = 42.67 ms) while the WAV is continuous. Mapping
+each frame through a single chunk timestamp, with a 20 ms per-span drift
+rejection, dropped 42.3 % of the S00 frames and could place a window
+40–85 ms off its tick. Audio samples are now placed on a per-file
+piecewise linear fit of chunk timestamp against sample index (chunk *k*
+stamped at sample (*k* + 1)·2048 − 1). Breakpoints are found on the
+residuals of a global fit: the median residual over the 25 chunks
+(~1 s) after a chunk differs from that over the 25 chunks before by
+more than 0.05 s; burst jitter averages out, a clock step or a dropout
+does not. Each segment is fitted on its own; frames whose window lies
+within 1 s of a breakpoint (or in the clock gap between two segments)
+are dropped and counted. A file is rejected only if its WAV length is
+not 2048 × the number of chunk timestamps or its timestamps are not
+monotonic; a segment is rejected only if its implied rate deviates from
+the WAV rate by more than 2e-3 or a residual exceeds 0.2 s
+(`MIC_STEP_WINDOW`, `MIC_STEP_DETECT_S`, `MIC_BREAKPOINT_MARGIN_S`,
+`MIC_RATE_TOL`, `MIC_SEGMENT_RESIDUAL_MAX_S` in
+`scripts/extract_actionsense.py`). Frames of a rejected file or segment
+count as audio gaps, not as outside the audio span. A constant host
+latency between a sound and its timestamp is absorbed into the
+intercept and cannot be detected by this fit. Segments, breakpoints
+(time, step) and per-segment rate and residual statistics are reported
+in `MANIFEST.md`.
 
 ## 8. Experiment (to be pre-registered, amendment v0.7)
 
