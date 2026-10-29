@@ -1,0 +1,96 @@
+START commit 938872fd30324511b1a5c6036576121d179f378f 2026-10-29T05:37:52Z 1793252272
+Uninstalled 1 package in 7ms
+Installed 1 package in 4ms
+torch 2.11.0 sklearn 1.8.0 numpy 2.4.4
+System-wide memory free percentage: 84%
+Uninstalled 1 package in 4ms
+Installed 1 package in 3ms
+{
+  "source": "ccfilm",
+  "n_frames": 5965,
+  "n_heldout": 995,
+  "n_purged": 384,
+  "held_segments": [
+    11,
+    13,
+    18,
+    19,
+    20
+  ],
+  "min_class_heldout_share": 0.16260162601626016,
+  "heldout_counts": [
+    223,
+    287,
+    285,
+    200
+  ],
+  "usable_counts": [
+    952,
+    1424,
+    1287,
+    923
+  ],
+  "label": {
+    "a": "audio energy (mean standardised log-mel) > median",
+    "b": "vision brightness (mean 16x16 intensity) > median",
+    "prevalence_a": 0.49991617770326907,
+    "prevalence_b": 0.49991617770326907,
+    "phi_ab": -0.17485334399963337,
+    "counts": [
+      1231,
+      1752,
+      1752,
+      1230
+    ]
+  }
+}
+{
+  "passed": true,
+  "delta_k": 0.3086750496807232,
+  "p_value": 9.999000099990002e-05,
+  "k_joint": 0.3329336838738196,
+  "k_decor": 0.024258634193096457,
+  "n_perm": 10000,
+  "reason": "ok",
+  "k_original_mean": 0.3564041687897877
+}
+seed=3211 onset=0 arm=plain full=0.483 bestq=0.423 bacc_all=0.495 best=vision:0.451 ctrl=0.951 wall=32.1s
+seed=3211 onset=50 arm=plain full=0.429 bestq=0.433 bacc_all=0.438 best=vision:0.451 ctrl=0.943 wall=32.7s
+seed=3211 onset=100 arm=plain full=0.474 bestq=0.458 bacc_all=0.452 best=vision:0.451 ctrl=0.942 wall=33.1s
+seed=3211 onset=150 arm=plain full=0.486 bestq=0.468 bacc_all=0.485 best=vision:0.451 ctrl=0.943 wall=33.9s
+seed=3211 onset=200 arm=plain full=0.502 bestq=0.467 bacc_all=0.499 best=vision:0.451 ctrl=0.945 wall=35.1s
+seed=3212 onset=0 arm=plain full=0.474 bestq=0.474 bacc_all=0.448 best=vision:0.544 ctrl=0.962 wall=31.9s
+seed=3212 onset=50 arm=plain full=0.495 bestq=0.495 bacc_all=0.463 best=vision:0.544 ctrl=0.962 wall=32.7s
+seed=3212 onset=100 arm=plain full=0.481 bestq=0.481 bacc_all=0.463 best=vision:0.544 ctrl=0.962 wall=33.1s
+seed=3212 onset=150 arm=plain full=0.478 bestq=0.478 bacc_all=0.460 best=vision:0.544 ctrl=0.964 wall=34.4s
+seed=3212 onset=200 arm=plain full=0.462 bestq=0.462 bacc_all=0.440 best=vision:0.544 ctrl=0.967 wall=35.5s
+seed=3213 onset=0 arm=plain full=0.487 bestq=0.491 bacc_all=0.485 best=vision:0.535 ctrl=0.954 wall=32.0s
+seed=3213 onset=50 arm=plain full=0.488 bestq=0.488 bacc_all=0.476 best=vision:0.533 ctrl=0.961 wall=33.0s
+seed=3213 onset=100 arm=plain full=0.493 bestq=0.492 bacc_all=0.511 best=vision:0.536 ctrl=0.958 wall=33.3s
+seed=3213 onset=150 arm=plain full=0.489 bestq=0.488 bacc_all=0.479 best=vision:0.522 ctrl=0.954 wall=33.6s
+seed=3213 onset=200 arm=plain full=0.499 bestq=0.499 bacc_all=0.500 best=vision:0.523 ctrl=0.956 wall=35.8s
+seed=3214 onset=0 arm=plain full=0.244 bestq=0.244 bacc_all=0.247 best=vision:0.458 ctrl=0.966 wall=32.1s
+seed=3214 onset=50 arm=plain full=0.245 bestq=0.245 bacc_all=0.246 best=vision:0.458 ctrl=0.966 wall=32.8s
+seed=3214 onset=100 arm=plain full=0.248 bestq=0.248 bacc_all=0.246 best=vision:0.458 ctrl=0.966 wall=33.2s
+seed=3214 onset=150 arm=plain full=0.246 bestq=0.246 bacc_all=0.245 best=vision:0.458 ctrl=0.968 wall=33.9s
+seed=3214 onset=200 arm=plain full=0.247 bestq=0.247 bacc_all=0.246 best=vision:0.458 ctrl=0.968 wall=34.8s
+seed=3215 onset=0 arm=plain full=0.482 bestq=0.479 bacc_all=0.477 best=vision:0.462 ctrl=0.964 wall=32.5s
+seed=3215 onset=50 arm=plain full=0.480 bestq=0.480 bacc_all=0.465 best=vision:0.464 ctrl=0.964 wall=33.1s
+seed=3215 onset=100 arm=plain full=0.479 bestq=0.479 bacc_all=0.489 best=vision:0.463 ctrl=0.966 wall=33.8s
+seed=3215 onset=150 arm=plain full=0.481 bestq=0.480 bacc_all=0.489 best=vision:0.463 ctrl=0.966 wall=34.7s
+seed=3215 onset=200 arm=plain full=0.479 bestq=0.455 bacc_all=0.446 best=vision:0.463 ctrl=0.968 wall=35.7s
+{
+  "gate1_learning": false,
+  "gate2_isolation": true,
+  "gate3_positive_control": true,
+  "gate5a_plain_bacc": true,
+  "gate6_converged": true
+}
+disposition: plain-stage prerequisite failed (gate1_learning): stop and report
+Uninstalled 1 package in 7ms
+Installed 1 package in 3ms
+{
+  "source": "reports/pilots/v09_revd_ccfilm_pilot.json",
+  "N": null,
+  "note": "no N: plain-stage prerequisite failed (gate1_learning): stop and report"
+}

@@ -195,6 +195,14 @@
     "sha256": "760475cba5f5dfa42496769cdcae37b8a8389c42ccde8b2f702c294bebbb29e6",
     "size": 61393
   },
+  "pilots/v09_revd_ccfilm_n_rule.json": {
+    "sha256": "6ae8f61f3161b33590df5b8c0cbdd822df5dfc1bdcab9baf5c2b4e006be30a02",
+    "size": 158
+  },
+  "pilots/v09_revd_ccfilm_pilot.json": {
+    "sha256": "550d941c65a11204a7761cca81bf7ed96076efdaae5405e287118bb52ae69f5d",
+    "size": 115946
+  },
   "sprint17_kraskov_vs_mine.csv": {
     "sha256": "ac9eaba84563001cc5b4fe3021faa47d04f7e860e33f682161a00b7134b4611f",
     "size": 286

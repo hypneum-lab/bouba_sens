@@ -748,3 +748,60 @@ and donor draws per seed.
 6. The budget narrative above is corrected.
 7. New runner-level and gate tests cover rev. D selection, the
    plain-stage stop, a skipped check and the per-cell ceiling.
+
+## D.7 Rev. D pilot, CC-film (macM1, 2026-10-29, commit `938872f`)
+
+**Run conditions.**
+
+- Command: `scripts/run_v09_revc.py --budget revd --world ccfilm`.
+- Seeds 3211–3215 (namespace 9101); R = 1,750, so 1,800–2,000 steps per
+  cell.
+- Under the heavy lock, started 05:38 UTC, 879 s in all
+  (`reports/pilots/v09_revd_ccfilm_pilot.json`, log
+  `reports/pilots/logs/revd_pilots.log`).
+- Codex r11 had judged commit 938872f VALID-TO-RUN.
+- **The Studyforrest step was cancelled** at the lead's request: the
+  22-day N10-C campaign was queued on the macM1 lock. Where to run it
+  is a PI decision.
+
+**Results.**
+
+- **Manipulation check: passes** (Δ_K 0.309, p = 1e-4).
+- **Disposition: stopped at the plain stage.** Gate 1 (learning) fails
+  at every onset; nothing is averaged across onsets.
+  - Mean full-network balanced accuracy per onset: 0.427–0.438.
+  - Lowest seed per onset: 0.244–0.248 (seed 3214).
+  - Margin over the best single-modality query: −0.001 to 0.012.
+- The other plain gates pass:
+  - isolation: the worst single modality in any cell is 0.571;
+    concatenation − best = 0.428;
+  - positive control: FG_ctrl 0.47, lowest 90 % CI lower bound 0.34;
+  - plain bacc(h_all) 0.43;
+  - every fit converged.
+- No N.
+
+**Task checkpoints** (onset 200, full / best query):
+
+| seed | 250 | 500 | 750 | 1000 | 1250 | 1500 | 1750 | 2000 |
+|---|---|---|---|---|---|---|---|---|
+| 3211 | 0.46 / 0.25 | 0.44 / 0.44 | 0.41 / 0.40 | 0.36 / 0.29 | 0.44 / 0.34 | 0.47 / 0.33 | 0.48 / 0.40 | 0.50 / 0.47 |
+| 3212 | 0.50 / 0.25 | 0.68 / 0.48 | **0.88** / 0.48 | 0.45 / 0.47 | 0.49 / 0.49 | 0.47 / 0.47 | 0.47 / 0.47 | 0.46 / 0.46 |
+| 3213 | 0.45 / 0.25 | 0.48 / 0.48 | 0.48 / 0.48 | 0.49 / 0.49 | 0.49 / 0.49 | 0.48 / 0.47 | 0.49 / 0.48 | 0.50 / 0.50 |
+| 3214 | 0.41 / 0.25 | 0.43 / 0.28 | 0.48 / 0.47 | 0.31 / 0.31 | 0.24 / 0.24 | 0.25 / 0.25 | 0.25 / 0.25 | 0.25 / 0.25 |
+| 3215 | 0.48 / 0.42 | 0.49 / 0.49 | 0.49 / 0.49 | 0.48 / 0.48 | 0.47 / 0.46 | 0.49 / 0.49 | 0.48 / 0.48 | 0.48 / 0.45 |
+
+**Reading.**
+
+- Longer training does not take the CC-film networks off the one-bit
+  plateau. Four seeds sit at about 0.48, equal to their best single
+  modality, from 500 steps to 2,000.
+- Seed 3212 reached 0.88 at 750 steps and fell back to the plateau by
+  1,000.
+- Seed 3214 collapsed to chance after about 1,000 steps, with a training
+  loss back at ln 4 (1.364).
+- The encoders keep the information throughout. Audio reads a at 0.97
+  and vision reads b at 0.99, and the concatenation control reaches
+  0.90+. The full network's fused pathway does not combine the two bits
+  stably.
+- So the failure is instability or collapse of the fused pathway, not
+  too short a budget. The PI has to decide.

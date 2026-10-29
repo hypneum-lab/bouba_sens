@@ -633,3 +633,15 @@ rounds. The draft header records it, and the code and records are kept.
 
 Records: `reports/pilots/v08_pilot_*`, `v08_revb_pilot_*`,
 `v08_revc_learning_gate.json`.
+
+## v0.9 rev. D, CC-film (2026-10-29, `938872f`, macM1)
+
+The run used R = 1,750 (1,800–2,000 steps) on seeds 3211–3215. The
+manipulation check passes (Δ_K 0.309). The run stopped at the learning
+gate at every onset: mean 0.43–0.44, lowest seed 0.24–0.25. The task
+checkpoints show a one-bit plateau (about 0.48) for 4 of 5 seeds from
+500 steps on, one transient escape (seed 3212: 0.88 at 750 steps, back
+to 0.46) and one collapse to chance (seed 3214, after about 1,000
+steps). No N. The Studyforrest rev. D step was not run, because the
+macM1 lock went to N10-C. Details: section D.7 of
+`docs/osf/redesign-proposals-v08-v09-revc-2026-10-28.md`.
