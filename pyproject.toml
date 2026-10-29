@@ -33,6 +33,7 @@ dependencies = [
     # [tool.uv.sources] below. Spec §6.3 contract verified by
     # tests/smoke/test_nerve_wml_api.py.
     "nerve-wml",
+    "h5py>=3.12",
 ]
 
 [project.optional-dependencies]
