@@ -414,7 +414,9 @@ def test_audio_stall_keeps_segment(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     chunk = 43
 
     def stall(true: np.ndarray, s: int) -> np.ndarray:
-        true[s : s + 7] = true[s + 6] + 0.05  # residuals 0.308 ... 0.05 s
+        # Stamped together, before the next chunk (monotonic): late by
+        # 0.298, 0.255, 0.212, 0.169 ... 0.04 s.
+        true[s : s + 7] = true[s + 6] + 0.04
         return true
 
     info, covered, rel, s = _hour_file(tmp_path, monkeypatch, stall)
@@ -422,7 +424,7 @@ def test_audio_stall_keeps_segment(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert seg["accepted"]
     assert seg["res_max"] > extract.MIC_SEGMENT_RESIDUAL_MAX_S  # the old gate rejected it
     assert seg["res_p99"] < 1e-3
-    assert seg["n_stall"] == 3  # 0.308, 0.265, 0.222 s late; 0.179 s is kept
+    assert seg["n_stall"] == 3  # 0.298, 0.255, 0.212 s late; 0.169 s is kept
     # Frame m spans samples [100 m, 100 m + 100): dropped iff it touches
     # chunks s..s+2.
     m = np.rint(rel * 10).astype(np.int64)
