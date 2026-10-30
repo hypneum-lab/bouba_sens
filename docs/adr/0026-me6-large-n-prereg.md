@@ -10,7 +10,9 @@ methodological note « nuls calibrés et errata »). Amended before any
 run by the PI decisions of 2026-10-30 ≈ 16:10: larger mock stream,
 fresh v1 draw accepted, no Gaussian pilot, iid **and** empirical power,
 run on electron-server (not KXKM). Amended again before any run by the
-PI decision of 2026-10-30 ≈ 16:45: two world-seed arms (ADR-0027).
+PI decision of 2026-10-30 ≈ 16:45: two world-seed arms (ADR-0027); and
+by the PI decisions of ≈ 18:00: 50 plantings, `cell` arm first, host
+chosen at the tag (electron-server, else KXKM CPU on 2026-11-03).
 **Depends on:** PR #59 / ADR-0027 (`lesion --world-seed-mode`,
 `WORLD_SEED_MODE`). This ADR is merged after #59, by a merge of main
 into its branch, and its tag is taken on a commit that contains both.
@@ -218,20 +220,40 @@ null. It decides nothing.
 
 ### Run
 
-- **Machine:** electron-server (8-core Xeon X5680, CPU torch), nice 19,
-  from 23:00 on the day of the tag, after NH-01 has finished; `PAR=4`,
-  `OMP_NUM_THREADS=2` (8 threads on 8 cores, as in ADR-0022 / ADR-0023).
-  Not KXKM (a CPU job there slows E1-small by 40–130 %). Environment
-  recorded (commit, uv lock, torch / numpy versions).
-- **Output directory, new:**
-  `~/scratch/bouba_sens-runs/me6-large-n-<tag date>/` on electron-server,
-  with `legacy/` and `cell/`, each holding `pilot_mock/`, `gaussian/`,
-  `mock/` and `*_logs/`.
+- **Host (PI decision ≈ 18:00):** the first host free when the tag is
+  taken; both arms run one after the other on that one host, never split
+  across hosts. The host and its free state are recorded in the run log.
+  - **electron-server** (8-core Xeon X5680, CPU torch), nice 19, after
+    NH-01 has finished, `PAR=4`, `OMP_NUM_THREADS=2` (8 threads on 8
+    cores, as in ADR-0022 / ADR-0023). Output:
+    `~/scratch/bouba_sens-runs/me6-large-n-<tag date>/`.
+  - **Otherwise KXKM, CPU only, on 2026-11-03**, under the NH-81 guard:
+    user `electron`, work under `/ai/saisail`, launcher in
+    `/ai/saisail/gpu-swap/launchers/`, nice 19, no GPU; ComfyUI,
+    gpu-swap, docling and E1-small are not touched. Start only after the
+    NH-81 measure has finished (line « done (measure finished) » in
+    `/ai/saisail/nh81-kxkm/results/wait.log`, or no `nh81-measure`
+    process). A guard sends SIGSTOP to the grid's own workers when the
+    `e1s-conf` tmux session or the E1-small process disappears, as the
+    KXKM launch notes require. The core count (`PAR=4`,
+    `OMP_NUM_THREADS=2`, 8 threads) is announced to the session that runs
+    M5 before the launch, so that it can reduce its workers. Output:
+    `/ai/saisail/bouba_sens-runs/me6-large-n-<tag date>/`. KXKM timings
+    are not measured; §Cost is for electron-server.
+  - Environment recorded on either host (host name, commit, uv lock,
+    torch / numpy versions).
+- **Output layout (either host):** `cell/` and `legacy/`, each holding
+  `pilot_mock/`, `gaussian/`, `mock/` and their `*_logs/`; one
+  `OUT_ROOT` per arm and world (the grid scripts refuse to resume a
+  cell of the other arm, ADR-0027).
 - **Order:** merge #59, then this ADR, on green CI → tag + Software
-  Heritage save → pilot mock, both arms → commit block lengths → Gaussian
-  and mock confirmatory grids, legacy arm then cell arm → analysis
-  (paired nulls, then iid and empirical power, per arm). A cell that fails is rerun by the idempotent script; any
-  other change is an amendment written before it is applied.
+  Heritage save → mock pilot, `cell` arm then `legacy` arm → commit both
+  block-length records → confirmatory grids of the **`cell` arm first**
+  (Gaussian, then mock; it is the intended design), then of the `legacy`
+  arm (Gaussian, then mock), same host, `PAR=4` → analysis (paired nulls,
+  then iid and empirical power, per arm). A cell that fails is rerun by
+  the idempotent script; any other change is an amendment written before
+  it is applied.
 
 ## Known limits
 
@@ -314,9 +336,10 @@ per arm** (less on the mock if its blocks are > 1). iid power curve:
 15 s, shared by the arms. Analysis for both arms: ≈ 2 h idle, ≈ 4 h
 under load.
 
-**Total on electron-server from 23:00: ≈ 6 h idle, ≈ 17 h under the
-smoke's load** (grids ≈ 4.1 / 13.3 h, then analysis ≈ 2 / 4 h). Under
-load the run would end around 16:00 the next day.
+**Total on electron-server: ≈ 6 h idle, ≈ 17 h under the smoke's
+load** (grids ≈ 4.1 / 13.3 h, then analysis ≈ 2 / 4 h). Started at
+23:00 under load, it would end around 16:00 the next day. Not measured
+on KXKM.
 
 **Design-stage power curve** (`me6_large_n.py power`, p = 0.25, iid
 reference, no data):
@@ -328,14 +351,16 @@ reference, no data):
 | 1024 | 0.0351 | 0.0400 | 1.000 | 0.08 / 1.00 / 1.00 / 1.00 |
 | 4096 | 0.0176 | 0.0203 | 0.018 | 0.92 / 1.00 / 1.00 / 1.00 |
 
-## Open points for the PI
+## Points settled by the PI (2026-10-30 ≈ 18:00, before any run)
 
-1. **Number of plantings.** 50 plantings per (arm, world, n, pair, δ)
-   give a binomial standard error ≤ 0.07 on each power value, for
-   ≈ 4 h of the analysis under load (2 arms × 2 worlds × 300 plantings).
-   20 plantings would cut that time to ≈ 40 % (≈ 1.6 h) with a standard
-   error ≤ 0.11. Kept at 50 unless the PI decides otherwise before the
-   tag.
+1. **Number of plantings: 50** per (arm, world, n, pair, δ), binomial
+   standard error ≤ 0.07 on each power value (≈ 4 h of the analysis
+   under load; 20 would have cost ≈ 40 % of that with an error ≤ 0.11).
+2. **Arm order:** `cell` first, then `legacy`, on one host, `PAR=4`.
+3. **Host:** the first free at the tag, electron-server, else KXKM CPU
+   on 2026-11-03 under the NH-81 guard (§Run).
+
+No open point remains in this ADR besides its sign-off.
 
 ## References
 
