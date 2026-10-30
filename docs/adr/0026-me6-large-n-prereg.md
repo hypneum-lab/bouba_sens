@@ -14,8 +14,10 @@ PI decision of 2026-10-30 ≈ 16:45: two world-seed arms (ADR-0027); and
 by the PI decisions of ≈ 18:00: 50 plantings, `cell` arm first, host
 chosen at the tag (electron-server, else KXKM CPU on 2026-11-03).
 **Depends on:** PR #59 / ADR-0027 (`lesion --world-seed-mode`,
-`WORLD_SEED_MODE`). This ADR is merged after #59, by a merge of main
-into its branch, and its tag is taken on a commit that contains both.
+`WORLD_SEED_MODE`, resume guards), squash-merged as main **`1295160`**
+and merged into this branch. `1295160` is the code base of both arms:
+the `legacy` arm is its default, the `cell` arm its opt-in mode. The
+tag is taken on the merge commit of this ADR, which contains both.
 **Tag:** `prereg-me6-large-n-<YYYYMMDD>` (annotated, on the merge commit
 of this ADR, date of the tag; expected `prereg-me6-large-n-20261030`).
 No pilot or confirmatory cell may start before it.
@@ -246,7 +248,7 @@ null. It decides nothing.
   `pilot_mock/`, `gaussian/`, `mock/` and their `*_logs/`; one
   `OUT_ROOT` per arm and world (the grid scripts refuse to resume a
   cell of the other arm, ADR-0027).
-- **Order:** merge #59, then this ADR, on green CI → tag + Software
+- **Order:** #59 merged (main `1295160`); merge this ADR on green CI → tag + Software
   Heritage save → mock pilot, `cell` arm then `legacy` arm → commit both
   block-length records → confirmatory grids of the **`cell` arm first**
   (Gaussian, then mock; it is the intended design), then of the `legacy`
@@ -274,7 +276,7 @@ null. It decides nothing.
    `lesion` with seed 0 and `eval` with the lesion seed, so in the
    historical behaviour a T2 cell of seed ≠ 0 is trained and then probed
    on different synthetic worlds. ADR-0027 records the defect and PR #59
-   adds the opt-in `cell` mode. This ADR runs both arms; it does not
+   (main `1295160`) adds the opt-in `cell` mode. This ADR runs both arms; it does not
    choose between them, and the legacy arm stays the one comparable with
    earlier grids.
 
