@@ -7,11 +7,11 @@
 > `bouba_sens/v0.7-actionsense-prereg`, after PI sign-off and before
 > any ActionSense grid runs.
 
-**Status:** Draft, awaiting PI sign-off. Not filed on OSF (local, git-dated pre-registration)
+**Status:** Draft, PI decisions of 2026-10-30 recorded (§8); awaiting PI sign-off. Not filed on OSF (local, git-dated pre-registration)
 **Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN`
 **Previous amendment:** `amendment-v0.6-sprint10-17.md` (Sprint 10–17 hyperparameters, MINE estimator)
 **Amendment tag to create after PI sign-off:** `bouba_sens/v0.7-actionsense-prereg`
-**Amendment date:** 2026-10-29 (draft)
+**Amendment date:** 2026-10-29 (draft); PI decisions 2026-10-30
 **Design and plan:** `docs/superpowers/specs/2026-10-28-actionsense-world-design.md`
 (§6, §7 as amended 2026-10-29, §8),
 `docs/superpowers/plans/2026-10-28-actionsense-world.md` (Task 6)
@@ -21,11 +21,18 @@
 merged. The commit is identified at tag time and written into the tag
 message and into ADR-0025.
 
-> **Numbering.** Draft PR #9 (`docs/osf-prereg-2026-10`, not merged)
-> holds other drafts numbered v0.7 to v0.9 (TOST equivalence, subspace
-> shift, decorrelation window). This document takes the number v0.7, as
-> the ActionSense plan requires. Renumbering the PR #9 drafts is a PI
-> decision. It does not affect this text.
+> **Numbering (PI decision 2026-10-30).** Draft PR #9
+> (`docs/osf-prereg-2026-10`, not merged) holds other drafts numbered
+> v0.7 to v0.9 (TOST equivalence, subspace shift, decorrelation
+> window). ActionSense keeps the number v0.7. The PR #9 draft
+> `amendment-v0.7-tost-equivalence` is to be renumbered v0.8 (a comment
+> to that effect is posted on PR #9; PR #9 itself is not modified).
+
+> **Code prerequisite.** The decisions of 2026-10-30 below need code
+> changes that are in PR #56 (`fix/v07-prereg-gates`): the `label_family`
+> jar rule, the `>=` threshold in `aggregate_grid.py`, and `EMISSION` /
+> `--probe-v2` in `run_grid.sh`. PR #56 must be merged before the tag,
+> and the extraction commit recorded at tag time must contain it.
 
 ## 1. What is amended and why
 
@@ -123,7 +130,7 @@ The statistics are written to `MANIFEST.md`. Labels are not normalised.
 Activities are read from `Start` / `Stop` rows paired by label. A
 family is assigned by **prefix match** on the lower-cased, stripped
 label (`FAMILY_RULES` in `src/bouba_sens/world/actionsense_features.py`):
-`peel`, `slice` → 0; `spread`, `open/close a jar` → 1; `clean`, `wipe` → 2;
+`peel`, `slice` → 0; `spread`, `open/close a jar`, `open a jar` → 1; `clean`, `wipe` → 2;
 `pour`, `set table`, `load dishwasher`, `unload dishwasher` → 3.
 Matching leading words, not substrings, keeps "Spread … on a bread
 slice" out of cutting.
@@ -139,7 +146,9 @@ The full table for the 20 activity strings of the ActionNet recording
 code (`recording_data/sensor_streamers/ExperimentControlStreamer.py`,
 `self._activities`) is unit-tested in
 `tests/unit/test_actionsense_features.py::UPSTREAM_LABELS`. The PI
-confirmed "Unload dishwasher" → family 3 on 2026-10-29.
+confirmed "Unload dishwasher" → family 3 on 2026-10-29, and on
+2026-10-30 decided that "Open a jar of almond butter" is family 1 (the
+jar family; rule `open a jar`, added in PR #56, with a test).
 
 | Raw label | Family |
 |---|---|
@@ -153,6 +162,7 @@ confirmed "Unload dishwasher" → family 3 on 2026-10-29.
 | Spread almond butter on a bread slice | 1 |
 | Spread jelly on a bread slice | 1 |
 | Open/close a jar of almond butter | 1 |
+| Open a jar of almond butter (string found in the S00 HDF5) | 1 |
 | Pour water from a pitcher into a glass | 3 |
 | Clean a plate with a sponge | 2 |
 | Clean a plate with a towel | 2 |
@@ -169,9 +179,10 @@ counted as `unmapped:<label>` and listed in `MANIFEST.md`. The
 extraction does not guess. The strings recorded in the HDF5 can differ
 from the upstream list. On S00 the unmapped pairs were "Get items from
 refrigerator/cabinets/drawers" (5), "Open a jar of almond butter" (3),
-"Get items from cabinets: …" (1) and "Stack on table: …" (1). By the
-rule above, "Open a jar of almond butter" is unmapped, so it is
-dropped (see §8, item 4).
+"Get items from cabinets: …" (1) and "Stack on table: …" (1). Under
+the prefix rules on main (ca3bcd8) alone, "Open a jar of almond butter"
+would be unmapped; with the `open a jar` rule decided on 2026-10-30
+(§8, item 4) it is family 1 and its 3 S00 segments are kept.
 
 ### 2.5 Frames dropped
 
@@ -306,13 +317,19 @@ re-extracts S00 together with the other four subjects.
 
 ### 4.1 Grids
 
-There are two grids, the direct analogues of ADR-0012's
-`v05_sf45_{nolock,lock}`:
+There are four grids (decision of 2026-10-30): the two lock settings,
+the direct analogues of ADR-0012's `v05_sf45_{nolock,lock}`, each run
+under **both** emission modes, `argmax-bridge` and `straight-through`.
+Both modes are pre-registered; a verdict is reported per mode.
 
-| Grid | `LOCK_AFTER` | Cells |
-|---|---|---|
-| `nolock` | empty (no lock) | 5 seeds × 5 lesioned modalities × T1/T2 × 3 SNR floors = **150** |
-| `lock` | `200` | 5 seeds × 5 lesioned modalities × T1/T2 × 3 SNR floors = **150** |
+| Grid | `LOCK_AFTER` | `EMISSION` | Cells |
+|---|---|---|---|
+| `nolock` / `argmax-bridge` | empty (no lock) | `argmax-bridge` | 5 seeds × 5 lesioned modalities × T1/T2 × 3 SNR floors = **150** |
+| `lock` / `argmax-bridge` | `200` | `argmax-bridge` | **150** |
+| `nolock` / `straight-through` | empty (no lock) | `straight-through` | **150** |
+| `lock` / `straight-through` | `200` | `straight-through` | **150** |
+
+Total: **600 cells**.
 
 - Seeds **0, 1, 2, 3, 4** (`run_grid.sh` default; `SEEDS` unset).
   Phase-1 train seed = `seed`. Lesion seed = `seed * 10000 + count`,
@@ -332,9 +349,10 @@ There are two grids, the direct analogues of ADR-0012's
 - The other `run_grid.sh` settings keep their defaults:
   `TRANSDUCER_GATING=hard`, `GUMBEL_TAU=1.0`, and `CODEBOOK_LOCK`,
   `GATING_SCHEDULE`, `GATING_TARGET` empty. `METRICS=Me1,Me2,Me3`.
-  `run_grid.sh` passes neither `--emission` nor `--probe-v2`, so the
-  emission is `argmax-bridge` and the B-3 probe is v1 (see §8, items
-  1–2).
+  With PR #56, `run_grid.sh` reads `EMISSION` (default `argmax-bridge`)
+  and passes `--emission` and `--probe-v2` (per-trio probe seeds as in
+  `run_grid_probe_v2.sh`), so each cell writes both the v1 and the v2
+  B-3 probe (see §8, items 1–2).
 - Host: macM1, in the background under `nice`, with logs in
   `~/hypneum-lab/actionsense/logs/`.
 
@@ -343,30 +361,33 @@ There are two grids, the direct analogues of ADR-0012's
 ```
 export BOUBA_SENS_ACTIONSENSE_DATA=data/actionsense
 
+# for E in argmax-bridge straight-through:
 # nolock
-WORLD=actionsense OUT_ROOT=runs/v07_actionsense_nolock \
+WORLD=actionsense EMISSION=$E OUT_ROOT=runs/v07_actionsense_nolock_$E \
   STEPS_TRAIN=200 STEPS_LESION=100 METRICS=Me1,Me2,Me3 \
   bash scripts/run_grid.sh
-uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_nolock \
-  --out reports/v0.7_actionsense_nolock_aggregate.json
+uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_nolock_$E \
+  --out reports/v0.7_actionsense_nolock_${E}_aggregate.json
 
 # lock
-WORLD=actionsense OUT_ROOT=runs/v07_actionsense_lock LOCK_AFTER=200 \
-  STEPS_TRAIN=200 STEPS_LESION=100 METRICS=Me1,Me2,Me3 \
+WORLD=actionsense EMISSION=$E OUT_ROOT=runs/v07_actionsense_lock_$E \
+  LOCK_AFTER=200 STEPS_TRAIN=200 STEPS_LESION=100 METRICS=Me1,Me2,Me3 \
   bash scripts/run_grid.sh
-uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_lock \
-  --out reports/v0.7_actionsense_lock_aggregate.json
+uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_lock_$E \
+  --out reports/v0.7_actionsense_lock_${E}_aggregate.json
 
-# ADR-0022 paired null, on each grid
-uv run python scripts/me6_paired_null.py --root runs/v07_actionsense_<grid> \
-  --replicates 20000 --seed 25102026 --block <B> \
-  --out reports/v0.7_actionsense_<grid>_me6_paired_null.json
+# ADR-0022 paired null, on each of the 4 grids, v2 probe (primary)
+uv run python scripts/me6_paired_null.py --root runs/v07_actionsense_<grid>_$E \
+  --replicates 20000 --seed 25102026 --block 10 \
+  --successes-file per_query_successes_v2.json \
+  --out reports/v0.7_actionsense_<grid>_${E}_me6_paired_null.json
+# same with the default per_query_successes.json (v1 probe, comparison)
 ```
 
 The run directory names are not part of the pre-registration. The
 report names follow plan Task 7, which also wires the same commands
 into `scripts/reproduce_paper_v01.sh` as `CHOOSE=v0.7_actionsense`. The block
-length `<B>` is fixed by the PI before the tag (§8, item 3).
+length is fixed to 10 (decision of 2026-10-30, §8, item 3).
 
 ### 4.3 Metrics and thresholds (unchanged)
 
@@ -377,11 +398,20 @@ length `<B>` is fixed by the PI before the tag (§8, item 3).
 | B-3 | median over the 30 (seed, timing, SNR) trios of Me6 = max over q ≠ m of \|P[q, m] − P[m, q]\| on the 5×5 per-query matrix | **0.02** |
 
 These are the thresholds on file (B-1 ≥ 0.05, B-2 ≥ 0.10, B-3 ≥ 0.02)
-and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes.
+and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes. The
+"≥" of the text is authoritative (decision of 2026-10-30): a median
+exactly equal to the threshold passes. Before PR #56, `aggregate_grid.py`
+tested `median > threshold`; PR #56 changes it to `>=` and adds a test on
+the exact-threshold value. This is a deviation of the code from the
+earlier amendments' implementation, not of the text; earlier ADR
+verdicts are not re-run.
 
 - **B-3 is reported only together with the ADR-0022 paired sign-flip
-  null** run on this world's saved `per_query_successes.json`, with
-  B = 20 000 replicates and seed 25102026. The report gives the observed
+  null** with block length 10 (10 consecutive frames = 1 s at 10 Hz),
+  run on the saved `per_query_successes_v2.json` (primary probe, ADR-0023;
+  decides the B-3 verdict) and, for comparison, on
+  `per_query_successes.json` (v1), with B = 20 000 replicates and
+  seed 25102026. The report gives the observed
   median, the null mean, median, P95 and P99, P(null ≥ observed), p, and
   P(B-3 passes | H0) under the fixed rule, together with the iid
   binomial reference of ADR-0021. A B-3 number without its null is not
@@ -392,17 +422,18 @@ and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes.
 
 ## 5. Analysis plan and decision rules (fixed before any grid)
 
-1. **Completeness.** Verdicts are computed only on complete grids: 150
-   of 150 `eval_report.json` files, 75 Me7 pairs and 30 complete trios.
+1. **Completeness.** Verdicts are computed only on complete grids (four
+   in all, §4.1): 150 of 150 `eval_report.json` files, 75 Me7 pairs and 30 complete trios.
    A failed cell may be re-run with the same seed, since `run_grid.sh`
    is idempotent. No cell is replaced by another seed. Any cell that is
    still missing is reported, and that grid gets no verdict.
 2. **Verdict per grid and per invariant.** The verdict is the median
    rule of `aggregate_grid.py`, as in every previous amendment: B-k
-   **PASS** if the grid median exceeds its threshold, and **FAIL**
-   otherwise. There is no bootstrap, no per-seed vote and no
-   multiple-comparison correction. The two grids are judged
-   separately.
+   **PASS** if the grid median is greater than or equal to its
+   threshold, and **FAIL** otherwise. B-3 is decided on the v2 probe;
+   the v1 B-3 value is reported for comparison and does not decide. There is no bootstrap, no per-seed vote and no
+   multiple-comparison correction. The four grids are judged
+   separately, and one verdict per emission mode is reported.
 3. **B-3 reading.** The fixed rule (step 2) is reported as is. B-3 is
    described as *distinguishable from the paired null* only if
    P(null ≥ observed) < 0.05 at the pre-registered block length
@@ -414,7 +445,8 @@ and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes.
    unequal query-modality main effects even without any lesion effect
    (ADR-0022, limit 4 as corrected 2026-10-26). A rejection is
    therefore not read as a lesion effect.
-4. **Lock vs no lock.** The difference between the two grids is
+4. **Lock vs no lock, and emission.** The difference between the lock
+   settings, and between the two emission modes, is
    reported descriptively (per-invariant medians side by side, and
    per-seed values). No test of it is pre-registered.
 5. **Descriptive reports, not verdicts.** These are per-seed medians,
@@ -428,8 +460,8 @@ and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes.
    next to the ActionSense results, and they are **not a replication
    target**: no agreement or disagreement test against them is run or
    claimed.
-7. **Regime qualification.** If the grids run with the `argmax-bridge`
-   emission (§4.1), every verdict carries the ADR-0024 qualification:
+7. **Regime qualification.** For the two `argmax-bridge` grids,
+   every verdict carries the ADR-0024 qualification:
    *measured in a regime where the network does not learn the task*.
 8. **Report.** The verdicts, the provenance (extraction commit, tag,
    nerve-wml commit, raw and tensor sha256) and the class baseline go
@@ -456,45 +488,44 @@ effect. Every deviation is listed in ADR-0025, and results produced
 under a deviation are marked as such. A bug fix that changes any tensor
 or any cell output counts as a deviation.
 
-## 8. Decisions requested from the PI before the tag
+## 8. Decisions of the PI (2026-10-30) and fields still open
 
-The plan and the spec do not settle the following points. They are
-listed here so that the signed text settles them, and none of them was
-decided by the drafter.
+The points below were open in the draft of 2026-10-29. The PI decided
+them on 2026-10-30; they are recorded as decided.
 
-1. **Emission regime.** `run_grid.sh`, as specified by the plan, passes
-   no `--emission`, so the grids would run with `argmax-bridge`. That
-   is the regime where, according to ADR-0024, the network does not
-   learn the task. This is the exact analogue of `v05_sf45`. The
-   alternative, `straight-through`, would need a `run_grid.sh` change
-   that the plan does not include. Keep `argmax-bridge` as written, or
-   amend?
-2. **B-3 probe.** `run_grid.sh` writes the v1 probe
-   (`per_query_successes.json`). ADR-0022 makes a probe with
-   above-chance per-modality accuracy a precondition of any new B-3
-   reading. Keep v1 as the pre-registered B-3 probe, add the ADR-0023
-   v2 probe (`--probe-v2`) as a second reading, or both?
-3. **Paired-null block length `<B>`.** ActionSense probes are
-   contiguous 64-row windows. ADR-0022 left the block length to the PI
-   (on the Studyforrest mock: 1 / 8 / 16 / 32 gave p < 5·10⁻⁵ / 1·10⁻⁴
-   / 0.06 / 0.31). One primary value must be fixed here.
-4. **"Open a jar of almond butter".** This string is in the S00 HDF5
-   (3 segments) and does not match the prefix `open/close a jar`, so it
-   is dropped. Spec §6 puts "opening and closing a jar" in family 1.
-   Keep it dropped, or add a rule (a change to `FAMILY_RULES` before
-   the full extraction)?
-5. **Strict or non-strict threshold.** The thresholds are written
-   "≥", but `aggregate_grid.py` passes on `median > threshold`. Me1 is
-   a mean over 64 outcomes, so a tie at exactly 0.05 or 0.02 can
-   happen. This draft follows the code (strict). Confirm.
+1. **Emission regime: both modes.** `argmax-bridge` and
+   `straight-through` are both pre-registered: 2 modes × 2 lock settings
+   (T1/T2 within each) = 4 grids, 600 cells, one verdict per mode.
+   `run_grid.sh` takes `EMISSION` (default `argmax-bridge`) in PR #56.
+2. **B-3 probe: v2 primary.** The ADR-0023 v2 probe decides the B-3
+   verdict. The v1 probe is reported for comparison. `--probe-v2`
+   stays active in `run_grid.sh` (PR #56).
+3. **Paired-null block length: 10.** Blocks of 10 frames, 1 s at 10 Hz
+   (ADR-0022, `me6_paired_null.py --block 10`; the option already exists).
+4. **"Open a jar of almond butter": family 1.** Rule `open a jar` added
+   to `FAMILY_RULES`, with a test (PR #56).
+5. **Thresholds: "≥" is authoritative.** `aggregate_grid.py` is
+   corrected from `>` to `>=`, with a test on the exact-threshold value
+   (PR #56). §4.3 notes the discrepancy with the earlier code.
+6. **Numbering.** ActionSense stays v0.7; the TOST-equivalence draft of
+   PR #9 is to be renumbered v0.8 (comment posted on PR #9, PR #9
+   untouched).
+
+**Still pending before the tag:**
+
+- the extraction commit after the fix of issue #52 (to be written into
+  the tag message and ADR-0025; it must include PR #56);
+- the sha256 of the S02–S05 raw files;
+- the PI signature.
 
 ## 9. What is **not** amended
 
-- No change to the three thresholds (0.05 / 0.10 / 0.02).
-- No change to the Me1 / Me3 / Me6 / Me7 definitions or to the
-  aggregation code.
-- No change to the grid shape (5 seeds × 5 modalities × 2 timings × 3
-  SNRs = 150 cells) or to the (T1, T2) pairing for B-1.
+- No change to the three thresholds (0.05 / 0.10 / 0.02); the
+  inequality is `>=`, as written (§4.3).
+- No change to the Me1 / Me3 / Me6 / Me7 definitions. The aggregation
+  code changes only by the `>` to `>=` comparison (PR #56).
+- No change to the shape of one grid (5 seeds × 5 modalities × 2 timings × 3
+  SNRs = 150 cells; four grids in all, §4.1) or to the (T1, T2) pairing for B-1.
 - No change to the encoders, the nerve or the head. The ActionSense
   extraction reduces each sensor to the existing contract.
 - The Studyforrest ADRs and their erratum (#45, ADR-0024) stay as they
