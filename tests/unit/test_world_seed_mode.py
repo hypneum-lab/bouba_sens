@@ -149,15 +149,25 @@ def test_cli_legacy_is_unchanged_and_cell_uses_the_phase1_world(
 # Frozen reference (ADR-0027 review): outputs of the commands below on
 # a1fd6ff (main before ADR-0027), electron-server, torch 2.11.0, numpy
 # 2.4.4. The default must reproduce the old code, not only the new one.
-# Frozen: the lesion world fingerprint (seed 0), the sha256 of the
-# discrete per-item / per-query files, and the metrics (dyadic values
-# exactly, me3_delta to 1e-6). Not frozen: model.pt and report.pkl,
+# Frozen: a summary of the lesion world (seed 0; float fields as sum
+# and absolute sum to 1e-5 relative, labels by sha256 -- world_sha256
+# itself hashes float bits and differs across CPUs, as CI showed), the
+# sha256 of the discrete per-item / per-query files, and the metrics
+# (dyadic values exactly, me3_delta to 1e-6). Not frozen: model.pt and report.pkl,
 # whose float weights may differ in the last bits between CPU
 # instruction sets (oneDNN / MKL kernels); they were byte-identical
 # between a1fd6ff and this branch on electron-server.
 LEGACY_REFERENCE = {
     "gaussian": {
-        "world0": "60f2bffbbc9bff8173cd5462ee97f0f238c36b3951dfc238b0bf19043bda6d0d",
+        "world0": {
+            "z": (98.493091, 6561.857587),
+            "audio": (-35.935259, 13034.644301),
+            "vision": (-92.660564, 18425.887378),
+            "tactile": (-2.280372, 6558.096545),
+            "gravity": (-25.260868, 636.623612),
+            "force": (-35.181922, 1227.12281),
+            "label": "301b51ff65051fc334737e027b8a3171cbc0e778c4799b7a55824f08022d1518",
+        },
         "t1": {
             "successes": "37b92dab16ae57d845c9337f1220bc8bb2ed06489674efea3c5da5a7addb8a48",
             "me1_file": "4c1cb6b8e870ba3471f34efc48ded1546043a08601423f9bd5b673a5fe2633b3",
@@ -171,7 +181,15 @@ LEGACY_REFERENCE = {
         "paired": (0.15625, 0.21875, -0.0625),
     },
     "studyforrest": {
-        "world0": "02ad4085a74950e7485b48e2e9fcc1d07851004997ada9993c7875f1fdba9f76",
+        "world0": {
+            "z": (0.0, 0.0),
+            "audio": (7864.605731, 21674.534936),
+            "vision": (15790.668621, 44767.709536),
+            "tactile": (0.0, 0.0),
+            "gravity": (0.0, 0.0),
+            "force": (0.0, 0.0),
+            "label": "c11be3679e61d8132a4645bf53e251886329bff058ff4c7768fc3a4b24cc944a",
+        },
         "t1": {
             "successes": "5e2c2c3ea723874832c632f921cf6b7b69d045781d420d59c6535ead5f51f3dd",
             "me1_file": "e9a3adea7dc658a9b558489a448330ac854f84a89fddc673c195f00681608559",
@@ -187,6 +205,18 @@ LEGACY_REFERENCE = {
 }
 
 
+def _world_summary(world: object) -> dict[str, object]:
+    import hashlib
+
+    s = world.sample(batch_size=256, seed=20_261_030)  # type: ignore[attr-defined]
+    out: dict[str, object] = {}
+    for name in ("z", "audio", "vision", "tactile", "gravity", "force"):
+        x = getattr(s, name).double()
+        out[name] = (float(x.sum()), float(x.abs().sum()))
+    out["label"] = hashlib.sha256(s.label.contiguous().numpy().tobytes()).hexdigest()
+    return out
+
+
 def _sha(path: Path) -> str:
     import hashlib
 
@@ -200,7 +230,11 @@ def test_default_reproduces_the_pre_adr0027_reference(
     monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_DATA", raising=False)
     monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES", raising=False)
     ref = LEGACY_REFERENCE[world]
-    assert world_sha256(_build_world(world, 0)) == ref["world0"]
+    summary = _world_summary(_build_world(world, 0))
+    want = ref["world0"]
+    assert summary["label"] == want["label"]  # type: ignore[index]
+    for name in ("z", "audio", "vision", "tactile", "gravity", "force"):
+        assert summary[name] == pytest.approx(want[name], rel=1e-5, abs=1e-3), name  # type: ignore[index]
     phase1 = tmp_path / "phase1"
     _run("train", "--steps", "3", "--batch-size", "4", "--seed", "7", "--world", world,
          "--no-probe-v2", "--out", str(phase1))  # fmt: skip
