@@ -378,7 +378,7 @@ uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_lock_$E \
 
 # ADR-0022 paired null, on each of the 4 grids, v2 probe (primary)
 uv run python scripts/me6_paired_null.py --root runs/v07_actionsense_<grid>_$E \
-  --replicates 20000 --seed 25102026 --block 10 \
+  --replicates 20000 --seed 25102026 --block <b_world> \
   --successes-file per_query_successes_v2.json \
   --out reports/v0.7_actionsense_<grid>_${E}_me6_paired_null.json
 # same with the default per_query_successes.json (v1 probe, comparison)
@@ -387,7 +387,7 @@ uv run python scripts/me6_paired_null.py --root runs/v07_actionsense_<grid>_$E \
 The run directory names are not part of the pre-registration. The
 report names follow plan Task 7, which also wires the same commands
 into `scripts/reproduce_paper_v01.sh` as `CHOOSE=v0.7_actionsense`. The block
-length is fixed to 10 (decision of 2026-10-30, §8, item 3).
+length `<b_world>` is set by the ADR-0023 autocorrelation rule on a separate pilot grid (§8, item 3).
 
 ### 4.3 Metrics and thresholds (unchanged)
 
@@ -407,7 +407,7 @@ earlier amendments' implementation, not of the text; earlier ADR
 verdicts are not re-run.
 
 - **B-3 is reported only together with the ADR-0022 paired sign-flip
-  null** with block length 10 (10 consecutive frames = 1 s at 10 Hz),
+  null** with the block length of the ADR-0023 autocorrelation rule (in probe items, §8, item 3),
   run on the saved `per_query_successes_v2.json` (primary probe, ADR-0023;
   decides the B-3 verdict) and, for comparison, on
   `per_query_successes.json` (v1), with B = 20 000 replicates and
@@ -500,8 +500,19 @@ them on 2026-10-30; they are recorded as decided.
 2. **B-3 probe: v2 primary.** The ADR-0023 v2 probe decides the B-3
    verdict. The v1 probe is reported for comparison. `--probe-v2`
    stays active in `run_grid.sh` (PR #56).
-3. **Paired-null block length: 10.** Blocks of 10 frames, 1 s at 10 Hz
-   (ADR-0022, `me6_paired_null.py --block 10`; the option already exists).
+3. **Paired-null block length: ADR-0023 rule.** (Re-decision of the PI,
+   2026-10-30; the first decision, "10 frames", is withdrawn because it
+   conflicts with ADR-0023.) The block length is fixed by the
+   autocorrelation rule of ADR-0023 and of the preregistration
+   `docs/prereg/2026-10-25-b3-probe-v2.md` (the `block` step of
+   `scripts/b3_probe_v2.py`), exactly as for the Gaussian and mock
+   worlds, in units of probe items. It is computed on a separate
+   **pilot grid, seeds 100-101**, and the resulting length is committed
+   **before** the confirmatory grids. Confirmatory seeds: ADR-0023
+   reserves 200-204 for its confirmatory grids, which already ran on the
+   Gaussian and mock worlds; the ActionSense seed set is therefore to be
+   confirmed (until the PI rules, §4.1 keeps the `run_grid.sh` default
+   seeds 0-4).
 4. **"Open a jar of almond butter": family 1.** Rule `open a jar` added
    to `FAMILY_RULES`, with a test (PR #56).
 5. **Thresholds: "≥" is authoritative.** `aggregate_grid.py` is
