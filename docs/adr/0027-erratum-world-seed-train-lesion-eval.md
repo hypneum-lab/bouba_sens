@@ -119,8 +119,10 @@ measured here.
   the v2 probe on or off. A frozen reference
   (`test_default_reproduces_the_pre_adr0027_reference`) checks the
   default against outputs computed with the code before this erratum
-  (`a1fd6ff`, electron-server): lesion world fingerprint, sha256 of the
-  per-item and per-query files, metrics (dyadic values exactly,
+  (`a1fd6ff`, electron-server): a summary of the lesion world (float
+  sums to 10⁻⁵ relative, labels by sha256; `world_sha256` hashes float
+  bits and differs between CPUs), sha256 of the per-item and per-query
+  files, metrics (dyadic values exactly,
   `me3_delta` to 10⁻⁶), paired-run Me1 / Me7. `model.pt` is not frozen,
   as float weights may differ in the last bits across CPU instruction
   sets; it was byte-identical between `a1fd6ff` and this branch on
