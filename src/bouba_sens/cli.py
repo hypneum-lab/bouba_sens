@@ -775,7 +775,7 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         from omegaconf import OmegaConf
 
         cfg = OmegaConf.load(cfg_path)
-        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)  # type: ignore[no-untyped-call]
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)
         state = _torch.load(model_pt, weights_only=True)
         mux.load_state_dict(state["mux"])
         nerve.load_state_dict(state["nerve"])
