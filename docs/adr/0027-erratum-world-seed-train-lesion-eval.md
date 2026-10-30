@@ -4,13 +4,15 @@
 threshold or past verdict is deleted or changed.
 **Date:** 2026-10-30
 **Decision source:** PI decision of 2026-10-30 ≈ 16:45 (add a corrected
-mode, keep the historical one as default, run both arms in ADR-0026).
+mode, keep the historical one as default, run both arms in ADR-0026);
+review fixes and replay decision of 2026-10-30 ≈ 18:00.
 **Builds on:** ADR-0024 (erratum: the default regime does not learn).
 **Artefacts:** `src/bouba_sens/cli.py` (`lesion --world-seed-mode`,
 `--world-seed`; `eval --world-seed-mode`; `resolve_lesion_world_seed`,
 `config_world_seed`), `src/bouba_sens/world/base.py` (`world_sha256`),
 `scripts/run_grid.sh`, `scripts/run_grid_probe_v2.sh` (`WORLD_SEED_MODE`),
-`tests/unit/test_world_seed_mode.py`.
+`tests/unit/test_world_seed_mode.py`,
+`tests/unit/test_grid_world_mode_guard.py`.
 
 ## Fact
 
@@ -66,7 +68,9 @@ XOR, Sinusoid, Studyforrest mock) run through `train` → `lesion`:
 
 - T1 cells. They have no phase 1 and are trained, scored and probed in
   `lesion`'s world 0. Their `me1_probe` is still on the lesion-seed world.
-- T2 cells of seed 0 (train and lesion both use world 0).
+- T2 cells of seed 0 for training, adaptation and the v1 / v2 probes
+  (train and lesion both use world 0). Their `me1_probe` is still
+  affected: `eval` rebuilds the world with the lesion seed, not 0.
 - Phase-1-only measurements: the emission pilot (seeds 110–111) and the
   phase-1 losses of ADR-0024.
 - Real-data worlds: Studyforrest real (2- and 5-modal), CCFilm and
@@ -97,15 +101,42 @@ measured here.
   recorded in `config.yaml` (legacy if absent, which covers every past
   run); paired-run Me1 follows it too. In `cell` mode the rebuild uses
   the recorded `world_seed` and `eval_report.json` gets the same three
-  keys. Nothing is added in legacy mode.
+  keys. Nothing is added in legacy mode. Paired mode
+  (`--t1-ckpt` / `--t2-ckpt`) rebuilds both cells with the same mode,
+  refuses a T1 / T2 pair whose modes differ, and in `cell` mode records
+  `world_seed_mode`, `world_sha256_t1` and `world_sha256_t2`.
 - `WORLD_SEED_MODE` (default `legacy`) in `run_grid.sh` and
   `run_grid_probe_v2.sh`. In `cell` mode it passes
   `--world-seed-mode cell --world-seed <grid seed>` to every lesion cell.
+  On resume, a finished cell whose `config.yaml` records another mode
+  (legacy if absent) stops the script with an error: one `OUT_ROOT` per
+  arm. Phase 1 needs no guard, since `train` does not read the mode.
 - Tests (`tests/unit/test_world_seed_mode.py`, Gaussian and mock):
   explicit `legacy` equals the default byte for byte (probe files,
   `metadata.json`, `config.yaml`, `eval_report.json`, `model.pt`). In
   `cell` mode, `train` (world s), `lesion` T2 and T1 and `eval` share one
-  world fingerprint, which differs from the world-0 fingerprint.
+  world fingerprint, which differs from the world-0 fingerprint, with
+  the v2 probe on or off. A frozen reference
+  (`test_default_reproduces_the_pre_adr0027_reference`) checks the
+  default against outputs computed with the code before this erratum
+  (`a1fd6ff`, electron-server): lesion world fingerprint, sha256 of the
+  per-item and per-query files, metrics (dyadic values exactly,
+  `me3_delta` to 10⁻⁶), paired-run Me1 / Me7. `model.pt` is not frozen,
+  as float weights may differ in the last bits across CPU instruction
+  sets; it was byte-identical between `a1fd6ff` and this branch on
+  electron-server. `tests/unit/test_grid_world_mode_guard.py` runs both
+  grid scripts with a fake `uv` (`bash -n`, pass-through, resume guard).
+
+## Replays (PI decision 2026-10-30 ≈ 18:00)
+
+- The straight-through lesion × query grid (Gaussian, seeds 300–309,
+  `docs/prereg/2026-10-26-b3-lesion-interaction.md`) will be **replayed
+  in `cell` mode after the ADR-0026 Me6 nulls**, as an **exploratory**
+  analysis. It does not replace or reopen the confirmatory reading of
+  that grid; it reports how far the legacy result depends on the world
+  change.
+- Every other historical grid receives this erratum only, with **no
+  replay**.
 
 ## What this erratum does not change
 
