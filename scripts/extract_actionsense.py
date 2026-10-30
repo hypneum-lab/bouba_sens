@@ -91,9 +91,11 @@ MIC_CHUNK = 2048
 # (relative; 44.1 vs 48 kHz is 8e-2) or the 99th percentile of its
 # |residual| exceeds MIC_SEGMENT_RESIDUAL_MAX_S (issue #52: a host stall,
 # ~7 chunks stamped together ~0.3 s late, is a spike the step detector
-# ignores; on the max residual it rejected a whole 1 h file). In an
-# accepted segment, frames whose window touches a chunk with |residual| >
-# MIC_SEGMENT_RESIDUAL_MAX_S are dropped as a stall. Frames within
+# ignores; on the max residual it rejected a whole 1 h file). Chunks with
+# |residual| > MIC_SEGMENT_RESIDUAL_MAX_S are left out of a second fit of
+# their segment, which then sets the residuals and the gate; in an
+# accepted segment, frames whose window touches such a chunk are dropped
+# as a stall. Frames within
 # MIC_BREAKPOINT_MARGIN_S of a breakpoint are dropped. A constant host
 # latency between the sound and its timestamp is absorbed into the
 # intercept and cannot be detected.
@@ -187,20 +189,28 @@ def _log_mel(frames: np.ndarray, fb: np.ndarray) -> np.ndarray:
 
 
 def _line_fit(
-    ts: np.ndarray, chunk: int, sr: float, k0: int, k1: int
+    ts: np.ndarray,
+    chunk: int,
+    sr: float,
+    k0: int,
+    k1: int,
+    keep: np.ndarray | None = None,
 ) -> tuple[dict[str, float], np.ndarray]:
     """Least-squares ``ts[k] = a + b * ((k + 1) * chunk - 1)`` on chunks k0..k1-1.
 
     Chunk ``k`` is stamped at its last sample, so sample ``j`` lies at
-    ``a + b * j``. Returns the fit (``a``, ``b``, implied ``rate = 1 / b``,
+    ``a + b * j``. With ``keep`` (bool per chunk of k0..k1-1), only the kept
+    chunks enter the regression; residuals and their statistics still cover
+    every chunk. Returns the fit (``a``, ``b``, implied ``rate = 1 / b``,
     ``rate_dev = |rate - sr| / sr``, |residual| ``res_median``, ``res_p99``,
     ``res_max``) and the signed residuals.
     """
     idx = (np.arange(k0, k1, dtype=np.float64) + 1.0) * chunk - 1.0
     t_rel = ts[k0:k1] - ts[k0]  # keep the epoch offset out of the regression
-    im, tm = idx.mean(), t_rel.mean()
-    den = ((idx - im) ** 2).sum()
-    b = float(((idx - im) * (t_rel - tm)).sum() / den) if den > 0 else 0.0
+    x, y = (idx, t_rel) if keep is None else (idx[keep], t_rel[keep])
+    im, tm = x.mean(), y.mean()
+    den = ((x - im) ** 2).sum()
+    b = float(((x - im) * (y - tm)).sum() / den) if den > 0 else 0.0
     a_rel = float(tm - b * im)
     res = t_rel - (a_rel + b * idx)
     absr = np.abs(res)
@@ -282,7 +292,12 @@ def _mic_clock_fit(
     """``mic_clock_segments`` plus a per-chunk stall mask.
 
     The mask flags the chunks of accepted segments whose |residual| on
-    their own segment's fit exceeds ``MIC_SEGMENT_RESIDUAL_MAX_S``.
+    their own segment's fit exceeds ``MIC_SEGMENT_RESIDUAL_MAX_S``. When
+    any chunk does, the segment is refitted once without those chunks (they
+    would pull the line: an undetected jump of a few chunks at a file end
+    moves it by tens of ms), and the residuals, the mask and the p99 gate
+    are taken from that second fit. Without such chunks the first fit is
+    kept as is.
     """
     stall = np.zeros(len(ts), dtype=bool)
     _glob, res = _line_fit(ts, chunk, sr, 0, len(ts))
@@ -294,8 +309,11 @@ def _mic_clock_fit(
         k0, k1 = edges[i], edges[i + 1]
         if k1 - k0 >= 2:
             fit, r = _line_fit(ts, chunk, sr, k0, k1)
-            good = fit["rate_dev"] <= MIC_RATE_TOL and fit["res_p99"] <= MIC_SEGMENT_RESIDUAL_MAX_S
             spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
+            if spike.any():
+                fit, r = _line_fit(ts, chunk, sr, k0, k1, keep=~spike)
+                spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
+            good = fit["rate_dev"] <= MIC_RATE_TOL and fit["res_p99"] <= MIC_SEGMENT_RESIDUAL_MAX_S
             fit["n_stall"] = float(spike.sum())
             if good:
                 stall[k0:k1] = spike
@@ -897,9 +915,11 @@ def _manifest(
         f"steps by more than {MIC_STEP_DETECT_S:g} s; frames within "
         f"{MIC_BREAKPOINT_MARGIN_S:g} s of a breakpoint are dropped. A segment is "
         f"rejected if its rate deviates from the WAV rate by more than {MIC_RATE_TOL:g} "
-        f"(relative) or its p99 |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s; in "
-        "an accepted segment, frames touching a chunk whose |residual| exceeds "
-        f"{MIC_SEGMENT_RESIDUAL_MAX_S:g} s are dropped (stall, `audio_stall_drop`); a file is "
+        f"(relative) or its p99 |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s, on a "
+        f"refit without the chunks whose |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s "
+        "if there are any; in an accepted segment, frames touching a chunk whose "
+        f"|residual| on that fit exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s are dropped (stall, "
+        "`audio_stall_drop`); a file is "
         "rejected if its WAV length is not 2048 x the chunk count or its timestamps are "
         "not monotonic. A constant host latency is absorbed into the intercept "
         "(fits per file under Stream spans).",
