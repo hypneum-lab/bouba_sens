@@ -19,6 +19,7 @@ FAMILY_RULES: tuple[tuple[str, int], ...] = (
     ("slice", 0),
     ("spread", 1),
     ("open/close a jar", 1),
+    ("open a jar", 1),
     ("clean", 2),
     ("wipe", 2),
     ("pour", 3),

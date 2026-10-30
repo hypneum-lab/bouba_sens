@@ -99,6 +99,60 @@ def _write_probe_v2(loop: object, out: Path, *, seed: int, prefix: str = "") -> 
     (out / f"{prefix}{PROBE_V2_META_FILE}").write_text(json.dumps(meta, indent=2))
 
 
+# ADR-0027 — world seed of `lesion` / `eval`. "legacy" (default) keeps the
+# historical seeds (lesion: 0; eval: the lesion seed recorded in
+# config.yaml); "cell" rebuilds the phase-1 world (seed = training seed).
+WORLD_SEED_MODES = ("legacy", "cell")
+
+
+def resolve_lesion_world_seed(
+    mode: str, *, world_seed: int | None, ckpt: Path | None, timing: str
+) -> int:
+    """World seed used by `lesion` (ADR-0027).
+
+    legacy: 0, as since the five-command CLI (2026-04-20); `--world-seed` is
+    refused. cell: the phase-1 training seed, read from
+    ``ckpt/metadata.json`` for T2 and/or given by ``--world-seed`` (required
+    for T1, which has no checkpoint); both must agree when both are given.
+    """
+    if mode not in WORLD_SEED_MODES:
+        raise typer.BadParameter(f"--world-seed-mode must be one of {WORLD_SEED_MODES}")
+    if mode == "legacy":
+        if world_seed is not None:
+            raise typer.BadParameter("--world-seed needs --world-seed-mode cell")
+        return 0
+    ckpt_seed: int | None = None
+    if ckpt is not None and timing.upper() == "T2":
+        meta = json.loads((Path(ckpt) / "metadata.json").read_text())
+        ckpt_seed = int(meta["seed"])
+    if world_seed is None and ckpt_seed is None:
+        raise typer.BadParameter("--world-seed-mode cell needs --world-seed (T1) or a T2 --ckpt")
+    if world_seed is not None and ckpt_seed is not None and world_seed != ckpt_seed:
+        raise typer.BadParameter(
+            f"--world-seed {world_seed} differs from the phase-1 seed {ckpt_seed} of {ckpt}"
+        )
+    return int(world_seed if world_seed is not None else ckpt_seed)  # type: ignore[arg-type]
+
+
+def config_world_seed(cfg: object, *, override: str | None = None) -> tuple[str, int]:
+    """(mode, world seed) for a model rebuilt from a lesion ``config.yaml``.
+
+    ``override`` None follows the mode recorded in the config (absent =
+    legacy, i.e. every config written before ADR-0027). legacy -> the
+    config seed (the lesion seed, the historical behaviour of `eval`);
+    cell -> the recorded ``world_seed``.
+    """
+    recorded = str(cfg.get("world_seed_mode", "legacy"))  # type: ignore[attr-defined]
+    mode = recorded if override is None else override
+    if mode not in WORLD_SEED_MODES:
+        raise typer.BadParameter(f"--world-seed-mode must be one of {WORLD_SEED_MODES}")
+    if mode == "legacy":
+        return mode, int(cfg["seed"])  # type: ignore[index]
+    if cfg.get("world_seed") is None:  # type: ignore[attr-defined]
+        raise typer.BadParameter("world-seed-mode cell needs world_seed in config.yaml")
+    return mode, int(cfg["world_seed"])  # type: ignore[index]
+
+
 def _build_world(name: str, seed: int) -> WorldSimulator:
     """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
     import os
@@ -451,6 +505,20 @@ def lesion(
             "training pool = seed + 1). Default: the run seed + 777."
         ),
     ),
+    world_seed_mode: str = typer.Option(
+        "legacy",
+        help=(
+            "ADR-0027 — 'legacy' (default, historical: world seed 0) or "
+            "'cell' (world rebuilt with the phase-1 training seed)."
+        ),
+    ),
+    world_seed: int | None = typer.Option(
+        None,
+        help=(
+            "ADR-0027 — phase-1 seed for --world-seed-mode cell; required "
+            "for T1 (no checkpoint), checked against the T2 checkpoint."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -483,7 +551,19 @@ def lesion(
     from bouba_sens.sensory import Modality, SensoryWML
 
     _seed_everything(seed)
-    world_obj = _build_world(world, seed=0)
+    w_seed = resolve_lesion_world_seed(
+        world_seed_mode, world_seed=world_seed, ckpt=ckpt, timing=timing
+    )
+    world_obj = _build_world(world, seed=w_seed)
+    world_record: dict[str, object] = {}
+    if world_seed_mode == "cell":
+        from bouba_sens.world.base import world_sha256
+
+        world_record = {
+            "world_seed_mode": "cell",
+            "world_seed": w_seed,
+            "world_sha256": world_sha256(world_obj),
+        }
     mux = GammaThetaMultiplexer(seed=0, constellation_lock_after=constellation_lock_after)
     sensories: dict[Modality, SensoryWML] = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=1, emission=emission),
@@ -556,6 +636,7 @@ def lesion(
                 "k_steps": k_steps,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
+                **world_record,
             },
             meta_out,
             indent=2,
@@ -596,6 +677,7 @@ def lesion(
                 "t1_ckpt": t1_ref,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
+                **world_record,
             }
         ),
         out / "config.yaml",
@@ -603,7 +685,7 @@ def lesion(
     typer.echo(f"lesion done; wrote {out}/report.pkl")
 
 
-def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
+def _build_model_from_config(cfg, *, world_seed_mode: str | None = None):  # type: ignore[no-untyped-def]
     """ADR-0007 Phase B — reconstruct the 6 model components from config.yaml.
 
     Returns `(mux, sensories, nerve, head, world_obj)`. Mirrors the
@@ -628,7 +710,9 @@ def _build_model_from_config(cfg):  # type: ignore[no-untyped-def]
     # ADR-0024 follow-up: emission mode recorded in config.yaml; configs
     # written before the option existed used the default rule.
     emission = str(cfg.get("emission", "argmax-bridge"))
-    world_obj = _build_world(world_name, seed)
+    # ADR-0027: legacy = the config seed (historical); cell = recorded world_seed.
+    _, w_seed = config_world_seed(cfg, override=world_seed_mode)
+    world_obj = _build_world(world_name, w_seed)
     mux = GammaThetaMultiplexer(seed=seed)
     sensories = {
         "audio": SensoryWML(0, "audio", AudioEncoder(), mux, seed=seed + 1, emission=emission),
@@ -678,6 +762,23 @@ def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:
 def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
     """Return (me1, seed, cell_name) for a Sprint 4+ cell directory.
 
+    Thin wrapper over :func:`_load_cell_world` (world seed mode recorded
+    in the cell's ``config.yaml``).
+    """
+    me1, seed, name, _ = _load_cell_world(path)
+    return me1, seed, name
+
+
+def _load_cell_world(
+    path: Path, *, world_seed_mode: str | None = None
+) -> tuple[float, int | None, str | None, dict[str, object]]:
+    """Return (me1, seed, cell_name, world record) for a cell directory.
+
+    The world record is ``{"world_seed_mode": mode, "world_sha256": sha}``
+    (ADR-0027); ``world_seed_mode`` None follows the mode recorded in
+    ``config.yaml`` (legacy if absent). ``world_sha256`` is computed in
+    cell mode only (None otherwise, and on the legacy fallback).
+
     ADR-0007 Phase B: reads `config.yaml` + `model.pt`, rebuilds the full
     model, loads state_dicts, and recomputes Me1 via the canonical probe
     pass. Falls back to the legacy `eval_report.json` path when either
@@ -690,8 +791,18 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         import torch as _torch
         from omegaconf import OmegaConf
 
+        from bouba_sens.world.base import world_sha256
+
         cfg = OmegaConf.load(cfg_path)
-        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)  # type: ignore[no-untyped-call]
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(
+            cfg, world_seed_mode=world_seed_mode
+        )
+        w_mode, _ = config_world_seed(cfg, override=world_seed_mode)
+        # Fingerprint only in cell mode: the legacy path stays as it was.
+        record: dict[str, object] = {
+            "world_seed_mode": w_mode,
+            "world_sha256": world_sha256(world_obj) if w_mode == "cell" else None,
+        }
         state = _torch.load(model_pt, weights_only=True)
         mux.load_state_dict(state["mux"])
         nerve.load_state_dict(state["nerve"])
@@ -700,9 +811,15 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
             sensories[m].load_state_dict(sd)
         seed_value = int(OmegaConf.select(cfg, "seed"))
         me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
-        return me1, seed_value, path.name
+        return me1, seed_value, path.name, record
 
-    # Legacy fallback — pre-Phase-B ad-hoc cells.
+    # Legacy fallback — pre-Phase-B ad-hoc cells. No world is rebuilt, so
+    # an explicit cell mode cannot be honoured (ADR-0027): refuse it.
+    if world_seed_mode == "cell":
+        raise typer.BadParameter(
+            f"--world-seed-mode cell needs config.yaml and model.pt in {path}; "
+            "this cell has neither, so its world cannot be rebuilt"
+        )
     eval_report = json.loads((path / "eval_report.json").read_text())
     me1 = float(eval_report["me1"])
     seed: int | None = None
@@ -712,7 +829,7 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         raw_seed = metadata.get("seed")
         if raw_seed is not None:
             seed = int(raw_seed)
-    return me1, seed, path.name
+    return me1, seed, path.name, {"world_seed_mode": "legacy", "world_sha256": None}
 
 
 def _emit_paired_run(
@@ -723,12 +840,25 @@ def _emit_paired_run(
     snr: float | None,
     out: Path,
     me7_fn: Callable[[float, float], float],
+    world_seed_mode: str | None = None,
 ) -> None:
-    """ADR-0007 paired-run emitter."""
+    """ADR-0007 paired-run emitter.
+
+    ADR-0027: both cells are rebuilt with ``world_seed_mode`` (None =
+    each cell's recorded mode); a T1 / T2 pair whose resolved modes
+    differ is refused. In cell mode the payload records the mode and the
+    two world fingerprints; legacy payloads keep their historical keys.
+    """
     from datetime import UTC, datetime
 
-    me1_t1, seed_t1, name_t1 = _load_cell(t1_ckpt)
-    me1_t2, seed_t2, _ = _load_cell(t2_ckpt)
+    me1_t1, seed_t1, name_t1, world_t1 = _load_cell_world(t1_ckpt, world_seed_mode=world_seed_mode)
+    me1_t2, seed_t2, _, world_t2 = _load_cell_world(t2_ckpt, world_seed_mode=world_seed_mode)
+    if world_t1["world_seed_mode"] != world_t2["world_seed_mode"]:
+        raise typer.BadParameter(
+            f"T1 cell {t1_ckpt} is in world-seed mode {world_t1['world_seed_mode']} "
+            f"but T2 cell {t2_ckpt} is in {world_t2['world_seed_mode']}; "
+            "pair cells of one mode or pass --world-seed-mode"
+        )
     me7 = me7_fn(me1_t1, me1_t2)
 
     # Derive a pair descriptor from the T1 cell name (e.g. seed0_T1_vision_plus10
@@ -751,6 +881,10 @@ def _emit_paired_run(
         "me7": me7,
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if world_t1["world_seed_mode"] == "cell":
+        payload["world_seed_mode"] = "cell"
+        payload["world_sha256_t1"] = world_t1["world_sha256"]
+        payload["world_sha256_t2"] = world_t2["world_sha256"]
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2))
 
@@ -773,6 +907,14 @@ def eval(
         help="Comma-separated metric ids",
     ),
     out: Path = typer.Option(Path("eval_report.json"), help="Output JSON path"),
+    world_seed_mode: str | None = typer.Option(
+        None,
+        help=(
+            "ADR-0027 — world seed of the me1_probe rebuild: 'legacy' (the "
+            "lesion seed, historical) or 'cell' (the recorded phase-1 seed). "
+            "Default: the mode recorded in config.yaml (legacy if absent)."
+        ),
+    ),
 ) -> None:
     """Compute metrics over a Phase 2 report.pkl, or a paired T1/T2 cell pair (ADR-0007).
 
@@ -811,6 +953,7 @@ def eval(
             snr=snr,
             out=out,
             me7_fn=me7_congenital_gap,
+            world_seed_mode=world_seed_mode,
         )
         typer.echo(f"paired eval done; wrote {out}")
         return
@@ -852,6 +995,7 @@ def eval(
     # Degrades to None when either Phase A artefact is absent (pre-Phase-A
     # legacy runs).
     me1_probe: float | None = None
+    world_record: dict[str, object] = {}
     model_pt = run / "model.pt"
     cfg_path = run / "config.yaml"
     if model_pt.exists() and cfg_path.exists():
@@ -859,7 +1003,18 @@ def eval(
         from omegaconf import OmegaConf
 
         cfg = OmegaConf.load(cfg_path)
-        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(
+            cfg, world_seed_mode=world_seed_mode
+        )
+        w_mode, w_seed = config_world_seed(cfg, override=world_seed_mode)
+        if w_mode == "cell":
+            from bouba_sens.world.base import world_sha256
+
+            world_record = {
+                "world_seed_mode": w_mode,
+                "world_seed": w_seed,
+                "world_sha256": world_sha256(world_obj),
+            }
         state = _torch.load(model_pt, weights_only=True)
         mux.load_state_dict(state["mux"])
         nerve.load_state_dict(state["nerve"])
@@ -880,6 +1035,7 @@ def eval(
                 "me7": eval_report.me7,
                 "me8": eval_report.me8,
                 "me9": eval_report.me9,
+                **world_record,
             },
             f,
             indent=2,
