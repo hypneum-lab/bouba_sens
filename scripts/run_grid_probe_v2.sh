@@ -47,6 +47,32 @@ cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
 echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION world_seed_mode=$WORLD_SEED_MODE seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
 
+# ADR-0027: refuse to resume a finished cell that was run in another
+# world-seed mode (mode read from its config.yaml; legacy if absent).
+# Phase 1 needs no guard: `train` does not read the mode.
+# usage: check_world_mode <cell_dir> <done_marker_file>
+check_world_mode() {
+    local dir="$1" marker="$2" have="legacy" line
+    [[ -f "${marker}" ]] || return 0
+    if [[ -f "${dir}/config.yaml" ]]; then
+        line=$(grep -E '^world_seed_mode:' "${dir}/config.yaml" || true)
+        if [[ -n "${line}" ]]; then
+            have=$(printf '%s' "${line#world_seed_mode:}" | tr -d " '\"")
+        fi
+    fi
+    if [[ "${have}" != "${WORLD_SEED_MODE}" ]]; then
+        echo "ERROR: ${dir} was run with world_seed_mode ${have}," >&2
+        echo "but WORLD_SEED_MODE=${WORLD_SEED_MODE}. Use one OUT_ROOT per arm (ADR-0027)." >&2
+        exit 1
+    fi
+}
+
+# Pre-flight: every finished cell under OUT_ROOT must match the mode.
+for eval_json in "$OUT_ROOT"/seed*_T*/eval_report.json; do
+    [[ -e "$eval_json" ]] || continue
+    check_world_mode "$(dirname "$eval_json")" "$eval_json"
+done
+
 phase1_job() {
     local seed="$1"
     local dir="$OUT_ROOT/phase1_seed${seed}"

@@ -144,3 +144,125 @@ def test_cli_legacy_is_unchanged_and_cell_uses_the_phase1_world(
     _run("eval", "--run", str(tmp_path / "cell"), "--metrics", "Me1", "--world-seed-mode",
          "legacy", "--out", str(tmp_path / "cell_as_legacy.json"))  # fmt: skip
     assert "world_sha256" not in json.loads((tmp_path / "cell_as_legacy.json").read_text())
+
+
+# Frozen reference (ADR-0027 review): outputs of the commands below on
+# a1fd6ff (main before ADR-0027), electron-server, torch 2.11.0, numpy
+# 2.4.4. The default must reproduce the old code, not only the new one.
+# Frozen: the lesion world fingerprint (seed 0), the sha256 of the
+# discrete per-item / per-query files, and the metrics (dyadic values
+# exactly, me3_delta to 1e-6). Not frozen: model.pt and report.pkl,
+# whose float weights may differ in the last bits between CPU
+# instruction sets (oneDNN / MKL kernels); they were byte-identical
+# between a1fd6ff and this branch on electron-server.
+LEGACY_REFERENCE = {
+    "gaussian": {
+        "world0": "60f2bffbbc9bff8173cd5462ee97f0f238c36b3951dfc238b0bf19043bda6d0d",
+        "t1": {
+            "successes": "37b92dab16ae57d845c9337f1220bc8bb2ed06489674efea3c5da5a7addb8a48",
+            "me1_file": "4c1cb6b8e870ba3471f34efc48ded1546043a08601423f9bd5b673a5fe2633b3",
+            "eval": (0.4375, 0.15625, 0.265625, -0.202701),
+        },
+        "t2": {
+            "successes": "c88ac3a642568172cfb08f1aebf559da74b7acae8c5ee883e7704cc846f0daf1",
+            "me1_file": "064fe5616c74d869b2b85e7927454a14bd437321e1002779c5fa6d709e3fcb27",
+            "eval": (0.3125, 0.21875, 0.34375, 0.123757),
+        },
+        "paired": (0.15625, 0.21875, -0.0625),
+    },
+    "studyforrest": {
+        "world0": "02ad4085a74950e7485b48e2e9fcc1d07851004997ada9993c7875f1fdba9f76",
+        "t1": {
+            "successes": "5e2c2c3ea723874832c632f921cf6b7b69d045781d420d59c6535ead5f51f3dd",
+            "me1_file": "e9a3adea7dc658a9b558489a448330ac854f84a89fddc673c195f00681608559",
+            "eval": (0.3125, 0.390625, 0.1875, -0.144191),
+        },
+        "t2": {
+            "successes": "956520ddb4e508ba0fcd1c96daeab9c5cb179e8bd1a01f5ea74421670fc4484b",
+            "me1_file": "7d62f26af6203ac6d40857f415a7114081f286424886c2d729fdd076d941b1f6",
+            "eval": (0.1875, 0.3125, 0.484375, -0.069842),
+        },
+        "paired": (0.390625, 0.3125, 0.078125),
+    },
+}
+
+
+def _sha(path: Path) -> str:
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@pytest.mark.parametrize("world", ["gaussian", "studyforrest"])
+def test_default_reproduces_the_pre_adr0027_reference(
+    world: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_DATA", raising=False)
+    monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES", raising=False)
+    ref = LEGACY_REFERENCE[world]
+    assert world_sha256(_build_world(world, 0)) == ref["world0"]
+    phase1 = tmp_path / "phase1"
+    _run("train", "--steps", "3", "--batch-size", "4", "--seed", "7", "--world", world,
+         "--no-probe-v2", "--out", str(phase1))  # fmt: skip
+    common = ("--modality", "vision", "--steps", "3", "--world", world, "--no-probe-v2")
+    _run("lesion", *common, "--seed", "70001", "--ckpt", str(phase1), "--timing", "T2",
+         "--out", str(tmp_path / "t2"))  # fmt: skip
+    _run("lesion", *common, "--seed", "70002", "--timing", "T1", "--out", str(tmp_path / "t1"))
+    for cell in ("t1", "t2"):
+        d = tmp_path / cell
+        _run("eval", "--run", str(d), "--metrics", "Me1,Me2,Me3",
+             "--out", str(d / "eval_report.json"))  # fmt: skip
+        assert _sha(d / "per_query_successes.json") == ref[cell]["successes"]  # type: ignore[index]
+        assert _sha(d / "per_query_me1.json") == ref[cell]["me1_file"]  # type: ignore[index]
+        rep = json.loads((d / "eval_report.json").read_text())
+        me1, me1_probe, me2, me3 = ref[cell]["eval"]  # type: ignore[index]
+        assert (rep["me1"], rep["me1_probe"], rep["me2"]) == (me1, me1_probe, me2)
+        assert rep["me3_delta"] == pytest.approx(me3, abs=1e-6)
+        assert "world_sha256" not in rep
+    _run("eval", "--t1-ckpt", str(tmp_path / "t1"), "--t2-ckpt", str(tmp_path / "t2"),
+         "--out", str(tmp_path / "paired.json"))  # fmt: skip
+    paired = json.loads((tmp_path / "paired.json").read_text())
+    assert (paired["me1_t1"], paired["me1_t2"], paired["me7"]) == ref["paired"]
+    assert "world_seed_mode" not in paired
+
+
+@pytest.mark.parametrize("world", ["gaussian", "studyforrest"])
+def test_cell_mode_with_probe_v2_and_paired_eval(
+    world: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("BOUBA_SENS_STUDYFORREST_DATA", raising=False)
+    phase1 = tmp_path / "phase1"
+    _run("train", "--steps", "3", "--batch-size", "4", "--seed", "7", "--world", world,
+         "--probe-v2-seed", "75099", "--out", str(phase1))  # fmt: skip
+    common = ("--modality", "vision", "--steps", "3", "--world", world, "--probe-v2-seed",
+              "75000", "--world-seed-mode", "cell")  # fmt: skip
+    _run("lesion", *common, "--seed", "70001", "--ckpt", str(phase1), "--timing", "T2",
+         "--out", str(tmp_path / "t2"))  # fmt: skip
+    _run("lesion", *common, "--seed", "70002", "--timing", "T1", "--world-seed", "7",
+         "--out", str(tmp_path / "t1"))  # fmt: skip
+    train_sha = world_sha256(_build_world(world, 7))
+    for cell in ("t1", "t2"):
+        d = tmp_path / cell
+        meta = json.loads((d / "metadata.json").read_text())
+        assert meta["world_sha256"] == train_sha
+        v2 = json.loads((d / "probe_v2_meta.json").read_text())
+        assert v2["probe_seed"] == 75000
+        assert (d / "per_query_successes_v2.json").exists()
+
+    # Paired eval: mode propagated, fingerprints recorded; mixed modes refused.
+    _run("eval", "--t1-ckpt", str(tmp_path / "t1"), "--t2-ckpt", str(tmp_path / "t2"),
+         "--out", str(tmp_path / "paired.json"))  # fmt: skip
+    paired = json.loads((tmp_path / "paired.json").read_text())
+    assert paired["world_seed_mode"] == "cell"
+    assert paired["world_sha256_t1"] == paired["world_sha256_t2"] == train_sha
+    _run("lesion", "--modality", "vision", "--steps", "3", "--world", world, "--no-probe-v2",
+         "--seed", "70003", "--timing", "T1", "--out", str(tmp_path / "t1_legacy"))  # fmt: skip
+    mixed = subprocess.run(
+        ["uv", "run", "bouba-sens", "eval", "--t1-ckpt", str(tmp_path / "t1_legacy"),
+         "--t2-ckpt", str(tmp_path / "t2"), "--out", str(tmp_path / "mixed.json")],
+        capture_output=True, text=True,
+    )  # fmt: skip
+    assert mixed.returncode != 0
+    flat = "".join(ch for ch in mixed.stderr if ch.isalnum() or ch == "-")
+    assert "world-seedmodelegacy" in flat  # rich may wrap the message
+    assert not (tmp_path / "mixed.json").exists()

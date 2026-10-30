@@ -77,6 +77,26 @@ check_probe_seed() {
     fi
 }
 
+# ADR-0027: refuse to resume a finished cell that was run in another
+# world-seed mode (mode read from its config.yaml; legacy if absent).
+# Phase 1 needs no guard: `train` does not read the mode.
+# usage: check_world_mode <cell_dir> <done_marker_file>
+check_world_mode() {
+    local dir="$1" marker="$2" have="legacy" line
+    [[ -f "${marker}" ]] || return 0
+    if [[ -f "${dir}/config.yaml" ]]; then
+        line=$(grep -E '^world_seed_mode:' "${dir}/config.yaml" || true)
+        if [[ -n "${line}" ]]; then
+            have=$(printf '%s' "${line#world_seed_mode:}" | tr -d " '\"")
+        fi
+    fi
+    if [[ "${have}" != "${WORLD_SEED_MODE}" ]]; then
+        echo "ERROR: ${dir} was run with world_seed_mode ${have}," >&2
+        echo "but WORLD_SEED_MODE=${WORLD_SEED_MODE}. Use one OUT_ROOT per arm (ADR-0027)." >&2
+        exit 1
+    fi
+}
+
 mkdir -p "${OUT_ROOT}"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
 echo "grid: ${total} cells -> ${OUT_ROOT}"
@@ -123,6 +143,7 @@ for seed in "${SEEDS[@]}"; do
                     timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1
                     case "${snr_label}" in floor) snr_idx=0 ;; minus10) snr_idx=1 ;; *) snr_idx=2 ;; esac
                     check_probe_seed "${cell_dir}" "$(( seed * 10000 + 5000 + 3 * timing_idx + snr_idx ))" "${eval_json}"
+                    check_world_mode "${cell_dir}" "${eval_json}"
                     skipped=$(( skipped + 1 ))
                     continue
                 fi

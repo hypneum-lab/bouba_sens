@@ -762,6 +762,23 @@ def _compute_me1(mux, sensories, nerve, head, world_obj, *, seed: int) -> float:
 def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
     """Return (me1, seed, cell_name) for a Sprint 4+ cell directory.
 
+    Thin wrapper over :func:`_load_cell_world` (world seed mode recorded
+    in the cell's ``config.yaml``).
+    """
+    me1, seed, name, _ = _load_cell_world(path)
+    return me1, seed, name
+
+
+def _load_cell_world(
+    path: Path, *, world_seed_mode: str | None = None
+) -> tuple[float, int | None, str | None, dict[str, object]]:
+    """Return (me1, seed, cell_name, world record) for a cell directory.
+
+    The world record is ``{"world_seed_mode": mode, "world_sha256": sha}``
+    (ADR-0027); ``world_seed_mode`` None follows the mode recorded in
+    ``config.yaml`` (legacy if absent). ``world_sha256`` is computed in
+    cell mode only (None otherwise, and on the legacy fallback).
+
     ADR-0007 Phase B: reads `config.yaml` + `model.pt`, rebuilds the full
     model, loads state_dicts, and recomputes Me1 via the canonical probe
     pass. Falls back to the legacy `eval_report.json` path when either
@@ -774,8 +791,18 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         import torch as _torch
         from omegaconf import OmegaConf
 
+        from bouba_sens.world.base import world_sha256
+
         cfg = OmegaConf.load(cfg_path)
-        mux, sensories, nerve, head, world_obj = _build_model_from_config(cfg)
+        mux, sensories, nerve, head, world_obj = _build_model_from_config(
+            cfg, world_seed_mode=world_seed_mode
+        )
+        w_mode, _ = config_world_seed(cfg, override=world_seed_mode)
+        # Fingerprint only in cell mode: the legacy path stays as it was.
+        record: dict[str, object] = {
+            "world_seed_mode": w_mode,
+            "world_sha256": world_sha256(world_obj) if w_mode == "cell" else None,
+        }
         state = _torch.load(model_pt, weights_only=True)
         mux.load_state_dict(state["mux"])
         nerve.load_state_dict(state["nerve"])
@@ -784,7 +811,7 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
             sensories[m].load_state_dict(sd)
         seed_value = int(OmegaConf.select(cfg, "seed"))
         me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
-        return me1, seed_value, path.name
+        return me1, seed_value, path.name, record
 
     # Legacy fallback — pre-Phase-B ad-hoc cells.
     eval_report = json.loads((path / "eval_report.json").read_text())
@@ -796,7 +823,7 @@ def _load_cell(path: Path) -> tuple[float, int | None, str | None]:
         raw_seed = metadata.get("seed")
         if raw_seed is not None:
             seed = int(raw_seed)
-    return me1, seed, path.name
+    return me1, seed, path.name, {"world_seed_mode": "legacy", "world_sha256": None}
 
 
 def _emit_paired_run(
@@ -807,12 +834,25 @@ def _emit_paired_run(
     snr: float | None,
     out: Path,
     me7_fn: Callable[[float, float], float],
+    world_seed_mode: str | None = None,
 ) -> None:
-    """ADR-0007 paired-run emitter."""
+    """ADR-0007 paired-run emitter.
+
+    ADR-0027: both cells are rebuilt with ``world_seed_mode`` (None =
+    each cell's recorded mode); a T1 / T2 pair whose resolved modes
+    differ is refused. In cell mode the payload records the mode and the
+    two world fingerprints; legacy payloads keep their historical keys.
+    """
     from datetime import UTC, datetime
 
-    me1_t1, seed_t1, name_t1 = _load_cell(t1_ckpt)
-    me1_t2, seed_t2, _ = _load_cell(t2_ckpt)
+    me1_t1, seed_t1, name_t1, world_t1 = _load_cell_world(t1_ckpt, world_seed_mode=world_seed_mode)
+    me1_t2, seed_t2, _, world_t2 = _load_cell_world(t2_ckpt, world_seed_mode=world_seed_mode)
+    if world_t1["world_seed_mode"] != world_t2["world_seed_mode"]:
+        raise typer.BadParameter(
+            f"T1 cell {t1_ckpt} is in world-seed mode {world_t1['world_seed_mode']} "
+            f"but T2 cell {t2_ckpt} is in {world_t2['world_seed_mode']}; "
+            "pair cells of one mode or pass --world-seed-mode"
+        )
     me7 = me7_fn(me1_t1, me1_t2)
 
     # Derive a pair descriptor from the T1 cell name (e.g. seed0_T1_vision_plus10
@@ -835,6 +875,10 @@ def _emit_paired_run(
         "me7": me7,
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if world_t1["world_seed_mode"] == "cell":
+        payload["world_seed_mode"] = "cell"
+        payload["world_sha256_t1"] = world_t1["world_sha256"]
+        payload["world_sha256_t2"] = world_t2["world_sha256"]
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2))
 
@@ -903,6 +947,7 @@ def eval(
             snr=snr,
             out=out,
             me7_fn=me7_congenital_gap,
+            world_seed_mode=world_seed_mode,
         )
         typer.echo(f"paired eval done; wrote {out}")
         return
