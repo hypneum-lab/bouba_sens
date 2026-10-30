@@ -296,8 +296,9 @@ def _mic_clock_fit(
     any chunk does, the segment is refitted once without those chunks (they
     would pull the line: an undetected jump of a few chunks at a file end
     moves it by tens of ms), and the residuals, the mask and the p99 gate
-    are taken from that second fit. Without such chunks the first fit is
-    kept as is.
+    are taken from that second fit; with fewer than 2 chunks left, the
+    segment is rejected instead. Without such chunks the first fit is kept
+    as is.
     """
     stall = np.zeros(len(ts), dtype=bool)
     _glob, res = _line_fit(ts, chunk, sr, 0, len(ts))
@@ -310,10 +311,17 @@ def _mic_clock_fit(
         if k1 - k0 >= 2:
             fit, r = _line_fit(ts, chunk, sr, k0, k1)
             spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
-            if spike.any():
+            # Fewer than 2 chunks left to refit on: rejected, the first fit
+            # is kept for its statistics.
+            fittable = (~spike).sum() >= 2
+            if spike.any() and fittable:
                 fit, r = _line_fit(ts, chunk, sr, k0, k1, keep=~spike)
                 spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
-            good = fit["rate_dev"] <= MIC_RATE_TOL and fit["res_p99"] <= MIC_SEGMENT_RESIDUAL_MAX_S
+            good = (
+                bool(fittable)
+                and fit["rate_dev"] <= MIC_RATE_TOL
+                and fit["res_p99"] <= MIC_SEGMENT_RESIDUAL_MAX_S
+            )
             fit["n_stall"] = float(spike.sum())
             if good:
                 stall[k0:k1] = spike

@@ -599,6 +599,27 @@ def test_audio_max_below_gate_matches_max_gate(
     assert counts_new == counts_old
 
 
+@pytest.mark.filterwarnings("error")
+def test_audio_all_chunks_stalled_rejected(tmp_path: Path) -> None:
+    """Every chunk of a segment beyond 0.2 s: nothing to refit on, so the
+    segment is rejected without a refit (no empty-mean warning, no nan)."""
+    sr, n_chunks = 1000, 20  # < 2 * MIC_STEP_WINDOW + 1: one segment
+    true = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / sr
+    ts = true + 0.3 * (-1.0) ** np.arange(n_chunks)  # monotonic (2.048 s steps)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="PCM_16")
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 300), info)
+    (seg,) = _segments(info)
+    assert seg["n_stall"] == n_chunks
+    assert not seg["accepted"] and not covered.any()
+    assert all(np.isfinite(seg[k]) for k in ("res_median", "res_p99", "res_max", "rate"))
+    assert info["n_stall_drop"] == 0
+
+
 def test_session_counts_audio_drops_once_per_frame(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
