@@ -38,6 +38,10 @@ GATING_TARGET="${GATING_TARGET:-}"
 # ADR-0024 follow-up — SensoryWML code emission: "argmax-bridge" (historical
 # default) or "straight-through".
 EMISSION="${EMISSION:-argmax-bridge}"
+# ADR-0027 — world seed of lesion / eval: "legacy" (default, historical:
+# lesion world seed 0, eval world seed = lesion seed) or "cell" (the
+# phase-1 world, seed = the grid seed, for T1 and T2 cells alike).
+WORLD_SEED_MODE="${WORLD_SEED_MODE:-legacy}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -137,6 +141,9 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
                 lesion_args+=(--emission "${EMISSION}")
+                if [[ "${WORLD_SEED_MODE}" != "legacy" ]]; then
+                    lesion_args+=(--world-seed-mode "${WORLD_SEED_MODE}" --world-seed "${seed}")
+                fi
                 # ADR-0023: v2 probe, seed shared per (seed, timing, snr) trio,
                 # same rule as run_grid_probe_v2.sh.
                 timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1

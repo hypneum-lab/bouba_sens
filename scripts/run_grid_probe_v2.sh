@@ -33,17 +33,19 @@ METRICS="${METRICS:-Me1,Me2,Me3}"
 WORLD="${WORLD:-gaussian}"
 # ADR-0024 follow-up: SensoryWML emission (argmax-bridge = historical default).
 EMISSION="${EMISSION:-argmax-bridge}"
+# ADR-0027: world seed of lesion / eval (legacy = historical, cell = phase-1 world).
+WORLD_SEED_MODE="${WORLD_SEED_MODE:-legacy}"
 # shellcheck disable=SC2206
 SEEDS=(${SEEDS:?set SEEDS, e.g. "200 201 202 203 204"})
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 SNR_CELLS=("floor:-20.0" "minus10:-10.0" "plus10:10.0")
 
-export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION
+export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION WORLD_SEED_MODE
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
-echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION world_seed_mode=$WORLD_SEED_MODE seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
 
 phase1_job() {
     local seed="$1"
@@ -74,6 +76,9 @@ cell_job() {
         --seed $(( seed * 10000 + count )) --snr-floor "$snr_floor" --world "$WORLD"
         --out "$cell_dir" --transducer-gating hard --gumbel-tau 1.0
         --probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )) --emission "$EMISSION")
+    if [[ "$WORLD_SEED_MODE" != "legacy" ]]; then
+        args+=(--world-seed-mode "$WORLD_SEED_MODE" --world-seed "$seed")
+    fi
     {
         if [[ "$timing" == "T1" ]]; then
             uv run bouba-sens lesion "${args[@]}"
