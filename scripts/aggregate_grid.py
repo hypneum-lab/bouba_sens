@@ -205,19 +205,19 @@ def _compute_invariants(
 
     return {
         "b1": {
-            "passes": median_me7 > B1_ME7_THRESHOLD,
+            "passes": median_me7 >= B1_ME7_THRESHOLD,
             "median_me7": median_me7,
             "threshold": B1_ME7_THRESHOLD,
             "cells_counted": len(me7_values),
         },
         "b2": {
-            "passes": median_me3 > B2_ME3_DELTA_THRESHOLD,
+            "passes": median_me3 >= B2_ME3_DELTA_THRESHOLD,
             "median_me3_delta": median_me3,
             "threshold": B2_ME3_DELTA_THRESHOLD,
             "cells_counted": len(me3_clean),
         },
         "b3": {
-            "passes": median_me6 > B3_ME6_THRESHOLD,
+            "passes": median_me6 >= B3_ME6_THRESHOLD,
             "median_me6_max_abs": median_me6,
             "threshold": B3_ME6_THRESHOLD,
             "cells_counted": len(me6_values),

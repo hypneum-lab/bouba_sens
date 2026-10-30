@@ -29,6 +29,9 @@ CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 # HARD during Phase 1 (0..200), GUMBEL during Phase 2 (200..300) for T2 cells.
 GATING_SCHEDULE="${GATING_SCHEDULE:-}"
 GATING_TARGET="${GATING_TARGET:-}"
+# ADR-0024 follow-up — SensoryWML code emission: "argmax-bridge" (historical
+# default) or "straight-through".
+EMISSION="${EMISSION:-argmax-bridge}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -70,6 +73,8 @@ for seed in "${SEEDS[@]}"; do
         )
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
+        train_args+=(--emission "${EMISSION}")
+        train_args+=(--probe-v2 --probe-v2-seed $(( seed * 10000 + 5099 )))
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
         [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
         [[ -n "${GATING_SCHEDULE}" ]] && train_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
@@ -107,6 +112,13 @@ for seed in "${SEEDS[@]}"; do
                 )
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
+                lesion_args+=(--emission "${EMISSION}")
+                # ADR-0023: v2 probe, seed shared per (seed, timing, snr) trio,
+                # same rule as run_grid_probe_v2.sh.
+                timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1
+                case "${snr_label}" in floor) snr_idx=0 ;; minus10) snr_idx=1 ;; *) snr_idx=2 ;; esac
+                trio=$(( 3 * timing_idx + snr_idx ))
+                lesion_args+=(--probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )))
                 lesion_args+=(--gumbel-tau "${GUMBEL_TAU}")
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")

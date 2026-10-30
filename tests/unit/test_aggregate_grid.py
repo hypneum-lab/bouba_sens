@@ -13,6 +13,7 @@ from aggregate_grid import (  # type: ignore[import-not-found]  # noqa: E402
     B1_ME7_THRESHOLD,
     B2_ME3_DELTA_THRESHOLD,
     B3_ME6_THRESHOLD,
+    _compute_invariants,
     aggregate,
 )
 
@@ -123,3 +124,26 @@ def test_b2_cells_counted_zero_when_me3_delta_missing(tmp_path: Path) -> None:
     assert b2["cells_counted"] == 0
     assert b2["median_me3_delta"] == 0.0
     assert b2["passes"] is False
+
+
+def test_invariants_pass_when_value_equals_threshold() -> None:
+    """Preregistered text says ">=": a median exactly at threshold passes."""
+    inv = _compute_invariants(
+        {"c": {"me3_delta": {"mean": B2_ME3_DELTA_THRESHOLD}}},
+        me6_values=[B3_ME6_THRESHOLD],
+        me7_values=[B1_ME7_THRESHOLD],
+    )
+    assert inv["b1"]["passes"] is True
+    assert inv["b2"]["passes"] is True
+    assert inv["b3"]["passes"] is True
+
+
+def test_invariants_fail_just_below_threshold() -> None:
+    inv = _compute_invariants(
+        {"c": {"me3_delta": {"mean": B2_ME3_DELTA_THRESHOLD - 1e-6}}},
+        me6_values=[B3_ME6_THRESHOLD - 1e-6],
+        me7_values=[B1_ME7_THRESHOLD - 1e-6],
+    )
+    assert inv["b1"]["passes"] is False
+    assert inv["b2"]["passes"] is False
+    assert inv["b3"]["passes"] is False
