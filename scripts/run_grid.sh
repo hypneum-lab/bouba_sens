@@ -43,6 +43,10 @@ EMISSION="${EMISSION:-argmax-bridge}"
 # per_query_successes_n{N}.json, the five cells of a trio sharing one
 # seed, seed*10000 + 6000 + trio. Empty (default) = historical behaviour.
 PROBE_SIZES="${PROBE_SIZES:-}"
+# ADR-0027 — world seed of lesion / eval: "legacy" (default, historical:
+# lesion world seed 0, eval world seed = lesion seed) or "cell" (the
+# phase-1 world, seed = the grid seed, for T1 and T2 cells alike).
+WORLD_SEED_MODE="${WORLD_SEED_MODE:-legacy}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -78,7 +82,35 @@ check_probe_seed() {
     fi
 }
 
+# ADR-0027: refuse to resume a finished cell that was run in another
+# world-seed mode (mode read from its config.yaml; legacy if absent).
+# Phase 1 needs no guard: `train` does not read the mode.
+# usage: check_world_mode <cell_dir> <done_marker_file>
+check_world_mode() {
+    local dir="$1" marker="$2" have="legacy" line
+    [[ -f "${marker}" ]] || return 0
+    if [[ -f "${dir}/config.yaml" ]]; then
+        line=$(grep -E '^world_seed_mode:' "${dir}/config.yaml" || true)
+        if [[ -n "${line}" ]]; then
+            have=$(printf '%s' "${line#world_seed_mode:}" | tr -d " '\"")
+        fi
+    fi
+    if [[ "${have}" != "${WORLD_SEED_MODE}" ]]; then
+        echo "ERROR: ${dir} was run with world_seed_mode ${have}," >&2
+        echo "but WORLD_SEED_MODE=${WORLD_SEED_MODE}. Use one OUT_ROOT per arm (ADR-0027)." >&2
+        exit 1
+    fi
+}
+
 mkdir -p "${OUT_ROOT}"
+
+# Pre-flight (ADR-0027): every finished cell under OUT_ROOT, whatever its
+# seed, must match WORLD_SEED_MODE before any cell is computed.
+for eval_json in "${OUT_ROOT}"/seed*_T*/eval_report.json; do
+    [[ -e "${eval_json}" ]] || continue
+    check_world_mode "$(dirname "${eval_json}")" "${eval_json}"
+done
+
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
 echo "grid: ${total} cells -> ${OUT_ROOT}"
 
@@ -124,6 +156,7 @@ for seed in "${SEEDS[@]}"; do
                     timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1
                     case "${snr_label}" in floor) snr_idx=0 ;; minus10) snr_idx=1 ;; *) snr_idx=2 ;; esac
                     check_probe_seed "${cell_dir}" "$(( seed * 10000 + 5000 + 3 * timing_idx + snr_idx ))" "${eval_json}"
+                    check_world_mode "${cell_dir}" "${eval_json}"
                     skipped=$(( skipped + 1 ))
                     continue
                 fi
@@ -142,6 +175,9 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
                 lesion_args+=(--emission "${EMISSION}")
+                if [[ "${WORLD_SEED_MODE}" != "legacy" ]]; then
+                    lesion_args+=(--world-seed-mode "${WORLD_SEED_MODE}" --world-seed "${seed}")
+                fi
                 # ADR-0023: v2 probe, seed shared per (seed, timing, snr) trio,
                 # same rule as run_grid_probe_v2.sh.
                 timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1

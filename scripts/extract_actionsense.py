@@ -88,10 +88,17 @@ MIC_CHUNK = 2048
 # moves by more than MIC_STEP_DETECT_S (burst jitter averages out, a clock
 # step or dropout does not). Each segment is fitted on its own and rejected
 # when its rate deviates from the WAV rate by more than MIC_RATE_TOL
-# (relative; 44.1 vs 48 kHz is 8e-2) or a residual exceeds
-# MIC_SEGMENT_RESIDUAL_MAX_S. Frames within MIC_BREAKPOINT_MARGIN_S of a
-# breakpoint are dropped. A constant host latency between the sound and
-# its timestamp is absorbed into the intercept and cannot be detected.
+# (relative; 44.1 vs 48 kHz is 8e-2) or the 99th percentile of its
+# |residual| exceeds MIC_SEGMENT_RESIDUAL_MAX_S (issue #52: a host stall,
+# ~7 chunks stamped together ~0.3 s late, is a spike the step detector
+# ignores; on the max residual it rejected a whole 1 h file). Chunks with
+# |residual| > MIC_SEGMENT_RESIDUAL_MAX_S are left out of a second fit of
+# their segment, which then sets the residuals and the gate; in an
+# accepted segment, frames whose window touches such a chunk are dropped
+# as a stall. Frames within
+# MIC_BREAKPOINT_MARGIN_S of a breakpoint are dropped. A constant host
+# latency between the sound and its timestamp is absorbed into the
+# intercept and cannot be detected.
 MIC_STEP_WINDOW = 25
 MIC_STEP_DETECT_S = 0.05
 MIC_RATE_TOL = 2e-3
@@ -182,20 +189,28 @@ def _log_mel(frames: np.ndarray, fb: np.ndarray) -> np.ndarray:
 
 
 def _line_fit(
-    ts: np.ndarray, chunk: int, sr: float, k0: int, k1: int
+    ts: np.ndarray,
+    chunk: int,
+    sr: float,
+    k0: int,
+    k1: int,
+    keep: np.ndarray | None = None,
 ) -> tuple[dict[str, float], np.ndarray]:
     """Least-squares ``ts[k] = a + b * ((k + 1) * chunk - 1)`` on chunks k0..k1-1.
 
     Chunk ``k`` is stamped at its last sample, so sample ``j`` lies at
-    ``a + b * j``. Returns the fit (``a``, ``b``, implied ``rate = 1 / b``,
+    ``a + b * j``. With ``keep`` (bool per chunk of k0..k1-1), only the kept
+    chunks enter the regression; residuals and their statistics still cover
+    every chunk. Returns the fit (``a``, ``b``, implied ``rate = 1 / b``,
     ``rate_dev = |rate - sr| / sr``, |residual| ``res_median``, ``res_p99``,
     ``res_max``) and the signed residuals.
     """
     idx = (np.arange(k0, k1, dtype=np.float64) + 1.0) * chunk - 1.0
     t_rel = ts[k0:k1] - ts[k0]  # keep the epoch offset out of the regression
-    im, tm = idx.mean(), t_rel.mean()
-    den = ((idx - im) ** 2).sum()
-    b = float(((idx - im) * (t_rel - tm)).sum() / den) if den > 0 else 0.0
+    x, y = (idx, t_rel) if keep is None else (idx[keep], t_rel[keep])
+    im, tm = x.mean(), y.mean()
+    den = ((x - im) ** 2).sum()
+    b = float(((x - im) * (y - tm)).sum() / den) if den > 0 else 0.0
     a_rel = float(tm - b * im)
     res = t_rel - (a_rel + b * idx)
     absr = np.abs(res)
@@ -263,9 +278,29 @@ def mic_clock_segments(ts: np.ndarray, chunk: int, sr: float) -> list[dict[str, 
     ``step`` (clock step at its start from the two neighbouring fits, the
     detection estimate if a neighbour is too short, 0 for the first),
     ``t0``/``t1`` (time
-    of its first/last sample on its own fit) and ``accepted`` (1.0 / 0.0)
-    after the ``MIC_RATE_TOL`` and ``MIC_SEGMENT_RESIDUAL_MAX_S`` gates.
+    of its first/last sample on its own fit), ``n_stall`` (chunks with
+    |residual| > ``MIC_SEGMENT_RESIDUAL_MAX_S``) and ``accepted`` (1.0 /
+    0.0) after the ``MIC_RATE_TOL`` gate and the ``MIC_SEGMENT_RESIDUAL_MAX_S``
+    gate on ``res_p99``.
     """
+    return _mic_clock_fit(ts, chunk, sr)[0]
+
+
+def _mic_clock_fit(
+    ts: np.ndarray, chunk: int, sr: float
+) -> tuple[list[dict[str, float]], np.ndarray]:
+    """``mic_clock_segments`` plus a per-chunk stall mask.
+
+    The mask flags the chunks of accepted segments whose |residual| on
+    their own segment's fit exceeds ``MIC_SEGMENT_RESIDUAL_MAX_S``. When
+    any chunk does, the segment is refitted once without those chunks (they
+    would pull the line: an undetected jump of a few chunks at a file end
+    moves it by tens of ms), and the residuals, the mask and the p99 gate
+    are taken from that second fit; with fewer than 2 chunks left, the
+    segment is rejected instead. Without such chunks the first fit is kept
+    as is.
+    """
+    stall = np.zeros(len(ts), dtype=bool)
     _glob, res = _line_fit(ts, chunk, sr, 0, len(ts))
     bps = mic_breakpoints(res)
     edges = [0, *(k for k, _ in bps), len(ts)]
@@ -274,12 +309,26 @@ def mic_clock_segments(ts: np.ndarray, chunk: int, sr: float) -> list[dict[str, 
     for i in range(len(edges) - 1):
         k0, k1 = edges[i], edges[i + 1]
         if k1 - k0 >= 2:
-            fit, _r = _line_fit(ts, chunk, sr, k0, k1)
-            good = fit["rate_dev"] <= MIC_RATE_TOL and fit["res_max"] <= MIC_SEGMENT_RESIDUAL_MAX_S
+            fit, r = _line_fit(ts, chunk, sr, k0, k1)
+            spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
+            # Fewer than 2 chunks left to refit on: rejected, the first fit
+            # is kept for its statistics.
+            fittable = (~spike).sum() >= 2
+            if spike.any() and fittable:
+                fit, r = _line_fit(ts, chunk, sr, k0, k1, keep=~spike)
+                spike = np.abs(r) > MIC_SEGMENT_RESIDUAL_MAX_S
+            good = (
+                bool(fittable)
+                and fit["rate_dev"] <= MIC_RATE_TOL
+                and fit["res_p99"] <= MIC_SEGMENT_RESIDUAL_MAX_S
+            )
+            fit["n_stall"] = float(spike.sum())
+            if good:
+                stall[k0:k1] = spike
         else:
             fit = {"a": float(ts[k0]), "b": 1.0 / sr, "rate": float("nan")}
             fit |= {"rate_dev": float("inf"), "res_median": 0.0, "res_p99": 0.0}
-            fit["res_max"] = 0.0
+            fit |= {"res_max": 0.0, "n_stall": 0.0}
             good = False
         fit |= {"k0": float(k0), "k1": float(k1), "step": steps[i]}
         fit["t0"] = fit["a"] + fit["b"] * k0 * chunk
@@ -291,7 +340,7 @@ def mic_clock_segments(ts: np.ndarray, chunk: int, sr: float) -> list[dict[str, 
             prev = segs[-1]
             fit["step"] = fit["t0"] - (prev["a"] + prev["b"] * k0 * chunk)
         segs.append(fit)
-    return segs
+    return segs, stall
 
 
 def audio_frames(
@@ -308,10 +357,13 @@ def audio_frames(
     fit of ``mic_clock_segments``: in a segment fitted as ``a + b * j``, the
     window of frame start ``s`` begins at sample ``rint((s - a) / b)``. A
     frame is covered only if its window lies inside one accepted segment,
-    at least ``MIC_BREAKPOINT_MARGIN_S`` from any breakpoint, and in no other
-    segment. ``info`` receives ``span`` (first, last chunk time), and, once
-    fitted, ``segments`` and ``n_breakpoint_drop`` (frames lost to the
-    breakpoint margins and the clock gaps between segments).
+    at least ``MIC_BREAKPOINT_MARGIN_S`` from any breakpoint, in no other
+    segment, and touches no stall chunk (|residual| on its segment's fit >
+    ``MIC_SEGMENT_RESIDUAL_MAX_S``). ``info`` receives ``span`` (first, last
+    chunk time), and, once fitted, ``segments``, ``breakpoint_drop`` (bool
+    per frame: lost to the breakpoint margins and the clock gaps between
+    segments), ``stall_drop`` (bool per frame: lost to a stall) and their
+    sums ``n_breakpoint_drop`` and ``n_stall_drop``.
     """
     wav, sr = sf.read(str(wav_path), dtype="float32")
     if wav.ndim > 1:
@@ -338,7 +390,7 @@ def audio_frames(
     if monotonic_violations(ts):
         info["error"] = f"{mic_h5_path.name}: chunk_timestamp not monotonic"
         return out, covered
-    segs = mic_clock_segments(ts, chunk, float(sr))
+    segs, stall = _mic_clock_fit(ts, chunk, float(sr))
     info["segments"] = segs
     win = round(WIDTH * sr)
     margin = round(MIC_BREAKPOINT_MARGIN_S * sr)
@@ -359,6 +411,13 @@ def audio_frames(
         i0_all[inner] = i0[inner]
         usable |= inner
     ok = np.flatnonzero(usable & (n_hit == 1))
+    # Stall: the window [i0, i0 + win) touches a flagged chunk.
+    n_stall = np.concatenate([[0], np.cumsum(stall)])
+    c0, c1 = i0_all[ok] // chunk, (i0_all[ok] + win - 1) // chunk + 1
+    stalled = n_stall[c1] - n_stall[c0] > 0
+    stall_drop = np.zeros(len(starts), dtype=bool)
+    stall_drop[ok[stalled]] = True
+    ok = ok[~stalled]
     for lo in range(0, len(ok), 2048):
         sel = ok[lo : lo + 2048]
         idx = i0_all[sel, None] + np.arange(win)[None, :]
@@ -371,7 +430,11 @@ def audio_frames(
         z0 = min(prev["t1"], nxt["t0"]) - MIC_BREAKPOINT_MARGIN_S
         z1 = max(prev["t1"], nxt["t0"]) + MIC_BREAKPOINT_MARGIN_S
         near |= (starts + WIDTH > z0) & (starts < z1)
-    info["n_breakpoint_drop"] = int((near & ~covered).sum())
+    bp_drop = near & ~covered & ~stall_drop
+    info["breakpoint_drop"] = bp_drop
+    info["stall_drop"] = stall_drop
+    info["n_breakpoint_drop"] = int(bp_drop.sum())
+    info["n_stall_drop"] = int(stall_drop.sum())
     return out, covered
 
 
@@ -633,6 +696,11 @@ def _session_body(
 
         aud = np.zeros((n, N_MELS))
         aok = np.zeros(n, dtype=bool)
+        # Frames lost to a breakpoint or a stall in some file, counted once
+        # per frame and only if no other file covers them.
+        bp_lost = np.zeros(n, dtype=bool)
+        stall_lost = np.zeros(n, dtype=bool)
+        fitted = False
         for mic_h5 in sorted(raw_sub.glob(f"*_streamLog_actionNet-microphone_{subject}.hdf5")):
             wav = mic_h5.with_name(mic_h5.stem + "_sink_chunked_data.wav")
             if not wav.exists():
@@ -650,12 +718,16 @@ def _session_body(
                         print(
                             f"  audio_segment_bad_clock_fit: {mic_h5.name} chunks "
                             f"{int(seg['k0'])}..{int(seg['k1'])}, rate {seg['rate']:.1f} Hz, "
+                            f"p99 |residual| {seg['res_p99']:.3f} s, "
                             f"max |residual| {seg['res_max']:.3f} s",
                             flush=True,
                         )
                 _bump(counts, "audio_breakpoints", len(segs) - 1)
-                n_bp = info.get("n_breakpoint_drop", 0)
-                _bump(counts, "audio_breakpoint_drop", n_bp if isinstance(n_bp, int) else 0)
+                fitted = True
+                for key, acc in (("breakpoint_drop", bp_lost), ("stall_drop", stall_lost)):
+                    mask = info.get(key)
+                    if isinstance(mask, np.ndarray):
+                        acc |= mask
             if "error" in info:
                 _bump(counts, "audio_file_inconsistent")
                 print(f"  audio_file_inconsistent: {info['error']}", flush=True)
@@ -667,6 +739,9 @@ def _session_body(
             take = cov & ~aok
             aud[take] = mel[take]
             aok |= cov
+        if fitted:
+            _bump(counts, "audio_breakpoint_drop", int((bp_lost & ~aok).sum()))
+            _bump(counts, "audio_stall_drop", int((stall_lost & ~aok & ~bp_lost).sum()))
         feats["audio"] = aud
         reasons["audio"] = aok
 
@@ -848,7 +923,11 @@ def _manifest(
         f"steps by more than {MIC_STEP_DETECT_S:g} s; frames within "
         f"{MIC_BREAKPOINT_MARGIN_S:g} s of a breakpoint are dropped. A segment is "
         f"rejected if its rate deviates from the WAV rate by more than {MIC_RATE_TOL:g} "
-        f"(relative) or a |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s; a file is "
+        f"(relative) or its p99 |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s, on a "
+        f"refit without the chunks whose |residual| exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s "
+        "if there are any; in an accepted segment, frames touching a chunk whose "
+        f"|residual| on that fit exceeds {MIC_SEGMENT_RESIDUAL_MAX_S:g} s are dropped (stall, "
+        "`audio_stall_drop`); a file is "
         "rejected if its WAV length is not 2048 x the chunk count or its timestamps are "
         "not monotonic. A constant host latency is absorbed into the intercept "
         "(fits per file under Stream spans).",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import shutil
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 
@@ -372,6 +373,284 @@ def test_audio_clock_jump_segmented(tmp_path: Path) -> None:
     assert second["step"] == pytest.approx(2.0, abs=1e-3)
     for seg in (first, second):
         assert seg["accepted"] and seg["res_max"] < 1e-6 and seg["rate_dev"] < 1e-9
+
+
+def _hour_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stamps_fn: Callable[[np.ndarray, int], np.ndarray],
+) -> tuple[dict[str, object], np.ndarray, np.ndarray, int]:
+    """A 1 h file (1 kHz, 43-sample chunks ~ the real 42.7 ms), edited stamps.
+
+    Returns ``(info, covered, rel, s)``: frame starts ``rel`` are wall seconds
+    after T0 and ``s`` is the mid-file chunk handed to ``stamps_fn``.
+    """
+    sr, chunk = 1000, 43
+    monkeypatch.setattr(extract, "MIC_CHUNK", chunk)
+    n_chunks = 3600 * sr // chunk + 1  # 3600.0 s of samples
+    true = T0 + ((np.arange(n_chunks) + 1) * chunk - 1) / sr
+    s = n_chunks // 2
+    stamps = stamps_fn(true.copy(), s)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * chunk, dtype=np.float32), sr, subtype="PCM_16")
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", stamps, stamps[:, None])
+    rel = 0.1 * np.arange(1, 36000)  # last frame ends at 3600.0 s
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + rel, info)
+    assert "error" not in info
+    return info, covered, rel, s
+
+
+def test_audio_stall_keeps_segment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue #52: a 0.3 s stall (7 chunks stamped together) in a 1 h file.
+
+    The spike is no step, so the file stays one segment. It used to fail
+    the max-residual gate and lose the whole hour; on the p99 gate the
+    segment is kept and only the frames touching a chunk stamped more than
+    MIC_SEGMENT_RESIDUAL_MAX_S late are dropped.
+    """
+    chunk = 43
+
+    def stall(true: np.ndarray, s: int) -> np.ndarray:
+        # Stamped together, before the next chunk (monotonic): late by
+        # 0.298, 0.255, 0.212, 0.169 ... 0.04 s.
+        true[s : s + 7] = true[s + 6] + 0.04
+        return true
+
+    info, covered, rel, s = _hour_file(tmp_path, monkeypatch, stall)
+    (seg,) = _segments(info)
+    assert seg["accepted"]
+    assert seg["res_max"] > extract.MIC_SEGMENT_RESIDUAL_MAX_S  # the old gate rejected it
+    assert seg["res_p99"] < 1e-3
+    assert seg["n_stall"] == 3  # 0.298, 0.255, 0.212 s late; 0.169 s is kept
+    # Frame m spans samples [100 m, 100 m + 100): dropped iff it touches
+    # chunks s..s+2.
+    m = np.rint(rel * 10).astype(np.int64)
+    hit = (m * 100 < (s + 3) * chunk) & (m * 100 + 100 > s * chunk)
+    assert 1 <= hit.sum() <= 3
+    np.testing.assert_array_equal(covered, ~hit)
+    assert info["n_stall_drop"] == int(hit.sum())
+    assert info["n_breakpoint_drop"] == 0
+
+
+def test_audio_continuous_step_still_segmented(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The same 0.3 s, held to the end of the file: a step, cut as before."""
+
+    def step(true: np.ndarray, s: int) -> np.ndarray:
+        true[s:] += 0.3
+        return true
+
+    info, covered, _rel, s = _hour_file(tmp_path, monkeypatch, step)
+    first, second = _segments(info)
+    assert first["accepted"] and second["accepted"]
+    assert int(second["k0"]) == s
+    assert second["step"] == pytest.approx(0.3, abs=1e-3)
+    assert first["n_stall"] == second["n_stall"] == 0
+    assert info["n_stall_drop"] == 0
+    assert 0 < info["n_breakpoint_drop"] == int((~covered).sum())
+
+
+def test_audio_smooth_drift_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A clock bending by 3 s over the hour: no step, rate within tolerance,
+    but most residuals are large, so the p99 gate rejects the segment."""
+
+    def drift(true: np.ndarray, _s: int) -> np.ndarray:
+        x = np.arange(len(true)) / len(true)
+        return true + 3.0 * x**2
+
+    info, covered, _rel, _s = _hour_file(tmp_path, monkeypatch, drift)
+    (seg,) = _segments(info)
+    assert seg["rate_dev"] <= extract.MIC_RATE_TOL
+    assert seg["res_p99"] > extract.MIC_SEGMENT_RESIDUAL_MAX_S
+    assert not seg["accepted"] and not covered.any()
+    assert info["n_stall_drop"] == 0
+
+
+def test_audio_end_jump_refit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """An undetected jump of the last 12 chunks (+60 s, fewer than
+    MIC_STEP_WINDOW / 2, so no step) passes the p99 gate. Those chunks are
+    dropped, and the segment is refitted without them: one line over all
+    chunks would misplace the kept frames by tens of ms."""
+    sr, chunk = 1000, 43
+
+    def jump(true: np.ndarray, _s: int) -> np.ndarray:
+        true[-12:] += 60.0
+        return true
+
+    info, covered, rel, _s = _hour_file(tmp_path, monkeypatch, jump)
+    (seg,) = _segments(info)
+    assert seg["accepted"] and seg["n_stall"] == 12
+    n_chunks = 3600 * sr // chunk + 1
+    j = np.arange(n_chunks) * chunk  # first sample of each chunk
+    true_t = T0 + j / sr
+    naive, _r = extract._line_fit(jump(T0 + (j + chunk - 1) / sr, 0), chunk, sr, 0, n_chunks)
+    assert np.abs(naive["a"] + naive["b"] * j - true_t).max() > 0.01
+    # Kept frames lie on the true clock to better than 1 ms.
+    jk = np.rint(rel[covered] * sr)
+    assert np.abs(seg["a"] + seg["b"] * jk - (T0 + jk / sr)).max() < 1e-3
+    m = np.rint(rel * 10).astype(np.int64)
+    hit = m * 100 + 100 > (n_chunks - 12) * chunk  # touches the jumped chunks
+    assert hit.sum() >= 1
+    np.testing.assert_array_equal(covered, ~hit)
+    assert info["n_stall_drop"] == int(hit.sum())
+    assert info["n_breakpoint_drop"] == 0
+
+
+def _max_gate_clock_fit(
+    ts: np.ndarray, chunk: int, sr: float
+) -> tuple[list[dict[str, float]], np.ndarray]:
+    """Reference: the segment fit of main before #52 (max-residual gate,
+    no stall mask, no refit), with the same piecewise structure."""
+    _glob, res = extract._line_fit(ts, chunk, sr, 0, len(ts))
+    bps = extract.mic_breakpoints(res)
+    edges = [0, *(k for k, _ in bps), len(ts)]
+    steps = [0.0, *(st for _, st in bps)]
+    segs: list[dict[str, float]] = []
+    for i in range(len(edges) - 1):
+        k0, k1 = edges[i], edges[i + 1]
+        if k1 - k0 >= 2:
+            fit, _r = extract._line_fit(ts, chunk, sr, k0, k1)
+            good = (
+                fit["rate_dev"] <= extract.MIC_RATE_TOL
+                and fit["res_max"] <= extract.MIC_SEGMENT_RESIDUAL_MAX_S
+            )
+        else:
+            fit = {"a": float(ts[k0]), "b": 1.0 / sr, "rate": float("nan")}
+            fit |= {"rate_dev": float("inf"), "res_median": 0.0, "res_p99": 0.0}
+            fit["res_max"] = 0.0
+            good = False
+        fit |= {"k0": float(k0), "k1": float(k1), "step": steps[i]}
+        fit["t0"] = fit["a"] + fit["b"] * k0 * chunk
+        fit["t1"] = fit["a"] + fit["b"] * (k1 * chunk - 1)
+        fit["accepted"] = 1.0 if good else 0.0
+        if segs and k1 - k0 >= 2 and edges[i - 1] + 2 <= k0:
+            prev = segs[-1]
+            fit["step"] = fit["t0"] - (prev["a"] + prev["b"] * k0 * chunk)
+        segs.append(fit)
+    return segs, np.zeros(len(ts), dtype=bool)
+
+
+def test_audio_max_below_gate_matches_max_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Non-regression (S00 regime): with every |residual| < 0.2 s, the p99
+    gate gives bit for bit the output of the old max gate."""
+    # Bursty stamps and a detected 0.9 s step (two segments, margins), as in
+    # test_audio_subsecond_jump_segmented: 32 ms chunks, 120 s.
+    sr, chunk = 8000, 256
+    n_chunks = 3750
+    ts, groups = _bursty_stamps(n_chunks, sr, seed=5, chunk=chunk)
+    s = min(groups, key=lambda g: abs(g - n_chunks // 2))
+    ts[s:] += 0.9
+    rng = np.random.default_rng(7)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, rng.uniform(-0.5, 0.5, n_chunks * chunk).astype(np.float32), sr)
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    starts = T0 + 0.1 * np.arange(1, 1200)
+
+    # Session: the synthetic subject, its 2 s of stamps jittered by 0.5 ms
+    # (bursts would bias the rate of so short a file past MIC_RATE_TOL).
+    sub = _write_subject(tmp_path / "raw")
+    mic = next(sub.glob("*microphone_S00.hdf5"))
+    with h5py.File(mic, "a") as h5:
+        grp = h5["sink"]["chunk_timestamp"]
+        t = np.asarray(grp["time_s"])[:, 0]
+        t = t + 0.0005 * (-1.0) ** np.arange(len(t))
+        grp["time_s"][...] = t[:, None]
+        grp["data"][...] = t[:, None]
+
+    def run() -> tuple[
+        dict[str, object], np.ndarray, np.ndarray, dict[str, np.ndarray], dict[str, int]
+    ]:
+        info: dict[str, object] = {}
+        with monkeypatch.context() as mp:
+            mp.setattr(extract, "MIC_CHUNK", chunk)
+            mel, cov = extract.audio_frames(wav_path, h5_path, starts, info)
+        arrays, counts = extract.extract_subject_with_counts(tmp_path / "raw", "S00", vision=False)
+        return info, mel, cov, arrays, counts
+
+    new = run()
+    monkeypatch.setattr(extract, "_mic_clock_fit", _max_gate_clock_fit)
+    old = run()
+    segs_new, segs_old = _segments(new[0]), _segments(old[0])
+    assert len(segs_new) == 2
+    assert all(sg["res_max"] < extract.MIC_SEGMENT_RESIDUAL_MAX_S for sg in segs_new)
+    for sn, so in zip(segs_new, segs_old, strict=True):
+        assert sn.pop("n_stall") == 0
+        assert sn == so
+    assert new[1].tobytes() == old[1].tobytes()
+    np.testing.assert_array_equal(new[2], old[2])
+    assert new[0]["n_breakpoint_drop"] == old[0]["n_breakpoint_drop"] > 0
+    assert new[0]["n_stall_drop"] == 0
+    arrays_new, arrays_old = new[3], old[3]
+    assert arrays_new.keys() == arrays_old.keys()
+    for k in arrays_new:
+        assert arrays_new[k].tobytes() == arrays_old[k].tobytes(), k
+    assert arrays_new["audio"].shape[0] == 10  # the session audio was used
+    counts_new, counts_old = dict(new[4]), dict(old[4])
+    assert counts_new.pop("audio_stall_drop") == 0
+    counts_old.pop("audio_stall_drop", None)
+    assert counts_new == counts_old
+
+
+@pytest.mark.filterwarnings("error")
+def test_audio_all_chunks_stalled_rejected(tmp_path: Path) -> None:
+    """Every chunk of a segment beyond 0.2 s: nothing to refit on, so the
+    segment is rejected without a refit (no empty-mean warning, no nan)."""
+    sr, n_chunks = 1000, 20  # < 2 * MIC_STEP_WINDOW + 1: one segment
+    true = T0 + ((np.arange(n_chunks) + 1) * CHUNK - 1) / sr
+    ts = true + 0.3 * (-1.0) ** np.arange(n_chunks)  # monotonic (2.048 s steps)
+    wav_path = tmp_path / "sink.wav"
+    sf.write(wav_path, np.zeros(n_chunks * CHUNK, dtype=np.float32), sr, subtype="PCM_16")
+    h5_path = tmp_path / "mic.hdf5"
+    with h5py.File(h5_path, "w") as h5:
+        _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
+    info: dict[str, object] = {}
+    _mel, covered = extract.audio_frames(wav_path, h5_path, T0 + 0.1 * np.arange(1, 300), info)
+    (seg,) = _segments(info)
+    assert seg["n_stall"] == n_chunks
+    assert not seg["accepted"] and not covered.any()
+    assert all(np.isfinite(seg[k]) for k in ("res_median", "res_p99", "res_max", "rate"))
+    assert info["n_stall_drop"] == 0
+
+
+def test_session_counts_audio_drops_once_per_frame(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Breakpoint and stall drops: one count per frame, none if covered."""
+    sub = _write_subject(tmp_path)
+    for p in list(sub.glob("2022-06-07_17-13-41_*microphone*")):
+        shutil.copy(p, p.with_name(p.name.replace("17-13-41", "17-13-42")))
+    marks = iter(
+        [
+            # (covered, breakpoint_drop, stall_drop) for the 10 frames
+            ([], [0, 1, 2, 3], [5, 6]),  # 17-13-41
+            ([2, 3, 6], [0, 1], [5]),  # 17-13-42
+        ]
+    )
+
+    def fake(
+        wav: Path, mic: Path, starts: np.ndarray, info: dict[str, object]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        cov_i, bp_i, st_i = next(marks)
+        n = len(starts)
+        cov, bp, st = (np.zeros(n, dtype=bool) for _ in range(3))
+        cov[cov_i], bp[bp_i], st[st_i] = True, True, True
+        info |= {"segments": [{"accepted": 1.0}], "breakpoint_drop": bp, "stall_drop": st}
+        return np.zeros((n, extract.N_MELS)), cov
+
+    monkeypatch.setattr(extract, "audio_frames", fake)
+    counts: dict[str, int] = {}
+    wear = next(sub.glob("*wearables*"))
+    extract._extract_session(wear, sub, "S00", False, counts, {}, [])
+    assert counts["audio_breakpoint_drop"] == 2  # frames 0, 1 (was 4 + 2)
+    assert counts["audio_stall_drop"] == 1  # frame 5; frame 6 is covered
 
 
 def test_session_counts_inconsistent_audio_file(tmp_path: Path) -> None:

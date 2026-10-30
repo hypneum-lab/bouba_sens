@@ -40,17 +40,45 @@ WORLD="${WORLD:-gaussian}"
 EMISSION="${EMISSION:-argmax-bridge}"
 # ADR-0026: extra v1 probe sizes (empty = none, historical behaviour).
 PROBE_SIZES="${PROBE_SIZES:-}"
+# ADR-0027: world seed of lesion / eval (legacy = historical, cell = phase-1 world).
+WORLD_SEED_MODE="${WORLD_SEED_MODE:-legacy}"
 # shellcheck disable=SC2206
 SEEDS=(${SEEDS:?set SEEDS, e.g. "200 201 202 203 204"})
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 SNR_CELLS=("floor:-20.0" "minus10:-10.0" "plus10:10.0")
 
-export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION PROBE_SIZES
+export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION PROBE_SIZES WORLD_SEED_MODE
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
-echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION probe_sizes=${PROBE_SIZES:-none} mock_samples=${BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES:-default} seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION world_seed_mode=$WORLD_SEED_MODE probe_sizes=${PROBE_SIZES:-none} mock_samples=${BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES:-default} seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+
+# ADR-0027: refuse to resume a finished cell that was run in another
+# world-seed mode (mode read from its config.yaml; legacy if absent).
+# Phase 1 needs no guard: `train` does not read the mode.
+# usage: check_world_mode <cell_dir> <done_marker_file>
+check_world_mode() {
+    local dir="$1" marker="$2" have="legacy" line
+    [[ -f "${marker}" ]] || return 0
+    if [[ -f "${dir}/config.yaml" ]]; then
+        line=$(grep -E '^world_seed_mode:' "${dir}/config.yaml" || true)
+        if [[ -n "${line}" ]]; then
+            have=$(printf '%s' "${line#world_seed_mode:}" | tr -d " '\"")
+        fi
+    fi
+    if [[ "${have}" != "${WORLD_SEED_MODE}" ]]; then
+        echo "ERROR: ${dir} was run with world_seed_mode ${have}," >&2
+        echo "but WORLD_SEED_MODE=${WORLD_SEED_MODE}. Use one OUT_ROOT per arm (ADR-0027)." >&2
+        exit 1
+    fi
+}
+
+# Pre-flight: every finished cell under OUT_ROOT must match the mode.
+for eval_json in "$OUT_ROOT"/seed*_T*/eval_report.json; do
+    [[ -e "$eval_json" ]] || continue
+    check_world_mode "$(dirname "$eval_json")" "$eval_json"
+done
 
 phase1_job() {
     local seed="$1"
@@ -83,6 +111,9 @@ cell_job() {
         --probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )) --emission "$EMISSION")
     if [[ -n "$PROBE_SIZES" ]]; then
         args+=(--probe-sizes "$PROBE_SIZES" --probe-sizes-seed $(( seed * 10000 + 6000 + trio )))
+    fi
+    if [[ "$WORLD_SEED_MODE" != "legacy" ]]; then
+        args+=(--world-seed-mode "$WORLD_SEED_MODE" --world-seed "$seed")
     fi
     {
         if [[ "$timing" == "T1" ]]; then
