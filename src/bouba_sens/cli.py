@@ -170,6 +170,35 @@ def _write_probe_sizes(loop: object, out: Path, *, sizes: list[int], seed: int) 
     (out / PROBE_SIZES_META_FILE).write_text(json.dumps(meta, indent=2))
 
 
+# ADR-0026 — opt-in length of the Studyforrest mock stream. Unset (default)
+# = the historical 4096-row mock, built exactly as before.
+MOCK_SAMPLES_ENV = "BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES"
+
+
+def mock_samples_override() -> int | None:
+    """Mock stream length from ``BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES``, or None."""
+    import os
+
+    raw = os.getenv(MOCK_SAMPLES_ENV, "").strip()
+    if not raw:
+        return None
+    if not raw.isdigit() or int(raw) < 2:
+        raise typer.BadParameter(f"{MOCK_SAMPLES_ENV} must be an integer >= 2, got {raw!r}")
+    return int(raw)
+
+
+def _mock_record(world_name: str, world_obj: object) -> dict[str, object]:
+    """Metadata entries for an overridden mock stream; empty by default."""
+    if world_name.lower().strip() != "studyforrest" or mock_samples_override() is None:
+        return {}
+    if getattr(world_obj, "mode", None) != "mock":
+        return {}
+    return {
+        "mock_samples": world_obj.n_rows,  # type: ignore[attr-defined]
+        "mock_cache_sha256": world_obj.cache_sha256(),  # type: ignore[attr-defined]
+    }
+
+
 def _build_world(name: str, seed: int) -> WorldSimulator:
     """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
     import os
@@ -195,6 +224,10 @@ def _build_world(name: str, seed: int) -> WorldSimulator:
             from bouba_sens.world.studyforrest import StudyforrestRealWorld
 
             return StudyforrestRealWorld(seed=seed, data_dir=data_dir)
+        mock_samples = mock_samples_override()
+        if data_dir is None and mock_samples is not None:
+            # ADR-0026 — opt-in larger mock stream (a modified mock world).
+            return StudyforrestWorld(seed=seed, n_mock_samples=mock_samples)
         return StudyforrestWorld(seed=seed, data_dir=data_dir)
     if key == "ccfilm":
         # ADR-0019 §E1.3d — CC-BY film real-AV bridge. REAL audio+vision+labels,
@@ -412,6 +445,7 @@ def train(
                 "seed": seed,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
+                **_mock_record(world, world_obj),
             },
             f,
             indent=2,
@@ -655,6 +689,7 @@ def lesion(
                 "k_steps": k_steps,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
+                **_mock_record(world, world_obj),
                 **(
                     {
                         "probe_sizes": sizes,

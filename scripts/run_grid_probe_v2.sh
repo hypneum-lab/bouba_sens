@@ -50,7 +50,7 @@ export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION PRO
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
-echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION probe_sizes=${PROBE_SIZES:-none} seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION probe_sizes=${PROBE_SIZES:-none} mock_samples=${BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES:-default} seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
 
 phase1_job() {
     local seed="$1"
