@@ -139,3 +139,56 @@ def test_main_power_writes_json(tmp_path: Path) -> None:
     assert rc == 0
     data = json.loads(out.read_text())
     assert data["kind"] == "power" and data["rows"][0]["n"] == 64
+
+
+def test_parse_pair_and_plant() -> None:
+    from me6_large_n import parse_pair, plant  # type: ignore[import-not-found]
+
+    assert parse_pair("audio|vision") == (0, 1)
+    assert parse_pair("gravity|force") == (3, 4)
+    for bad in ("audio", "audio|audio", "audio|smell"):
+        with pytest.raises(ValueError):
+            parse_pair(bad)
+    rng = np.random.default_rng(0)
+    base = _null_grid(rng, 64, k=4)
+    out = plant(base, pair=(0, 1), k=5, rng=np.random.default_rng(1))
+    zeros_before = (base[:, 0, 1] == 0).sum(axis=-1)
+    ones_before = (base[:, 1, 0] == 1).sum(axis=-1)
+    assert np.array_equal(
+        out[:, 0, 1].sum(axis=-1), base[:, 0, 1].sum(axis=-1) + np.minimum(5, zeros_before)
+    )
+    assert np.array_equal(
+        out[:, 1, 0].sum(axis=-1), base[:, 1, 0].sum(axis=-1) - np.minimum(5, ones_before)
+    )
+    mask = np.ones((5, 5), dtype=bool)
+    mask[0, 1] = mask[1, 0] = False
+    assert np.array_equal(out[:, mask], base[:, mask])
+    assert not np.array_equal(out, base) and np.array_equal(
+        base, _null_grid(np.random.default_rng(0), 64, k=4)
+    )
+
+
+def test_empirical_power_detects_large_planted_delta(tmp_path: Path) -> None:
+    from me6_large_n import empirical_power  # type: ignore[import-not-found]
+
+    rng = np.random.default_rng(2)
+    _write_grid(tmp_path, _null_grid(rng, 256), name=successes_file_for(256))
+    kwargs = dict(
+        world="gaussian",
+        blocks_by_size={"256": 1},
+        pairs=["audio|vision"],
+        deltas=[0.004, 0.4],
+        plantings=4,
+        null_replicates=200,
+        seed=5,
+    )
+    out = empirical_power(tmp_path, **kwargs)
+    (row,) = out["rows"]
+    small, large = row["cells"]
+    assert row["n_items"] == 256 and row["complete"]
+    assert small["k_flips_per_entry"] == 1 and large["k_flips_per_entry"] == 51
+    assert large["power_paired_test"] == 1.0
+    assert small["power_paired_test"] <= 0.5
+    assert empirical_power(tmp_path, **kwargs) | {"generated_at": None} == out | {
+        "generated_at": None
+    }
