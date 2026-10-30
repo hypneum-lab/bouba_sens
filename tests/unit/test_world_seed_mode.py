@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -319,8 +320,11 @@ def test_paired_eval_refuses_cell_mode_on_fallback_cells(tmp_path: Path) -> None
         capture_output=True, text=True,
     )  # fmt: skip
     assert refused.returncode != 0
-    flat = "".join(ch for ch in refused.stderr if ch.isalnum() or ch == "-")
-    assert "--world-seed-modecellneedsconfigyamlandmodelpt" in flat
+    # rich may wrap and colour the message (ANSI escapes on CI): strip both.
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", refused.stderr)
+    flat = "".join(ch for ch in plain if ch.isalnum())
+    assert "worldseedmodecellneedsconfigyamlandmodelpt" in flat
+    assert "worldcannotberebuilt" in flat
     assert not (tmp_path / "cell.json").exists()
 
     # Default (and explicit legacy): historical fallback, historical keys.
