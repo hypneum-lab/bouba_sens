@@ -539,32 +539,39 @@ def test_audio_max_below_gate_matches_max_gate(
 ) -> None:
     """Non-regression (S00 regime): with every |residual| < 0.2 s, the p99
     gate gives bit for bit the output of the old max gate."""
-    sr = 48000
-    n_chunks = 400
+    # Bursty stamps and a detected 0.9 s step (two segments, margins), as in
+    # test_audio_subsecond_jump_segmented: 32 ms chunks, 120 s.
+    sr, chunk = 8000, 256
+    n_chunks = 3750
+    ts, groups = _bursty_stamps(n_chunks, sr, seed=5, chunk=chunk)
+    s = min(groups, key=lambda g: abs(g - n_chunks // 2))
+    ts[s:] += 0.9
     rng = np.random.default_rng(7)
     wav_path = tmp_path / "sink.wav"
-    sf.write(wav_path, rng.uniform(-0.5, 0.5, n_chunks * CHUNK).astype(np.float32), sr)
-    ts, groups = _bursty_stamps(n_chunks, sr, seed=8)
-    s = min(groups, key=lambda g: abs(g - n_chunks // 2))  # step between groups
-    ts[s:] += 0.5  # one detected step: two segments, margins
+    sf.write(wav_path, rng.uniform(-0.5, 0.5, n_chunks * chunk).astype(np.float32), sr)
     h5_path = tmp_path / "mic.hdf5"
     with h5py.File(h5_path, "w") as h5:
         _stream(h5, "sink", "chunk_timestamp", ts, ts[:, None])
-    starts = T0 + 0.1 * np.arange(1, 170)
+    starts = T0 + 0.1 * np.arange(1, 1200)
 
+    # Session: the synthetic subject, its 2 s of stamps jittered by 0.5 ms
+    # (bursts would bias the rate of so short a file past MIC_RATE_TOL).
     sub = _write_subject(tmp_path / "raw")
     mic = next(sub.glob("*microphone_S00.hdf5"))
     with h5py.File(mic, "a") as h5:
         grp = h5["sink"]["chunk_timestamp"]
-        burst, _g = _bursty_stamps(len(grp["time_s"]), SR, seed=9)
-        grp["time_s"][...] = burst[:, None]
-        grp["data"][...] = burst[:, None]
+        t = np.asarray(grp["time_s"])[:, 0]
+        t = t + 0.0005 * (-1.0) ** np.arange(len(t))
+        grp["time_s"][...] = t[:, None]
+        grp["data"][...] = t[:, None]
 
     def run() -> tuple[
         dict[str, object], np.ndarray, np.ndarray, dict[str, np.ndarray], dict[str, int]
     ]:
         info: dict[str, object] = {}
-        mel, cov = extract.audio_frames(wav_path, h5_path, starts, info)
+        with monkeypatch.context() as mp:
+            mp.setattr(extract, "MIC_CHUNK", chunk)
+            mel, cov = extract.audio_frames(wav_path, h5_path, starts, info)
         arrays, counts = extract.extract_subject_with_counts(tmp_path / "raw", "S00", vision=False)
         return info, mel, cov, arrays, counts
 
@@ -585,6 +592,7 @@ def test_audio_max_below_gate_matches_max_gate(
     assert arrays_new.keys() == arrays_old.keys()
     for k in arrays_new:
         assert arrays_new[k].tobytes() == arrays_old[k].tobytes(), k
+    assert arrays_new["audio"].shape[0] == 10  # the session audio was used
     counts_new, counts_old = dict(new[4]), dict(old[4])
     assert counts_new.pop("audio_stall_drop") == 0
     counts_old.pop("audio_stall_drop", None)
