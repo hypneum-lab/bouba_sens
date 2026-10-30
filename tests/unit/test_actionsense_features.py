@@ -135,3 +135,9 @@ def test_window_rms_masks_nonfinite_samples() -> None:
 def test_monotonic_violations() -> None:
     assert monotonic_violations(np.array([0.0, 1.0, 1.0, 2.0])) == 0
     assert monotonic_violations(np.array([0.0, 2.0, 1.0, 3.0, 2.5])) == 2
+
+
+def test_label_family_open_a_jar_is_jar_family() -> None:
+    """PI decision 2026-10-30: the bare "Open a jar" label is family 1."""
+    assert label_family("Open a jar of almond butter") == 1
+    assert label_family("  open a jar of almond butter ") == 1
