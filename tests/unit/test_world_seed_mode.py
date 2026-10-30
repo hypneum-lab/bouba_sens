@@ -300,3 +300,33 @@ def test_cell_mode_with_probe_v2_and_paired_eval(
     flat = "".join(ch for ch in mixed.stderr if ch.isalnum() or ch == "-")
     assert "world-seedmodelegacy" in flat  # rich may wrap the message
     assert not (tmp_path / "mixed.json").exists()
+
+
+def test_paired_eval_refuses_cell_mode_on_fallback_cells(tmp_path: Path) -> None:
+    """Cells without config.yaml / model.pt have no world to rebuild."""
+    for name, me1, seed in (
+        ("seed0_T1_vision_plus10", 0.5, 1),
+        ("seed0_T2_vision_plus10", 0.25, 2),
+    ):
+        d = tmp_path / name
+        d.mkdir()
+        (d / "eval_report.json").write_text(json.dumps({"me1": me1}))
+        (d / "metadata.json").write_text(json.dumps({"seed": seed}))
+    t1, t2 = tmp_path / "seed0_T1_vision_plus10", tmp_path / "seed0_T2_vision_plus10"
+    refused = subprocess.run(
+        ["uv", "run", "bouba-sens", "eval", "--t1-ckpt", str(t1), "--t2-ckpt", str(t2),
+         "--world-seed-mode", "cell", "--out", str(tmp_path / "cell.json")],
+        capture_output=True, text=True,
+    )  # fmt: skip
+    assert refused.returncode != 0
+    flat = "".join(ch for ch in refused.stderr if ch.isalnum() or ch == "-")
+    assert "--world-seed-modecellneedsconfigyamlandmodelpt" in flat
+    assert not (tmp_path / "cell.json").exists()
+
+    # Default (and explicit legacy): historical fallback, historical keys.
+    for extra in ((), ("--world-seed-mode", "legacy")):
+        out = tmp_path / f"legacy{len(extra)}.json"
+        _run("eval", "--t1-ckpt", str(t1), "--t2-ckpt", str(t2), *extra, "--out", str(out))
+        payload = json.loads(out.read_text())
+        assert set(payload) == {"pair", "me1_t1", "me1_t2", "me7", "timestamp"}
+        assert (payload["me1_t1"], payload["me1_t2"]) == (0.5, 0.25)

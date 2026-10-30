@@ -103,14 +103,17 @@ measured here.
   the recorded `world_seed` and `eval_report.json` gets the same three
   keys. Nothing is added in legacy mode. Paired mode
   (`--t1-ckpt` / `--t2-ckpt`) rebuilds both cells with the same mode,
-  refuses a T1 / T2 pair whose modes differ, and in `cell` mode records
+  refuses a T1 / T2 pair whose modes differ, refuses `--world-seed-mode
+  cell` on a cell without `config.yaml` / `model.pt` (no world to
+  rebuild), and in `cell` mode records
   `world_seed_mode`, `world_sha256_t1` and `world_sha256_t2`.
 - `WORLD_SEED_MODE` (default `legacy`) in `run_grid.sh` and
   `run_grid_probe_v2.sh`. In `cell` mode it passes
   `--world-seed-mode cell --world-seed <grid seed>` to every lesion cell.
-  On resume, a finished cell whose `config.yaml` records another mode
-  (legacy if absent) stops the script with an error: one `OUT_ROOT` per
-  arm. Phase 1 needs no guard, since `train` does not read the mode.
+  Before any cell is computed, both scripts check every finished cell
+  under `OUT_ROOT` (all seeds, not only `SEEDS`); one whose `config.yaml`
+  records another mode (legacy if absent) stops the script with an
+  error: one `OUT_ROOT` per arm. Phase 1 needs no guard, since `train` does not read the mode.
 - Tests (`tests/unit/test_world_seed_mode.py`, Gaussian and mock):
   explicit `legacy` equals the default byte for byte (probe files,
   `metadata.json`, `config.yaml`, `eval_report.json`, `model.pt`). In

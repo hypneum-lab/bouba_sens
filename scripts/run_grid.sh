@@ -98,6 +98,14 @@ check_world_mode() {
 }
 
 mkdir -p "${OUT_ROOT}"
+
+# Pre-flight (ADR-0027): every finished cell under OUT_ROOT, whatever its
+# seed, must match WORLD_SEED_MODE before any cell is computed.
+for eval_json in "${OUT_ROOT}"/seed*_T*/eval_report.json; do
+    [[ -e "${eval_json}" ]] || continue
+    check_world_mode "$(dirname "${eval_json}")" "${eval_json}"
+done
+
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
 echo "grid: ${total} cells -> ${OUT_ROOT}"
 

@@ -813,7 +813,13 @@ def _load_cell_world(
         me1 = _compute_me1(mux, sensories, nerve, head, world_obj, seed=seed_value)
         return me1, seed_value, path.name, record
 
-    # Legacy fallback — pre-Phase-B ad-hoc cells.
+    # Legacy fallback — pre-Phase-B ad-hoc cells. No world is rebuilt, so
+    # an explicit cell mode cannot be honoured (ADR-0027): refuse it.
+    if world_seed_mode == "cell":
+        raise typer.BadParameter(
+            f"--world-seed-mode cell needs config.yaml and model.pt in {path}; "
+            "this cell has neither, so its world cannot be rebuilt"
+        )
     eval_report = json.loads((path / "eval_report.json").read_text())
     me1 = float(eval_report["me1"])
     seed: int | None = None

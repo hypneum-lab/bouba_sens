@@ -91,3 +91,25 @@ def test_resume_accepts_a_cell_of_the_same_mode(
         assert all("--world-seed-mode cell --world-seed 400" in line for line in lesions)
     else:
         assert all("--world-seed-mode" not in line for line in lesions)
+
+
+@pytest.mark.parametrize("script", GRIDS)
+def test_preflight_checks_every_seed_in_out_root(script: str, tmp_path: Path) -> None:
+    """A finished cell of another mode stops the grid before any cell runs.
+
+    SEEDS="5 0": seed 5 comes first and has nothing done; seed 0 has one
+    finished legacy cell. In cell mode no lesion (and no phase 1) may run.
+    """
+    env, log = _fake_env(tmp_path, "cell")
+    env["SEEDS"] = "5 0"
+    cell = tmp_path / "grid" / "seed0_T1_audio_floor"
+    cell.mkdir(parents=True)
+    (cell / "eval_report.json").write_text("{}")
+    (cell / "probe_v2_meta.json").write_text('{"probe_seed": 5000}')
+    (cell / "config.yaml").write_text("phase: lesion\nseed: 1\n")
+    res = _run(script, env, tmp_path)
+    assert res.returncode != 0
+    assert "world_seed_mode legacy" in res.stderr
+    logged = log.read_text() if log.exists() else ""
+    assert "bouba-sens lesion" not in logged
+    assert "bouba-sens train" not in logged
