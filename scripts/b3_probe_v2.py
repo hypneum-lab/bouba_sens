@@ -102,9 +102,7 @@ def block_from_acf(acf: dict[int, float], *, n_items: int) -> tuple[int, int | N
     return max(1, n_items // 4), None
 
 
-def block_rule(
-    root: Path, *, world: str, successes_file: str = SUCCESSES_V2
-) -> dict[str, Any]:
+def block_rule(root: Path, *, world: str, successes_file: str = SUCCESSES_V2) -> dict[str, Any]:
     """Apply the block-length rule to the v2 outcomes of a pilot grid.
 
     `successes_file` selects another per-cell outcome file with the same
