@@ -65,7 +65,7 @@ not done by a pull request; see the PI action list below.
 
 | 0026 | `0026-me6-large-n-prereg.md` | Me6 at large probe sizes — preregistered paired nulls, n ∈ {64, 256, 1024, 4096} (argmax-bridge, seeds 400–404, mock 65 536 rows, legacy and cell world-seed arms, electron-server; base main 1295160 with ADR-0027) | 2026-10-30 | Proposed — awaiting PI sign-off |
 
-| 0027 | `0027-erratum-world-seed-train-lesion-eval.md` | Erratum — `train`, `lesion` and `eval` build different synthetic worlds (seed s / 0 / lesion seed); `--world-seed-mode cell` added, default unchanged | 2026-10-30 | Proposed — awaiting PI sign-off |
+| 0027 | `0027-erratum-world-seed-train-lesion-eval.md` | Erratum — `train`, `lesion` and `eval` build different synthetic worlds (seed s / 0 / lesion seed); `--world-seed-mode cell` added, default unchanged | 2026-10-30 | Accepted — PI sign-off 2026-10-30 |
 
 Next free number: **0028** (0025 is reserved for the ActionSense verdicts,
 `docs/superpowers/plans/2026-10-28-actionsense-world.md`).
