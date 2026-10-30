@@ -16,6 +16,11 @@
 #   seed * 10000 + 5099 (positive control), and so is its untrained
 #   initial state (descriptive reference).
 #
+# ADR-0026 — PROBE_SIZES (comma-separated, e.g. "64,256,1024,4096", empty by
+# default) also re-runs the v1 zero-masking probe at each size; the five
+# cells of a trio share ONE such seed, seed * 10000 + 6000 + trio, so the
+# paired v1 differences are within-item too (files per_query_successes_n{N}.json).
+#
 # Idempotent: cells with eval_report.json are skipped.
 # Usage: SEEDS="200 201" WORLD=gaussian OUT_ROOT=... PAR=4 scripts/run_grid_probe_v2.sh
 set -euo pipefail
@@ -33,17 +38,19 @@ METRICS="${METRICS:-Me1,Me2,Me3}"
 WORLD="${WORLD:-gaussian}"
 # ADR-0024 follow-up: SensoryWML emission (argmax-bridge = historical default).
 EMISSION="${EMISSION:-argmax-bridge}"
+# ADR-0026: extra v1 probe sizes (empty = none, historical behaviour).
+PROBE_SIZES="${PROBE_SIZES:-}"
 # shellcheck disable=SC2206
 SEEDS=(${SEEDS:?set SEEDS, e.g. "200 201 202 203 204"})
 MODALITIES=(audio vision tactile gravity force)
 TIMINGS=(T1 T2)
 SNR_CELLS=("floor:-20.0" "minus10:-10.0" "plus10:10.0")
 
-export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION
+export REPO OUT_ROOT LOG_DIR STEPS_TRAIN STEPS_LESION METRICS WORLD EMISSION PROBE_SIZES
 mkdir -p "$OUT_ROOT" "$LOG_DIR"
 cd "$REPO"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
-echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
+echo "[$(date -Is)] grid start: $(git rev-parse --short HEAD 2>/dev/null || echo nogit) world=$WORLD emission=$EMISSION probe_sizes=${PROBE_SIZES:-none} seeds=${SEEDS[*]} cells=$total PAR=$PAR -> $OUT_ROOT"
 
 phase1_job() {
     local seed="$1"
@@ -74,6 +81,9 @@ cell_job() {
         --seed $(( seed * 10000 + count )) --snr-floor "$snr_floor" --world "$WORLD"
         --out "$cell_dir" --transducer-gating hard --gumbel-tau 1.0
         --probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )) --emission "$EMISSION")
+    if [[ -n "$PROBE_SIZES" ]]; then
+        args+=(--probe-sizes "$PROBE_SIZES" --probe-sizes-seed $(( seed * 10000 + 6000 + trio )))
+    fi
     {
         if [[ "$timing" == "T1" ]]; then
             uv run bouba-sens lesion "${args[@]}"

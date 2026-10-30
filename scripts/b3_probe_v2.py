@@ -102,11 +102,18 @@ def block_from_acf(acf: dict[int, float], *, n_items: int) -> tuple[int, int | N
     return max(1, n_items // 4), None
 
 
-def block_rule(root: Path, *, world: str) -> dict[str, Any]:
-    """Apply the block-length rule to the v2 outcomes of a pilot grid."""
+def block_rule(
+    root: Path, *, world: str, successes_file: str = SUCCESSES_V2
+) -> dict[str, Any]:
+    """Apply the block-length rule to the v2 outcomes of a pilot grid.
+
+    `successes_file` selects another per-cell outcome file with the same
+    layout (ADR-0026: the v1 probe at several sizes); the default keeps the
+    ADR-0023 behaviour.
+    """
     if world not in WORLDS:
         raise ValueError(f"unknown world {world!r}")
-    trios, incomplete = discover_trios(root, successes_file=SUCCESSES_V2)
+    trios, incomplete = discover_trios(root, successes_file=successes_file)
     successes = stack_successes(trios)  # (K, 5, 5, n)
     n_items = int(successes.shape[-1])
     differences = pair_differences(successes)  # (K, 10, n)

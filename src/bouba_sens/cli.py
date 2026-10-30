@@ -99,6 +99,77 @@ def _write_probe_v2(loop: object, out: Path, *, seed: int, prefix: str = "") -> 
     (out / f"{prefix}{PROBE_V2_META_FILE}").write_text(json.dumps(meta, indent=2))
 
 
+# ADR-0026 — extra v1 probes at larger sizes (one file pair per size).
+PROBE_SIZES_META_FILE = "probe_sizes_meta.json"
+
+
+def probe_sizes_successes_file(size: int) -> str:
+    """Per-item v1 outcomes at probe size ``size`` (ADR-0026)."""
+    return f"per_query_successes_n{size}.json"
+
+
+def probe_sizes_accuracy_file(size: int) -> str:
+    """Per-query v1 accuracies at probe size ``size`` (ADR-0026)."""
+    return f"per_query_me1_n{size}.json"
+
+
+def parse_probe_sizes(raw: str) -> list[int]:
+    """Parse ``"64,256,1024"`` into a sorted list of distinct positive ints.
+
+    The empty string (the default) means no extra probe, i.e. the
+    historical behaviour.
+    """
+    text = raw.strip()
+    if not text:
+        return []
+    sizes: set[int] = set()
+    for part in text.split(","):
+        token = part.strip()
+        if not token.isdigit() or int(token) <= 0:
+            raise typer.BadParameter(f"probe size must be a positive integer, got {token!r}")
+        sizes.add(int(token))
+    return sorted(sizes)
+
+
+def _write_probe_sizes(loop: object, out: Path, *, sizes: list[int], seed: int) -> None:
+    """ADR-0026 — re-run the v1 zero-masking probe at each size and write it.
+
+    For each size n (ascending), the five query modalities are scored on ONE
+    shared probe batch ``world.sample(batch_size=n, seed=seed)`` with the
+    frozen state, exactly as ``per_query_successes.json`` is at n = 64.
+    Writes ``per_query_successes_n{n}.json`` (``{modality: [0/1] * n}``),
+    ``per_query_me1_n{n}.json`` and ``probe_sizes_meta.json``. Each size
+    runs inside ``torch.random.fork_rng`` reseeded with ``seed``, so the
+    global RNG state seen by every other artefact is untouched and the
+    outcomes at one size do not depend on which other sizes were asked.
+    """
+    import torch as _torch
+
+    from bouba_sens.loop import successes_to_accuracy
+    from bouba_sens.sensory import MODALITIES as _MODS
+
+    out.mkdir(parents=True, exist_ok=True)
+    accuracies: dict[str, object] = {}
+    for size in sizes:
+        with _torch.random.fork_rng(devices=[]):
+            _torch.manual_seed(seed)
+            successes = {
+                m: loop.query_successes(m, batch_size=size, seed=seed)  # type: ignore[attr-defined]
+                for m in _MODS
+            }
+        acc = {m: successes_to_accuracy(v) for m, v in successes.items()}
+        accuracies[str(size)] = acc
+        (out / probe_sizes_successes_file(size)).write_text(json.dumps(successes))
+        (out / probe_sizes_accuracy_file(size)).write_text(json.dumps(acc, indent=2))
+    meta = {
+        "probe": "v1 zero-masking query_successes at several sizes (ADR-0026)",
+        "probe_seed": seed,
+        "sizes": sizes,
+        "accuracies": accuracies,
+    }
+    (out / PROBE_SIZES_META_FILE).write_text(json.dumps(meta, indent=2))
+
+
 def _build_world(name: str, seed: int) -> WorldSimulator:
     """Dispatch a world simulator by name. Sprint 6 / Task 6.1 + Sprint 7 / Task 7.6."""
     import os
@@ -451,6 +522,21 @@ def lesion(
             "training pool = seed + 1). Default: the run seed + 777."
         ),
     ),
+    probe_sizes: str = typer.Option(
+        "",
+        help=(
+            "ADR-0026 — comma-separated extra sizes of the v1 probe, e.g. "
+            "'64,256,1024,4096'; writes per_query_successes_n{N}.json. "
+            "Empty (default) = no extra probe; the n = 64 files are unchanged."
+        ),
+    ),
+    probe_sizes_seed: int | None = typer.Option(
+        None,
+        help=(
+            "ADR-0026 — seed of the extra v1 probe batches (same seed for "
+            "every size). Default: the run seed + 777."
+        ),
+    ),
     out: Path = typer.Option(..., help="Phase 2 run directory"),
 ) -> None:
     """Phase 2 lesion_phase. Reuses Phase 1 checkpoint if provided (T2);
@@ -464,8 +550,14 @@ def lesion(
     outcomes behind them (``{modality: [0/1] * 64}``, item ``i`` is the
     same probe item for every modality). The seed is the lesion seed, so
     different cells (different ``--seed``) probe different batches.
+
+    ADR-0026 — ``--probe-sizes`` re-runs the same v1 probe on the same
+    frozen state at each listed size (files ``*_n{N}.json``), after the
+    n = 64 files and before the v2 probe, without touching either.
     """
     import pickle
+
+    sizes = parse_probe_sizes(probe_sizes)
 
     from track_p.multiplexer import GammaThetaMultiplexer
 
@@ -537,6 +629,13 @@ def lesion(
         json.dump(per_query_me1, pq_out, indent=2)
     with (out / "per_query_successes.json").open("w") as ps_out:
         json.dump(per_query_successes, ps_out)
+    if sizes:
+        _write_probe_sizes(
+            loop,
+            out,
+            sizes=sizes,
+            seed=seed + 777 if probe_sizes_seed is None else probe_sizes_seed,
+        )
     if probe_v2:
         # ADR-0023 — v2 probe on the same frozen lesion-adapted state, after
         # the v1 probe so the v1 outputs are untouched.
@@ -556,6 +655,16 @@ def lesion(
                 "k_steps": k_steps,
                 "version": __version__,
                 **({"emission": emission} if emission != "argmax-bridge" else {}),
+                **(
+                    {
+                        "probe_sizes": sizes,
+                        "probe_sizes_seed": (
+                            seed + 777 if probe_sizes_seed is None else probe_sizes_seed
+                        ),
+                    }
+                    if sizes
+                    else {}
+                ),
             },
             meta_out,
             indent=2,
