@@ -40,7 +40,7 @@ human-labelled activities.
 
 - Rescuing or re-deriving the Studyforrest numbers. Those 17 blocks
   stay historical, with their erratum (#45).
-- Changing the locked thresholds (B-1 ≥ 0.05, B-2 ≥ 0.10, B-3 ≥ 0.02)
+- Changing the locked thresholds (B-1 > 0.05, B-2 > 0.10, B-3 > 0.02)
   or the Me1/Me3/Me6/Me7 definitions.
 - Changing the encoder architecture or the modality dimensions to fit
   the richer sensors. Extraction reduces each sensor to the existing

@@ -2,6 +2,12 @@
 # Sprint 4 Task 4.2 — 150-run grid orchestrator.
 # 5 seeds x 5 modalities x 2 timings x 3 SNR = 150 cells.
 # Idempotent: cells with an existing eval_report.json are skipped.
+#
+# WARNING (v0.7): the seed rule of the v2 probe changed in this script
+# (ADR-0023 trio rule, seed*10000 + 5000 + trio, instead of the CLI
+# default seed + 777). A grid started before this change must NOT be
+# resumed. For v0.7 a fresh OUT_ROOT is mandatory. A guard below refuses
+# to resume a cell whose probe_v2_meta.json is missing or has another seed.
 set -euo pipefail
 
 OUT_ROOT="${OUT_ROOT:-./runs/v01_grid}"
@@ -29,6 +35,9 @@ CODEBOOK_LOCK="${CODEBOOK_LOCK:-}"
 # HARD during Phase 1 (0..200), GUMBEL during Phase 2 (200..300) for T2 cells.
 GATING_SCHEDULE="${GATING_SCHEDULE:-}"
 GATING_TARGET="${GATING_TARGET:-}"
+# ADR-0024 follow-up — SensoryWML code emission: "argmax-bridge" (historical
+# default) or "straight-through".
+EMISSION="${EMISSION:-argmax-bridge}"
 
 # Seeds default to the 5-seed replication set used in paper v0.5. Q3
 # (`scripts/replay_amedi_seeds.py`) overrides this via the `SEEDS` env
@@ -50,6 +59,20 @@ SNR_CELLS=(
     "plus10:10.0"
 )
 
+# Refuse to resume a finished cell that lacks probe_v2_meta.json or was
+# probed with another seed (grid started under the old seed rule).
+# usage: check_probe_seed <dir> <expected_seed> <done_marker_file>
+check_probe_seed() {
+    local dir="$1" want="$2" marker="$3"
+    [[ -f "${marker}" ]] || return 0
+    local meta="${dir}/probe_v2_meta.json"
+    if [[ ! -f "${meta}" ]] || ! grep -Eq "\"probe_seed\": *${want}([^0-9]|$)" "${meta}"; then
+        echo "ERROR: ${dir} has no probe_v2_meta.json with probe_seed ${want}." >&2
+        echo "Grid predates the ADR-0023 seed rule; use a fresh OUT_ROOT." >&2
+        exit 1
+    fi
+}
+
 mkdir -p "${OUT_ROOT}"
 total=$(( ${#SEEDS[@]} * ${#MODALITIES[@]} * ${#TIMINGS[@]} * ${#SNR_CELLS[@]} ))
 echo "grid: ${total} cells -> ${OUT_ROOT}"
@@ -59,6 +82,7 @@ skipped=0
 for seed in "${SEEDS[@]}"; do
     # One Phase 1 checkpoint per seed (reused across T2 cells for that seed).
     phase1_dir="${OUT_ROOT}/phase1_seed${seed}"
+    check_probe_seed "${phase1_dir}" "$(( seed * 10000 + 5099 ))" "${phase1_dir}/checkpoint.pkl"
     if [[ ! -f "${phase1_dir}/checkpoint.pkl" ]]; then
         echo "[seed ${seed}] phase 1 pretrain ${STEPS_TRAIN} steps -> ${phase1_dir}"
         train_args=(
@@ -70,6 +94,8 @@ for seed in "${SEEDS[@]}"; do
         )
         [[ -n "${LOCK_AFTER}" ]] && train_args+=(--constellation-lock-after "${LOCK_AFTER}")
         train_args+=(--transducer-gating "${TRANSDUCER_GATING}")
+        train_args+=(--emission "${EMISSION}")
+        train_args+=(--probe-v2 --probe-v2-seed $(( seed * 10000 + 5099 )))
         train_args+=(--gumbel-tau "${GUMBEL_TAU}")
         [[ -n "${CODEBOOK_LOCK}" ]] && train_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
         [[ -n "${GATING_SCHEDULE}" ]] && train_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
@@ -90,6 +116,9 @@ for seed in "${SEEDS[@]}"; do
                 count=$(( count + 1 ))
 
                 if [[ -f "${eval_json}" ]]; then
+                    timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1
+                    case "${snr_label}" in floor) snr_idx=0 ;; minus10) snr_idx=1 ;; *) snr_idx=2 ;; esac
+                    check_probe_seed "${cell_dir}" "$(( seed * 10000 + 5000 + 3 * timing_idx + snr_idx ))" "${eval_json}"
                     skipped=$(( skipped + 1 ))
                     continue
                 fi
@@ -107,6 +136,13 @@ for seed in "${SEEDS[@]}"; do
                 )
                 [[ -n "${LOCK_AFTER}" ]] && lesion_args+=(--constellation-lock-after "${LOCK_AFTER}")
                 lesion_args+=(--transducer-gating "${TRANSDUCER_GATING}")
+                lesion_args+=(--emission "${EMISSION}")
+                # ADR-0023: v2 probe, seed shared per (seed, timing, snr) trio,
+                # same rule as run_grid_probe_v2.sh.
+                timing_idx=0; [[ "${timing}" == "T2" ]] && timing_idx=1
+                case "${snr_label}" in floor) snr_idx=0 ;; minus10) snr_idx=1 ;; *) snr_idx=2 ;; esac
+                trio=$(( 3 * timing_idx + snr_idx ))
+                lesion_args+=(--probe-v2 --probe-v2-seed $(( seed * 10000 + 5000 + trio )))
                 lesion_args+=(--gumbel-tau "${GUMBEL_TAU}")
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
