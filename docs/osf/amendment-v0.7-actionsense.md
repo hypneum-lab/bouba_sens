@@ -527,12 +527,31 @@ them on 2026-10-30; they are recorded as decided.
    PR #9 is to be renumbered v0.8 (comment posted on PR #9, PR #9
    untouched).
 
-**Still pending before the tag:**
+**Filled in on 2026-10-30 (before the tag):**
 
-- the extraction commit after the fix of issue #52 (to be written into
-  the tag message and ADR-0025; it must include PR #56);
-- the sha256 of the S02–S05 raw files;
-- the PI signature.
+- **Extraction commit:** `a1fd6ff` (main, PR #57, fix of issue #52;
+  it includes PR #56). To be written into the tag message and
+  ADR-0025.
+- **Raw files S00–S05:** `actionsense_raw/MANIFEST.json` lists the 35
+  raw files with size and sha256 (the S02–S05 download ended with
+  `FETCH_VERIFIED`). sha256 of that manifest:
+  `b801042416796af2431c7271bcae7fcb2a3521428718467392c327da22f82e95`.
+- **S00 re-extraction at `a1fd6ff`** (macM1, ffmpeg 9.0.2): 13 062
+  rows kept out of 13 699 frames, against 12 597 in pilot run 2. The
+  +465 rows all come from PR #56: "Open a jar of almond butter" now maps
+  to family 1 (1 051 → 1 516 rows); the other families are unchanged
+  (5 624, 1 155, 4 767). Shares become 0.4306 / 0.1161 / 0.0884 /
+  0.3650, so the **majority-class baseline is 0.4306** (pilot: 0.4465,
+  exploratory). `audio_stall_drop` is 0 and `audio_breakpoint_drop` 176
+  (154 in the pilot, the difference coming from the added frames).
+- **PR #57 alone leaves S00 unchanged:** an extraction at `1290a4b`
+  (#56 without #57) gives the same 8 output sha256 and the same
+  counters. Output sha256 at `a1fd6ff`: audio `cf6f9577…`, force
+  `7a8ec62d…`, gravity `130186a3…`, labels `461ac918…`, rows
+  `0b5c4f6a…`, subject `63bf868d…`, tactile `b806fa36…`, vision
+  `c73f9a43…`; output MANIFEST.md `87ac0f7b…`.
+
+**Still pending before the tag:** the PI signature.
 
 ## 9. What is **not** amended
 
