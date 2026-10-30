@@ -30,7 +30,8 @@ message and into ADR-0025.
 
 > **Code prerequisite.** The decisions of 2026-10-30 below need code
 > changes that are in PR #56 (`fix/v07-prereg-gates`): the `label_family`
-> jar rule, the `>=` threshold in `aggregate_grid.py`, and `EMISSION` /
+> jar rule, the strict `>` threshold test restored in `aggregate_grid.py`, the
+> ActionSense spec text aligned to `>`, and `EMISSION` /
 > `--probe-v2` in `run_grid.sh`. PR #56 must be merged before the tag,
 > and the extraction commit recorded at tag time must contain it.
 
@@ -331,7 +332,10 @@ Both modes are pre-registered; a verdict is reported per mode.
 
 Total: **600 cells**.
 
-- Seeds **0, 1, 2, 3, 4** (`run_grid.sh` default; `SEEDS` unset).
+- Confirmatory seeds **300, 301, 302, 303, 304** (never used in the
+  repository), passed as `SEEDS="300 301 302 303 304"` to `run_grid.sh`.
+  Every v0.7 grid uses a fresh `OUT_ROOT` (mandatory; `run_grid.sh`
+  refuses to resume a cell with a missing or different v2 probe seed).
   Phase-1 train seed = `seed`. Lesion seed = `seed * 10000 + count`,
   where `count` is the 1-based cell index in the loop order of
   `run_grid.sh` (seed, then modality, then timing, then SNR).
@@ -364,6 +368,7 @@ export BOUBA_SENS_ACTIONSENSE_DATA=data/actionsense
 # for E in argmax-bridge straight-through:
 # nolock
 WORLD=actionsense EMISSION=$E OUT_ROOT=runs/v07_actionsense_nolock_$E \
+  SEEDS="300 301 302 303 304" \
   STEPS_TRAIN=200 STEPS_LESION=100 METRICS=Me1,Me2,Me3 \
   bash scripts/run_grid.sh
 uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_nolock_$E \
@@ -371,6 +376,7 @@ uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_nolock_$E \
 
 # lock
 WORLD=actionsense EMISSION=$E OUT_ROOT=runs/v07_actionsense_lock_$E \
+  SEEDS="300 301 302 303 304" \
   LOCK_AFTER=200 STEPS_TRAIN=200 STEPS_LESION=100 METRICS=Me1,Me2,Me3 \
   bash scripts/run_grid.sh
 uv run python scripts/aggregate_grid.py --root runs/v07_actionsense_lock_$E \
@@ -397,14 +403,13 @@ length `<b_world>` is set by the ADR-0023 autocorrelation rule on a separate pil
 | B-2 | median over the 150 cells of the Me3 delta (`me3_delta.mean`, Kraskov MI in bits) | **0.10** |
 | B-3 | median over the 30 (seed, timing, SNR) trios of Me6 = max over q ≠ m of \|P[q, m] − P[m, q]\| on the 5×5 per-query matrix | **0.02** |
 
-These are the thresholds on file (B-1 ≥ 0.05, B-2 ≥ 0.10, B-3 ≥ 0.02)
+These are the thresholds on file (B-1 > 0.05, B-2 > 0.10, B-3 > 0.02)
 and the Me1 / Me3 / Me6 / Me7 definitions. None of them changes. The
-"≥" of the text is authoritative (decision of 2026-10-30): a median
-exactly equal to the threshold passes. Before PR #56, `aggregate_grid.py`
-tested `median > threshold`; PR #56 changes it to `>=` and adds a test on
-the exact-threshold value. This is a deviation of the code from the
-earlier amendments' implementation, not of the text; earlier ADR
-verdicts are not re-run.
+rule stays the original frozen strict ">" (spec 2026-04-20
+lines 44-46, `main.tex:149`): a median exactly equal to the threshold
+fails. `aggregate_grid.py` already implements it. The textual "≥" of
+the ActionSense design spec is a typo, corrected in PR #56. No rule
+changes.
 
 - **B-3 is reported only together with the ADR-0022 paired sign-flip
   null** with the block length of the ADR-0023 autocorrelation rule (in probe items, §8, item 3),
@@ -508,16 +513,16 @@ them on 2026-10-30; they are recorded as decided.
    `scripts/b3_probe_v2.py`), exactly as for the Gaussian and mock
    worlds, in units of probe items. It is computed on a separate
    **pilot grid, seeds 100-101**, and the resulting length is committed
-   **before** the confirmatory grids. Confirmatory seeds: ADR-0023
-   reserves 200-204 for its confirmatory grids, which already ran on the
-   Gaussian and mock worlds; the ActionSense seed set is therefore to be
-   confirmed (until the PI rules, §4.1 keeps the `run_grid.sh` default
-   seeds 0-4).
+   **before** the confirmatory grids. Confirmatory ActionSense seeds:
+   **300-304** (never used in the repository; ADR-0023 reserves 200-204
+   for its Gaussian and mock confirmatory grids). The block-length pilot
+   stays on seeds 100-101. All v0.7 grids use a fresh `OUT_ROOT`.
 4. **"Open a jar of almond butter": family 1.** Rule `open a jar` added
    to `FAMILY_RULES`, with a test (PR #56).
-5. **Thresholds: "≥" is authoritative.** `aggregate_grid.py` is
-   corrected from `>` to `>=`, with a test on the exact-threshold value
-   (PR #56). §4.3 notes the discrepancy with the earlier code.
+5. **Thresholds: the strict ">" stays.** The frozen original rule is
+   kept; no rule changes. The textual gap in the ActionSense design
+   spec ("≥") is corrected to ">" in PR #56, with boundary tests (equal
+   to the threshold fails, threshold + 1e-6 passes).
 6. **Numbering.** ActionSense stays v0.7; the TOST-equivalence draft of
    PR #9 is to be renumbered v0.8 (comment posted on PR #9, PR #9
    untouched).
@@ -532,9 +537,9 @@ them on 2026-10-30; they are recorded as decided.
 ## 9. What is **not** amended
 
 - No change to the three thresholds (0.05 / 0.10 / 0.02); the
-  inequality is `>=`, as written (§4.3).
+  inequality is the strict `>` of the frozen rule (§4.3).
 - No change to the Me1 / Me3 / Me6 / Me7 definitions. The aggregation
-  code changes only by the `>` to `>=` comparison (PR #56).
+  code is unchanged (strict `>`); PR #56 only adds boundary tests.
 - No change to the shape of one grid (5 seeds × 5 modalities × 2 timings × 3
   SNRs = 150 cells; four grids in all, §4.1) or to the (T1, T2) pairing for B-1.
 - No change to the encoders, the nerve or the head. The ActionSense
