@@ -9,7 +9,11 @@ per-item outcomes, paired null, power curve against n; for the
 methodological note « nuls calibrés et errata »). Amended before any
 run by the PI decisions of 2026-10-30 ≈ 16:10: larger mock stream,
 fresh v1 draw accepted, no Gaussian pilot, iid **and** empirical power,
-run on electron-server (not KXKM).
+run on electron-server (not KXKM). Amended again before any run by the
+PI decision of 2026-10-30 ≈ 16:45: two world-seed arms (ADR-0027).
+**Depends on:** PR #59 / ADR-0027 (`lesion --world-seed-mode`,
+`WORLD_SEED_MODE`). This ADR is merged after #59, by a merge of main
+into its branch, and its tag is taken on a commit that contains both.
 **Tag:** `prereg-me6-large-n-<YYYYMMDD>` (annotated, on the merge commit
 of this ADR, date of the tag; expected `prereg-me6-large-n-20261030`).
 No pilot or confirmatory cell may start before it.
@@ -63,9 +67,17 @@ without data.
   lesion seed `seed · 10000 + count`, as in ADR-0023.
 - **Script:** `scripts/run_grid_probe_v2.sh` at the tagged commit, with
   `PROBE_SIZES=64,256,1024,4096` (v2 probe left on, its default).
-- **Seeds:** confirmatory **400–404** (150 cells + 5 phase 1 per world,
-  30 trios). Pilot **100–101**, mock only (60 cells); no Gaussian pilot,
-  since its block is 1 by design.
+- **Two arms (PI decision 2026-10-30 ≈ 16:45, ADR-0027):**
+  `WORLD_SEED_MODE=legacy` (lesion world seed 0, the historical
+  behaviour) and `WORLD_SEED_MODE=cell` (lesion and eval rebuild the
+  world with the phase-1 seed). Same seeds, same n, same mock length
+  and same script in both arms; only the variable differs. Phase 1 is
+  the same in both arms (`train` does not read the mode); each arm
+  reruns it in its own directory.
+- **Seeds:** confirmatory **400–404** (150 cells + 5 phase 1 per world
+  and per arm, 30 trios). Pilot **100–101**, mock only (60 cells + 2
+  phase 1), **run once per arm**; no Gaussian pilot, since its block is
+  1 by design.
 - **One training grid per world.** n only acts on the probe: each lesion
   cell is probed at the four sizes on the same frozen state.
 
@@ -96,8 +108,14 @@ without data.
   int64 with shapes; electron-server, torch 2.11.0, numpy 2.4.4):
   - historical 4096 rows, seed 0:
     `67c6466906044f2a311c451dcf14f604964576e1a6efd2b5b36db5a7d3d4ed2f`
-  - 65 536 rows, seed 0 (the `lesion` world, i.e. every probe):
+  - 65 536 rows, seed 0 (the `lesion` world of the legacy arm, i.e.
+    every legacy probe):
     `4709392ef5853b6e391ba6a0346e26e3914e35872cf8cf3d2aeb839673493b85`
+  - 65 536 rows, seed 400 (phase 1 of seed 400 in both arms, and the
+    `lesion` world of seed 400 in the cell arm):
+    `f96341066ca527b6d60dffeef9e4ad2c7a522da9e37b87ccf861bcbead835db6`
+  - in the cell arm, `metadata.json` and `config.yaml` also carry
+    `world_seed_mode`, `world_seed` and `world_sha256` (ADR-0027).
   - each phase-1 stream (seed = training seed) and each `eval` stream is
     recorded in its `metadata.json` at run time.
   Labels stay balanced (16 384 per class).
@@ -134,26 +152,32 @@ without data.
   Me6 = max over the 10 pairs of |P[q, m] − P[m, q]|.
 - **Null:** paired sign flip of `scripts/me6_paired_null.py`, B = 20 000
   replicates, seed 25102026, p = (#{null ≥ observed} + 1) / (B + 1).
-- **Block rule** (ADR-0023 rule, per n): Gaussian b = 1 at every n.
-  Mock: on the pilot grid, lag-k ACF of the paired differences for
+- **Block rule** (ADR-0023 rule, per arm and per n): Gaussian b = 1 at
+  every n. Mock: on the pilot grid of each arm, lag-k ACF of the paired differences for
   k = 1 … n/4; k* = smallest k with ACF < 0.1; b = 1 if k* = 1, else the
   power of two ≥ k*; b = n/4 if the ACF never falls below 0.1. Applied
   to the four per-size files and to the historical file
-  (`scripts/me6_large_n.py blocks`). The pilot record
+  (`scripts/me6_large_n.py blocks`). The blocks are fixed **per arm**:
+  in the legacy arm every probe reads the seed-0 stream, in the cell arm
+  each seed reads its own stream, so the item dependence may differ and
+  one shared pilot would not be justified. The pilot record
   (`docs/prereg/2026-10-30-me6-large-n-pilot.md`,
-  `reports/me6_large_n_pilot_mock.json`) is committed and pushed
+  `reports/me6_large_n_pilot_mock_{legacy,cell}.json`) is committed and pushed
   **before** the confirmatory grids start. No Me6 statistic is computed
   on the pilot.
 
-### Reading (per world, per n; `scripts/me6_large_n.py report`)
+### Reading (per arm, per world, per n; `scripts/me6_large_n.py report`)
 
 1. Fewer than 30 complete trios → « non concluant » (incomplete grid).
 2. p < 0.01 → « excès sur le nul apparié ».
 3. p ≥ 0.05 → « compatible avec le nul apparié ».
 4. 0.01 ≤ p < 0.05 → « non concluant ».
 
-Eight primary rows (2 worlds × 4 n), read separately, unadjusted p
-reported together with the Bonferroni level 0.01 / 8.
+Sixteen primary rows (2 arms × 2 worlds × 4 n), read separately,
+unadjusted p reported together with the Bonferroni level 0.01 / 16
+(= 0.000625; the smallest attainable p with B = 20 000 is ≈ 5 · 10⁻⁵).
+The difference between arms is described (medians, nulls, firing rate
+of the 0.02 rule side by side); it is not tested and decides nothing.
 
 **Frozen 0.02 rule, comparison only:** for each row, whether
 median > 0.02 (strict) and how often the rule fires under the paired
@@ -168,7 +192,8 @@ null. It decides nothing.
   world's observed grand-mean accuracy. Reported: power of the paired
   test, firing rate of the 0.02 rule under H0 and under each δ.
 - **Empirical** (`me6_large_n.py power --mode empirical`, on each
-  confirmatory grid and each size, with the committed blocks): in every
+  confirmatory grid of each arm and each size, with that arm's committed
+  blocks): in every
   trio, k = round(δ · n / 2) items of P[a, b] equal to 0 are set to 1 and
   k items of P[b, a] equal to 1 are set to 0, chosen at random (fewer if
   not available; the effective δ = 2k / n is reported). Pairs
@@ -176,18 +201,20 @@ null. It decides nothing.
   3 + 2 partition), δ ∈ {0.02, 0.05, 0.10}, **50 plantings** each, each
   planting with its own generator `default_rng([25102026, n, pair, δ
   index, planting])` and its own paired sign-flip null (1 000 replicates,
-  seed 25102026 + planting, committed block). Reported per (world, n,
-  pair, δ): power = fraction of plantings with p < 0.01, firing rate of
+  seed 25102026 + planting, committed block). Reported per (arm, world,
+  n, pair, δ): power = fraction of plantings with p < 0.01, firing rate of
   the 0.02 rule, mean planted median. The planting ignores the item
   order, so on the mock it plants an asymmetry without temporal
   structure; this is declared, not corrected.
-- Report: `reports/me6_large_n_{gaussian,mock,power}.json` and a note
+- Report: `reports/me6_large_n_{legacy,cell}_{gaussian,mock,power}.json`
+  and a note
   `docs/milestones/<date>-me6-large-n-results.md`, with the observed
   medians and null quantiles next to the ADR-0021 iid prediction at the
   same n. Expected, not decisive: Gaussian rows compatible with the
   paired null at every n, paired null close to the iid reference, and
-  the 0.02 rule firing under H0 at n ≤ 1024 but rarely at 4096. No
-  prediction for the mock rows.
+  the 0.02 rule firing under H0 at n ≤ 1024 but rarely at 4096, in
+  both arms. No prediction for the mock rows, nor for the difference
+  between arms.
 
 ### Run
 
@@ -198,10 +225,12 @@ null. It decides nothing.
   recorded (commit, uv lock, torch / numpy versions).
 - **Output directory, new:**
   `~/scratch/bouba_sens-runs/me6-large-n-<tag date>/` on electron-server,
-  with `pilot_mock/`, `gaussian/`, `mock/` and `*_logs/`.
-- **Order:** merge on green CI → tag + Software Heritage save → pilot
-  mock → commit block lengths → Gaussian and mock confirmatory grids →
-  analysis (paired nulls, then iid and empirical power). A cell that fails is rerun by the idempotent script; any
+  with `legacy/` and `cell/`, each holding `pilot_mock/`, `gaussian/`,
+  `mock/` and `*_logs/`.
+- **Order:** merge #59, then this ADR, on green CI → tag + Software
+  Heritage save → pilot mock, both arms → commit block lengths → Gaussian
+  and mock confirmatory grids, legacy arm then cell arm → analysis
+  (paired nulls, then iid and empirical power, per arm). A cell that fails is rerun by the idempotent script; any
   other change is an amendment written before it is applied.
 
 ## Known limits
@@ -219,12 +248,13 @@ null. It decides nothing.
    the mock but differed on 1–3 of 64 items per query on the Gaussian
    world. The per-size probes are therefore a fresh draw, not a copy of
    the historical probe, even at n = 64.
-5. World seeds (pre-existing, not changed here): `train` builds its
-   world with the training seed, `lesion` with seed 0 and `eval` with the
-   lesion seed (`cli.py`). For the mock, phase 1 therefore trains on a
-   different stream from the one every lesion cell adapts on and is
-   probed on (for the Gaussian world, on different projections). This
-   holds for every grid of the repository and is reported, not fixed.
+5. World seeds: `train` builds its world with the training seed,
+   `lesion` with seed 0 and `eval` with the lesion seed, so in the
+   historical behaviour a T2 cell of seed ≠ 0 is trained and then probed
+   on different synthetic worlds. ADR-0027 records the defect and PR #59
+   adds the opt-in `cell` mode. This ADR runs both arms; it does not
+   choose between them, and the legacy arm stays the one comparable with
+   earlier grids.
 
 ## What this ADR does not change
 
@@ -233,7 +263,8 @@ compared), past verdict, B-1 / B-2 / B-3 status, or default of the CLI
 and grid scripts (without `--probe-sizes` / `PROBE_SIZES` every output is
 bit-identical, `tests/unit/test_probe_sizes.py`; without
 `BOUBA_SENS_STUDYFORREST_MOCK_SAMPLES` the mock is the historical one,
-`tests/unit/test_mock_samples.py`). It does not reopen
+`tests/unit/test_mock_samples.py`; `WORLD_SEED_MODE` defaults to
+`legacy`, ADR-0027). It does not reopen
 B-3, change the emission, or use the straight-through grids.
 
 ## Cost (electron-server, PAR = 4)
@@ -258,17 +289,19 @@ probes cost a few forward passes; the longer mock costs ≈ 20 s per job
 155 jobs in 54 min (Gaussian) and 36 min (mock), ≈ 85 s and ≈ 55 s per
 job per slot.
 
-**Grids.** n only acts on the probe, so one training grid per world:
-Gaussian 155 jobs; mock 155 + pilot 62 = 217 jobs.
+**Grids.** n only acts on the probe, so one training grid per world and
+per arm: Gaussian 155 jobs per arm; mock 155 + pilot 62 = 217 jobs per
+arm. The `cell` mode adds one world fingerprint per lesion job (a
+256-item batch), negligible.
 
-| | jobs | idle (≈ s / job) | wall, PAR 4, idle | loaded (≈ s / job) | wall, PAR 4, loaded |
+| | jobs (2 arms) | idle (≈ s / job) | wall, PAR 4, idle | loaded (≈ s / job) | wall, PAR 4, loaded |
 |---|---:|---:|---:|---:|---:|
-| Gaussian | 155 | 85 | ≈ 55 min | 210 | ≈ 2.3 h |
-| mock 65 536 (pilot + confirmatory) | 217 | 75 | ≈ 68 min | 290 | ≈ 4.4 h |
-| **total grids** | 372 | | **≈ 2.0 h** | | **≈ 6.7 h** |
+| Gaussian | 310 | 85 | ≈ 1.8 h | 210 | ≈ 4.5 h |
+| mock 65 536 (pilot + confirmatory) | 434 | 75 | ≈ 2.3 h | 290 | ≈ 8.7 h |
+| **total grids** | 744 | | **≈ 4.1 h** | | **≈ 13.3 h** |
 
-The pilot (62 mock jobs, ≈ 20–75 min) must finish and its block lengths
-be committed before the confirmatory grids start. Four separate grids
+The two pilots (62 mock jobs each, ≈ 20–75 min each) must finish and
+their block lengths be committed before the confirmatory grids start. Four separate grids
 per n would cost ≈ 4 × the training jobs for the same data.
 
 **Analysis** (smoke timings under load): paired null at n = 4096, 30
@@ -276,11 +309,14 @@ trios, 20 000 replicates, 255 s at block 1 (41 s at block 64), ≈ 10 min
 per world over the five files with the iid reference. Empirical power:
 one planting with its 1 000-replicate null takes ≈ 0.14 / 0.46 / 1.9 /
 7.4 s at n = 64 / 256 / 1024 / 4096 (block 1, synthetic grid), so
-2 pairs × 3 δ × 50 plantings ≈ 300 × 9.9 s ≈ **50 min per world**
-(less on the mock if its blocks are > 1). iid power curve: 15 s.
+2 pairs × 3 δ × 50 plantings ≈ 300 × 9.9 s ≈ **50 min per world and
+per arm** (less on the mock if its blocks are > 1). iid power curve:
+15 s, shared by the arms. Analysis for both arms: ≈ 2 h idle, ≈ 4 h
+under load.
 
-**Total on electron-server from 23:00: ≈ 4 h idle, ≈ 9 h under the
-smoke's load** (grids, then ≈ 2 h of analysis).
+**Total on electron-server from 23:00: ≈ 6 h idle, ≈ 17 h under the
+smoke's load** (grids ≈ 4.1 / 13.3 h, then analysis ≈ 2 / 4 h). Under
+load the run would end around 16:00 the next day.
 
 **Design-stage power curve** (`me6_large_n.py power`, p = 0.25, iid
 reference, no data):
@@ -292,7 +328,17 @@ reference, no data):
 | 1024 | 0.0351 | 0.0400 | 1.000 | 0.08 / 1.00 / 1.00 / 1.00 |
 | 4096 | 0.0176 | 0.0203 | 0.018 | 0.92 / 1.00 / 1.00 / 1.00 |
 
+## Open points for the PI
+
+1. **Number of plantings.** 50 plantings per (arm, world, n, pair, δ)
+   give a binomial standard error ≤ 0.07 on each power value, for
+   ≈ 4 h of the analysis under load (2 arms × 2 worlds × 300 plantings).
+   20 plantings would cut that time to ≈ 40 % (≈ 1.6 h) with a standard
+   error ≤ 0.11. Kept at 50 unless the PI decides otherwise before the
+   tag.
+
 ## References
 
 ADR-0021, ADR-0022, ADR-0023, ADR-0024;
-`docs/prereg/2026-10-25-b3-probe-v2.md`; PI decision 2026-10-30 14:10.
+ADR-0027; `docs/prereg/2026-10-25-b3-probe-v2.md`; PI decisions
+2026-10-30 14:10, ≈ 16:10 and ≈ 16:45.
