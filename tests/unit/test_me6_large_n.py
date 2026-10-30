@@ -38,7 +38,9 @@ def _write_grid(root: Path, successes: np.ndarray, *, name: str) -> None:
                 for j, lesioned in enumerate(MODALITIES):
                     cell = root / f"seed{seed}_{timing}_{lesioned}_{snr}"
                     cell.mkdir(parents=True, exist_ok=True)
-                    body = {q: [int(v) for v in successes[k, i, j]] for i, q in enumerate(MODALITIES)}
+                    body = {
+                        q: [int(v) for v in successes[k, i, j]] for i, q in enumerate(MODALITIES)
+                    }
                     (cell / name).write_text(json.dumps(body))
                 k += 1
 
@@ -118,7 +120,9 @@ def test_power_curve_shape() -> None:
     assert small["rule_0p02_rate_under_null"] == 1.0
     assert large["rule_0p02_rate_under_null"] < 0.2
     assert large["null_p99"] < small["null_p99"]
-    pw = {(r["n"], a["delta"]): a["power_paired_test"] for r in out["rows"] for a in r["alternatives"]}
+    pw = {
+        (r["n"], a["delta"]): a["power_paired_test"] for r in out["rows"] for a in r["alternatives"]
+    }
     assert pw[(4096, 0.15)] == 1.0
     assert pw[(64, 0.02)] < 0.2
     assert pw[(4096, 0.15)] >= pw[(64, 0.15)]
