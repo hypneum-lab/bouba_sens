@@ -7,7 +7,7 @@
 > `bouba_sens/v0.7-actionsense-prereg`, after PI sign-off and before
 > any ActionSense grid runs.
 
-**Status:** Draft, PI decisions of 2026-10-30 recorded (§8); awaiting PI sign-off. Not filed on OSF (local, git-dated pre-registration)
+**Status:** Accepted — PI sign-off 2026-10-30 (PR #55 comment 6532469131, on commit 0ea2521). Not filed on OSF (local, git-dated pre-registration)
 **Parent pre-registration:** `dream-of-kiki` OSF DOI `10.17605/OSF.IO/Q6JYN`
 **Previous amendment:** `amendment-v0.6-sprint10-17.md` (Sprint 10–17 hyperparameters, MINE estimator)
 **Amendment tag to create after PI sign-off:** `bouba_sens/v0.7-actionsense-prereg`
@@ -551,7 +551,8 @@ them on 2026-10-30; they are recorded as decided.
   `0b5c4f6a…`, subject `63bf868d…`, tactile `b806fa36…`, vision
   `c73f9a43…`; output MANIFEST.md `87ac0f7b…`.
 
-**Still pending before the tag:** the PI signature.
+**PI signature:** 2026-10-30 21:09 CET, comment 6532469131 on PR #55
+(commit 0ea2521). Nothing remains pending before the tag.
 
 ## 9. What is **not** amended
 

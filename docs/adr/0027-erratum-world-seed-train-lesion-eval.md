@@ -1,6 +1,7 @@
 # ADR-0027 — Erratum: `train`, `lesion` and `eval` build different synthetic worlds
 
-**Status:** Proposed — awaiting PI sign-off. Erratum; no value, metric,
+**Status:** Accepted — PI sign-off 2026-10-30 (PR #59 comment
+6532468639, on main 1295160). Erratum; no value, metric,
 threshold or past verdict is deleted or changed.
 **Date:** 2026-10-30
 **Decision source:** PI decision of 2026-10-30 ≈ 16:45 (add a corrected

@@ -63,7 +63,7 @@ not done by a pull request; see the PI action list below.
 
 | 0024 | `0024-erratum-default-regime-does-not-learn.md` | Erratum — with the default settings the network does not learn the task; B-1/B-2/B-3 requalified | 2026-10-26 | Accepted — PI decision 2026-10-26 |
 
-| 0027 | `0027-erratum-world-seed-train-lesion-eval.md` | Erratum — `train`, `lesion` and `eval` build different synthetic worlds (seed s / 0 / lesion seed); `--world-seed-mode cell` added, default unchanged | 2026-10-30 | Proposed — awaiting PI sign-off |
+| 0027 | `0027-erratum-world-seed-train-lesion-eval.md` | Erratum — `train`, `lesion` and `eval` build different synthetic worlds (seed s / 0 / lesion seed); `--world-seed-mode cell` added, default unchanged | 2026-10-30 | Accepted — PI sign-off 2026-10-30 |
 
 Next free number: **0028** (0025 is reserved for the ActionSense verdicts,
 `docs/superpowers/plans/2026-10-28-actionsense-world.md`; 0026 is the
