@@ -1,0 +1,82 @@
+{
+  "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+  "generated_at": "2026-10-31T13:10:56+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "params": {
+    "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/gaussian",
+    "blocks": {
+      "64": 1,
+      "256": 1,
+      "1024": 1,
+      "4096": 1
+    },
+    "replicates": 20000,
+    "seed": 31102026
+  },
+  "null": "joint transpose flip: one sign per (trio, item or block), shared by the 10 pairs",
+  "rows": {
+    "64": {
+      "trios": 30,
+      "block": 1,
+      "observed_median": 0.15625,
+      "null": {
+        "mean": 0.1066875,
+        "median": 0.109375,
+        "p95": 0.125,
+        "p99": 0.1328125,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 1,
+      "frac_ge_observed": 5e-05,
+      "p_value": 9.99950002499875e-05
+    },
+    "256": {
+      "trios": 30,
+      "block": 1,
+      "observed_median": 0.09375,
+      "null": {
+        "mean": 0.054055859375,
+        "median": 0.0546875,
+        "p95": 0.0625,
+        "p99": 0.06640625,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    },
+    "1024": {
+      "trios": 30,
+      "block": 1,
+      "observed_median": 0.0693359375,
+      "null": {
+        "mean": 0.0271050048828125,
+        "median": 0.02685546875,
+        "p95": 0.03125,
+        "p99": 0.033203125,
+        "frac_above_threshold": 0.99955
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    },
+    "4096": {
+      "trios": 30,
+      "block": 1,
+      "observed_median": 0.0584716796875,
+      "null": {
+        "mean": 0.0135638671875,
+        "median": 0.0135498046875,
+        "p95": 0.015625,
+        "p99": 0.0166015625,
+        "frac_above_threshold": 0.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    }
+  },
+  "elapsed_s": 66.2
+}

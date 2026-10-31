@@ -1,0 +1,421 @@
+{
+  "item_flip": {
+    "schema": "bouba_sens.me6_paired_null.v1",
+    "generated_at": "2026-10-31T13:56:32+00:00",
+    "host": "electron-server",
+    "python": "3.14.4",
+    "numpy": "2.4.4",
+    "params": {
+      "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/diagnostic/reprobe/cell/b_T1",
+      "replicates": 20000,
+      "seed": 31102026,
+      "threshold": 0.02,
+      "n_modalities": 5,
+      "n_items": 4096,
+      "cells_counted": 15,
+      "cells_expected_full_grid": 30,
+      "complete": false,
+      "block": 1,
+      "successes_file": "per_query_successes_reprobe_n4096.json",
+      "null": "paired sign-flip of s_mq(i) <-> s_qm(i), independent per (trio, pair, item)"
+    },
+    "incomplete_trios": [],
+    "median": {
+      "observed": 0.02197265625,
+      "passes_fixed_threshold": true,
+      "null": {
+        "mean": 0.01869873046875,
+        "median": 0.0185546875,
+        "p95": 0.021728515625,
+        "p99": 0.023193359375,
+        "frac_above_threshold": 0.2437
+      },
+      "count_ge_observed": 906,
+      "frac_ge_observed": 0.0453,
+      "p_value": 0.04534773261336933
+    },
+    "per_trio_pooled_null": {
+      "mean": 0.019212860514322916,
+      "median": 0.0185546875,
+      "p95": 0.029541015625,
+      "p99": 0.03515625,
+      "frac_above_threshold": 0.41283333333333333
+    },
+    "grand_mean_accuracy": 0.25044791666666666,
+    "elapsed_s": 77.836
+  },
+  "d1": {
+    "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+    "generated_at": "2026-10-31T13:56:32+00:00",
+    "host": "electron-server",
+    "python": "3.14.4",
+    "numpy": "2.4.4",
+    "params": {
+      "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/diagnostic/reprobe/cell/b_T1",
+      "blocks": {
+        "4096": 1
+      },
+      "replicates": 20000,
+      "seed": 31102026
+    },
+    "phi": {
+      "4096": {
+        "trios": 15,
+        "block": 1,
+        "observed": 1.5953244879145534,
+        "null": {
+          "mean": 1.000475504615722,
+          "median": 0.9963795370117543,
+          "p95": 1.2062199951558312,
+          "p99": 1.296634727740864,
+          "frac_above_threshold": 1.0
+        },
+        "count_ge_observed": 0,
+        "frac_ge_observed": 0.0,
+        "p_value": 4.999750012499375e-05,
+        "breakdown": {
+          "pair": {
+            "audio|vision": 1.3160203912922541,
+            "audio|tactile": 0.9322507046609441,
+            "audio|gravity": 1.2307847162724639,
+            "audio|force": 1.7008290764211789,
+            "vision|tactile": 1.364550612410719,
+            "vision|gravity": 1.9514800051066823,
+            "vision|force": 3.8803165251845755,
+            "tactile|gravity": 0.7628624860715251,
+            "tactile|force": 0.5634292582020823,
+            "gravity|force": 2.24678033906961
+          },
+          "timing": {
+            "T1": 1.5953244879145534
+          },
+          "snr": {
+            "floor": 1.7979833428841,
+            "minus10": 1.6559870072064504,
+            "plus10": 1.3302726069214972
+          }
+        }
+      }
+    },
+    "split_half": {
+      "n": 4096,
+      "block": 1,
+      "halves": "even/odd items",
+      "r_all": {
+        "observed": 0.38026737071449,
+        "null": {
+          "mean": 0.0006455958248399883,
+          "median": 0.0006614796008949346,
+          "p95": 0.15032498509922831,
+          "p99": 0.20609002733712195,
+          "frac_above_threshold": 0.4139
+        },
+        "count_ge_observed": 0,
+        "frac_ge_observed": 0.0,
+        "p_value": 4.999750012499375e-05
+      },
+      "r_argmax": {
+        "observed": 0.761397517494892,
+        "null": {
+          "mean": 0.564240297810144,
+          "median": 0.5771871408994007,
+          "p95": 0.7833597303355037,
+          "p99": 0.8475700633572322,
+          "frac_above_threshold": 0.99825
+        },
+        "count_ge_observed": 1525,
+        "frac_ge_observed": 0.07625,
+        "p_value": 0.07629618519074047
+      }
+    },
+    "elapsed_s": 532.8
+  },
+  "d3": {
+    "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+    "generated_at": "2026-10-31T14:05:25+00:00",
+    "host": "electron-server",
+    "python": "3.14.4",
+    "numpy": "2.4.4",
+    "params": {
+      "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/diagnostic/reprobe/cell/b_T1",
+      "successes_file": "per_query_successes_reprobe_n4096.json",
+      "replicates": 20000,
+      "seed": 31102026
+    },
+    "trios": 15,
+    "max_pair": {
+      "observed": 0.004899088541666667,
+      "null": {
+        "mean": 0.005680526529947917,
+        "median": 0.005485026041666666,
+        "p95": 0.008707682291666666,
+        "p99": 0.010139973958333333,
+        "frac_above_threshold": 0.0
+      },
+      "count_ge_observed": 12958,
+      "frac_ge_observed": 0.6479,
+      "p_value": 0.647917604119794
+    },
+    "per_pair": {
+      "audio|vision": {
+        "mean_delta": -0.00419921875,
+        "S": 0.00419921875,
+        "n_positive": 4,
+        "n_negative": 9,
+        "count_ge_observed": 3314,
+        "frac_ge_observed": 0.1657,
+        "p_value": 0.16574171291435427
+      },
+      "audio|tactile": {
+        "mean_delta": 0.0028971354166666668,
+        "S": 0.0028971354166666668,
+        "n_positive": 7,
+        "n_negative": 5,
+        "count_ge_observed": 3311,
+        "frac_ge_observed": 0.16555,
+        "p_value": 0.1655917204139793
+      },
+      "audio|gravity": {
+        "mean_delta": 0.0013346354166666667,
+        "S": 0.0013346354166666667,
+        "n_positive": 9,
+        "n_negative": 4,
+        "count_ge_observed": 13148,
+        "frac_ge_observed": 0.6574,
+        "p_value": 0.6574171291435428
+      },
+      "audio|force": {
+        "mean_delta": -0.0003255208333333333,
+        "S": 0.0003255208333333333,
+        "n_positive": 7,
+        "n_negative": 8,
+        "count_ge_observed": 18704,
+        "frac_ge_observed": 0.9352,
+        "p_value": 0.9352032398380081
+      },
+      "vision|tactile": {
+        "mean_delta": 0.0037434895833333335,
+        "S": 0.0037434895833333335,
+        "n_positive": 8,
+        "n_negative": 6,
+        "count_ge_observed": 1761,
+        "frac_ge_observed": 0.08805,
+        "p_value": 0.08809559522023899
+      },
+      "vision|gravity": {
+        "mean_delta": 0.0011067708333333333,
+        "S": 0.0011067708333333333,
+        "n_positive": 6,
+        "n_negative": 8,
+        "count_ge_observed": 15193,
+        "frac_ge_observed": 0.75965,
+        "p_value": 0.759662016899155
+      },
+      "vision|force": {
+        "mean_delta": 0.004899088541666667,
+        "S": 0.004899088541666667,
+        "n_positive": 9,
+        "n_negative": 4,
+        "count_ge_observed": 5669,
+        "frac_ge_observed": 0.28345,
+        "p_value": 0.28348582570871456
+      },
+      "tactile|gravity": {
+        "mean_delta": -0.004313151041666667,
+        "S": 0.004313151041666667,
+        "n_positive": 2,
+        "n_negative": 13,
+        "count_ge_observed": 1005,
+        "frac_ge_observed": 0.05025,
+        "p_value": 0.05029748512574371
+      },
+      "tactile|force": {
+        "mean_delta": -0.0014322916666666666,
+        "S": 0.0014322916666666666,
+        "n_positive": 6,
+        "n_negative": 7,
+        "count_ge_observed": 10929,
+        "frac_ge_observed": 0.54645,
+        "p_value": 0.5464726763661817
+      },
+      "gravity|force": {
+        "mean_delta": 0.0005208333333333333,
+        "S": 0.0005208333333333333,
+        "n_positive": 7,
+        "n_negative": 8,
+        "count_ge_observed": 17001,
+        "frac_ge_observed": 0.85005,
+        "p_value": 0.8500574971251438
+      }
+    },
+    "leading_pair": {
+      "pair": "vision|force",
+      "same_sign_trios": 9
+    },
+    "argmax_sign_table": [
+      {
+        "trio": "seed400_T1_floor",
+        "pair": "audio|gravity",
+        "delta": 0.018310546875
+      },
+      {
+        "trio": "seed400_T1_minus10",
+        "pair": "audio|gravity",
+        "delta": -0.024658203125
+      },
+      {
+        "trio": "seed400_T1_plus10",
+        "pair": "audio|vision",
+        "delta": -0.0244140625
+      },
+      {
+        "trio": "seed401_T1_floor",
+        "pair": "audio|tactile",
+        "delta": 0.013916015625
+      },
+      {
+        "trio": "seed401_T1_minus10",
+        "pair": "gravity|force",
+        "delta": 0.02197265625
+      },
+      {
+        "trio": "seed401_T1_plus10",
+        "pair": "audio|gravity",
+        "delta": -0.00830078125
+      },
+      {
+        "trio": "seed402_T1_floor",
+        "pair": "vision|gravity",
+        "delta": -0.023681640625
+      },
+      {
+        "trio": "seed402_T1_minus10",
+        "pair": "vision|force",
+        "delta": -0.036376953125
+      },
+      {
+        "trio": "seed402_T1_plus10",
+        "pair": "vision|force",
+        "delta": 0.034912109375
+      },
+      {
+        "trio": "seed403_T1_floor",
+        "pair": "audio|force",
+        "delta": -0.03564453125
+      },
+      {
+        "trio": "seed403_T1_minus10",
+        "pair": "gravity|force",
+        "delta": -0.012939453125
+      },
+      {
+        "trio": "seed403_T1_plus10",
+        "pair": "audio|gravity",
+        "delta": 0.011474609375
+      },
+      {
+        "trio": "seed404_T1_floor",
+        "pair": "vision|force",
+        "delta": 0.0302734375
+      },
+      {
+        "trio": "seed404_T1_minus10",
+        "pair": "vision|tactile",
+        "delta": -0.01318359375
+      },
+      {
+        "trio": "seed404_T1_plus10",
+        "pair": "vision|gravity",
+        "delta": 0.013671875
+      }
+    ],
+    "within_seed": {
+      "400": {
+        "trios": 3,
+        "patterns": 8,
+        "p_exact": {
+          "audio|vision": 0.5,
+          "audio|tactile": 0.5,
+          "audio|gravity": 1.0,
+          "audio|force": 0.5,
+          "vision|tactile": 1.0,
+          "vision|gravity": 1.0,
+          "vision|force": 0.5,
+          "tactile|gravity": 0.25,
+          "tactile|force": 1.0,
+          "gravity|force": 0.75
+        },
+        "min_p": 0.25
+      },
+      "401": {
+        "trios": 3,
+        "patterns": 8,
+        "p_exact": {
+          "audio|vision": 1.0,
+          "audio|tactile": 1.0,
+          "audio|gravity": 0.5,
+          "audio|force": 1.0,
+          "vision|tactile": 0.5,
+          "vision|gravity": 0.25,
+          "vision|force": 0.5,
+          "tactile|gravity": 0.25,
+          "tactile|force": 0.5,
+          "gravity|force": 0.25
+        },
+        "min_p": 0.25
+      },
+      "402": {
+        "trios": 3,
+        "patterns": 8,
+        "p_exact": {
+          "audio|vision": 0.5,
+          "audio|tactile": 0.5,
+          "audio|gravity": 0.25,
+          "audio|force": 1.0,
+          "vision|tactile": 0.5,
+          "vision|gravity": 0.75,
+          "vision|force": 1.0,
+          "tactile|gravity": 0.75,
+          "tactile|force": 0.25,
+          "gravity|force": 0.25
+        },
+        "min_p": 0.25
+      },
+      "403": {
+        "trios": 3,
+        "patterns": 8,
+        "p_exact": {
+          "audio|vision": 1.0,
+          "audio|tactile": 0.5,
+          "audio|gravity": 0.5,
+          "audio|force": 0.75,
+          "vision|tactile": 1.0,
+          "vision|gravity": 0.5,
+          "vision|force": 0.75,
+          "tactile|gravity": 1.0,
+          "tactile|force": 0.5,
+          "gravity|force": 1.0
+        },
+        "min_p": 0.5
+      },
+      "404": {
+        "trios": 3,
+        "patterns": 8,
+        "p_exact": {
+          "audio|vision": 0.75,
+          "audio|tactile": 1.0,
+          "audio|gravity": 1.0,
+          "audio|force": 1.0,
+          "vision|tactile": 1.0,
+          "vision|gravity": 0.75,
+          "vision|force": 0.5,
+          "tactile|gravity": 0.25,
+          "tactile|force": 0.25,
+          "gravity|force": 0.5
+        },
+        "min_p": 0.25
+      }
+    },
+    "elapsed_s": 0.4
+  }
+}

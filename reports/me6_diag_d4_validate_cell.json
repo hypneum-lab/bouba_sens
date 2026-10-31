@@ -1,0 +1,36 @@
+{
+  "reprobe_original_seed": {
+    "seed400_T2_audio_floor": {
+      "audio": 0,
+      "vision": 0,
+      "tactile": 0,
+      "gravity": 0,
+      "force": 0
+    },
+    "seed401_T1_vision_plus10": {
+      "audio": 0,
+      "vision": 0,
+      "tactile": 0,
+      "gravity": 0,
+      "force": 0
+    },
+    "seed403_T2_force_minus10": {
+      "audio": 0,
+      "vision": 0,
+      "tactile": 0,
+      "gravity": 0,
+      "force": 0
+    },
+    "seed404_T1_gravity_floor": {
+      "audio": 0,
+      "vision": 0,
+      "tactile": 0,
+      "gravity": 0,
+      "force": 0
+    }
+  },
+  "t1_lesion_rebuild": {
+    "cell": "seed402_T1_tactile_floor",
+    "mismatched_tensors": []
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+  "generated_at": "2026-10-31T13:10:24+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "params": {
+    "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/gaussian",
+    "blocks": {
+      "64": 1,
+      "256": 1,
+      "1024": 1,
+      "4096": 1
+    },
+    "replicates": 20000,
+    "seed": 31102026
+  },
+  "phi": {
+    "64": {
+      "trios": 30,
+      "block": 1,
+      "observed": 1.6639705887210732,
+      "null": {
+        "mean": 1.000818672406499,
+        "median": 0.9993762506607814,
+        "p95": 1.138636178551405,
+        "p99": 1.197509683451831,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 2.1447160168047574,
+          "audio|tactile": 2.787617046002081,
+          "audio|gravity": 2.278531110709126,
+          "audio|force": 1.5218654186901508,
+          "vision|tactile": 0.9569541697882562,
+          "vision|gravity": 1.8500547531058589,
+          "vision|force": 1.4772807493346518,
+          "tactile|gravity": 1.041151411219791,
+          "tactile|force": 1.5121088160055358,
+          "gravity|force": 1.0736286650708924
+        },
+        "timing": {
+          "T1": 1.4728750087252123,
+          "T2": 1.841608733505958
+        },
+        "snr": {
+          "floor": 1.7436059713736958,
+          "minus10": 1.5591507887754312,
+          "plus10": 1.6880833286824761
+        }
+      }
+    },
+    "256": {
+      "trios": 30,
+      "block": 1,
+      "observed": 3.128173901442834,
+      "null": {
+        "mean": 0.9999932877859151,
+        "median": 0.9973747750668946,
+        "p95": 1.1398309211373376,
+        "p99": 1.2006062186068727,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 5.749698418138257,
+          "audio|tactile": 7.255127606891392,
+          "audio|gravity": 4.5924443503273755,
+          "audio|force": 2.5377308209644402,
+          "vision|tactile": 2.424409439036757,
+          "vision|gravity": 2.090301313394577,
+          "vision|force": 2.138056516454332,
+          "tactile|gravity": 1.1710034867232875,
+          "tactile|force": 2.0528839904819582,
+          "gravity|force": 1.557153895306787
+        },
+        "timing": {
+          "T1": 2.555513524521571,
+          "T2": 3.6576886335275636
+        },
+        "snr": {
+          "floor": 3.5289176531378277,
+          "minus10": 2.3125543234940253,
+          "plus10": 3.508918369505461
+        }
+      }
+    },
+    "1024": {
+      "trios": 30,
+      "block": 1,
+      "observed": 8.466744331912992,
+      "null": {
+        "mean": 1.0000205985632276,
+        "median": 0.9979724490963002,
+        "p95": 1.1395977334274698,
+        "p99": 1.2040320386037624,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 18.337780621713552,
+          "audio|tactile": 25.30202606844871,
+          "audio|gravity": 15.348799873919301,
+          "audio|force": 2.466077138578545,
+          "vision|tactile": 6.926722266249244,
+          "vision|gravity": 5.243935313388512,
+          "vision|force": 4.5784524523315016,
+          "tactile|gravity": 1.1761500533256783,
+          "tactile|force": 5.032739639263984,
+          "gravity|force": 1.9081277096792748
+        },
+        "timing": {
+          "T1": 5.3127417138982365,
+          "T2": 11.406188948702251
+        },
+        "snr": {
+          "floor": 8.56425470369106,
+          "minus10": 7.9052560048355005,
+          "plus10": 8.890274259356561
+        }
+      }
+    },
+    "4096": {
+      "trios": 30,
+      "block": 1,
+      "observed": 29.1354497976934,
+      "null": {
+        "mean": 0.9998234397698313,
+        "median": 0.9975744651584646,
+        "p95": 1.1376840180719034,
+        "p99": 1.204453524877676,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 68.92240992195039,
+          "audio|tactile": 85.43447831759894,
+          "audio|gravity": 51.5462741015645,
+          "audio|force": 6.7305496432110745,
+          "vision|tactile": 22.7193072636836,
+          "vision|gravity": 17.55212604338201,
+          "vision|force": 20.359293267618987,
+          "tactile|gravity": 1.79383982700583,
+          "tactile|force": 16.746010247465804,
+          "gravity|force": 2.9312153793470914
+        },
+        "timing": {
+          "T1": 16.723174354500866,
+          "T2": 41.12553900132156
+        },
+        "snr": {
+          "floor": 29.986092580832267,
+          "minus10": 26.80945269903192,
+          "plus10": 30.556960177198597
+        }
+      }
+    }
+  },
+  "split_half": {
+    "n": 4096,
+    "block": 1,
+    "halves": "even/odd items",
+    "r_all": {
+      "observed": 0.8988318653808108,
+      "null": {
+        "mean": -0.00017575516076858002,
+        "median": -6.0977541654231574e-05,
+        "p95": 0.11006949044522679,
+        "p99": 0.15568668962401933,
+        "frac_above_threshold": 0.38185
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    },
+    "r_argmax": {
+      "observed": 0.984667164503766,
+      "null": {
+        "mean": 0.5339974196539875,
+        "median": 0.5409304906643722,
+        "p95": 0.7012924344319476,
+        "p99": 0.7566062213890611,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    }
+  },
+  "elapsed_s": 934.3
+}
