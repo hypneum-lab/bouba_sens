@@ -1,0 +1,185 @@
+{
+  "schema": "bouba_sens.me6_large_n.v1",
+  "kind": "report",
+  "generated_at": "2026-10-31T11:46:51+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/mock",
+  "world": "mock",
+  "replicates": 20000,
+  "seed": 25102026,
+  "threshold_frozen_rule": 0.02,
+  "rows": {
+    "64": {
+      "successes_file": "per_query_successes_n64.json",
+      "n_items": 64,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "grand_mean_accuracy": 0.2516041666666667,
+      "observed_median": 0.0625,
+      "null": {
+        "mean": 0.141437890625,
+        "median": 0.140625,
+        "p95": 0.171875,
+        "p99": 0.1875,
+        "frac_above_threshold": 1.0
+      },
+      "p_value": 0.99990000499975,
+      "frac_ge_observed": 0.9999,
+      "rule_0p02_observed_passes": true,
+      "rule_0p02_rate_under_null": 1.0,
+      "iid_reference_median": {
+        "mean": 0.140537890625,
+        "median": 0.140625,
+        "p95": 0.15625,
+        "p99": 0.15625,
+        "frac_above_threshold": 1.0
+      },
+      "iid_reference_tail": {
+        "count_ge_observed": 20000,
+        "frac_ge_observed": 1.0,
+        "p_value": 1.0
+      },
+      "trios_with_p_below_0p05": 0,
+      "reading": "compatible with the paired null"
+    },
+    "256": {
+      "successes_file": "per_query_successes_n256.json",
+      "n_items": 256,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "grand_mean_accuracy": 0.247359375,
+      "observed_median": 0.052734375,
+      "null": {
+        "mean": 0.08612734375,
+        "median": 0.0859375,
+        "p95": 0.109375,
+        "p99": 0.119140625,
+        "frac_above_threshold": 1.0
+      },
+      "p_value": 0.9959502024898755,
+      "frac_ge_observed": 0.99595,
+      "rule_0p02_observed_passes": true,
+      "rule_0p02_rate_under_null": 1.0,
+      "iid_reference_median": {
+        "mean": 0.06990888671875,
+        "median": 0.0703125,
+        "p95": 0.078125,
+        "p99": 0.080078125,
+        "frac_above_threshold": 1.0
+      },
+      "iid_reference_tail": {
+        "count_ge_observed": 20000,
+        "frac_ge_observed": 1.0,
+        "p_value": 1.0
+      },
+      "trios_with_p_below_0p05": 2,
+      "reading": "compatible with the paired null"
+    },
+    "1024": {
+      "successes_file": "per_query_successes_n1024.json",
+      "n_items": 1024,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "grand_mean_accuracy": 0.2511276041666667,
+      "observed_median": 0.02490234375,
+      "null": {
+        "mean": 0.0441751220703125,
+        "median": 0.0439453125,
+        "p95": 0.05615234375,
+        "p99": 0.0615234375,
+        "frac_above_threshold": 0.99985
+      },
+      "p_value": 0.9980000999950003,
+      "frac_ge_observed": 0.998,
+      "rule_0p02_observed_passes": true,
+      "rule_0p02_rate_under_null": 0.99985,
+      "iid_reference_median": {
+        "mean": 0.035164453125,
+        "median": 0.03515625,
+        "p95": 0.03857421875,
+        "p99": 0.04052734375,
+        "frac_above_threshold": 1.0
+      },
+      "iid_reference_tail": {
+        "count_ge_observed": 20000,
+        "frac_ge_observed": 1.0,
+        "p_value": 1.0
+      },
+      "trios_with_p_below_0p05": 4,
+      "reading": "compatible with the paired null"
+    },
+    "4096": {
+      "successes_file": "per_query_successes_n4096.json",
+      "n_items": 4096,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "grand_mean_accuracy": 0.25100227864583335,
+      "observed_median": 0.0087890625,
+      "null": {
+        "mean": 0.022446331787109374,
+        "median": 0.0223388671875,
+        "p95": 0.0286865234375,
+        "p99": 0.03125,
+        "frac_above_threshold": 0.7477
+      },
+      "p_value": 1.0,
+      "frac_ge_observed": 1.0,
+      "rule_0p02_observed_passes": false,
+      "rule_0p02_rate_under_null": 0.7477,
+      "iid_reference_median": {
+        "mean": 0.01757125244140625,
+        "median": 0.017578125,
+        "p95": 0.0194091796875,
+        "p99": 0.0201416015625,
+        "frac_above_threshold": 0.0159
+      },
+      "iid_reference_tail": {
+        "count_ge_observed": 20000,
+        "frac_ge_observed": 1.0,
+        "p_value": 1.0
+      },
+      "trios_with_p_below_0p05": 5,
+      "reading": "compatible with the paired null"
+    },
+    "legacy": {
+      "successes_file": "per_query_successes.json",
+      "n_items": 64,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "grand_mean_accuracy": 0.26895833333333335,
+      "observed_median": 0.3125,
+      "null": {
+        "mean": 0.259073046875,
+        "median": 0.2578125,
+        "p95": 0.2890625,
+        "p99": 0.3046875,
+        "frac_above_threshold": 1.0
+      },
+      "p_value": 0.004649767511624419,
+      "frac_ge_observed": 0.0046,
+      "rule_0p02_observed_passes": true,
+      "rule_0p02_rate_under_null": 1.0,
+      "iid_reference_median": {
+        "mean": 0.143580078125,
+        "median": 0.140625,
+        "p95": 0.15625,
+        "p99": 0.1640625,
+        "frac_above_threshold": 1.0
+      },
+      "iid_reference_tail": {
+        "count_ge_observed": 0,
+        "frac_ge_observed": 0.0,
+        "p_value": 4.999750012499375e-05
+      },
+      "trios_with_p_below_0p05": 7,
+      "reading": "excess over the paired null"
+    }
+  }
+}

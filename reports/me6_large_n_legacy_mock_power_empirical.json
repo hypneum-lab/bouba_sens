@@ -1,0 +1,359 @@
+{
+  "schema": "bouba_sens.me6_large_n.v1",
+  "kind": "power_empirical",
+  "generated_at": "2026-10-31T12:15:59+00:00",
+  "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/legacy/mock",
+  "world": "mock",
+  "pairs": [
+    "audio|vision",
+    "gravity|force"
+  ],
+  "deltas": [
+    0.02,
+    0.05,
+    0.1
+  ],
+  "plantings": 50,
+  "null_replicates": 1000,
+  "alpha": 0.01,
+  "seed": 25102026,
+  "pair_names": [
+    "audio|vision",
+    "audio|tactile",
+    "audio|gravity",
+    "audio|force",
+    "vision|tactile",
+    "vision|gravity",
+    "vision|force",
+    "tactile|gravity",
+    "tactile|force",
+    "gravity|force"
+  ],
+  "rows": [
+    {
+      "size": "64",
+      "successes_file": "per_query_successes_n64.json",
+      "n_items": 64,
+      "block": 4,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.2109375,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.2109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.2109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.2109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.2109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.2109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.2265625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "256",
+      "successes_file": "per_query_successes_n256.json",
+      "n_items": 256,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.06640625,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.0234375,
+          "median_mean": 0.072265625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 6,
+          "delta_effective": 0.046875,
+          "median_mean": 0.072265625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 13,
+          "delta_effective": 0.1015625,
+          "median_mean": 0.119140625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.0234375,
+          "median_mean": 0.06640625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 6,
+          "delta_effective": 0.046875,
+          "median_mean": 0.072265625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 13,
+          "delta_effective": 0.1015625,
+          "median_mean": 0.107421875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "1024",
+      "successes_file": "per_query_successes_n1024.json",
+      "n_items": 1024,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.04345703125,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 10,
+          "delta_effective": 0.01953125,
+          "median_mean": 0.048828125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 26,
+          "delta_effective": 0.05078125,
+          "median_mean": 0.0634765625,
+          "power_paired_test": 0.86,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 51,
+          "delta_effective": 0.099609375,
+          "median_mean": 0.10400390625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 10,
+          "delta_effective": 0.01953125,
+          "median_mean": 0.04345703125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 26,
+          "delta_effective": 0.05078125,
+          "median_mean": 0.05859375,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 51,
+          "delta_effective": 0.099609375,
+          "median_mean": 0.1015625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "4096",
+      "successes_file": "per_query_successes_n4096.json",
+      "n_items": 4096,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.0262451171875,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 41,
+          "delta_effective": 0.02001953125,
+          "median_mean": 0.0291748046875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 102,
+          "delta_effective": 0.0498046875,
+          "median_mean": 0.050537109375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 205,
+          "delta_effective": 0.10009765625,
+          "median_mean": 0.10009765625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 41,
+          "delta_effective": 0.02001953125,
+          "median_mean": 0.0262451171875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 102,
+          "delta_effective": 0.0498046875,
+          "median_mean": 0.0499267578125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 205,
+          "delta_effective": 0.10009765625,
+          "median_mean": 0.10009765625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "legacy",
+      "successes_file": "per_query_successes.json",
+      "n_items": 64,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.34375,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.34375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.34375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.359375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.34375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.34375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.34375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    }
+  ]
+}
