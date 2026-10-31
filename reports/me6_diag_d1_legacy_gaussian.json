@@ -1,0 +1,204 @@
+{
+  "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+  "generated_at": "2026-10-31T13:10:24+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "params": {
+    "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/legacy/gaussian",
+    "blocks": {
+      "64": 1,
+      "256": 1,
+      "1024": 1,
+      "4096": 1
+    },
+    "replicates": 20000,
+    "seed": 31102026
+  },
+  "phi": {
+    "64": {
+      "trios": 30,
+      "block": 1,
+      "observed": 1.333881470540373,
+      "null": {
+        "mean": 0.9997330844599622,
+        "median": 0.9975113182695172,
+        "p95": 1.1395189253783637,
+        "p99": 1.2028081209676103,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 3,
+      "frac_ge_observed": 0.00015,
+      "p_value": 0.000199990000499975,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 0.8190162530274733,
+          "audio|tactile": 1.5082032458252894,
+          "audio|gravity": 1.6216620275219895,
+          "audio|force": 1.4375231409549925,
+          "vision|tactile": 2.0356525486474553,
+          "vision|gravity": 1.1209024655259785,
+          "vision|force": 1.5246125168656979,
+          "tactile|gravity": 0.9139349057230479,
+          "tactile|force": 1.1807223443136758,
+          "gravity|force": 1.1664536313654197
+        },
+        "timing": {
+          "T1": 1.6321754651063656,
+          "T2": 1.0443608287557333
+        },
+        "snr": {
+          "floor": 1.6946753851942533,
+          "minus10": 1.3554504063558364,
+          "plus10": 0.951276272477597
+        }
+      }
+    },
+    "256": {
+      "trios": 30,
+      "block": 1,
+      "observed": 2.119238767384036,
+      "null": {
+        "mean": 1.0004741020770656,
+        "median": 0.9977308696464694,
+        "p95": 1.1399232358433362,
+        "p99": 1.2051301723417696,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 1.7131618618582434,
+          "audio|tactile": 4.859849321519917,
+          "audio|gravity": 1.9618957382902773,
+          "audio|force": 1.1302620974782396,
+          "vision|tactile": 6.248862495962817,
+          "vision|gravity": 1.3243611050269102,
+          "vision|force": 1.6803902953940686,
+          "tactile|gravity": 0.9867170491714995,
+          "tactile|force": 0.9438641882533019,
+          "gravity|force": 0.9855719369576097
+        },
+        "timing": {
+          "T1": 2.8939555099761254,
+          "T2": 1.3668160317730138
+        },
+        "snr": {
+          "floor": 1.700114645617927,
+          "minus10": 2.163416674937958,
+          "plus10": 2.490109479267829
+        }
+      }
+    },
+    "1024": {
+      "trios": 30,
+      "block": 1,
+      "observed": 4.630571974106699,
+      "null": {
+        "mean": 1.0001453795753523,
+        "median": 0.9975742887868702,
+        "p95": 1.140952357993338,
+        "p99": 1.2062223187764505,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 2.815471108084966,
+          "audio|tactile": 13.120926407572636,
+          "audio|gravity": 3.794568356855569,
+          "audio|force": 1.3880662355556792,
+          "vision|tactile": 16.660393512946843,
+          "vision|gravity": 2.438334587167991,
+          "vision|force": 4.73656350440635,
+          "tactile|gravity": 0.7993951753688339,
+          "tactile|force": 0.8524696686651679,
+          "gravity|force": 1.3557762439692582
+        },
+        "timing": {
+          "T1": 6.8371895489542505,
+          "T2": 2.4865534793966657
+        },
+        "snr": {
+          "floor": 3.07276197559512,
+          "minus10": 4.9911960558140445,
+          "plus10": 5.831635569208862
+        }
+      }
+    },
+    "4096": {
+      "trios": 30,
+      "block": 1,
+      "observed": 16.246641660350868,
+      "null": {
+        "mean": 0.9996624709407593,
+        "median": 0.9967312225052551,
+        "p95": 1.1425276112649245,
+        "p99": 1.205092337619018,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05,
+      "breakdown": {
+        "pair": {
+          "audio|vision": 7.796374244658036,
+          "audio|tactile": 52.4376370099546,
+          "audio|gravity": 14.203661340475795,
+          "audio|force": 1.6292898085440897,
+          "vision|tactile": 67.02878568630382,
+          "vision|gravity": 7.105264598323725,
+          "vision|force": 14.392006792569127,
+          "tactile|gravity": 1.1168530453062122,
+          "tactile|force": 1.6173686306158004,
+          "gravity|force": 1.9345083679819732
+        },
+        "timing": {
+          "T1": 25.514161017665675,
+          "T2": 7.17491496551454
+        },
+        "snr": {
+          "floor": 8.52196527676898,
+          "minus10": 19.43924807425213,
+          "plus10": 20.812675528051724
+        }
+      }
+    }
+  },
+  "split_half": {
+    "n": 4096,
+    "block": 1,
+    "halves": "even/odd items",
+    "r_all": {
+      "observed": 0.8414100763056215,
+      "null": {
+        "mean": -0.0005612105578655644,
+        "median": -0.001142023705522595,
+        "p95": 0.11221633507168424,
+        "p99": 0.16084902592734174,
+        "frac_above_threshold": 0.37955
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    },
+    "r_argmax": {
+      "observed": 0.9795709996358163,
+      "null": {
+        "mean": 0.5397710273273651,
+        "median": 0.547013297918689,
+        "p95": 0.7093994223461837,
+        "p99": 0.7642811529725315,
+        "frac_above_threshold": 0.99995
+      },
+      "count_ge_observed": 0,
+      "frac_ge_observed": 0.0,
+      "p_value": 4.999750012499375e-05
+    }
+  },
+  "elapsed_s": 928.0
+}

@@ -1,0 +1,15 @@
+start 2026-10-31T14:10:24+01:00 host electron-server commit 7b00593e36049f55c48dcdb402bfee4f15ab3dcb
+uptime:  14:10:24 up 95 days, 20:07,  1 user,  load average: 2.45, 2.12, 2.52
+d1 cell mock done in 32 s (2026-10-31T14:10:56+01:00)
+d1 legacy mock done in 92 s (2026-10-31T14:11:56+01:00)
+d2 cell mock done in 5 s (2026-10-31T14:12:01+01:00)
+d2 cell gaussian done in 66 s (2026-10-31T14:12:02+01:00)
+d2 legacy mock done in 9 s (2026-10-31T14:12:11+01:00)
+d3 cell gaussian done in 1 s (2026-10-31T14:12:12+01:00)
+d3 cell mock done in 1 s (2026-10-31T14:12:13+01:00)
+d3 legacy gaussian done in 1 s (2026-10-31T14:12:14+01:00)
+d3 legacy mock done in 1 s (2026-10-31T14:12:15+01:00)
+d2 legacy gaussian done in 59 s (2026-10-31T14:13:00+01:00)
+d1 legacy gaussian done in 928 s (2026-10-31T14:25:52+01:00)
+d1 cell gaussian done in 934 s (2026-10-31T14:25:58+01:00)
+end 2026-10-31T14:25:58+01:00

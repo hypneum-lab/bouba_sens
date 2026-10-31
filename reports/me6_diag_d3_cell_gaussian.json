@@ -1,0 +1,363 @@
+{
+  "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+  "generated_at": "2026-10-31T13:12:12+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "params": {
+    "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/gaussian",
+    "successes_file": "per_query_successes_n4096.json",
+    "replicates": 20000,
+    "seed": 31102026
+  },
+  "trios": 30,
+  "max_pair": {
+    "observed": 0.01826171875,
+    "null": {
+      "mean": 0.015281951090494792,
+      "median": 0.015323893229166666,
+      "p95": 0.025447591145833334,
+      "p99": 0.0302978515625,
+      "frac_above_threshold": 0.13065
+    },
+    "count_ge_observed": 5627,
+    "frac_ge_observed": 0.28135,
+    "p_value": 0.28138593070346485
+  },
+  "per_pair": {
+    "audio|vision": {
+      "mean_delta": 0.01826171875,
+      "S": 0.01826171875,
+      "n_positive": 16,
+      "n_negative": 13,
+      "count_ge_observed": 2504,
+      "frac_ge_observed": 0.1252,
+      "p_value": 0.12524373781310935
+    },
+    "audio|tactile": {
+      "mean_delta": 0.0135009765625,
+      "S": 0.0135009765625,
+      "n_positive": 15,
+      "n_negative": 12,
+      "count_ge_observed": 6555,
+      "frac_ge_observed": 0.32775,
+      "p_value": 0.327783610819459
+    },
+    "audio|gravity": {
+      "mean_delta": 0.0111083984375,
+      "S": 0.0111083984375,
+      "n_positive": 14,
+      "n_negative": 14,
+      "count_ge_observed": 5255,
+      "frac_ge_observed": 0.26275,
+      "p_value": 0.26278686065696716
+    },
+    "audio|force": {
+      "mean_delta": 0.0022786458333333335,
+      "S": 0.0022786458333333335,
+      "n_positive": 12,
+      "n_negative": 18,
+      "count_ge_observed": 11385,
+      "frac_ge_observed": 0.56925,
+      "p_value": 0.5692715364231788
+    },
+    "vision|tactile": {
+      "mean_delta": 0.00576171875,
+      "S": 0.00576171875,
+      "n_positive": 15,
+      "n_negative": 11,
+      "count_ge_observed": 9485,
+      "frac_ge_observed": 0.47425,
+      "p_value": 0.47427628618569073
+    },
+    "vision|gravity": {
+      "mean_delta": -0.0014485677083333334,
+      "S": 0.0014485677083333334,
+      "n_positive": 14,
+      "n_negative": 13,
+      "count_ge_observed": 13702,
+      "frac_ge_observed": 0.6851,
+      "p_value": 0.6851157442127893
+    },
+    "vision|force": {
+      "mean_delta": -0.0028564453125,
+      "S": 0.0028564453125,
+      "n_positive": 18,
+      "n_negative": 9,
+      "count_ge_observed": 12625,
+      "frac_ge_observed": 0.63125,
+      "p_value": 0.6312684365781711
+    },
+    "tactile|gravity": {
+      "mean_delta": -0.0017903645833333333,
+      "S": 0.0017903645833333333,
+      "n_positive": 11,
+      "n_negative": 18,
+      "count_ge_observed": 11217,
+      "frac_ge_observed": 0.56085,
+      "p_value": 0.5608719564021799
+    },
+    "tactile|force": {
+      "mean_delta": -0.0025634765625,
+      "S": 0.0025634765625,
+      "n_positive": 17,
+      "n_negative": 13,
+      "count_ge_observed": 15901,
+      "frac_ge_observed": 0.79505,
+      "p_value": 0.7950602469876507
+    },
+    "gravity|force": {
+      "mean_delta": 0.0031575520833333334,
+      "S": 0.0031575520833333334,
+      "n_positive": 15,
+      "n_negative": 14,
+      "count_ge_observed": 6568,
+      "frac_ge_observed": 0.3284,
+      "p_value": 0.32843357832108394
+    }
+  },
+  "leading_pair": {
+    "pair": "audio|vision",
+    "same_sign_trios": 16
+  },
+  "argmax_sign_table": [
+    {
+      "trio": "seed400_T1_floor",
+      "pair": "audio|tactile",
+      "delta": -0.0517578125
+    },
+    {
+      "trio": "seed400_T1_minus10",
+      "pair": "tactile|force",
+      "delta": -0.0341796875
+    },
+    {
+      "trio": "seed400_T1_plus10",
+      "pair": "vision|tactile",
+      "delta": 0.107666015625
+    },
+    {
+      "trio": "seed400_T2_floor",
+      "pair": "audio|vision",
+      "delta": 0.185302734375
+    },
+    {
+      "trio": "seed400_T2_minus10",
+      "pair": "audio|gravity",
+      "delta": 0.228271484375
+    },
+    {
+      "trio": "seed400_T2_plus10",
+      "pair": "audio|vision",
+      "delta": 0.19775390625
+    },
+    {
+      "trio": "seed401_T1_floor",
+      "pair": "tactile|force",
+      "delta": 0.052978515625
+    },
+    {
+      "trio": "seed401_T1_minus10",
+      "pair": "vision|tactile",
+      "delta": 0.14697265625
+    },
+    {
+      "trio": "seed401_T1_plus10",
+      "pair": "vision|tactile",
+      "delta": 0.056884765625
+    },
+    {
+      "trio": "seed401_T2_floor",
+      "pair": "vision|force",
+      "delta": -0.01171875
+    },
+    {
+      "trio": "seed401_T2_minus10",
+      "pair": "audio|force",
+      "delta": -0.009521484375
+    },
+    {
+      "trio": "seed401_T2_plus10",
+      "pair": "vision|tactile",
+      "delta": 0.0107421875
+    },
+    {
+      "trio": "seed402_T1_floor",
+      "pair": "tactile|gravity",
+      "delta": 0.02783203125
+    },
+    {
+      "trio": "seed402_T1_minus10",
+      "pair": "vision|force",
+      "delta": -0.088623046875
+    },
+    {
+      "trio": "seed402_T1_plus10",
+      "pair": "vision|gravity",
+      "delta": -0.117919921875
+    },
+    {
+      "trio": "seed402_T2_floor",
+      "pair": "audio|gravity",
+      "delta": 0.05078125
+    },
+    {
+      "trio": "seed402_T2_minus10",
+      "pair": "audio|gravity",
+      "delta": 0.06884765625
+    },
+    {
+      "trio": "seed402_T2_plus10",
+      "pair": "audio|tactile",
+      "delta": 0.20849609375
+    },
+    {
+      "trio": "seed403_T1_floor",
+      "pair": "vision|force",
+      "delta": -0.121826171875
+    },
+    {
+      "trio": "seed403_T1_minus10",
+      "pair": "audio|vision",
+      "delta": 0.0087890625
+    },
+    {
+      "trio": "seed403_T1_plus10",
+      "pair": "audio|force",
+      "delta": 0.078857421875
+    },
+    {
+      "trio": "seed403_T2_floor",
+      "pair": "vision|force",
+      "delta": -0.016357421875
+    },
+    {
+      "trio": "seed403_T2_minus10",
+      "pair": "gravity|force",
+      "delta": -0.013671875
+    },
+    {
+      "trio": "seed403_T2_plus10",
+      "pair": "tactile|force",
+      "delta": -0.009521484375
+    },
+    {
+      "trio": "seed404_T1_floor",
+      "pair": "audio|tactile",
+      "delta": -0.2021484375
+    },
+    {
+      "trio": "seed404_T1_minus10",
+      "pair": "vision|tactile",
+      "delta": -0.112060546875
+    },
+    {
+      "trio": "seed404_T1_plus10",
+      "pair": "gravity|force",
+      "delta": 0.042724609375
+    },
+    {
+      "trio": "seed404_T2_floor",
+      "pair": "vision|force",
+      "delta": -0.01318359375
+    },
+    {
+      "trio": "seed404_T2_minus10",
+      "pair": "tactile|gravity",
+      "delta": -0.06005859375
+    },
+    {
+      "trio": "seed404_T2_plus10",
+      "pair": "gravity|force",
+      "delta": 0.0634765625
+    }
+  ],
+  "within_seed": {
+    "400": {
+      "trios": 6,
+      "patterns": 64,
+      "p_exact": {
+        "audio|vision": 0.09375,
+        "audio|tactile": 0.1875,
+        "audio|gravity": 0.0625,
+        "audio|force": 0.71875,
+        "vision|tactile": 0.375,
+        "vision|gravity": 0.4375,
+        "vision|force": 0.0625,
+        "tactile|gravity": 0.59375,
+        "tactile|force": 0.21875,
+        "gravity|force": 0.71875
+      },
+      "min_p": 0.0625
+    },
+    "401": {
+      "trios": 6,
+      "patterns": 64,
+      "p_exact": {
+        "audio|vision": 0.4375,
+        "audio|tactile": 0.90625,
+        "audio|gravity": 0.125,
+        "audio|force": 0.21875,
+        "vision|tactile": 0.15625,
+        "vision|gravity": 0.40625,
+        "vision|force": 0.5625,
+        "tactile|gravity": 0.78125,
+        "tactile|force": 0.40625,
+        "gravity|force": 0.625
+      },
+      "min_p": 0.125
+    },
+    "402": {
+      "trios": 6,
+      "patterns": 64,
+      "p_exact": {
+        "audio|vision": 0.5,
+        "audio|tactile": 0.6875,
+        "audio|gravity": 0.3125,
+        "audio|force": 0.625,
+        "vision|tactile": 0.875,
+        "vision|gravity": 0.25,
+        "vision|force": 0.84375,
+        "tactile|gravity": 0.25,
+        "tactile|force": 0.28125,
+        "gravity|force": 0.28125
+      },
+      "min_p": 0.25
+    },
+    "403": {
+      "trios": 6,
+      "patterns": 64,
+      "p_exact": {
+        "audio|vision": 0.75,
+        "audio|tactile": 0.8125,
+        "audio|gravity": 0.25,
+        "audio|force": 0.34375,
+        "vision|tactile": 1.0,
+        "vision|gravity": 0.3125,
+        "vision|force": 0.53125,
+        "tactile|gravity": 0.03125,
+        "tactile|force": 0.21875,
+        "gravity|force": 0.59375
+      },
+      "min_p": 0.03125
+    },
+    "404": {
+      "trios": 6,
+      "patterns": 64,
+      "p_exact": {
+        "audio|vision": 0.5625,
+        "audio|tactile": 0.28125,
+        "audio|gravity": 0.21875,
+        "audio|force": 0.21875,
+        "vision|tactile": 0.1875,
+        "vision|gravity": 0.6875,
+        "vision|force": 0.6875,
+        "tactile|gravity": 0.40625,
+        "tactile|force": 0.28125,
+        "gravity|force": 0.34375
+      },
+      "min_p": 0.1875
+    }
+  },
+  "elapsed_s": 0.7
+}

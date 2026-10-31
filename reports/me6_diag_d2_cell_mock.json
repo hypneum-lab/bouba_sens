@@ -1,0 +1,82 @@
+{
+  "schema": "bouba_sens.me6_large_n_diagnostic.v1",
+  "generated_at": "2026-10-31T13:11:56+00:00",
+  "host": "electron-server",
+  "python": "3.14.4",
+  "numpy": "2.4.4",
+  "params": {
+    "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/mock",
+    "blocks": {
+      "64": 8,
+      "256": 16,
+      "1024": 16,
+      "4096": 16
+    },
+    "replicates": 20000,
+    "seed": 31102026
+  },
+  "null": "joint transpose flip: one sign per (trio, item or block), shared by the 10 pairs",
+  "rows": {
+    "64": {
+      "trios": 30,
+      "block": 8,
+      "observed_median": 0.0625,
+      "null": {
+        "mean": 0.069821484375,
+        "median": 0.0703125,
+        "p95": 0.1015625,
+        "p99": 0.1171875,
+        "frac_above_threshold": 1.0
+      },
+      "count_ge_observed": 14954,
+      "frac_ge_observed": 0.7477,
+      "p_value": 0.7477126143692815
+    },
+    "256": {
+      "trios": 30,
+      "block": 16,
+      "observed_median": 0.052734375,
+      "null": {
+        "mean": 0.04142216796875,
+        "median": 0.041015625,
+        "p95": 0.05859375,
+        "p99": 0.068359375,
+        "frac_above_threshold": 0.99875
+      },
+      "count_ge_observed": 2567,
+      "frac_ge_observed": 0.12835,
+      "p_value": 0.12839358032098394
+    },
+    "1024": {
+      "trios": 30,
+      "block": 16,
+      "observed_median": 0.02490234375,
+      "null": {
+        "mean": 0.020846923828125,
+        "median": 0.0205078125,
+        "p95": 0.029296875,
+        "p99": 0.0341796875,
+        "frac_above_threshold": 0.5468
+      },
+      "count_ge_observed": 3796,
+      "frac_ge_observed": 0.1898,
+      "p_value": 0.18984050797460128
+    },
+    "4096": {
+      "trios": 30,
+      "block": 16,
+      "observed_median": 0.0087890625,
+      "null": {
+        "mean": 0.010680224609375,
+        "median": 0.0103759765625,
+        "p95": 0.014892578125,
+        "p99": 0.017333984375,
+        "frac_above_threshold": 0.0017
+      },
+      "count_ge_observed": 15792,
+      "frac_ge_observed": 0.7896,
+      "p_value": 0.7896105194740263
+    }
+  },
+  "elapsed_s": 5.4
+}
