@@ -316,6 +316,24 @@ Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.jso
 8. Keller & Mrsic-Flogel 2018 — Predictive Processing: A Canonical Cortical Computation (Neuron).
 9. Kleinman, Achille & Soatto 2023 — Critical Learning Periods for Multisensory Integration in Deep Networks (CVPR).
 
+## AI assistance (transparency)
+
+This repository is developed by a one-person lab with AI assistants
+used as tools, never as authors:
+
+- **Claude Code (Anthropic)** assists with code, documentation,
+  operations and literature search in interactive sessions driven by
+  the PI.
+- **Codex CLI (OpenAI, `gpt-6.1-sol` / `gpt-6-astra`)** runs
+  independent review passes before a release, a pre-registration or a
+  submission; the briefs, reports and verdict tables are published next
+  to the reviewed material whenever a pass is run.
+
+Every scientific claim, verdict and pre-registration decision is taken
+by the PI; results are reproduced by the test suite and CI, and review
+reports are evidence, not endorsements. No model is listed as a
+co-author of a publication or as a co-author of a commit.
+
 ## License
 
 MIT. See `LICENSE`.
