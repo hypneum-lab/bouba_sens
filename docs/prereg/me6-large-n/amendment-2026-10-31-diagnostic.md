@@ -109,12 +109,12 @@ balanced. Cost < 1 min.
 ## Diagnostic needing a new run — separate PI go required
 
 **D4 — Fresh items and pre-lesion states.** A small script
-(`scripts/me6_reprobe.py`, committed before any run) loads saved
+(`scripts/me6_large_n_diagnostic.py reprobe`, committed before any run) loads saved
 states and runs `query_successes` (v1, zero masking) at n = 4096, inside
 `fork_rng` reseeded with the probe seed, writing
 `per_query_successes_reprobe_n4096.json` to a new output root
-`~/scratch/bouba_sens-runs/me6-diagnostic-<date>/` (no saved cell is
-touched). Probe seed **5 106 000 + 10·(s − 400) + trio** (s ∈ 400–404,
+`~/scratch/bouba_sens-runs/me6-large-n-20261031/diagnostic/reprobe/`
+(no saved cell is touched). Probe seed **5 106 000 + 10·(s − 400) + trio** (s ∈ 400–404,
 trio 0–5), outside every used namespace (run seeds 0–4, 100–101,
 110–111, 200–204, 300–309, 400–404, 999 and their derived probe seeds).
 (a) the 300 lesion states (`model.pt`, both arms): D1–D3 rerun on fresh
@@ -131,6 +131,36 @@ Cost (electron-server, PAR = 4, nice 19, from the `eval` timings of
 ADR-0026, 15–33 s per job): (a) 300 jobs ≈ 40 min; (b) 2 arms × (5
 checkpoints + 75 initial states) ≈ 25 min; analysis ≈ 30 min; ≈ 1.5 h
 under load. No KXKM, no GPU.
+
+## Corrections made with the code (2026-10-31, before any run)
+
+PI go for D1–D4 given 2026-10-31 ≈ 14:00 (D4 after D1–D3 are saved).
+Written into this file in the commit that adds
+`scripts/me6_large_n_diagnostic.py`, before its first run:
+
+1. **Mock rows added, descriptive only.** D1–D3 are also run on the
+   mock grids with the committed ADR-0026 blocks (`cell` 8/16/16/16,
+   `legacy` 4/8/8/8 at n = 64/256/1024/4096): every flip acts on block
+   sums; φ uses block sums (expectation 1 under the block flip); D1
+   halves are the first and second half of the blocks (adjacent
+   windows, not iid). The Gaussian rows remain the ones this amendment
+   is about.
+2. **D1 argmax r:** the argmax pair is chosen on the full vector, in the
+   observed data and again in every null replicate (same selection).
+   φ is also reported at n = 64.
+3. **D3 within seed** is reported for both arms (descriptive).
+4. **D4 details:** column index = position of the lesioned modality in
+   (audio, vision, tactile, gravity, force); the (b)-T2 probe of a cell
+   reseeds the forward RNG with probe seed + that index, (a) and
+   (b)-T1 with the probe seed. The rebuild is checked first
+   (`validate`): reprobing four saved states with their original probe
+   seed must reproduce `per_query_successes_n4096.json`, and one T1 cell
+   rebuilt and re-lesioned must reproduce its `model.pt`. D4 analysis =
+   Me6 median with the item-flip null of ADR-0026 (block 1) but seed
+   31102026, B = 20 000, plus D1 and D3; (b)-T1 and (b)-T2 have 15
+   trios each per arm, (a) 30.
+5. RNG streams: `default_rng([31102026, tag, n, start])`, chunks of
+   100 replicates, tag 1 = D1 split, 2 = D2, 3 = D3, 4 = φ.
 
 ## What a later confirmatory test would need
 
