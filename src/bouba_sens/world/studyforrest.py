@@ -60,6 +60,15 @@ class StudyforrestWorld:
     def mode(self) -> str:
         return self._mode
 
+    @property
+    def n_rows(self) -> int:
+        """Length of the cached stream (4096 for the default mock)."""
+        return int(self._n)
+
+    def cache_sha256(self) -> str:
+        """ADR-0026 — SHA-256 of the cached stream (see `stream_sha256`)."""
+        return stream_sha256(self._audio, self._vision, self._labels)
+
     def sample(self, batch_size: int, seed: int) -> WorldSample:
         gen = torch.Generator().manual_seed(seed)
         # Sample a contiguous temporal slice so lag-1 autocorr is non-zero
@@ -159,6 +168,22 @@ class StudyforrestRealWorld:
             "gravity": (_GRAVITY_DIM,),
             "force": (_FORCE_DIM,),
         }
+
+
+def stream_sha256(audio: torch.Tensor, vision: torch.Tensor, labels: torch.Tensor) -> str:
+    """SHA-256 over the raw bytes of (audio float32, vision float32, labels int64).
+
+    ADR-0026 — identifies a mock (or real) stream exactly. The tensors are
+    made contiguous and hashed in this order, each prefixed by its shape.
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    for t in (audio, vision, labels):
+        c = t.detach().contiguous().cpu()
+        h.update(repr((str(c.dtype), tuple(c.shape))).encode())
+        h.update(c.numpy().tobytes())
+    return h.hexdigest()
 
 
 def _build_mock_cache(n: int, seed: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

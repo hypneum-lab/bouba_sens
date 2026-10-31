@@ -38,6 +38,11 @@ GATING_TARGET="${GATING_TARGET:-}"
 # ADR-0024 follow-up — SensoryWML code emission: "argmax-bridge" (historical
 # default) or "straight-through".
 EMISSION="${EMISSION:-argmax-bridge}"
+# ADR-0026 — extra sizes of the v1 probe, comma-separated (e.g.
+# "64,256,1024,4096"); each lesion cell then also writes
+# per_query_successes_n{N}.json, the five cells of a trio sharing one
+# seed, seed*10000 + 6000 + trio. Empty (default) = historical behaviour.
+PROBE_SIZES="${PROBE_SIZES:-}"
 # ADR-0027 — world seed of lesion / eval: "legacy" (default, historical:
 # lesion world seed 0, eval world seed = lesion seed) or "cell" (the
 # phase-1 world, seed = the grid seed, for T1 and T2 cells alike).
@@ -183,6 +188,7 @@ for seed in "${SEEDS[@]}"; do
                 [[ -n "${CODEBOOK_LOCK}" ]] && lesion_args+=(--codebook-lock-after "${CODEBOOK_LOCK}")
                 [[ -n "${GATING_SCHEDULE}" ]] && lesion_args+=(--transducer-gating-schedule "${GATING_SCHEDULE}")
                 [[ -n "${GATING_TARGET}" ]] && lesion_args+=(--transducer-gating-target "${GATING_TARGET}")
+                [[ -n "${PROBE_SIZES}" ]] && lesion_args+=(--probe-sizes "${PROBE_SIZES}" --probe-sizes-seed $(( seed * 10000 + 6000 + trio )))
                 if [[ "${timing}" == "T1" ]]; then
                     # Congenital: skip pretrain, no checkpoint.
                     uv run bouba-sens lesion "${lesion_args[@]}"
