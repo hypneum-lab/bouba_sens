@@ -1,7 +1,8 @@
 # ADR-0026 — Me6 at large probe sizes: preregistered paired nulls, n ∈ {64, 256, 1024, 4096}
 
-**Status:** Proposed — awaiting PI sign-off. Preregistration (L1 once
-tagged). Modifies no metric, verdict, past ADR or locked threshold.
+**Status:** Accepted — PI sign-off posted 2026-10-31 07:18 UTC (PR #58
+comment 6540527463, on ec101c5). Preregistration (L1 once tagged).
+Modifies no metric, verdict, past ADR or locked threshold.
 **Date:** 2026-10-30
 **Decision source:** PI decision of 2026-10-30, 14:10 (fresh Gaussian and
 mock grids, argmax-bridge, B-3 probe at n ∈ {64, 256, 1024, 4096},
@@ -19,7 +20,8 @@ and merged into this branch. `1295160` is the code base of both arms:
 the `legacy` arm is its default, the `cell` arm its opt-in mode. The
 tag is taken on the merge commit of this ADR, which contains both.
 **Tag:** `prereg-me6-large-n-<YYYYMMDD>` (annotated, on the merge commit
-of this ADR, date of the tag; expected `prereg-me6-large-n-20261030`).
+of this ADR, date of the tag: `prereg-me6-large-n-20261031`, since
+the sign-off came after midnight).
 No pilot or confirmatory cell may start before it.
 **Builds on:** ADR-0021 (iid reference, follow-ups (c), 3, 4, 6),
 ADR-0022 (paired null), ADR-0023 (trio-shared probe seed, block rule),
