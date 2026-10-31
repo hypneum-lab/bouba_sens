@@ -336,7 +336,7 @@ co-author of a publication or as a co-author of a commit.
 
 ## License
 
-MIT. See `LICENSE`.
+MIT (code) + CC-BY-4.0 (docs). See `LICENSE`.
 
 ## Citation
 
