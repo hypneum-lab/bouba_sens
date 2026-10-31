@@ -4,6 +4,7 @@ title: "bouba_sens — A Pre-Registered Cross-Modal Plasticity Benchmark"
 authors:
   - family-names: "Saillant"
     given-names: "Clément"
+    orcid: "https://orcid.org/0000-0002-8414-185X"
     affiliation: "Hypneum Lab"
     email: "c.saillant@gmail.com"
 version: "0.5.10"
@@ -35,6 +36,7 @@ preferred-citation:
   authors:
     - family-names: "Saillant"
       given-names: "Clément"
+      orcid: "https://orcid.org/0000-0002-8414-185X"
       affiliation: "Hypneum Lab"
   year: 2026
   journal: "Transactions on Machine Learning Research"
