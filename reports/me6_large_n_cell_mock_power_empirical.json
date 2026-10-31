@@ -1,0 +1,359 @@
+{
+  "schema": "bouba_sens.me6_large_n.v1",
+  "kind": "power_empirical",
+  "generated_at": "2026-10-31T12:11:18+00:00",
+  "root": "/home/electron/scratch/bouba_sens-runs/me6-large-n-20261031/cell/mock",
+  "world": "mock",
+  "pairs": [
+    "audio|vision",
+    "gravity|force"
+  ],
+  "deltas": [
+    0.02,
+    0.05,
+    0.1
+  ],
+  "plantings": 50,
+  "null_replicates": 1000,
+  "alpha": 0.01,
+  "seed": 25102026,
+  "pair_names": [
+    "audio|vision",
+    "audio|tactile",
+    "audio|gravity",
+    "audio|force",
+    "vision|tactile",
+    "vision|gravity",
+    "vision|force",
+    "tactile|gravity",
+    "tactile|force",
+    "gravity|force"
+  ],
+  "rows": [
+    {
+      "size": "64",
+      "successes_file": "per_query_successes_n64.json",
+      "n_items": 64,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.0625,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.0625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.078125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.09375,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.0703125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.078125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.109375,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "256",
+      "successes_file": "per_query_successes_n256.json",
+      "n_items": 256,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.052734375,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.0234375,
+          "median_mean": 0.060546875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 6,
+          "delta_effective": 0.046875,
+          "median_mean": 0.06640625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 13,
+          "delta_effective": 0.1015625,
+          "median_mean": 0.1015625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.0234375,
+          "median_mean": 0.052734375,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 6,
+          "delta_effective": 0.046875,
+          "median_mean": 0.052734375,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 13,
+          "delta_effective": 0.1015625,
+          "median_mean": 0.1015625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "1024",
+      "successes_file": "per_query_successes_n1024.json",
+      "n_items": 1024,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.02490234375,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 10,
+          "delta_effective": 0.01953125,
+          "median_mean": 0.029296875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 26,
+          "delta_effective": 0.05078125,
+          "median_mean": 0.05078125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 51,
+          "delta_effective": 0.099609375,
+          "median_mean": 0.099609375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 10,
+          "delta_effective": 0.01953125,
+          "median_mean": 0.029296875,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 26,
+          "delta_effective": 0.05078125,
+          "median_mean": 0.05078125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 51,
+          "delta_effective": 0.099609375,
+          "median_mean": 0.099609375,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "4096",
+      "successes_file": "per_query_successes_n4096.json",
+      "n_items": 4096,
+      "block": 16,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.0087890625,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 41,
+          "delta_effective": 0.02001953125,
+          "median_mean": 0.0206298828125,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 102,
+          "delta_effective": 0.0498046875,
+          "median_mean": 0.0499267578125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 205,
+          "delta_effective": 0.10009765625,
+          "median_mean": 0.10009765625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 41,
+          "delta_effective": 0.02001953125,
+          "median_mean": 0.0211181640625,
+          "power_paired_test": 0.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 102,
+          "delta_effective": 0.0498046875,
+          "median_mean": 0.0498046875,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 205,
+          "delta_effective": 0.10009765625,
+          "median_mean": 0.10009765625,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    },
+    {
+      "size": "legacy",
+      "successes_file": "per_query_successes.json",
+      "n_items": 64,
+      "block": 8,
+      "trios": 30,
+      "complete": true,
+      "observed_median_unplanted": 0.3125,
+      "cells": [
+        {
+          "pair": "audio|vision",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.3125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.3203125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "audio|vision",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.3203125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.02,
+          "k_flips_per_entry": 1,
+          "delta_effective": 0.03125,
+          "median_mean": 0.3125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.05,
+          "k_flips_per_entry": 2,
+          "delta_effective": 0.0625,
+          "median_mean": 0.3203125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        },
+        {
+          "pair": "gravity|force",
+          "delta": 0.1,
+          "k_flips_per_entry": 3,
+          "delta_effective": 0.09375,
+          "median_mean": 0.3203125,
+          "power_paired_test": 1.0,
+          "rule_0p02_fires": 1.0
+        }
+      ]
+    }
+  ]
+}
