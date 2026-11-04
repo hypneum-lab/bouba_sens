@@ -5,7 +5,7 @@
 **Date.** 2026-04-22
 **Companion artefacts.**
 - Repository : `github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`)
-- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19666405`)
+- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19680058`)
 - Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19, amendment v0.6 2026-04-22)
 - ADRs : `docs/adr/0004..0017` record every verdict, retraction, and scope change inline with its grid commit.
 
@@ -956,7 +956,7 @@ and say nothing about nerve biophysics per se.
   PyPI as `bouba-sens==0.5.4` (tag `v0.5.4`, commit `360a442`).
 - `github.com/hypneum-lab/nerve-wml` v1.5.3 — protocol + methodology
   dependencies (Kraskov-kNN, bootstrap CI, null model permutation,
-  MINE estimator). Zenodo DOI `10.5281/zenodo.19666405`.
+  MINE estimator). Zenodo DOI `10.5281/zenodo.19680058`.
 - `reports/*.json` + `reports/*.png` — per-grid aggregates, per-seed
   breakdowns, and the Amedi dose-response curve. Committed verbatim
   (force-added past the `.gitignore` for the reports we cite).

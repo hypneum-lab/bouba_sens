@@ -308,7 +308,7 @@ Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.jso
 
 1. Amedi et al. 2007 — Shape conveyed by visual-to-auditory sensory substitution activates LOC (Nat Neurosci).
 2. Heimler & Amedi 2020 — Are critical periods reversible in the adult brain? Insights on cortical specializations based on sensory deprivation studies (Neurosci. Biobehav. Rev.).
-3. Röder et al. 2021 — Sensitive periods for functional specialization (PNAS).
+3. Röder, Kekunnaya & Guerreiro 2021 — Neural mechanisms of visual sensitive periods in humans (Neurosci. Biobehav. Rev. 120, 86–99; doi:10.1016/j.neubiorev.2020.10.030).
 4. Alper & Averbuch-Elor 2023 — Kiki or Bouba? Sound Symbolism in Vision-and-Language Models (NeurIPS).
 5. Girdhar et al. 2023 — ImageBind: One Embedding Space (CVPR).
 6. Ma et al. 2022 — Are Multimodal Transformers Robust to Missing Modality? (CVPR).

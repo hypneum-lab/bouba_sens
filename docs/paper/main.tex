@@ -37,7 +37,7 @@
 \begin{abstract}
 We introduce \texttt{bouba\_sens}, a pre-registered benchmark
 measuring three invariants of cross-modal plasticity --- B-1
-(congenital-blindness T1/T2 gap, \citealp{amedi2007}), B-2
+(congenital-blindness T1/T2 gap, \citealp{cohen1999period, sadato2002critical, collignon2013impact}), B-2
 (informational migration under lesion, Me3 delta), and B-3
 (perceptive/proprioceptive structural asymmetry, bouba/kiki) ---
 across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
@@ -108,16 +108,17 @@ portable multi-seed validation protocol for future benchmarks.
 
 Two independent lines of evidence suggest that cross-modal
 asymmetry is a \emph{structural} property of cognitive
-architectures. \citet{amedi2007} report that, in congenital
-blindness, occipital cortex is re-tasked to audition with
-\emph{greater} plasticity than in late-acquired blindness ---
-a quantitative T1/T2 gap that critical-period theories
+architectures. Comparisons of early- and late-onset blindness
+report a sensitive period for the cross-modal recruitment of
+occipital cortex \citep{cohen1999period, sadato2002critical, collignon2013impact} ---
+a T1/T2 gap that critical-period theories
 \citep{bavelier2002cross, merabet2010neural} attribute to a
 lock-style plasticity constraint mid-development. The bouba/kiki
 effect \citep{kohler1947gestalt, ramachandran2001synaesthesia}
-independently reports $\geq 95\,\%$ cross-cultural agreement on a
-round-vs-spiky sound-shape mapping, evidence of a hard-wired
-\emph{asymmetric} modality mapping \citep{sidhu2018five}. To the
+independently reports high agreement on a round-vs-spiky
+sound-shape mapping, robust across 25 languages and ten writing
+systems \citep{cwiek2022bouba}; whether this mapping is hard-wired
+or partly learned remains debated \citep{sidhu2018five}. To the
 best of our knowledge, no pre-registered computational benchmark
 currently tests whether a given cross-modal architecture
 reproduces both properties simultaneously.
@@ -210,7 +211,8 @@ $\theta$-replay FIFO buffer (see \texttt{src/bouba\_sens/loop.py}).
     XOR & Non-linearly-separable 4-class & No & Synthetic \\
     Sinusoid & Circular manifold & No & Synthetic \\
     Studyforrest mock & AR(1) scene-latent surrogate & \textbf{Yes} & Synthetic, bio-plausible stats \\
-    MIT-BIH ECG & 1-s-window spectrograms of real ECG & \textbf{Yes} & \citet{moody2001physionet}, CC0 \\
+    % unverified (bib audit 2026-11-04): CC0 licence of MIT-BIH not checked
+    MIT-BIH ECG & 1-s-window spectrograms of real ECG & \textbf{Yes} & \citet{moody2001mitbih}, CC0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -355,7 +357,7 @@ $+2\times$ amplification), B-1 $= +0.0063$, B-2 $= +0.0005$
 
 \subsection{Real biological signal (ADR-0009)}
 
-MIT-BIH ECG~\citep{moody2001physionet}: B-3 $= \mathbf{0.4453}$
+MIT-BIH ECG~\citep{moody2001mitbih, moody2001physionet}: B-3 $= \mathbf{0.4453}$
 ($22.3\times$, strongest of any world), B-1 $= -0.0062$,
 B-2 $= +0.0111$.
 
@@ -524,7 +526,7 @@ dataset is planned (issue~\#45).
 Amendment v0.5 (\texttt{docs/osf/}, git-dated, never filed on
 OSF) extends the pre-registered grid with a fifth world derived
 from Studyforrest Phase-2
-\citep{hanke2016studyforrest} (sub-01, ses-localizer,
+\citep{hanke2016studyforrest, sengupta2016studyforrest} (sub-01, ses-localizer,
 task-movielocalizer run-1): real VGG16 features over
 \texttt{movie\_localizer.mkv}, ffmpeg scene-cut tactile proxy,
 real cardiac + respiration physio, zero gravity (rp regressors
@@ -621,7 +623,7 @@ preserves the discrete T1/T2 asymmetry. Soft gating dilutes the
 signal across all 20 cross-modal pairs proportionally, reducing
 the effective signal-to-noise on the Me7 axis. This is an
 \emph{architectural constraint} on the space of mechanisms that
-could reproduce \citet{amedi2007} in our setup: at least one
+could reproduce the early- vs late-onset contrast in our setup: at least one
 component of the plasticity router needs a hard phase transition,
 not a continuous gate.
 
@@ -1058,9 +1060,11 @@ refers to modality provenance, not to lesion severity.
 \label{sec:related}
 
 \paragraph{Cross-modal plasticity in congenital and late-acquired blindness.}
-\citet{amedi2007} show that congenitally blind subjects recruit
-occipital cortex for auditory object recognition to a
-quantitatively greater degree than late-onset blind subjects ---
+Studies contrasting early- and late-onset blindness
+\citep{cohen1999period, sadato2002critical, collignon2013impact} report a sensitive period for the
+cross-modal recruitment of occipital cortex, and sensory
+substitution recruits the lateral occipital complex for shape
+\citep{amedi2007} ---
 our B-1 invariant operationalises this asymmetry as a Me7
 threshold. \citet{bavelier2002cross} and
 \citet{merabet2010neural} frame this as a critical-period
@@ -1099,7 +1103,8 @@ deprivation during an early window, not by removing one modality
 after convergence, which is the manipulation
 \texttt{constellation\_lock\_after} implements. We are not aware of
 an artificial-network model that directly contrasts congenital and
-late sensory loss in the sense of \citet{amedi2007}; bouba\_sens
+late sensory loss in the sense of \citet{cohen1999period} and
+\citet{collignon2013impact}; bouba\_sens
 targets that gap, and its B-1 retraction
 (Section~\ref{sec:dose-response}) shows that, in this benchmark,
 the lock mechanism does not produce a T1/T2 gap above the noise
@@ -1107,11 +1112,12 @@ floor.
 
 \paragraph{Bouba/kiki correspondence and ideasthesia.}
 \citet{kohler1947gestalt} and
-\citet{ramachandran2001synaesthesia} established the $\geq 95\,\%$
-cross-cultural agreement on round-vs-spiky sound-shape mapping;
-\citet{sidhu2018five} review the converging evidence that this
-mapping is a structural property of sensory integration, not
-learned. Our B-3 invariant formalises that asymmetry as the max
+\citet{ramachandran2001synaesthesia} reported high agreement on the
+round-vs-spiky sound-shape mapping, and \citet{cwiek2022bouba} find
+the effect robust across 25 languages and ten writing systems;
+\citet{sidhu2018five} review five candidate mechanisms, including
+learned ones (statistical co-occurrence, language patterns), and
+conclude that no single account is settled. Our B-3 invariant formalises that asymmetry as the max
 off-diagonal magnitude of the 5-modality perf matrix. Its
 $5$--$6\times$ threshold pass across every grid in this paper,
 independent of all Phase-1/Phase-2 controls, is a magnitude result
@@ -1142,9 +1148,10 @@ bouba\_sens treats it as a black-box protocol dependency and
 measures only downstream invariants.
 
 \paragraph{Pre-registered benchmarks in ML.}
-The NeurIPS Datasets \& Benchmarks track~\citep{vanschoren2021neurips}
-and \citet{gebru2021datasheets} pushed the field towards
-OSF-style pre-registration. bouba\_sens follows a locked-threshold
+Documentation standards such as datasheets for
+datasets~\citep{gebru2021datasheets} push the field towards
+transparent reporting; pre-registration is a separate, stricter
+practice. bouba\_sens follows a locked-threshold
 protocol registered locally (git-dated design specification,
 2026-04-20; not filed on OSF): the $0.05 / 0.10 / 0.02$
 thresholds for B-1 / B-2 / B-3 are frozen before the 9-grid
@@ -1182,7 +1189,8 @@ Maxwell's equations. The underlying substrate is Hodgkin-Huxley
 membrane dynamics plus FEM-derived tissue conductivities --- two
 orders of magnitude below the abstraction layer of our work.
 Classical ``nerve net'' formalisms descending from
-\citet{mcnaughton1971counter} sit at the opposite extreme:
+\citet{mcculloch1943logical} and \citet{kleene1956representation}
+(see also \citealp{mcnaughton1971counter}) sit at the opposite extreme:
 discrete-time automata with threshold neurons, delay-weighted
 axons, and inhibitory/excitatory edges, with no biophysics at
 all. nerve-wml~\citep{saillant2026nervewml}, and by extension
@@ -1208,7 +1216,7 @@ released on PyPI as \texttt{bouba-sens==0.5.4} (tag
 \texttt{github.com/hypneum-lab/nerve-wml} v1.5.3~\citep{saillant2026nervewml}
 --- protocol and methodology dependencies (Kraskov-kNN, bootstrap
 CI, null-model permutation, MINE estimator). Zenodo DOI
-\texttt{10.5281/zenodo.19666405}.
+\texttt{10.5281/zenodo.19680058}.
 \texttt{reports/*.json} and \texttt{reports/*.png} --- per-grid
 aggregates, per-seed breakdowns, and the Amedi dose-response
 curve, committed verbatim (force-added past the

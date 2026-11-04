@@ -13,7 +13,7 @@ filed on OSF). Not registered on OSF.
 **Software DOI.** Zenodo (concept) — to be minted alongside this
 submission via `.zenodo.json` already at repo root
 **Companion software.** `nerve-wml` v1.5.3
-(DOI `10.5281/zenodo.19666405`)
+(DOI `10.5281/zenodo.19680058`)
 
 ---
 
@@ -127,8 +127,9 @@ four-person panel.
    authority on the pre-reg framing.
 
 4. **Alessandro Achille** (AWS AI / Caltech) — *critical-period
-   theory in deep neural networks.* First author on *Critical
-   Learning Periods Emerge Even in Deep Linear Networks*
+   theory in deep neural networks.* Co-author (first author:
+   Michael Kleinman) of *Critical Learning Periods Emerge Even
+   in Deep Linear Networks*
    (ICLR 2024 spotlight) and the foundational 2019 critical-
    period series. Direct relevance to §5.5 (the Amedi-style
    dose-response curve framed as a critical-period signature
@@ -161,7 +162,7 @@ proposed reviewers.
   GitHub-Zenodo webhook on the next tag (`.zenodo.json` already
   at repo root with full metadata).
 - Companion software DOI: `nerve-wml` v1.5.3 archived at
-  `10.5281/zenodo.19666405`; the Paper depends on it for the
+  `10.5281/zenodo.19680058`; the Paper depends on it for the
   cross-substrate measurement primitive.
 
 ### Author contributions
