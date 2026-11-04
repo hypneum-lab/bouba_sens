@@ -255,6 +255,17 @@ Documentary corrections only ; no value, metric or threshold changed.
    not evidence for or against cross-modal plasticity in an agent that
    performs the task. No number is deleted. Issue #22.
 
+### Erratum (2026-11-04) — wrong DOIs in the registered spec
+
+7. The frozen design spec
+   `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (lines
+   508-509) gives two wrong DOIs; the spec is left unchanged. Correct
+   identifiers (Crossref): Heimler & Amedi 2020, Neurosci. Biobehav.
+   Rev. 116, 494-507, doi:10.1016/j.neubiorev.2020.06.034 (not
+   10.1016/j.neuroscience.2019.12.048); Röder, Kekunnaya & Guerreiro
+   2021, Neurosci. Biobehav. Rev. 120, 86-99,
+   doi:10.1016/j.neubiorev.2020.10.030 (not 10.1073/pnas.2004321118).
+
 ## Quickstart
 
 ```bash
