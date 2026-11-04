@@ -399,7 +399,11 @@ expected performances) was ill-posed, since any query-modality main
 effect violates it, and the residual after removing that effect is at
 the null level (Gaussian $p \approx 0.55$). The networks' code
 channel is collapsed (one argmax code per modality), so the probe
-reads encoder states rather than what the nerve transmits.
+reads encoder states rather than what the nerve transmits. Under fixed Hebbian couplings, multidirectional
+associative memories trained on layers of different entropy settle
+to equal retrieval amplitudes~\citep{alessandrelli2025cooperativeness},
+so a per-query accuracy gap is not by itself read as a structural
+asymmetry.
 
 % ==================================================================
 
@@ -1109,6 +1113,18 @@ targets that gap, and its B-1 retraction
 (Section~\ref{sec:dose-response}) shows that, in this benchmark,
 the lock mechanism does not produce a T1/T2 gap above the noise
 floor.
+
+\paragraph{Associative-memory models of multimodal binding.}
+See also the Rome group's analytical work on multi-layer Hebbian
+memories: in multidirectional associative memories whose layers
+are trained on datasets of different entropy, all retrieval regions
+settle to the same amplitude~\citep{alessandrelli2025cooperativeness};
+the same group reports a dreaming $L$-directional memory that
+recovers modality-specific patterns from a common mixed
+cue~\citep{barra2026dreaming}, and an analysis of Hebbian couplings
+built on examples with blank (missing) entries~\citep{agliari2025empty}.
+These models fix the couplings analytically; they do not test
+lesions after training.
 
 \paragraph{Bouba/kiki correspondence and ideasthesia.}
 \citet{kohler1947gestalt} and
