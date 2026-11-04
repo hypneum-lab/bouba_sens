@@ -21,9 +21,50 @@
   doi     = {10.1038/nn1912},
   note    = {Metadata corrected 2026-10-25 (issue \#25): the entry
              previously carried Amedi et al. 2003, Nat Neurosci 6(7),
-             10.1038/nn1072. The congenital-vs-late quantitative
-             contrast attributed to this citation in \S1.1 and \S7
-             still needs a PI check against the article.}
+             10.1038/nn1072. Since 2026-11-04 the early- vs late-onset
+             contrast is cited to cohen1999period, sadato2002critical
+             and collignon2013impact; this entry is kept only for
+             sensory-substitution recruitment of the LOC.}
+}
+
+@article{cohen1999period,
+  author  = {Cohen, Leonardo G. and Weeks, Robert A. and Sadato, Norihiro
+             and Celnik, Pablo and Ishii, Kenji and Hallett, Mark},
+  title   = {Period of Susceptibility for Cross-Modal Plasticity in the
+             Blind},
+  journal = {Annals of Neurology},
+  year    = {1999},
+  volume  = {45},
+  number  = {4},
+  pages   = {451--460},
+  doi     = {10.1002/1531-8249(199904)45:4<451::AID-ANA6>3.0.CO;2-B}
+}
+
+@article{sadato2002critical,
+  author  = {Sadato, Norihiro and Okada, Tomohisa and Honda, Manabu
+             and Yonekura, Yoshiharu},
+  title   = {Critical Period for Cross-Modal Plasticity in Blind Humans:
+             A Functional {MRI} Study},
+  journal = {NeuroImage},
+  year    = {2002},
+  volume  = {16},
+  number  = {2},
+  pages   = {389--400},
+  doi     = {10.1006/nimg.2002.1111}
+}
+
+@article{collignon2013impact,
+  author  = {Collignon, Olivier and Dormal, Giulia and Albouy, Genevi{\`e}ve
+             and Vandewalle, Gilles and Voss, Patrice and Phillips,
+             Christophe and Lepore, Franco},
+  title   = {Impact of Blindness Onset on the Functional Organization and
+             the Connectivity of the Occipital Cortex},
+  journal = {Brain},
+  year    = {2013},
+  volume  = {136},
+  number  = {9},
+  pages   = {2769--2783},
+  doi     = {10.1093/brain/awt176}
 }
 
 @article{bavelier2002cross,
@@ -83,6 +124,25 @@
   doi     = {10.3758/s13423-017-1361-1}
 }
 
+@article{cwiek2022bouba,
+  author  = {{\'C}wiek, Aleksandra and Fuchs, Susanne and Draxler, Christoph
+             and Asu, Eva Liina and Dediu, Dan and Hiovain, Katri
+             and Kawahara, Shigeto and Koutalidis, Sofia and Krifka, Manfred
+             and Lippus, P{\"a}rtel and Lupyan, Gary and Oh, Grace E.
+             and Paul, Jing and Petrone, Caterina and Ridouane, Rachid
+             and Reiter, Sabine and Sch{\"u}mchen, Nathalie
+             and Szalontai, {\'A}d{\'a}m and {\"U}nal-Logacev, {\"O}zlem
+             and Zeller, Jochen and Perlman, Marcus and Winter, Bodo},
+  title   = {The \emph{bouba/kiki} Effect Is Robust across Cultures and
+             Writing Systems},
+  journal = {Philosophical Transactions of the Royal Society B},
+  year    = {2022},
+  volume  = {377},
+  number  = {1841},
+  pages   = {20200390},
+  doi     = {10.1098/rstb.2020.0390}
+}
+
 % ------------------------------------------------------------------
 % γ/θ phase-amplitude coupling (protocol substrate)
 % ------------------------------------------------------------------
@@ -134,7 +194,9 @@
   howpublished = {Preprint},
   note         = {Repository \url{https://github.com/hypneum-lab/nerve-wml}
                   (tag \texttt{v1.5.3}), archived at Zenodo
-                  \url{https://doi.org/10.5281/zenodo.19666405}.
+                  \url{https://doi.org/10.5281/zenodo.19680058}
+                  (version DOI of v1.5.3; concept DOI
+                  10.5281/zenodo.19656342).
                   arXiv-id TBD (deposit scheduled S1, 2026-04-30).
                   Companion Paper 1 of the Hypneum Lab GENIAL programme.}
 }
@@ -143,6 +205,8 @@
 % Pre-registered benchmarks and ML methodology
 % ------------------------------------------------------------------
 
+% unverified (bib audit 2026-11-04): no matching editorial found via
+% Crossref or Semantic Scholar; no longer cited for pre-registration.
 @inproceedings{vanschoren2021neurips,
   author    = {Vanschoren, Joaquin and Yeung, Serena},
   title     = {NeurIPS 2021 Datasets and Benchmarks Track: Editorial},
@@ -154,7 +218,7 @@
 @article{gebru2021datasheets,
   author  = {Gebru, Timnit and Morgenstern, Jamie and Vecchione, Briana
              and Vaughan, Jennifer Wortman and Wallach, Hanna
-             and Iii, Hal Daum{\'e} and Crawford, Kate},
+             and Daum{\'e} III, Hal and Crawford, Kate},
   title   = {Datasheets for Datasets},
   journal = {Communications of the ACM},
   year    = {2021},
@@ -212,21 +276,47 @@
   volume  = {20},
   number  = {3},
   pages   = {70--75},
-  doi     = {10.1109/51.932728},
-  note    = {MIT-BIH Arrhythmia Database, release 1.0.0.}
+  doi     = {10.1109/51.932728}
 }
 
-@misc{hanke2016studyforrest,
-  author       = {Hanke, Michael and Adelh{\"o}fer, Nico
-                   and Kottke, Daniel and Iacovella, Vittorio
-                   and Sengupta, Ayan and Kaule, Falko R.
-                   and Nigbur, Roland and Waite, Alexander Q.
-                   and Baumgartner, Florian J. and Stadler, J{\"o}rg},
-  title        = {Simultaneous {fMRI}/eyetracking while natural-viewing of a
-                  movie (studyforrest extension)},
-  year         = {2016},
-  howpublished = {OpenNeuro dataset \texttt{ds000113-c}},
-  doi          = {10.18112/openneuro.ds000113.v2.0.1}
+@article{moody2001mitbih,
+  author  = {Moody, George B. and Mark, Roger G.},
+  title   = {The Impact of the {MIT-BIH} Arrhythmia Database},
+  journal = {IEEE Engineering in Medicine and Biology Magazine},
+  year    = {2001},
+  volume  = {20},
+  number  = {3},
+  pages   = {45--50},
+  doi     = {10.1109/51.932724}
+}
+
+@article{hanke2016studyforrest,
+  author  = {Hanke, Michael and Adelh{\"o}fer, Nico and Kottke, Daniel
+             and Iacovella, Vittorio and Sengupta, Ayan and Kaule, Falko R.
+             and Nigbur, Roland and Waite, Alexander Q.
+             and Baumgartner, Florian and Stadler, J{\"o}rg},
+  title   = {A studyforrest Extension, Simultaneous {fMRI} and Eye Gaze
+             Recordings during Prolonged Natural Stimulation},
+  journal = {Scientific Data},
+  year    = {2016},
+  volume  = {3},
+  pages   = {160092},
+  doi     = {10.1038/sdata.2016.92},
+  note    = {Previous entry cited OpenNeuro DOI
+             10.18112/openneuro.ds000113.v2.0.1, which is not registered.}
+}
+
+@article{sengupta2016studyforrest,
+  author  = {Sengupta, Ayan and Kaule, Falko R. and Guntupalli, J. Swaroop
+             and Hoffmann, Michael B. and H{\"a}usler, Christian
+             and Stadler, J{\"o}rg and Hanke, Michael},
+  title   = {A studyforrest Extension, Retinotopic Mapping and Localization
+             of Higher Visual Areas},
+  journal = {Scientific Data},
+  year    = {2016},
+  volume  = {3},
+  pages   = {160093},
+  doi     = {10.1038/sdata.2016.93}
 }
 
 % ------------------------------------------------------------------
@@ -234,9 +324,9 @@
 % ------------------------------------------------------------------
 
 @article{lubba2019pypns,
-  author  = {Lubba, Carl H. and Le Guen, Yasir and Jarvis, Sven
-             and Jaffe, Noah S. and Sepulveda, Francisco
-             and Donaldson, Nick de N. and Schultz, Simon R.},
+  author  = {Lubba, Carl H. and Le Guen, Yann and Jarvis, Sarah
+             and Jones, Nick S. and Cork, Simon C. and Eftekhar, Amir
+             and Schultz, Simon R.},
   title   = {{PyPNS}: Multiscale Simulation of a Peripheral Nerve
              in {Python}},
   journal = {Neuroinformatics},
@@ -267,6 +357,27 @@
   address   = {Cambridge, MA},
   series    = {Research Monograph},
   number    = {65}
+}
+
+@article{mcculloch1943logical,
+  author  = {McCulloch, Warren S. and Pitts, Walter},
+  title   = {A Logical Calculus of the Ideas Immanent in Nervous Activity},
+  journal = {The Bulletin of Mathematical Biophysics},
+  year    = {1943},
+  volume  = {5},
+  number  = {4},
+  pages   = {115--133},
+  doi     = {10.1007/BF02478259}
+}
+
+@incollection{kleene1956representation,
+  author    = {Kleene, Stephen C.},
+  title     = {Representation of Events in Nerve Nets and Finite Automata},
+  booktitle = {Automata Studies (AM-34)},
+  publisher = {Princeton University Press},
+  year      = {1956},
+  pages     = {3--42},
+  doi       = {10.1515/9781400882618-002}
 }
 
 % ------------------------------------------------------------------
