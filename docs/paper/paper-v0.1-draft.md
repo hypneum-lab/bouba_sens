@@ -834,10 +834,11 @@ operationalises this asymmetry as a Me7 threshold. Bavelier &
 Neville (2002) frame this as a critical-period phenomenon:
 lock-style plasticity constraints mid-development produce the T1/T2
 gap that adult-onset reorganisation cannot close. Merabet &
-Pascual-Leone (2010) do not hold that view: the earlier the loss,
-the more marked the reorganisation, but the brain retains a high
-level of neuroplasticity well into adulthood (section "Critical
-periods and adult plasticity"); Heimler & Amedi (2020) review to what extent such
+Pascual-Leone (2010) temper that view: the evidence is consistent
+with more marked reorganisation the earlier the loss, but the brain
+retains a high level of neuroplasticity well into adulthood, though
+not necessarily to the same degree as the developing brain (section
+"Critical periods and adult plasticity"); Heimler & Amedi (2020) review to what extent such
 critical periods remain reversible in the adult brain.
 bouba_sens's `constellation_lock_after` is a direct architectural
 analogue of that critical period. The single-seed §5.5 dose-response
