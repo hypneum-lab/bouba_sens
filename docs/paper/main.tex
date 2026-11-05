@@ -531,12 +531,21 @@ Amendment v0.5 (\texttt{docs/osf/}, git-dated, never filed on
 OSF) extends the pre-registered grid with a fifth world derived
 from Studyforrest Phase-2
 \citep{hanke2016studyforrest, sengupta2016studyforrest} (sub-01, ses-localizer,
-task-movielocalizer run-1): real VGG16 features over
-\texttt{movie\_localizer.mkv}, ffmpeg scene-cut tactile proxy,
-real cardiac + respiration physio, zero gravity (rp regressors
-not published), and CC-BY-4.0 LibriSpeech audio substitution
-(path (b) of ADR-0012 --- the Forrest Gump soundtrack is not
-redistributable).
+task-movielocalizer run-1): VGG16 features over
+\texttt{movie\_localizer.mkv} (to be cross-checked on that file),
+ffmpeg scene-cut tactile proxy, real pulse-oximetry + respiration
+physio, zero gravity (rp regressors not published), and CC-BY-4.0
+LibriSpeech audio substitution (path (b) of ADR-0012 --- the Forrest
+Gump soundtrack is not redistributable). The movie localizer is not
+film footage: it is a retinotopic-style localizer of colored radial
+checkerboards flickering at 5\,Hz, covering either the movie-frame
+rectangle or only the horizontal bars and alternating every 12\,s,
+4 cycles, 48 volumes at TR 2\,s (about 96\,s)
+\citep[pp.~2, 4, 6]{sengupta2016studyforrest}. The vision and
+scene-cut channels therefore describe this checkerboard stimulus,
+not the film.
+% Sengupta et al. 2016, Sci. Data 3:160093: checkerboards p. 4,
+% movie frame localizer p. 6, TR p. 2, PDDL licence p. 11.
 
 \begin{table}[ht]
   \centering

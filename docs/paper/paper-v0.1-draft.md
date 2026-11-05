@@ -369,11 +369,18 @@ on any of the four synthetic worlds at this parameterisation.
 
 OSF amendment v0.5 extends the pre-registered grid with a fifth
 world derived from Studyforrest phase-2 (sub-01 ses-localizer
-task-movielocalizer run-1): real VGG16 features over
-movie_localizer.mkv, ffmpeg scene-cut tactile proxy, real
-cardiac+respiration physio, zero gravity (rp regressors not
-published), CC-BY-4.0 LibriSpeech audio substitution (path (b)
-of ADR-0012 — the Forrest Gump soundtrack is not redistributable).
+task-movielocalizer run-1): VGG16 features over
+movie_localizer.mkv (to be cross-checked on that file), ffmpeg
+scene-cut tactile proxy, real pulse-oximetry + respiration physio,
+zero gravity (rp regressors not published), CC-BY-4.0 LibriSpeech
+audio substitution (path (b) of ADR-0012 — the Forrest Gump
+soundtrack is not redistributable). The movie localizer is not film
+footage: it is a retinotopic-style localizer of colored radial
+checkerboards flickering at 5 Hz, covering either the movie-frame
+rectangle or only the horizontal bars and alternating every 12 s,
+4 cycles, 48 volumes at TR 2 s, about 96 s (Sengupta et al. 2016,
+Sci. Data 3:160093, pp. 2, 4, 6). The vision and scene-cut channels
+therefore describe this checkerboard stimulus, not the film.
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|

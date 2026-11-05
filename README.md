@@ -280,6 +280,15 @@ Documentary corrections only ; no value, metric or threshold changed.
    respiratory trace, not an ECG (same article, p. 4 and p. 7).
    Participant 2 has no physiological recordings in the localizer
    session (Table 1, p. 7). No value is changed.
+9. The 4.5-modal bridge (ADR-0012) took its vision and scene-cut
+   channels from `movie_localizer.mkv`, which is not film footage:
+   it is a localizer of colored radial checkerboards flickering at
+   5 Hz, alternating every 12 s between the movie-frame rectangle
+   and the horizontal bars, 48 volumes, about 96 s (same article,
+   p. 4 and p. 6). Amendment v0.5 (table line 29, "film frames") is
+   left unchanged; the paper section on the 4.5-modal bridge now
+   describes the stimulus. The VGG16 numbers are kept and are still
+   to be cross-checked on `movie_localizer.mkv`.
 
 ## Quickstart
 
