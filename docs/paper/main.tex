@@ -112,8 +112,14 @@ architectures. Comparisons of early- and late-onset blindness
 report a sensitive period for the cross-modal recruitment of
 occipital cortex \citep{cohen1999period, sadato2002critical, collignon2013impact} ---
 a T1/T2 gap that critical-period theories
-\citep{bavelier2002cross, merabet2010neural} attribute to a
-lock-style plasticity constraint mid-development. The bouba/kiki
+\citep{bavelier2002cross} attribute to a
+lock-style plasticity constraint mid-development, while
+\citet{merabet2010neural} report stronger reorganisation the
+earlier the loss but a high level of neuroplasticity retained well
+into adulthood.
+% Merabet & Pascual-Leone 2010, author manuscript PMC3898172 (no
+% pagination), section "Critical periods and adult plasticity".
+The bouba/kiki
 effect \citep{kohler1947gestalt, ramachandran2001synaesthesia}
 independently reports high agreement on a round-vs-spiky
 sound-shape mapping, robust across 25 languages and ten writing
@@ -1079,11 +1085,17 @@ cross-modal recruitment of occipital cortex, and sensory
 substitution recruits the lateral occipital complex for shape
 \citep{amedi2007} ---
 our B-1 invariant operationalises this asymmetry as a Me7
-threshold. \citet{bavelier2002cross} and
-\citet{merabet2010neural} frame this as a critical-period
+threshold. \citet{bavelier2002cross} frame this as a critical-period
 phenomenon: lock-style plasticity constraints mid-development
 produce the T1/T2 gap that adult-onset reorganisation cannot
-close; \citet{heimler2020critical} review to what extent such
+close. \citet{merabet2010neural} do not hold that view: they
+report that the earlier the sensory loss, the more marked the
+reorganisation, but describe the brain as retaining a high level
+of neuroplasticity well into adulthood rather than a finite window;
+% Merabet & Pascual-Leone 2010, author manuscript PMC3898172 (no
+% pagination), section "Critical periods and adult plasticity:
+% Is timing really everything?".
+\citet{heimler2020critical} review to what extent such
 critical periods remain reversible in the adult brain.
 bouba\_sens's \texttt{constellation\_lock\_after} is a direct
 architectural analogue of that critical period. The single-seed
@@ -1176,7 +1188,10 @@ measures only downstream invariants.
 Documentation standards such as datasheets for
 datasets~\citep{gebru2021datasheets} push the field towards
 transparent reporting; pre-registration is a separate, stricter
-practice. bouba\_sens follows a locked-threshold
+practice, which that article does not discuss.
+% Gebru et al., arXiv:1803.09010v8 (2021): objectives p. 1-2; no
+% mention of pre-registration or OSF in the text (p. 1-11).
+bouba\_sens follows a locked-threshold
 protocol registered locally (git-dated design specification,
 2026-04-20; not filed on OSF): the $0.05 / 0.10 / 0.02$
 thresholds for B-1 / B-2 / B-3 are frozen before the 9-grid

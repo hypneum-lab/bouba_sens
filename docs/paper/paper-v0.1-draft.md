@@ -831,10 +831,13 @@ Amedi et al. (2007) show that congenitally blind subjects recruit
 occipital cortex for auditory object recognition to a quantitatively
 greater degree than late-onset blind subjects — our B-1 invariant
 operationalises this asymmetry as a Me7 threshold. Bavelier &
-Neville (2002) and Merabet & Pascual-Leone (2010) frame this as a
-critical-period phenomenon: lock-style plasticity constraints mid-
-development produce the T1/T2 gap that adult-onset reorganisation
-cannot close; Heimler & Amedi (2020) review to what extent such
+Neville (2002) frame this as a critical-period phenomenon:
+lock-style plasticity constraints mid-development produce the T1/T2
+gap that adult-onset reorganisation cannot close. Merabet &
+Pascual-Leone (2010) do not hold that view: the earlier the loss,
+the more marked the reorganisation, but the brain retains a high
+level of neuroplasticity well into adulthood (section "Critical
+periods and adult plasticity"); Heimler & Amedi (2020) review to what extent such
 critical periods remain reversible in the adult brain.
 bouba_sens's `constellation_lock_after` is a direct architectural
 analogue of that critical period. The single-seed §5.5 dose-response
@@ -905,7 +908,9 @@ protocol dependency and measures only downstream invariants.
 
 **Pre-registered benchmarks in ML.** The NeurIPS Datasets & Benchmarks
 track (Vanschoren & Yeung 2021) and Gebru et al. (2018) *Datasheets
-for Datasets* pushed the field towards OSF-style pre-registration.
+for Datasets* pushed the field towards transparent dataset reporting;
+pre-registration is a separate practice that the datasheets article
+does not discuss (arXiv:1803.09010v8, p. 1-11).
 bouba_sens follows the OSF locked-threshold protocol (registration
 `10.17605/OSF.IO/Q6JYN`): the 0.05 / 0.10 / 0.02 thresholds for
 B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
