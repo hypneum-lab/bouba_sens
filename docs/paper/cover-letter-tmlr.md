@@ -110,9 +110,10 @@ four-person panel.
 2. **Tessa M. Dekker** (University College London,
    Institute of Ophthalmology) — *cross-modal cortical
    plasticity, computational fMRI methodology.*
-   Corresponding author on *Hierarchical cortical plasticity in
+   Last author on *Hierarchical cortical plasticity in
    congenital sight impairment* (bioRxiv 2024,
-   doi:10.1101/2024.07.04.602138). Provides an independent
+   doi:10.1101/2024.07.04.602138; eLife Reviewed Preprint v1,
+   2024); corresponding-author status to be cross-checked. Provides an independent
    neuroscience perspective on the B-1 congenital-blindness
    invariant ; methodologically rigorous on individual
    variability in plasticity. No Amedi-lab affiliation.
@@ -176,7 +177,7 @@ manuscript drafting, and revision.
 We note for completeness one concurrent work that touches
 adjacent topics:
 
-- **RecursiveMAS** (Yang et al., arXiv:2604.25917, 2026-04-28)
+- **RecursiveMAS** (Zou et al., arXiv:2604.25917, 2026-04-28)
   proposes a latent-space recursive computation across
   heterogeneous LLM agents. Although the engineering target
   differs (multi-agent LLMs, not cross-modal plasticity
