@@ -266,6 +266,21 @@ Documentary corrections only ; no value, metric or threshold changed.
    2021, Neurosci. Biobehav. Rev. 120, 86-99,
    doi:10.1016/j.neubiorev.2020.10.030 (not 10.1073/pnas.2004321118).
 
+### Erratum (2026-11-04) — Studyforrest licence and physiology
+
+8. The OSF amendments describe the Studyforrest data inaccurately;
+   the amendment files are left unchanged. Amendment v0.4
+   (`docs/osf/amendment-v0.4-studyforrest.md`, line 35) says
+   "Creative Commons": the data are released under the Open Data
+   Commons Public Domain Dedication and License (PDDL), code under
+   MIT (Sengupta et al. 2016, Sci. Data 3:160093,
+   doi:10.1038/sdata.2016.93, p. 11). The physiological channel used
+   for the force modality (amendment v0.5, table line 32, "ECG +
+   respiration") is a pleth pulse from pulse oximetry plus a
+   respiratory trace, not an ECG (same article, p. 4 and p. 7).
+   Participant 2 has no physiological recordings in the localizer
+   session (Table 1, p. 7). No value is changed.
+
 ## Quickstart
 
 ```bash
