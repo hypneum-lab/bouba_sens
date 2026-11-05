@@ -883,8 +883,12 @@ retired in favour of $N \gtrsim f(D)$.} The Me3 probe has ambient
 dimension $d_{\mathrm{fused}} = K \cdot d_{\mathrm{hidden}} = 896$ but
 a measured effective dimension $D \approx 12$ (participation ratio
 $11.67$, two-NN intrinsic dimension $12.38$, 5 seeds, $N = 512$,
-LOCK\_AFTER$=100$ with hard gating). Sample complexity of MI
-estimators scales with this intrinsic dimension, so the fixed
+LOCK\_AFTER$=100$ with hard gating). For neural estimators, sample
+complexity has been argued to scale with latent rather than ambient
+dimension~\citep{abdelaleem2025accurate}; that source does not extend
+the argument to Kraskov $k$-NN, which it reports failing on
+high-dimensional data even at low latent dimension (its Fig.~10), so
+for Kraskov the bound below is a working assumption. The fixed
 ``$\geq 128$'' heuristic is replaced by an estimator-aware bound:
 report $D$ alongside every MI estimate, and treat any $N \lesssim
 10^3$ for the Me3 probe as resolving sign, not magnitude. Plug-in
@@ -1073,6 +1077,25 @@ Section~\ref{sec:results} grid results carry no SNR-robustness claim
 either. Likewise, ``robust to which half of the modality set is real''
 refers to modality provenance, not to lesion severity.
 
+\paragraph{Qualification: estimator assumptions.} Three departures
+from the cited estimators' published conditions are not corrected in
+this paper. (i) Me3 applies the Kraskov estimator, designed for
+continuous variables, to discrete class labels
+(\texttt{src/bouba\_sens/metrics/mi\_migration.py}); with many
+identical coordinates, nearest-neighbour counts are wrong unless the
+degeneracy is broken~\citep[p.~6]{kraskov2004estimating}. The
+estimator of \citet{ross2014mutual}, built for one discrete and one
+continuous variable, is the adapted choice and has not been run. The
+1-D path is also called with a single random state. (ii) The
+two-NN intrinsic dimension is computed as a maximum-likelihood ratio
+on all points at $N = 512$, whereas the published procedure fits a
+line after discarding the $10\,\%$ of points with the largest
+$\mu$ and checks stability by block analysis~\citep[p.~3--6]{facco2017estimating}.
+(iii) The sample-complexity scaling with latent dimension is
+established for neural estimators, not for Kraskov (paragraph~(b)).
+Each point limits the magnitude readings of B-2 above; none was
+tested here.
+
 % ==================================================================
 
 \section{Related work}
@@ -1104,8 +1127,12 @@ Amedi asymmetry did not survive multi-seed validation and is
 retracted (Section~\ref{sec:dose-response}, ADR-0019).
 
 \paragraph{Missing-modality robustness and critical periods in deep multimodal networks.}
-Most multimodal benchmarks assume modality completeness at
-evaluation time~\citep{liang2021multibench}, and joint-embedding
+MultiBench~\citep{liang2021multibench} already tests missing
+modalities at evaluation time: it drops an entire modality from the
+test data of a model trained on clean data and reports the
+performance curve (its Appendix D.3.2--D.3.3). This measures
+degradation without further training, not reorganisation after the
+loss, which is what B-1 targets. Joint-embedding
 models such as ImageBind~\citep{girdhar2023imagebind} bind
 modalities through a shared space without testing reorganisation
 after channel loss. \citet{ma2022missing} show that multimodal
@@ -1164,7 +1191,15 @@ does not support a hard-wired perceptive/proprioceptive mapping.
 Bouba/kiki is therefore a motivating analogue for B-3, not a
 property the benchmark establishes. In models,
 \citet{alper2023kiki} probe sound symbolism in vision-and-language
-models (CLIP, Stable Diffusion). Using real speech,
+models (CLIP, Stable Diffusion) and report an effect; their only null
+is chance-level classification, one of their measures changes sign
+across CLIP prompts (their Table~7), and the two larger text-only
+encoders they test also show associations (their Table~5). Published results run the other way:
+probing image-to-text with direct label probabilities,
+\citet{verhoef2024kiki} and \citet{kouwenhoven2025bouba} find no
+consistent effect in CLIP and other vision-language models, and
+\citet{keles2026iconicity} describe the CLIP and Stable Diffusion
+results as weak or dataset-driven. Using real speech,
 \citet{tsai2026hearing} separate auditory, cross-modal, and visual
 components of the effect and find that speech language models align
 poorly with human auditory judgments and that open-weight models
@@ -1211,12 +1246,16 @@ survive comparison with random partitions. For B-2,
 neural MI estimators is governed by latent rather than ambient
 dimensionality and give a protocol with consistency checks, bias
 correction, and confidence intervals, which matches the regime of
-the estimator-aware $N \gtrsim f(D)$ criterion adopted in ADR-0019.
-\citet{foresti2026mibench} benchmark non-parametric,
-discriminative, and generative MI estimators and find no universal
-winner, which supports triangulating Kraskov, binning, and
-MINE~\citep{kraskov2004estimating, belghazi2018mine} rather than
-relying on any single estimator.
+the estimator-aware $N \gtrsim f(D)$ criterion adopted in ADR-0019
+for MINE; for Kraskov they report the opposite, a failure in high
+dimension even at low latent dimension (Section~\ref{sec:limitations-e1e2}).
+\citet{foresti2026mibench} benchmark $k$-NN (KSG, WKL),
+discriminative (MINE, NWJ, InfoNCE), and generative (MINDE) MI
+estimators and find no universal winner, an argument for not relying
+on any single estimator. Their benchmark includes no binning
+estimator, so it does not speak to the adaptive-binning estimator
+used here alongside Kraskov and
+MINE~\citep{kraskov2004estimating, belghazi2018mine}.
 
 \paragraph{Biophysical vs protocol-level nerve simulators.}
 Readers searching for ``nerve'' in the Python ecosystem will
