@@ -106,7 +106,7 @@ portable multi-seed validation protocol for future benchmarks.
 Two independent lines of evidence suggest cross-modal asymmetry is a structural property of cognitive architectures :
 
 - **Amedi 2007**, congenital blindness : occipital cortex re-tasked to audition with *greater* plasticity than late-acquired blindness.
-- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : 95 %+ cross-cultural agreement on sound-shape correspondence (“bouba” round, “kiki” spiky) — evidence of a hard-wired **asymmetric** modality mapping.
+- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : high agreement on sound-shape correspondence (“bouba” round, “kiki” spiky), robust across 25 languages and ten writing systems (Ćwiek et al. 2022) <!-- source to be provided for any percentage: no document read on 2026-11-04 supports "95 %+" -->; whether the mapping is hard-wired or partly learned remains debated (Sidhu & Pexman 2018), and that review names no asymmetry.
 
 No pre-registered computational benchmark currently tests whether a given architecture reproduces these two properties simultaneously.
 
@@ -846,9 +846,12 @@ did not survive multi-seed validation and is retracted (§5.5,
 ADR-0019).
 
 **Missing-modality robustness and critical periods in deep
-multimodal networks.** Most multimodal benchmarks assume modality
-completeness at evaluation time (MultiBench, Liang et al. 2021),
-and joint-embedding models such as ImageBind (Girdhar et al. 2023)
+multimodal networks.** MultiBench (Liang et al. 2021) already
+tests missing modalities at evaluation time: it drops an entire
+modality from the test data of a model trained on clean data and
+reports the performance curve (its Appendix D.3.2–D.3.3). This
+measures degradation without further training, not reorganisation
+after the loss, which is what B-1 targets. Joint-embedding models such as ImageBind (Girdhar et al. 2023)
 bind modalities through a shared space without testing
 reorganisation after channel loss. Ma et al. (2022) show that
 multimodal Transformers are sensitive to missing modalities and
@@ -875,11 +878,16 @@ et al. (2007); bouba_sens targets that gap, and its B-1 retraction
 produce a T1/T2 gap above the noise floor.
 
 **Bouba/kiki correspondence and ideasthesia.** Köhler (1947) and
-Ramachandran & Hubbard (2001) established the 95 %+ cross-cultural
-agreement on round-vs-spiky sound-shape mapping; Sidhu & Pexman
-(2018) review the converging evidence that this mapping is a
-structural property of sensory integration, not learned. Our B-3
-invariant formalises that asymmetry as the max off-diagonal
+Ramachandran & Hubbard (2001) reported high agreement on the
+round-vs-spiky sound-shape mapping, and Ćwiek et al. (2022) find the
+effect robust across 25 languages and ten writing systems
+<!-- source to be provided for any percentage: no document read on
+2026-11-04 supports "95 %+" -->; Sidhu & Pexman (2018) review five
+candidate mechanisms, including learned ones, judge the evidence for
+innateness not overwhelming, and find that current evidence does not
+pinpoint any particular mechanism. Our B-3
+invariant formalises a modality asymmetry, which that review does not
+describe, as the max off-diagonal
 magnitude of the 5-modality perf matrix. Its 5–6× threshold pass
 across every grid in this paper, independent of all Phase-1/Phase-2
 controls, is a magnitude result only: the partition null model and
@@ -888,7 +896,17 @@ per-modality entropy and does not support a hard-wired
 perceptive/proprioceptive mapping. Bouba/kiki is therefore a
 motivating analogue for B-3, not a property the benchmark
 establishes. In models, Alper & Averbuch-Elor (2023) probe sound
-symbolism in vision-and-language models (CLIP, Stable Diffusion). Using real
+symbolism in vision-and-language models (CLIP, Stable Diffusion)
+and report an effect; their only null is chance-level
+classification, one of their measures changes sign across CLIP
+prompts (their Table 7), and the two larger text-only encoders they
+test also show associations (their Table 5). Published results run
+the other way: probing image-to-text with direct label
+probabilities, Verhoef, Shahrasbi & Kouwenhoven (2024) and
+Kouwenhoven, Shahrasbi & Verhoef (2025) find no consistent effect in
+CLIP and other vision-language models, and Keleş et al. (2026)
+describe the CLIP and Stable Diffusion results as weak or
+dataset-driven. Using real
 speech, Tsai et al. (2026) separate auditory, cross-modal, and
 visual components of the effect and find that speech language
 models align poorly with human auditory judgments and that
@@ -930,11 +948,14 @@ Abdelaleem, Martini & Nemenman (2025) argue that the sample
 complexity of neural MI estimators is governed by latent rather
 than ambient dimensionality and give a protocol with consistency
 checks, bias correction, and confidence intervals, which matches
-the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1).
-Foresti et al. (2026) benchmark non-parametric, discriminative,
-and generative MI estimators and find no universal winner, which
-supports triangulating Kraskov, binning, and MINE rather than
-relying on any single estimator.
+the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1) for
+MINE; for Kraskov they report the opposite, a failure in high
+dimension even at low latent dimension (their Fig. 10). Foresti et
+al. (2026) benchmark k-NN (KSG, WKL), discriminative (MINE, NWJ,
+InfoNCE) and generative (MINDE) MI estimators and find no universal
+winner, an argument for not relying on any single estimator. Their
+benchmark includes no binning estimator, so it does not speak to the
+adaptive-binning estimator used here alongside Kraskov and MINE.
 
 **Biophysical vs protocol-level nerve simulators.** Readers
 searching for "nerve" in the Python ecosystem will encounter

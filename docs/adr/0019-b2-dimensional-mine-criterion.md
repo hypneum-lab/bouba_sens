@@ -74,6 +74,21 @@ Replacing "n ≥ 128" with an estimator-aware, dimensionality-grounded rule:
   **N ≳ c · k · 2^D_int** for density-style methods and
   **N ≳ batch_size and growing with D_int** for MINE.
 
+> **Citation note (2026-11-05, no change to the criterion).** The
+> intrinsic-not-ambient argument comes from Abdelaleem, Martini &
+> Nemenman 2025 (arXiv:2506.00330), who establish it for neural
+> estimators, with N ≳ K_Z²/I (p. 11). The same paper reports KSG
+> failing on 500-dimensional data with latent dimension 10 at both
+> N = 256 and N = 2¹⁴ (Fig. 10, p. 31), so it does not support
+> extending the rule to k-NN Kraskov; for Kraskov the bound above is
+> a working assumption. Two further departures are recorded in the
+> paper limitations: Me3 feeds discrete labels to an estimator built
+> for continuous variables (ties, Kraskov et al. 2004 p. 6; Ross 2014
+> is the continuous–discrete estimator), and the two-NN dimension in
+> `scripts/spikes/e1_b2_dimensional_mine.py` is a maximum-likelihood
+> ratio on all points at N = 512, without the 10 % cut and block
+> analysis of Facco et al. 2017 (p. 3–6).
+
 With measured **D_int ≈ 12**, even the favourable MINE scaling puts the
 honest sample requirement **well above** the heuristic 128, and above the
 N=480 pooling used in Sprint 17. The N=512 run here is at the **floor** of
