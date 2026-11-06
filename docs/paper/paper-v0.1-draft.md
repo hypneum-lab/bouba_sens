@@ -28,9 +28,10 @@ structural asymmetry, bouba/kiki) — across five synthetic/surrogate
 worlds (Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and
 **two real bridges with opposite real/synthetic modality splits**.
 The **Studyforrest** bridge (OpenNeuro ds000113) carries real
-physiology in the force channel (with its cardiac and respiratory labels
-swapped and its time base off by a factor of 5 in the cache used here,
-issue #74; values not recomputed), real head-motion gravity regressors,
+physiology in the force channel (cardiac and respiratory labels
+swapped and time base off by a factor of 5 in the first cache, issue
+#74; corrected and recomputed 2026-11-06, §6.3.1(d)), real head-motion
+gravity regressors,
 and
 real scene-annotation tactile/labels, while audio and vision are
 annotation-derived **proxies** (the copyrighted soundtrack and movie
@@ -765,49 +766,64 @@ The real Studyforrest cache was provisioned from **OpenNeuro ds000113**
 over the public S3 REST API (`scripts/fetch_studyforrest_sample.py
 --source openneuro`, 9000 frames @ 10 Hz; the dead `studyforrest.org`
 phase-1 URL is retired). Channel provenance is mixed and labelled
-in the cache MANIFEST: **force** (real ds000113 physiology, but the
+in the cache MANIFEST: **force** (real ds000113 physiology; the
 phase-1 files hold trigger, respiratory, cardiac and oxygen-saturation
 columns at 100 Hz, Hanke et al. 2014, *Sci. Data* 1:140003,
-doi:10.1038/sdata.2014.3, p. 11, and the extraction assumed
-trigger, cardiac, respiratory at 500 Hz: in the cached `force.pt`
-"cardiac" is the respiratory trace, "respiration" is the cardiac trace,
-and 9000 frames span about 4500 s; issue #74), **gravity** (head-motion `*_bold_moco.txt`
+doi:10.1038/sdata.2014.3, p. 11; the first cache assumed trigger,
+cardiac, respiratory at 500 Hz, so its "cardiac" was the respiratory
+trace, its "respiration" the cardiac trace, and its 9000 frames spanned
+about 4500 s, issue #74; the cache regenerated on 2026-11-06 has
+"cardiac" peaking at 1.37 Hz and "respiration" at 0.30 Hz over 900 s,
+the five other tensors byte-identical), **gravity** (head-motion `*_bold_moco.txt`
 rotation regressors), **tactile** and **labels** (scenes.csv scene /
 DAY-NIGHT / INT-EXT annotation) are **real ds000113 signal**; **audio**
 and **vision** are **annotation-derived proxies** (narration-timing and
 scene-cut structure respectively) because the Forrest Gump soundtrack
 and movie are copyrighted and absent from OpenNeuro. The run uses
 `StudyforrestRealWorld` (mode `real5`, verified — not the mock stub).
-The cache `data/studyforrest_real/force.pt` used for the values below
-was built with this earlier extraction code; the code has since been
-fixed (issue #74), and the values reported here have not been
-recomputed with the fixed channel.
-
 B-2 = MI_post − MI_pre, N=512, 5 seeds, 500-resample bootstrap 95% CIs,
-effective dim **D ≈ 12.5** (PR 12.9, two-NN 12.5 — matching the
-gaussian D ≈ 12):
+effective dim **D ≈ 12.5** (PR 13.0, two-NN 12.5 on the corrected
+cache; 12.9 / 12.5 on the first cache):
 
-| Estimator (probe) | gaussian mean (bits) | **real-bridge mean (bits)** | **real 95% CI** |
-|-------------------|---------------------:|----------------------------:|-----------------|
-| Kraskov k-NN (1-D) | −0.031 | **−0.001** | [−0.0029, +0.000] |
-| Adaptive binning (1-D) | −0.016 | **−0.0024** | [−0.0072, +0.000] |
-| MINE (1-D mean-pool) | 0.000 | **−2.0e-7** | [−6.6e-7, +8.3e-8] |
-| MINE (full 896-D probe) | −0.038 | **−1.9e-5** | [−5.7e-5, −1.8e-9] |
+| Estimator (probe) | gaussian mean (bits) | first cache (#74) | **corrected cache** | **corrected 95% CI** |
+|-------------------|---------------------:|------------------:|--------------------:|----------------------|
+| Kraskov k-NN (1-D) | −0.031 | −0.001 | **−0.0002** | [−0.0007, 0.000] |
+| Adaptive binning (1-D) | −0.016 | −0.0024 | **+0.0001** | [0.000, +0.0003] |
+| MINE (1-D mean-pool) | 0.000 | −2.0e-7 | **+2.4e-7** | [+1.1e-7, +3.9e-7] |
+| MINE (full 896-D probe) | −0.038 | −1.9e-5 | **−1.3e-4** | [−3.8e-4, +2.9e-8] |
 
-The real-bridge verdict is **identical to gaussian: B-2 Null.** Every
-estimator's CI brackets zero; no estimator crosses the +0.10 threshold
-on any of the 5 seeds. The probe-shape conclusions transfer unchanged:
-MINE-1-D is pinned at the DV floor (~0), and the full-probe MINE — the
-v0.2 "richer probe rescues B-2" hypothesis — again surfaces no positive
-signal (mean −1.9e-5). *The B-2 magnitudes here are smaller than
-gaussian's, which is expected:* the real bridge's lesioned audio channel
-is an annotation proxy, so there is even less audio-specific information
-available to migrate, but the qualitative null is the same.
-(`reports/e1_b2_dimensional_mine_studyforrest.json`.)
+With the first cache (issue #74) the real-bridge means were −0.001
+(Kraskov), −0.0024 (binning), −2.0e-7 (MINE 1-D) and −1.9e-5 (MINE
+full); they were recomputed on 2026-11-06 with the corrected cache
+(`reports/e1_b2_dimensional_mine_studyforrest_phase1fix.json`). A
+same-day replay on the first cache reproduces the Kraskov and binning
+values exactly and every value of seeds 1–4 (seed 0 differs in D and
+MINE; `…_oldcache_replay.json`). With the corrected cache, no
+estimator's B-2 exceeds the preregistered +0.10 threshold on any of
+the 5 seeds. Paired label-permutation null (1000 draws, same
+permutation on the pre- and post-lesion probe, mean over 5 seeds,
+`scripts/spikes/e1_b2_paired_null.py`): Kraskov observed 0.000, null
+median 0.000, P99 0.0044, p = 0.62; binning observed −0.0011, null
+median −0.00003, P99 0.0036, p = 0.79 (first cache: p = 0.75 / 0.70).
+
+*Reading.* The probe is a contiguous slice of 512 frames (51.2 s) and
+the label is the scene index quantised to 4. In 4 of 5 seeds the
+probe holds a single class, and in seed 1 it holds 500 and 12; the
+label file is identical in both caches. MI with a constant label is
+zero for any representation, so on those seeds B-2 is 0 by
+construction and the measurement cannot fail. The Phase-1 loss moves
+from 1.33–1.40 to 0.87–0.92 (ln 4 = 1.39), but training batches are
+drawn the same way and reader accuracy was not measured, so the
+learning gate is not established. B-2 on this bridge is **not
+conclusive**, with either cache.
+
+The class of this result changes from "B-2 Null" (earlier text) to a
+measurement that is not informative; the question is left to the PI
+(issue #74).
 
 *Honest scope.* This is a real bridge for gravity/tactile/labels, with
-a real but mislabelled force channel (see above; values not recomputed,
-issue #74), and a documented proxy for audio/vision; it is **not** a full
+a real force channel (corrected cache), and a documented proxy for
+audio/vision; it is **not** a full
 perceptual-stimulus replication (which would require the copyrighted
 media outside OpenNeuro). The promotion lifts the "gaussian-only"
 caveat for the B-2 *verdict* while keeping the audio/vision-proxy
