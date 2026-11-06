@@ -14,7 +14,7 @@ the artefact chain is publishable to Zenodo without copyright bind.
             Replaces the absent motion-locations annotation CSV.
 - gravity : zeros, documented fallback — rp_*.txt head-motion regressors
             are not published with phase-2 BOLD. Log-level warning emitted.
-- force   : real ECG + respiration from sub-01 ses-localizer
+- force   : real cardiac (pulse-ox) + respiration from sub-01 ses-localizer
             task-movielocalizer run-1 cardresp physio.
 - labels  : 4-quantile binning of audio RMS per 100 ms window.
 
