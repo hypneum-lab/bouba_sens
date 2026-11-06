@@ -17,6 +17,12 @@ included in the null (one MINE fit per draw is too costly); its values
 are read from the main runner.
 
 Empirical p = (k + 1) / (n_null + 1), one-sided (B-2 >= observed).
+
+``--probe-sampling stratified`` (ADR-0019 amendment 2026-11-06) draws the
+probe by label class instead of a contiguous slice and adds, per seed, the
+reader accuracy of the trained head on the probe (learning gate: at least
+the majority-class rate + 0.10); the summary is also given over the seeds
+that pass the gate.
 """
 
 from __future__ import annotations
@@ -31,23 +37,28 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from e1_b2_dimensional_mine import (  # noqa: E402
+from e1_b2_dimensional_mine import (
     LesionSpec,
-    _full_fused,
+    _fused_and_preds,
     build_loop,
     m2_snr_schedule,
     me3_scalar,
     mi_binning_bits,
+    probe_diagnostics,
 )
 
+from bouba_sens.world.probe_sampling import sample_probe
 
-def capture(world, seed, lock_after, steps_train, steps_lesion, batch_size):
+
+def capture(
+    world, seed, lock_after, steps_train, steps_lesion, batch_size, probe_sampling="contiguous"
+):
     """Same calls as ``capture_probe``, plus the Phase-1 loss log."""
     loop = build_loop(world, seed, lock_after)
     losses: list[float] = []
     loop.pretrain(steps_train, batch_size=batch_size, seed=seed, loss_log=losses)
-    probe = loop.world.sample(batch_size=batch_size, seed=seed - 99_999)
-    pre = _full_fused(loop, probe)
+    probe = sample_probe(loop.world, batch_size, seed - 99_999, probe_sampling)
+    pre, preds_pre = _fused_and_preds(loop, probe)
     labels = probe.label.detach().cpu()
     lesion = LesionSpec(
         modality="audio",
@@ -56,8 +67,9 @@ def capture(world, seed, lock_after, steps_train, steps_lesion, batch_size):
         schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=steps_lesion),
     )
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=batch_size, seed=seed)
-    post = _full_fused(loop, probe)
-    return pre.numpy(), post.numpy(), labels.numpy(), losses
+    post, preds_post = _fused_and_preds(loop, probe)
+    diag = probe_diagnostics(loop.world, labels.numpy(), preds_pre.numpy(), preds_post.numpy())
+    return pre.numpy(), post.numpy(), labels.numpy(), losses, diag
 
 
 def main() -> None:
@@ -70,6 +82,12 @@ def main() -> None:
     ap.add_argument("--batch-size", type=int, default=512)
     ap.add_argument("--n-null", type=int, default=1000)
     ap.add_argument("--null-seed", type=int, default=20261106)
+    ap.add_argument(
+        "--probe-sampling",
+        choices=["contiguous", "stratified"],
+        default="contiguous",
+        help="probe draw: contiguous slice (legacy) or class-stratified (ADR-0019 amendment)",
+    )
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
@@ -83,8 +101,14 @@ def main() -> None:
     null_k = np.zeros((args.n_null, args.seeds))
     null_b = np.zeros((args.n_null, args.seeds))
     for seed in range(args.seeds):
-        pre, post, labels, losses = capture(
-            args.world, seed, args.lock_after, args.steps_train, args.steps_lesion, args.batch_size
+        pre, post, labels, losses, diag = capture(
+            args.world,
+            seed,
+            args.lock_after,
+            args.steps_train,
+            args.steps_lesion,
+            args.batch_size,
+            args.probe_sampling,
         )
         x_pre, x_post = me3_scalar(pre), me3_scalar(post)
         y = labels.astype(float)
@@ -99,10 +123,9 @@ def main() -> None:
             null_b[i, seed] = mi_binning_bits(x_post, lp, n_bins) - mi_binning_bits(
                 x_pre, lp, n_bins
             )
-        counts = np.bincount(labels.astype(int), minlength=4).tolist()
         rec = {
             "seed": seed,
-            "label_counts": counts,
+            **diag,
             "loss_first20_mean": float(np.mean(losses[:20])),
             "loss_last20_mean": float(np.mean(losses[-20:])),
             "ln4": math.log(4),
@@ -119,6 +142,8 @@ def main() -> None:
         print(json.dumps(rec), flush=True)
 
     def summarise(obs_vals, null_mat):
+        if len(obs_vals) == 0:
+            return None
         obs = float(np.mean(obs_vals))
         null_mean = null_mat.mean(axis=1)
         k = int(np.sum(null_mean >= obs))
@@ -133,6 +158,7 @@ def main() -> None:
             "null_p99_below_threshold": bool(np.percentile(null_mean, 99) < 0.10),
         }
 
+    gated = [s["seed"] for s in seeds_out if s["gate_pass"]]
     out = {
         "world": args.world,
         "seeds": args.seeds,
@@ -140,11 +166,21 @@ def main() -> None:
         "steps_train": args.steps_train,
         "steps_lesion": args.steps_lesion,
         "batch_size": args.batch_size,
+        "probe_sampling": args.probe_sampling,
         "n_null": args.n_null,
         "null_seed": args.null_seed,
         "null": "paired label permutation, same permutation on pre and post probe",
         "kraskov_1d": summarise([s["kraskov_delta_bits"] for s in seeds_out], null_k),
         "binning_1d": summarise([s["binning_delta_bits"] for s in seeds_out], null_b),
+        "gated": {
+            "seeds": gated,
+            "kraskov_1d": summarise(
+                [seeds_out[i]["kraskov_delta_bits"] for i in gated], null_k[:, gated]
+            ),
+            "binning_1d": summarise(
+                [seeds_out[i]["binning_delta_bits"] for i in gated], null_b[:, gated]
+            ),
+        },
         "per_seed": seeds_out,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
