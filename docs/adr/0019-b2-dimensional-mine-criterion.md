@@ -202,7 +202,7 @@ phase-1 URL (404) was retired in favour of the live S3 bucket.
 
 | modality | provenance | real? |
 |----------|-----------|:-----:|
-| force | phase-1 `ses-forrestgump` physio, 4 columns (trigger, respiratory, cardiac, SpO2) at 100 Hz (Hanke et al. 2014, *Sci. Data* 1:140003, p. 11); extraction assumed 500 Hz and `[trigger, cardiac, respiratory]`, so "cardiac" = respiration, "resp" = cardiac, 5× time compression (issue #74, 2026-11-06) | **REAL, mislabelled** |
+| force | phase-1 `ses-forrestgump` physio, 4 columns (trigger, respiratory, cardiac, SpO2) at 100 Hz (Hanke et al. 2014, *Sci. Data* 1:140003, p. 11); extraction assumed 500 Hz and `[trigger, cardiac, respiratory]`, so "cardiac" = respiration, "resp" = cardiac, 5× time compression in the first cache (issue #74, 2026-11-06; corrected cache in E1.3c-bis) | **REAL** (mislabelled in the first cache) |
 | gravity | `derivatives/motion/*_bold_moco.txt` rotation regressors | **REAL** |
 | tactile | `scenes.csv` scene / DAY-NIGHT / INT-EXT one-hot → 32-D proj | **REAL** |
 | labels | `scenes.csv` scene index, quantised to 4 | **REAL** |
@@ -210,11 +210,11 @@ phase-1 URL (404) was retired in favour of the live S3 bucket.
 | vision | `scenes.csv` cut structure → (16,16) | **PROXY** |
 
 *Note (2026-11-06, issue #74):* the cache
-`data/studyforrest_real/force.pt` used for the E1.3c values was built
-with the earlier extraction code (channels swapped, about 4500 s of
-physiology in 9000 frames). The extraction code has since been fixed;
-the values reported in this ADR have not been recomputed with the fixed
-channel.
+`data/studyforrest_real/force.pt` used for the E1.3c values below was
+built with the earlier extraction code (channels swapped, about 4500 s
+of physiology in 9000 frames). The extraction was fixed (PR #75) and
+the values were recomputed on 2026-11-06 with the corrected cache; see
+E1.3c-bis after the E1.3c verdict.
 
 audio + vision are **annotation-derived proxies**, not the perceptual
 stimuli: the Forrest Gump soundtrack/movie are copyrighted and are **not
@@ -250,6 +250,55 @@ real-bridge magnitudes are *smaller* than gaussian's — expected, since the
 lesioned `audio` channel is an annotation proxy carrying less
 audio-specific information to migrate — but the qualitative null is the
 same. Artefact: `reports/e1_b2_dimensional_mine_studyforrest.json`.
+
+### E1.3c-bis — recompute with the corrected phase-1 cache (2026-11-06)
+
+The cache was regenerated on macM1 with the fixed extraction
+(`fetch_studyforrest_sample.py --source openneuro --duration-seconds
+900 --force`). New `force.pt` SHA-256 `d96ad636…b9e9` (first cache
+`890b90ae…d773`); the five other tensors are byte-identical. Welch
+spectrum over 900 s at 10 Hz: "cardiac" peaks at 1.37 Hz and
+"respiration" at 0.30 Hz (first cache: 1.22 Hz and 3.88 Hz, consistent
+with the 5× time compression). Same command as E1.3c (`--world studyforrest --seeds 5
+--lock-after 100 --steps-train 200 --steps-lesion 100 --batch-size 512
+--bootstrap 500`), on macM1 under the heavy lock.
+
+| Estimator (probe shape) | first cache (#74) | **corrected cache** | **corrected 95% CI** |
+|-------------------------|------------------:|--------------------:|----------------------|
+| Kraskov k-NN (1-D) | −0.00097 | **−0.00022** | [−0.00066, 0.000] |
+| Adaptive binning (1-D) | −0.0024 | **+0.00011** | [0.000, +0.00032] |
+| MINE (1-D mean-pool) | −2.0e-7 | **+2.4e-7** | [+1.1e-7, +3.9e-7] |
+| MINE (full 896-D probe) | −1.9e-5 | **−1.3e-4** | [−3.8e-4, +2.9e-8] |
+
+D_PR 12.98, D_2NN 12.46 (first cache 12.91 / 12.49). With the first
+cache (#74) the values were those of the E1.3c table; recomputed on
+2026-11-06 with the corrected cache. A same-day replay on the first
+cache reproduces Kraskov and binning exactly and every value of seeds
+1–4 (seed 0 differs in D and MINE). No estimator's B-2 exceeds the
+preregistered +0.10 threshold on any seed. Paired label-permutation
+null (1000 draws, same permutation on the pre- and post-lesion probe,
+mean over 5 seeds, `scripts/spikes/e1_b2_paired_null.py`): Kraskov
+observed 0.000, null median 0.000, P99 0.0044, p = 0.62; binning
+observed −0.0011, null median −0.00003, P99 0.0036, p = 0.79 (first
+cache p = 0.75 / 0.70). MINE is not in the null (one fit per draw).
+
+*Reading.* The probe batch is a contiguous slice of 512 frames
+(51.2 s); the label is the scene index quantised to 4. In 4 of 5 seeds
+it holds a single class (`[0,512,0,0]` or `[0,0,512,0]`), in seed 1
+500 and 12; `labels.pt` is identical in both caches. MI with a
+constant label is zero for any representation, so B-2 is 0 by
+construction on those seeds and the measurement cannot fail. The
+Phase-1 loss moves from 1.33–1.40 to 0.87–0.92 (ln 4 = 1.39), but
+training batches are drawn the same way and reader accuracy was not
+measured, so the learning gate is not established. B-2 on the real
+bridge is **not conclusive**, with either cache.
+
+The class of the E1.3c result changes from "Null" to a measurement
+that is not informative; this ADR's Decision is not edited and the
+question is left to the PI (issue #74). Artefacts:
+`reports/e1_b2_dimensional_mine_studyforrest_phase1fix.json`,
+`…_oldcache_replay.json`, `reports/e1_b2_paired_null_studyforrest_*.json`,
+logs and cache manifests in `reports/b2_phase1_recompute_20261106/`.
 
 ## E1.3d — CC-film real-AV bridge (`--world ccfilm`, Big Buck Bunny CC-BY)
 
@@ -356,9 +405,9 @@ above as the synthetic reference and are not overwritten.
 *Remaining qualification:* the real bridge carries **real** signal for
 force/gravity/tactile/labels but **annotation-derived proxies** for
 audio/vision (the perceptual stimuli are copyrighted and outside
-OpenNeuro). The force channel is real physiology but mislabelled and
-time-compressed in the cache used here (table above; values not
-recomputed, issue #74). This is a genuine real bridge for the proprioceptive +
+OpenNeuro). The force channel was mislabelled and
+time-compressed in the first cache (issue #74); it is corrected in the
+cache used for E1.3c-bis. This is a genuine real bridge for the proprioceptive +
 scene-structure channels, **not** a full perceptual-stimulus replication.
 The B-2 null holds with this limitation stated.
 

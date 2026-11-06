@@ -1,0 +1,41 @@
+== newcache start 2026-11-06T13:26:07Z data=/Users/electron/scratch/bouba-b2-0611/data/studyforrest_real
+{"seed": 0, "label_counts": [0, 512, 0, 0], "loss_first20_mean": 1.3248438119888306, "loss_last20_mean": 0.9167948216199875, "ln4": 1.3862943611198906, "x_pre_std": 0.000431786582339555, "x_post_std": 0.0004792851395905018, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.0, "binning_post": 0.0, "binning_delta_bits": 0.0}
+{"seed": 1, "label_counts": [0, 500, 12, 0], "loss_first20_mean": 1.3387344121932983, "loss_last20_mean": 0.8933756202459335, "ln4": 1.3862943611198906, "x_pre_std": 0.0019319133134558797, "x_post_std": 0.0012123463675379753, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.03168665145123111, "binning_post": 0.026043657504263316, "binning_delta_bits": -0.005642993946967795}
+{"seed": 2, "label_counts": [0, 0, 512, 0], "loss_first20_mean": 1.3459650695323944, "loss_last20_mean": 0.8830700397491456, "ln4": 1.3862943611198906, "x_pre_std": 0.00033200366306118667, "x_post_std": 0.00032410171115770936, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.0, "binning_post": 0.0, "binning_delta_bits": 0.0}
+{"seed": 3, "label_counts": [0, 512, 0, 0], "loss_first20_mean": 1.3984241425991057, "loss_last20_mean": 0.8666741341352463, "ln4": 1.3862943611198906, "x_pre_std": 0.00017591603682376444, "x_post_std": 0.00016877644520718604, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.0, "binning_post": 0.0, "binning_delta_bits": 0.0}
+{"seed": 4, "label_counts": [0, 0, 512, 0], "loss_first20_mean": 1.333430290222168, "loss_last20_mean": 0.870919731259346, "ln4": 1.3862943611198906, "x_pre_std": 0.0003890171938110143, "x_post_std": 0.00031626908457838, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.0, "binning_post": 0.0, "binning_delta_bits": 0.0}
+{
+  "world": "studyforrest",
+  "seeds": 5,
+  "lock_after": 100,
+  "steps_train": 200,
+  "steps_lesion": 100,
+  "batch_size": 512,
+  "n_null": 1000,
+  "null_seed": 20261106,
+  "null": "paired label permutation, same permutation on pre and post probe",
+  "kraskov_1d": {
+    "observed_mean": 0.0,
+    "null_median": 0.0,
+    "null_p99": 0.004437202566887056,
+    "null_p01": -0.004092009088557665,
+    "p_one_sided": 0.6233766233766234,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  },
+  "binning_1d": {
+    "observed_mean": -0.001128598789393559,
+    "null_median": -2.562486235319697e-05,
+    "null_p99": 0.0035835002395896297,
+    "null_p01": -0.0032918473980795373,
+    "p_one_sided": 0.7942057942057942,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  }
+}
+real 411,50
+user 325,29
+sys 163,03
+== newcache rc=0 end 2026-11-06T13:32:58Z
