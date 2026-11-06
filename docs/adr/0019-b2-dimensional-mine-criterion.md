@@ -300,6 +300,76 @@ question is left to the PI (issue #74). Artefacts:
 `…_oldcache_replay.json`, `reports/e1_b2_paired_null_studyforrest_*.json`,
 logs and cache manifests in `reports/b2_phase1_recompute_20261106/`.
 
+## Amendment 2026-11-06 — probe sampling
+
+**Status: exploratory.** This is a change of method informed by reading
+the results of PR #76 (E1.3c-bis) and issue #77 (single-class probe).
+It is not preregistered, and nothing measured under it can carry a
+confirmatory claim. The rule below is written and committed before any
+run that uses it; the code and the run logs come in later commits.
+
+**Root cause addressed.** The B-2 probe is a contiguous slice of
+512 frames (`scripts/spikes/e1_b2_dimensional_mine.py:98`, world
+`sample()` at `src/bouba_sens/world/studyforrest.py:146-148`). The
+Studyforrest label is the scene index quantised to 4, so a 51.2 s slice
+lies inside one long scene class in 4 of 5 seeds
+(`reports/b2_phase1_recompute_20261106/null_newcache.log`, lines 2-6).
+MI with a constant label is zero for any representation.
+
+**Rule (a priori).**
+
+1. *Probe draw.* N = 512 frames from the whole cache (9000 frames for
+   Studyforrest), stratified by label class, without replacement.
+   Allocation: equal share ⌊512 / C⌋ for the C classes present in the
+   cache (128 for C = 4). A class with fewer frames than its share gives
+   all its frames; the shortfall is shared equally among the classes
+   that still have frames, repeated until 512 frames are allocated or
+   the cache is exhausted; an integer remainder goes to the classes in
+   increasing label order. The per-class counts of the cache and of the
+   probe are written to the output JSON. Inside each class, frames are
+   picked by a uniform permutation from a `torch.Generator` seeded with
+   the probe seed `seed - 99_999`, as before; the selected indices are
+   sorted. Training and lesion batches are unchanged (contiguous
+   slices): only the probe changes.
+2. *Paired null.* Same probe (same function, same seed). Label
+   permutation inside the probe, 1000 draws, the same permutation on the
+   pre- and post-lesion probe, statistic = mean B-2 over seeds,
+   one-sided p = (k + 1) / (1000 + 1), null seed 20261106 as before.
+3. *Learning gate.* Reader accuracy = accuracy of the trained
+   integration head (argmax of its logits on the fused code) on the
+   probe, after Phase 1 and before the lesion, taken from the same
+   forward pass that gives the pre-lesion probe (no extra RNG draw). A
+   seed passes if its reader accuracy is at least the majority-class
+   rate of its probe plus a margin of **0.10** (absolute; 0.35 for a
+   balanced 4-class probe, about five binomial standard errors above
+   0.25 at N = 512). The post-lesion reader accuracy on the clean probe
+   is reported, not gated.
+4. *Classification.* A seed that fails the gate is "not measurable";
+   its B-2 is reported but not used. If fewer than 3 of 5 seeds pass,
+   B-2 on that cache is "not measurable". Otherwise the mean B-2 over
+   the passing seeds is compared with the unchanged preregistered
+   threshold **+0.10 bit**, and the paired null p is given for the same
+   seeds. Allowed wording: "exceeds / does not exceed the preregistered
+   threshold", "not conclusive", "not measurable". Not used: confirmed,
+   positive, refuted.
+5. *Reproduction.* `--probe-sampling contiguous` (default) reproduces
+   the earlier runs; `--probe-sampling stratified` applies this rule.
+   It needs a world that exposes `dataset_labels` and `gather`
+   (Studyforrest real bridge); other worlds are out of scope here.
+
+**CC-film and Gaussian worlds (not rerun).** CC-film labels are
+per-frame quartiles over 600 frames (`scripts/extract_ccfilm_features.py:157-164`),
+so any contiguous 512-frame slice holds 62 to 150 frames of each class;
+the Gaussian world draws i.i.d. samples. Section E1.3d used the 2-fps
+cache `data/ccfilm_real` (600 frames, this ADR E1.3d; commit `fb7af00`
+of 2026-06-04). The 10-fps cache `ccfilm_real_10fps` (5,965 frames) was
+built on 2026-10-28 for the v0.9 pilots (commit `33b266d`, branch
+`docs/osf-prereg-2026-10`, not an ancestor of this branch), and no
+script or `reports/MANIFEST.json` entry on this branch refers to it
+(the E1.3d JSON artefact `reports/e1_b2_dimensional_mine_ccfilm.json`
+is not tracked, so its run log cannot be checked). The bound above
+therefore applies to E1.3d, on the evidence of dates and frame counts.
+
 ## E1.3d — CC-film real-AV bridge (`--world ccfilm`, Big Buck Bunny CC-BY)
 
 E1.3c left one honest gap: on the Studyforrest bridge, `audio` and `vision`
