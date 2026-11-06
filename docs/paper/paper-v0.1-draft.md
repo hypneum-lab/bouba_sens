@@ -406,7 +406,19 @@ zero everywhere, the "respiration" channel is the cardiac pulse, and
 the respiratory column is never read (issue #72). The April 2026
 tensors are lost, so this cannot be checked on them. The code is
 unchanged since commit `d7a3645`, so they probably had the same
-defect.
+defect. The reader is corrected on branch
+`fix/physio-channels-2026-11-06` (draft): column names and the 500 Hz
+rate come from the BIDS sidecar `recording-cardresp_physio.json`
+(trigger, cardiac pulse oximetry, respiration belt), and the first
+data line is kept. With the fix, dims 0-2 of the force channel hold
+the pulse-oximetry trace and dims 3-5 the respiration belt, decimated
+to 10 Hz. The physiology file covers 96 s (961 frames), so the
+remaining 839 of the 1800 frames are zero padding, as before. *The
+4.5-modal row of the table below, the B-2 interval and the other
+real-data blocks on this bridge (§5.5-§5.9) were computed on the
+earlier reader and are to be recomputed after regeneration
+(issue #72), which also requires the aligned tensor set of issue
+#45.*
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|

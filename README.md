@@ -307,6 +307,10 @@ Documentary corrections only ; no value, metric or threshold changed.
    and the respiratory column is never read. The April tensors are
    lost; the code is unchanged since `d7a3645`, so they probably had
    the same defect (not verified). No value is changed. Issue #72.
+   The reader fix (sidecar column names, first data line kept) is on
+   branch `fix/physio-channels-2026-11-06`, a draft awaiting PI
+   validation; the 4.5-modal values are to be recomputed after
+   regeneration, which also needs the aligned set of issue #45.
 
 ### Erratum (2026-11-06) — phase-1 physiology layout
 
