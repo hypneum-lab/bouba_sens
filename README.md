@@ -255,6 +255,57 @@ Documentary corrections only ; no value, metric or threshold changed.
    not evidence for or against cross-modal plasticity in an agent that
    performs the task. No number is deleted. Issue #22.
 
+### Erratum (2026-11-04) — wrong DOIs in the registered spec
+
+7. The frozen design spec
+   `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (lines
+   508-509) gives two wrong DOIs; the spec is left unchanged. Correct
+   identifiers (Crossref): Heimler & Amedi 2020, Neurosci. Biobehav.
+   Rev. 116, 494-507, doi:10.1016/j.neubiorev.2020.06.034 (not
+   10.1016/j.neuroscience.2019.12.048); Röder, Kekunnaya & Guerreiro
+   2021, Neurosci. Biobehav. Rev. 120, 86-99,
+   doi:10.1016/j.neubiorev.2020.10.030 (not 10.1073/pnas.2004321118).
+
+### Erratum (2026-11-04) — Studyforrest licence and physiology
+
+8. The OSF amendments describe the Studyforrest data inaccurately;
+   the amendment files are left unchanged. Amendment v0.4
+   (`docs/osf/amendment-v0.4-studyforrest.md`, line 35) says
+   "Creative Commons": the data are released under the Open Data
+   Commons Public Domain Dedication and License (PDDL), code under
+   MIT (Sengupta et al. 2016, Sci. Data 3:160093,
+   doi:10.1038/sdata.2016.93, p. 11). The physiological channel used
+   for the force modality (amendment v0.5, table line 32, "ECG +
+   respiration") is a pleth pulse from pulse oximetry plus a
+   respiratory trace, not an ECG (same article, p. 4 and p. 7).
+   Participant 2 has no physiological recordings in the localizer
+   session (Table 1, p. 7). No value is changed.
+9. The 4.5-modal bridge (ADR-0012) took its vision and scene-cut
+   channels from `movie_localizer.mkv`, which is not film footage.
+   The file (checked on 2026-11-06) lasts 12 s: 300 frames of
+   1280×720 at 25 fps, no audio track. It shows a colored polar
+   checkerboard redrawn at 5 Hz (60 patterns, colors redrawn, not a
+   contrast reversal), filling only the movie-frame area. It is the
+   inside-movie half of a localizer: in the scanner, the PsychoPy
+   script alternated it every 12 s with `inv_movie_localizer.mkv`,
+   4 cycles, 48 volumes, about 96 s (same article, p. 4 and p. 6;
+   the dataset task description and the 48 sub-01 physio triggers
+   agree). The vision channel (120 frames at 10 Hz) and the 7
+   scene-cuts therefore describe this checkerboard; the cuts are
+   pattern changes. Amendment v0.5 (table line 29, "film frames") is
+   left unchanged; the paper section on the 4.5-modal bridge now
+   describes the stimulus. The VGG16 numbers are kept.
+10. The force channel of the 4.5-modal bridge does not hold the
+   pulse-oximetry and respiration signal. `extract_force`
+   (`src/bouba_sens/world/studyforrest_features.py`, lines 162-166)
+   reads the first line of the header-less BIDS physio file as a
+   header and falls back to column 0 (trigger) as "ECG" and column 1
+   (pulse oximetry) as "respiration". In the regenerated `force.pt`
+   the "ECG" channel is zero everywhere, "respiration" is the pulse,
+   and the respiratory column is never read. The April tensors are
+   lost; the code is unchanged since `d7a3645`, so they probably had
+   the same defect (not verified). No value is changed. Issue #72.
+
 ## Quickstart
 
 ```bash
@@ -308,7 +359,7 @@ Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.jso
 
 1. Amedi et al. 2007 — Shape conveyed by visual-to-auditory sensory substitution activates LOC (Nat Neurosci).
 2. Heimler & Amedi 2020 — Are critical periods reversible in the adult brain? Insights on cortical specializations based on sensory deprivation studies (Neurosci. Biobehav. Rev.).
-3. Röder et al. 2021 — Sensitive periods for functional specialization (PNAS).
+3. Röder, Kekunnaya & Guerreiro 2021 — Neural mechanisms of visual sensitive periods in humans (Neurosci. Biobehav. Rev. 120, 86–99; doi:10.1016/j.neubiorev.2020.10.030).
 4. Alper & Averbuch-Elor 2023 — Kiki or Bouba? Sound Symbolism in Vision-and-Language Models (NeurIPS).
 5. Girdhar et al. 2023 — ImageBind: One Embedding Space (CVPR).
 6. Ma et al. 2022 — Are Multimodal Transformers Robust to Missing Modality? (CVPR).

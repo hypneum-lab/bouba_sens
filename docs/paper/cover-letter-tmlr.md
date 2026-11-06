@@ -13,7 +13,7 @@ filed on OSF). Not registered on OSF.
 **Software DOI.** Zenodo (concept) — to be minted alongside this
 submission via `.zenodo.json` already at repo root
 **Companion software.** `nerve-wml` v1.5.3
-(DOI `10.5281/zenodo.19666405`)
+(DOI `10.5281/zenodo.19680058`)
 
 ---
 
@@ -110,9 +110,10 @@ four-person panel.
 2. **Tessa M. Dekker** (University College London,
    Institute of Ophthalmology) — *cross-modal cortical
    plasticity, computational fMRI methodology.*
-   Corresponding author on *Hierarchical cortical plasticity in
+   Last author on *Hierarchical cortical plasticity in
    congenital sight impairment* (bioRxiv 2024,
-   doi:10.1101/2024.07.04.602138). Provides an independent
+   doi:10.1101/2024.07.04.602138; eLife Reviewed Preprint v1,
+   2024); corresponding-author status to be cross-checked. Provides an independent
    neuroscience perspective on the B-1 congenital-blindness
    invariant ; methodologically rigorous on individual
    variability in plasticity. No Amedi-lab affiliation.
@@ -127,8 +128,9 @@ four-person panel.
    authority on the pre-reg framing.
 
 4. **Alessandro Achille** (AWS AI / Caltech) — *critical-period
-   theory in deep neural networks.* First author on *Critical
-   Learning Periods Emerge Even in Deep Linear Networks*
+   theory in deep neural networks.* Co-author (first author:
+   Michael Kleinman) of *Critical Learning Periods Emerge Even
+   in Deep Linear Networks*
    (ICLR 2024 spotlight) and the foundational 2019 critical-
    period series. Direct relevance to §5.5 (the Amedi-style
    dose-response curve framed as a critical-period signature
@@ -161,7 +163,7 @@ proposed reviewers.
   GitHub-Zenodo webhook on the next tag (`.zenodo.json` already
   at repo root with full metadata).
 - Companion software DOI: `nerve-wml` v1.5.3 archived at
-  `10.5281/zenodo.19666405`; the Paper depends on it for the
+  `10.5281/zenodo.19680058`; the Paper depends on it for the
   cross-substrate measurement primitive.
 
 ### Author contributions
@@ -175,7 +177,7 @@ manuscript drafting, and revision.
 We note for completeness one concurrent work that touches
 adjacent topics:
 
-- **RecursiveMAS** (Yang et al., arXiv:2604.25917, 2026-04-28)
+- **RecursiveMAS** (Zou et al., arXiv:2604.25917, 2026-04-28)
   proposes a latent-space recursive computation across
   heterogeneous LLM agents. Although the engineering target
   differs (multi-agent LLMs, not cross-modal plasticity

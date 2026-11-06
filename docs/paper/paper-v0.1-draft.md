@@ -5,7 +5,7 @@
 **Date.** 2026-04-22
 **Companion artefacts.**
 - Repository : `github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`)
-- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19666405`)
+- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19680058`)
 - Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19, amendment v0.6 2026-04-22)
 - ADRs : `docs/adr/0004..0017` record every verdict, retraction, and scope change inline with its grid commit.
 
@@ -106,7 +106,7 @@ portable multi-seed validation protocol for future benchmarks.
 Two independent lines of evidence suggest cross-modal asymmetry is a structural property of cognitive architectures :
 
 - **Amedi 2007**, congenital blindness : occipital cortex re-tasked to audition with *greater* plasticity than late-acquired blindness.
-- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : 95 %+ cross-cultural agreement on sound-shape correspondence (“bouba” round, “kiki” spiky) — evidence of a hard-wired **asymmetric** modality mapping.
+- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : high agreement on sound-shape correspondence (“bouba” round, “kiki” spiky), robust across 25 languages and ten writing systems (Ćwiek et al. 2022) <!-- source to be provided for any percentage: no document read on 2026-11-04 supports "95 %+" -->; whether the mapping is hard-wired or partly learned remains debated (Sidhu & Pexman 2018), and that review names no asymmetry.
 
 No pre-registered computational benchmark currently tests whether a given architecture reproduces these two properties simultaneously.
 
@@ -369,11 +369,41 @@ on any of the four synthetic worlds at this parameterisation.
 
 OSF amendment v0.5 extends the pre-registered grid with a fifth
 world derived from Studyforrest phase-2 (sub-01 ses-localizer
-task-movielocalizer run-1): real VGG16 features over
-movie_localizer.mkv, ffmpeg scene-cut tactile proxy, real
-cardiac+respiration physio, zero gravity (rp regressors not
-published), CC-BY-4.0 LibriSpeech audio substitution (path (b)
-of ADR-0012 — the Forrest Gump soundtrack is not redistributable).
+task-movielocalizer run-1): VGG16 features over
+movie_localizer.mkv, ffmpeg scene-cut tactile proxy, a physiological
+force channel (see below), zero gravity (rp regressors not
+published), CC-BY-4.0 LibriSpeech audio substitution (path (b) of
+ADR-0012 — the Forrest Gump soundtrack is not redistributable). The
+movie localizer is not film footage. The file movie_localizer.mkv
+(checked on 2026-11-06; its MD5 matches the git-annex key) lasts
+12 s: 300 frames of 1280×720 at 25 fps, with no audio track. It
+shows a colored polar checkerboard, redrawn every 0.2 s (5 Hz, 60
+distinct patterns whose colors are redrawn, not a contrast
+reversal), filling only the movie-frame area between two grey bands.
+In the scanner, the PsychoPy script alternated this file every 12 s
+with inv_movie_localizer.mkv, for 4 cycles, 48 volumes at TR 2 s,
+about 96 s (Sengupta et al. 2016, Sci. Data 3:160093, pp. 2, 4, 6).
+The task description of the dataset states this alternation, and the
+sub-01 physiology file holds 48 scanner triggers over 96 s. Sub-01 is
+present in the localizer session; the dataset has no events file for
+this task. The vision channel (120 frames at 10 Hz) and the
+scene-cut channel (7 detected "cuts") therefore describe the
+inside-movie checkerboard only, not the film. The 7 "cuts" are
+changes of checkerboard pattern.
+
+The force channel is not the pulse-oximetry and respiration signal
+that earlier versions of this section described. On the regenerated tensors,
+`extract_force`
+(`src/bouba_sens/world/studyforrest_features.py`, lines 162-166)
+reads the first data line of the header-less BIDS physiology file as
+a header. It then falls back to column 0 (the scanner trigger) as
+"ECG" and column 1 (the pulse-oximetry trace) as "respiration". In
+the regenerated `force.pt`, the "ECG" channel and its derivatives are
+zero everywhere, the "respiration" channel is the cardiac pulse, and
+the respiratory column is never read (issue #72). The April 2026
+tensors are lost, so this cannot be checked on them. The code is
+unchanged since commit `d7a3645`, so they probably had the same
+defect.
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|
@@ -824,10 +854,14 @@ Amedi et al. (2007) show that congenitally blind subjects recruit
 occipital cortex for auditory object recognition to a quantitatively
 greater degree than late-onset blind subjects — our B-1 invariant
 operationalises this asymmetry as a Me7 threshold. Bavelier &
-Neville (2002) and Merabet & Pascual-Leone (2010) frame this as a
-critical-period phenomenon: lock-style plasticity constraints mid-
-development produce the T1/T2 gap that adult-onset reorganisation
-cannot close; Heimler & Amedi (2020) review to what extent such
+Neville (2002) frame this as a critical-period phenomenon:
+lock-style plasticity constraints mid-development produce the T1/T2
+gap that adult-onset reorganisation cannot close. Merabet &
+Pascual-Leone (2010) temper that view: the evidence is consistent
+with more marked reorganisation the earlier the loss, but the brain
+retains a high level of neuroplasticity well into adulthood, though
+not necessarily to the same degree as the developing brain (section
+"Critical periods and adult plasticity"); Heimler & Amedi (2020) review to what extent such
 critical periods remain reversible in the adult brain.
 bouba_sens's `constellation_lock_after` is a direct architectural
 analogue of that critical period. The single-seed §5.5 dose-response
@@ -836,9 +870,12 @@ did not survive multi-seed validation and is retracted (§5.5,
 ADR-0019).
 
 **Missing-modality robustness and critical periods in deep
-multimodal networks.** Most multimodal benchmarks assume modality
-completeness at evaluation time (MultiBench, Liang et al. 2021),
-and joint-embedding models such as ImageBind (Girdhar et al. 2023)
+multimodal networks.** MultiBench (Liang et al. 2021) already
+tests missing modalities at evaluation time: it drops an entire
+modality from the test data of a model trained on clean data and
+reports the performance curve (its Appendix D.3.2–D.3.3). This
+measures degradation without further training, not reorganisation
+after the loss, which is what B-1 targets. Joint-embedding models such as ImageBind (Girdhar et al. 2023)
 bind modalities through a shared space without testing
 reorganisation after channel loss. Ma et al. (2022) show that
 multimodal Transformers are sensitive to missing modalities and
@@ -865,11 +902,16 @@ et al. (2007); bouba_sens targets that gap, and its B-1 retraction
 produce a T1/T2 gap above the noise floor.
 
 **Bouba/kiki correspondence and ideasthesia.** Köhler (1947) and
-Ramachandran & Hubbard (2001) established the 95 %+ cross-cultural
-agreement on round-vs-spiky sound-shape mapping; Sidhu & Pexman
-(2018) review the converging evidence that this mapping is a
-structural property of sensory integration, not learned. Our B-3
-invariant formalises that asymmetry as the max off-diagonal
+Ramachandran & Hubbard (2001) reported high agreement on the
+round-vs-spiky sound-shape mapping, and Ćwiek et al. (2022) find the
+effect robust across 25 languages and ten writing systems
+<!-- source to be provided for any percentage: no document read on
+2026-11-04 supports "95 %+" -->; Sidhu & Pexman (2018) review five
+candidate mechanisms, including learned ones, judge the evidence for
+innateness not overwhelming, and find that current evidence does not
+pinpoint any particular mechanism. Our B-3
+invariant formalises a modality asymmetry, which that review does not
+describe, as the max off-diagonal
 magnitude of the 5-modality perf matrix. Its 5–6× threshold pass
 across every grid in this paper, independent of all Phase-1/Phase-2
 controls, is a magnitude result only: the partition null model and
@@ -878,7 +920,17 @@ per-modality entropy and does not support a hard-wired
 perceptive/proprioceptive mapping. Bouba/kiki is therefore a
 motivating analogue for B-3, not a property the benchmark
 establishes. In models, Alper & Averbuch-Elor (2023) probe sound
-symbolism in vision-and-language models (CLIP, Stable Diffusion). Using real
+symbolism in vision-and-language models (CLIP, Stable Diffusion)
+and report an effect; their only null is chance-level
+classification, one of their measures changes sign across CLIP
+prompts (their Table 7), and the two larger text-only encoders they
+test also show associations (their Table 5). Published results run
+the other way: probing image-to-text with direct label
+probabilities, Verhoef, Shahrasbi & Kouwenhoven (2024) and
+Kouwenhoven, Shahrasbi & Verhoef (2025) find no consistent effect in
+CLIP and other vision-language models, and Keleş et al. (2026)
+describe the CLIP and Stable Diffusion results as weak or
+dataset-driven. Using real
 speech, Tsai et al. (2026) separate auditory, cross-modal, and
 visual components of the effect and find that speech language
 models align poorly with human auditory judgments and that
@@ -898,7 +950,9 @@ protocol dependency and measures only downstream invariants.
 
 **Pre-registered benchmarks in ML.** The NeurIPS Datasets & Benchmarks
 track (Vanschoren & Yeung 2021) and Gebru et al. (2018) *Datasheets
-for Datasets* pushed the field towards OSF-style pre-registration.
+for Datasets* pushed the field towards transparent dataset reporting;
+pre-registration is a separate practice that the datasheets article
+does not discuss (arXiv:1803.09010v8, p. 1-11).
 bouba_sens follows the OSF locked-threshold protocol (registration
 `10.17605/OSF.IO/Q6JYN`): the 0.05 / 0.10 / 0.02 thresholds for
 B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
@@ -918,11 +972,14 @@ Abdelaleem, Martini & Nemenman (2025) argue that the sample
 complexity of neural MI estimators is governed by latent rather
 than ambient dimensionality and give a protocol with consistency
 checks, bias correction, and confidence intervals, which matches
-the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1).
-Foresti et al. (2026) benchmark non-parametric, discriminative,
-and generative MI estimators and find no universal winner, which
-supports triangulating Kraskov, binning, and MINE rather than
-relying on any single estimator.
+the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1) for
+MINE; for Kraskov they report the opposite, a failure in high
+dimension even at low latent dimension (their Fig. 10). Foresti et
+al. (2026) benchmark k-NN (KSG, WKL), discriminative (MINE, NWJ,
+InfoNCE) and generative (MINDE) MI estimators and find no universal
+winner, an argument for not relying on any single estimator. Their
+benchmark includes no binning estimator, so it does not speak to the
+adaptive-binning estimator used here alongside Kraskov and MINE.
 
 **Biophysical vs protocol-level nerve simulators.** Readers
 searching for "nerve" in the Python ecosystem will encounter
@@ -956,7 +1013,7 @@ and say nothing about nerve biophysics per se.
   PyPI as `bouba-sens==0.5.4` (tag `v0.5.4`, commit `360a442`).
 - `github.com/hypneum-lab/nerve-wml` v1.5.3 — protocol + methodology
   dependencies (Kraskov-kNN, bootstrap CI, null model permutation,
-  MINE estimator). Zenodo DOI `10.5281/zenodo.19666405`.
+  MINE estimator). Zenodo DOI `10.5281/zenodo.19680058`.
 - `reports/*.json` + `reports/*.png` — per-grid aggregates, per-seed
   breakdowns, and the Amedi dose-response curve. Committed verbatim
   (force-added past the `.gitignore` for the reports we cite).
