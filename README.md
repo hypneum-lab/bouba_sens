@@ -195,8 +195,10 @@ B-2 Null was re-checked on two real-signal bridges with **opposite**
 real/synthetic modality splits (complements, *not* a replacement of the
 headline synthetic findings) :
 
-- **Studyforrest (OpenNeuro ds000113).** force / gravity / tactile /
-  labels = **REAL** ds000113 signal ; audio / vision = annotation
+- **Studyforrest (OpenNeuro ds000113).** gravity / tactile / labels =
+  **REAL** ds000113 signal ; force = **REAL** physiology but mislabelled
+  and time-compressed in the cache used for the reported values
+  (erratum 11, issue #74) ; audio / vision = annotation
   **PROXY** (the Forrest Gump soundtrack and film are copyrighted and
   absent from OpenNeuro — labelled as proxies, not "real movie vision").
 - **CC-film (Big Buck Bunny, CC-BY 3.0).** audio (log-mel) / vision
@@ -305,6 +307,23 @@ Documentary corrections only ; no value, metric or threshold changed.
    and the respiratory column is never read. The April tensors are
    lost; the code is unchanged since `d7a3645`, so they probably had
    the same defect (not verified). No value is changed. Issue #72.
+
+### Erratum (2026-11-06) — phase-1 physiology layout
+
+11. The force channel of the Studyforrest OpenNeuro bridge (paper
+   §(d), ADR-0019) was read with the wrong layout. The phase-1
+   `ses-forrestgump` physio files have four columns (trigger,
+   respiratory trace, cardiac trace, oxygen saturation) at 100 Hz
+   (Hanke et al. 2014, Sci. Data 1:140003, doi:10.1038/sdata.2014.3,
+   p. 11); `scripts/fetch_studyforrest_sample.py` assumed three
+   columns (trigger, cardiac, respiratory) at 500 Hz. The cache
+   `data/studyforrest_real/force.pt` used for the §(d) values was
+   built with this earlier code: its "cardiac" dims hold the
+   respiration, its "resp" dims hold the cardiac trace, and its 9000
+   frames span about 4500 s of physiology instead of 900 s. The script
+   now reads the layout from a sidecar when one exists, else from the
+   column count. The reported values have not been recomputed. This
+   is separate from item 10. Issue #74.
 
 ## Quickstart
 

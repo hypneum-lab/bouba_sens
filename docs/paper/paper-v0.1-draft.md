@@ -28,7 +28,10 @@ structural asymmetry, bouba/kiki) — across five synthetic/surrogate
 worlds (Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and
 **two real bridges with opposite real/synthetic modality splits**.
 The **Studyforrest** bridge (OpenNeuro ds000113) carries real
-cardiac-respiratory force, real head-motion gravity regressors, and
+physiology in the force channel (with its cardiac and respiratory labels
+swapped and its time base off by a factor of 5 in the cache used here,
+issue #74; values not recomputed), real head-motion gravity regressors,
+and
 real scene-annotation tactile/labels, while audio and vision are
 annotation-derived **proxies** (the copyrighted soundtrack and movie
 frames are absent from OpenNeuro — not "real movie vision"). The
@@ -762,14 +765,23 @@ The real Studyforrest cache was provisioned from **OpenNeuro ds000113**
 over the public S3 REST API (`scripts/fetch_studyforrest_sample.py
 --source openneuro`, 9000 frames @ 10 Hz; the dead `studyforrest.org`
 phase-1 URL is retired). Channel provenance is mixed and labelled
-verbatim in the cache MANIFEST: **force** (cardiac pulse-ox +
-respiration physio, 500 Hz), **gravity** (head-motion `*_bold_moco.txt`
+in the cache MANIFEST: **force** (real ds000113 physiology, but the
+phase-1 files hold trigger, respiratory, cardiac and oxygen-saturation
+columns at 100 Hz, Hanke et al. 2014, *Sci. Data* 1:140003,
+doi:10.1038/sdata.2014.3, p. 11, and the extraction assumed
+trigger, cardiac, respiratory at 500 Hz: in the cached `force.pt`
+"cardiac" is the respiratory trace, "respiration" is the cardiac trace,
+and 9000 frames span about 4500 s; issue #74), **gravity** (head-motion `*_bold_moco.txt`
 rotation regressors), **tactile** and **labels** (scenes.csv scene /
 DAY-NIGHT / INT-EXT annotation) are **real ds000113 signal**; **audio**
 and **vision** are **annotation-derived proxies** (narration-timing and
 scene-cut structure respectively) because the Forrest Gump soundtrack
 and movie are copyrighted and absent from OpenNeuro. The run uses
 `StudyforrestRealWorld` (mode `real5`, verified — not the mock stub).
+The cache `data/studyforrest_real/force.pt` used for the values below
+was built with this earlier extraction code; the code has since been
+fixed (issue #74), and the values reported here have not been
+recomputed with the fixed channel.
 
 B-2 = MI_post − MI_pre, N=512, 5 seeds, 500-resample bootstrap 95% CIs,
 effective dim **D ≈ 12.5** (PR 12.9, two-NN 12.5 — matching the
@@ -793,8 +805,9 @@ is an annotation proxy, so there is even less audio-specific information
 available to migrate, but the qualitative null is the same.
 (`reports/e1_b2_dimensional_mine_studyforrest.json`.)
 
-*Honest scope.* This is a real bridge for force/gravity/tactile/labels
-and a documented proxy for audio/vision; it is **not** a full
+*Honest scope.* This is a real bridge for gravity/tactile/labels, with
+a real but mislabelled force channel (see above; values not recomputed,
+issue #74), and a documented proxy for audio/vision; it is **not** a full
 perceptual-stimulus replication (which would require the copyrighted
 media outside OpenNeuro). The promotion lifts the "gaussian-only"
 caveat for the B-2 *verdict* while keeping the audio/vision-proxy
