@@ -67,7 +67,9 @@ not done by a pull request; see the PI action list below.
 
 | 0027 | `0027-erratum-world-seed-train-lesion-eval.md` | Erratum — `train`, `lesion` and `eval` build different synthetic worlds (seed s / 0 / lesion seed); `--world-seed-mode cell` added, default unchanged | 2026-10-30 | Accepted — PI sign-off 2026-10-30 |
 
-Next free number: **0028** (0025 is reserved for the ActionSense verdicts,
+| 0028 | `0028-b3-network-level-null.md` | B-3 network-level null — R replicate lesioned networks per cell, replicate-level transpose flip (draft prereg `docs/prereg/b3-network-null/prereg-draft.md`, not frozen) | 2026-10-31 | Proposed — draft, PI decisions open |
+
+Next free number: **0029** (0025 is reserved for the ActionSense verdicts,
 `docs/superpowers/plans/2026-10-28-actionsense-world.md`).
 
 ## PI action list (not resolvable by pull request)
