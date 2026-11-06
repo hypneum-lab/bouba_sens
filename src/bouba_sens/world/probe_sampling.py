@@ -64,7 +64,8 @@ def stratified_indices(labels: torch.Tensor, n: int, seed: int) -> torch.Tensor:
 def sample_probe(world: Any, batch_size: int, seed: int, mode: str = "contiguous") -> WorldSample:
     """Probe batch: the world's contiguous ``sample`` or a stratified draw."""
     if mode == "contiguous":
-        return world.sample(batch_size=batch_size, seed=seed)
+        contiguous: WorldSample = world.sample(batch_size=batch_size, seed=seed)
+        return contiguous
     if mode != "stratified":
         raise ValueError(f"probe sampling must be 'contiguous' or 'stratified'; got {mode!r}")
     if not (hasattr(world, "dataset_labels") and hasattr(world, "gather")):
@@ -72,4 +73,5 @@ def sample_probe(world: Any, batch_size: int, seed: int, mode: str = "contiguous
             "stratified probe sampling needs a world with `dataset_labels` and `gather`"
         )
     idx = stratified_indices(world.dataset_labels, batch_size, seed)
-    return world.gather(idx)
+    stratified: WorldSample = world.gather(idx)
+    return stratified
