@@ -106,7 +106,7 @@ portable multi-seed validation protocol for future benchmarks.
 Two independent lines of evidence suggest cross-modal asymmetry is a structural property of cognitive architectures :
 
 - **Amedi 2007**, congenital blindness : occipital cortex re-tasked to audition with *greater* plasticity than late-acquired blindness.
-- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : high agreement on sound-shape correspondence (“bouba” round, “kiki” spiky), robust across 25 languages and ten writing systems (Ćwiek et al. 2022) <!-- source to be provided for any percentage: no document read on 2026-11-04 supports "95 %+" -->; whether the mapping is hard-wired or partly learned remains debated (Sidhu & Pexman 2018), and that review names no asymmetry.
+- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : high agreement on sound-shape correspondence (“bouba” round, “kiki” spiky), robust across 25 languages and ten writing systems (Ćwiek et al. 2022) <!-- source to be provided for any percentage: no document read on 2026-11-04 supports "95 %+" -->; whether the mapping is hard-wired or partly learned remains debated (Sidhu & Pexman 2018), and that review names no asymmetry; the one infant study we have read found no effect at 5 and 6 months across three experiments and a general preference for round shapes, a null its authors call hard to interpret (Fort, Weiß, Martin & Peperkamp 2013, AVSP proceedings).
 
 No pre-registered computational benchmark currently tests whether a given architecture reproduces these two properties simultaneously.
 
