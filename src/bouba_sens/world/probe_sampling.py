@@ -61,9 +61,7 @@ def stratified_indices(labels: torch.Tensor, n: int, seed: int) -> torch.Tensor:
     return torch.sort(idx).values
 
 
-def sample_probe(
-    world: Any, batch_size: int, seed: int, mode: str = "contiguous"
-) -> WorldSample:
+def sample_probe(world: Any, batch_size: int, seed: int, mode: str = "contiguous") -> WorldSample:
     """Probe batch: the world's contiguous ``sample`` or a stratified draw."""
     if mode == "contiguous":
         return world.sample(batch_size=batch_size, seed=seed)
