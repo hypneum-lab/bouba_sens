@@ -1,0 +1,47 @@
+== null oldcache start 2026-11-06T14:20:48Z data=/Users/electron/hypneum-lab/bouba_sens/data/studyforrest_real commit=540e483
+{"seed": 0, "label_counts": [128, 128, 128, 128], "majority_rate": 0.25, "reader_acc_pre": 0.25, "reader_acc_post": 0.25, "gate_margin": 0.1, "gate_pass": false, "cache_label_counts": [180, 3480, 4280, 1060], "loss_first20_mean": 1.3227625787258148, "loss_last20_mean": 0.9074536979198455, "ln4": 1.3862943611198906, "x_pre_std": 0.00021757124341093004, "x_post_std": 0.00022029486717656255, "kraskov_pre": 0.0, "kraskov_post": 0.0, "kraskov_delta_bits": 0.0, "binning_pre": 0.09320141366237147, "binning_post": 0.08134908496703473, "binning_delta_bits": -0.011852328695336742}
+{"seed": 1, "label_counts": [128, 128, 128, 128], "majority_rate": 0.25, "reader_acc_pre": 0.25, "reader_acc_post": 0.25, "gate_margin": 0.1, "gate_pass": false, "cache_label_counts": [180, 3480, 4280, 1060], "loss_first20_mean": 1.3630273342132568, "loss_last20_mean": 0.8912738353013993, "ln4": 1.3862943611198906, "x_pre_std": 0.0010535853216424584, "x_post_std": 0.0013357041170820594, "kraskov_pre": 0.23496436785956817, "kraskov_post": 0.36396069360705985, "kraskov_delta_bits": 0.12899632574749167, "binning_pre": 0.2982622546594526, "binning_post": 0.41568783651585467, "binning_delta_bits": 0.11742558185640206}
+{"seed": 2, "label_counts": [128, 128, 128, 128], "majority_rate": 0.25, "reader_acc_pre": 0.25, "reader_acc_post": 0.25, "gate_margin": 0.1, "gate_pass": false, "cache_label_counts": [180, 3480, 4280, 1060], "loss_first20_mean": 1.3797611355781556, "loss_last20_mean": 0.8816360801458358, "ln4": 1.3862943611198906, "x_pre_std": 0.0003633232263382524, "x_post_std": 0.0003810232155956328, "kraskov_pre": 0.0, "kraskov_post": 0.032948529849976586, "kraskov_delta_bits": 0.032948529849976586, "binning_pre": 0.09457179876833684, "binning_post": 0.10816917899657408, "binning_delta_bits": 0.01359738022823724}
+{"seed": 3, "label_counts": [128, 128, 128, 128], "majority_rate": 0.25, "reader_acc_pre": 0.25, "reader_acc_post": 0.365234375, "gate_margin": 0.1, "gate_pass": false, "cache_label_counts": [180, 3480, 4280, 1060], "loss_first20_mean": 1.3684261083602904, "loss_last20_mean": 0.8593019515275955, "ln4": 1.3862943611198906, "x_pre_std": 0.00034495111322030425, "x_post_std": 0.00038278050487861037, "kraskov_pre": 0.45276328867967586, "kraskov_post": 0.4588683633768724, "kraskov_delta_bits": 0.006105074697196566, "binning_pre": 0.5113762490257866, "binning_post": 0.5612741790301842, "binning_delta_bits": 0.04989793000439757}
+{"seed": 4, "label_counts": [128, 128, 128, 128], "majority_rate": 0.25, "reader_acc_pre": 0.25, "reader_acc_post": 0.25, "gate_margin": 0.1, "gate_pass": false, "cache_label_counts": [180, 3480, 4280, 1060], "loss_first20_mean": 1.3672587335109712, "loss_last20_mean": 0.9090378195047378, "ln4": 1.3862943611198906, "x_pre_std": 0.00021653223666362464, "x_post_std": 0.00018027846817858517, "kraskov_pre": 0.0, "kraskov_post": 0.013020852367872617, "kraskov_delta_bits": 0.013020852367872617, "binning_pre": 0.09546349647261432, "binning_post": 0.11409276490381545, "binning_delta_bits": 0.018629268431201135}
+{
+  "world": "studyforrest",
+  "seeds": 5,
+  "lock_after": 100,
+  "steps_train": 200,
+  "steps_lesion": 100,
+  "batch_size": 512,
+  "probe_sampling": "stratified",
+  "n_null": 1000,
+  "null_seed": 20261106,
+  "null": "paired label permutation, same permutation on pre and post probe",
+  "kraskov_1d": {
+    "observed_mean": 0.036214156532507494,
+    "null_median": 0.0007042758780878982,
+    "null_p99": 0.03796987300568613,
+    "null_p01": -0.03744637055237732,
+    "p_one_sided": 0.012987012987012988,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  },
+  "binning_1d": {
+    "observed_mean": 0.03753956636498025,
+    "null_median": 0.0008228718124079853,
+    "null_p99": 0.02544932882615149,
+    "null_p01": -0.025791746998716083,
+    "p_one_sided": 0.000999000999000999,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  },
+  "gated": {
+    "seeds": [],
+    "kraskov_1d": null,
+    "binning_1d": null
+  }
+}
+real 360,50
+user 297,08
+sys 153,22
+== null oldcache rc=0 end 2026-11-06T14:26:48Z
