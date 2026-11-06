@@ -370,17 +370,40 @@ on any of the four synthetic worlds at this parameterisation.
 OSF amendment v0.5 extends the pre-registered grid with a fifth
 world derived from Studyforrest phase-2 (sub-01 ses-localizer
 task-movielocalizer run-1): VGG16 features over
-movie_localizer.mkv (to be cross-checked on that file), ffmpeg
-scene-cut tactile proxy, real pulse-oximetry + respiration physio,
-zero gravity (rp regressors not published), CC-BY-4.0 LibriSpeech
-audio substitution (path (b) of ADR-0012 — the Forrest Gump
-soundtrack is not redistributable). The movie localizer is not film
-footage: it is a retinotopic-style localizer of colored radial
-checkerboards flickering at 5 Hz, covering either the movie-frame
-rectangle or only the horizontal bars and alternating every 12 s,
-4 cycles, 48 volumes at TR 2 s, about 96 s (Sengupta et al. 2016,
-Sci. Data 3:160093, pp. 2, 4, 6). The vision and scene-cut channels
-therefore describe this checkerboard stimulus, not the film.
+movie_localizer.mkv, ffmpeg scene-cut tactile proxy, a physiological
+force channel (see below), zero gravity (rp regressors not
+published), CC-BY-4.0 LibriSpeech audio substitution (path (b) of
+ADR-0012 — the Forrest Gump soundtrack is not redistributable). The
+movie localizer is not film footage. The file movie_localizer.mkv
+(checked on 2026-11-06; its MD5 matches the git-annex key) lasts
+12 s: 300 frames of 1280×720 at 25 fps, with no audio track. It
+shows a colored polar checkerboard, redrawn every 0.2 s (5 Hz, 60
+distinct patterns whose colors are redrawn, not a contrast
+reversal), filling only the movie-frame area between two grey bands.
+In the scanner, the PsychoPy script alternated this file every 12 s
+with inv_movie_localizer.mkv, for 4 cycles, 48 volumes at TR 2 s,
+about 96 s (Sengupta et al. 2016, Sci. Data 3:160093, pp. 2, 4, 6).
+The task description of the dataset states this alternation, and the
+sub-01 physiology file holds 48 scanner triggers over 96 s. Sub-01 is
+present in the localizer session; the dataset has no events file for
+this task. The vision channel (120 frames at 10 Hz) and the
+scene-cut channel (7 detected "cuts") therefore describe the
+inside-movie checkerboard only, not the film. The 7 "cuts" are
+changes of checkerboard pattern.
+
+The force channel is not the pulse-oximetry and respiration signal
+that earlier versions of this section described. On the regenerated tensors,
+`extract_force`
+(`src/bouba_sens/world/studyforrest_features.py`, lines 162-166)
+reads the first data line of the header-less BIDS physiology file as
+a header. It then falls back to column 0 (the scanner trigger) as
+"ECG" and column 1 (the pulse-oximetry trace) as "respiration". In
+the regenerated `force.pt`, the "ECG" channel and its derivatives are
+zero everywhere, the "respiration" channel is the cardiac pulse, and
+the respiratory column is never read (issue #72). The April 2026
+tensors are lost, so this cannot be checked on them. The code is
+unchanged since commit `d7a3645`, so they probably had the same
+defect.
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|
