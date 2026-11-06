@@ -325,6 +325,21 @@ Documentary corrections only ; no value, metric or threshold changed.
    column count. The reported values have not been recomputed. This
    is separate from item 10. Issue #74.
 
+### Erratum (2026-11-06) — phase-2 physiology header
+
+13. `extract_force` now reads the phase-2 physio columns by name
+   (item 10, issue #72). The column names and the sampling rate come
+   from the BIDS sidecar `recording-cardresp_physio.json` (500 Hz;
+   trigger, cardiac, respiratory); a missing column or sidecar stops
+   the extraction with an error. On sub-01 ses-localizer run-1 the new
+   force tensor holds the cardiac trace in channel 0 and the
+   respiratory trace in channel 3 (checked on 2026-11-06). Every
+   4.5-modal value was computed on the April tensors, probably with
+   the old header reading (#72; not verified, the code is unchanged
+   since `d7a3645`). No value is recomputed: those tensors are lost and
+   the public data still give 120 vision frames against 1800 (issue
+   #45). No value is changed.
+
 ## Quickstart
 
 ```bash
