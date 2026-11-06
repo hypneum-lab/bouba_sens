@@ -17,7 +17,11 @@ Inside each class the rows are picked by a uniform permutation from a
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
+
+from bouba_sens.world.base import WorldSample
 
 
 def stratified_allocation(class_counts: dict[int, int], n: int) -> dict[int, int]:
@@ -57,7 +61,9 @@ def stratified_indices(labels: torch.Tensor, n: int, seed: int) -> torch.Tensor:
     return torch.sort(idx).values
 
 
-def sample_probe(world, batch_size: int, seed: int, mode: str = "contiguous"):
+def sample_probe(
+    world: Any, batch_size: int, seed: int, mode: str = "contiguous"
+) -> WorldSample:
     """Probe batch: the world's contiguous ``sample`` or a stratified draw."""
     if mode == "contiguous":
         return world.sample(batch_size=batch_size, seed=seed)
