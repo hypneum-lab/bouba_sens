@@ -1,0 +1,4 @@
+[fetch] wrote 9000 frames to /Users/electron/scratch/bouba-b2-0611/data/studyforrest_real/ (source: OpenNeuro ds000113 (Studyforrest, Hanke et al. 2014) via S3 REST); export BOUBA_SENS_STUDYFORREST_DATA=/Users/electron/scratch/bouba-b2-0611/data/studyforrest_real
+real 8,47
+user 2,03
+sys 0,43

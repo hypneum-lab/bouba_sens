@@ -1,0 +1,116 @@
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "D_participation_ratio_mean": 12.800316429138183,
+  "D_twoNN_mean": 12.510784721374511,
+  "kraskov_delta": {
+    "mean": -0.0009739338904524301,
+    "ci95": [
+      -0.00292180167135729,
+      0.0
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": -0.0023974419930155124,
+    "ci95": [
+      -0.007192325979046538,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": -2.203957670806893e-07,
+    "ci95": [
+      -6.771816877723091e-07,
+      6.604133793131852e-08
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": -1.8982912930910714e-05,
+    "ci95": [
+      -5.6830970179156226e-05,
+      -2.5872640039173772e-08
+    ],
+    "n": 5
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.1573486328125,
+      "D_twoNN": 12.138957023620605,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": -8.384154229561921e-08,
+      "mine_full_delta_bits": -7.169526757843334e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 9.136578327086709e-08,
+      "mine_full_post": 1.967051569243374e-08
+    },
+    {
+      "seed": 1,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.811869621276855,
+      "D_twoNN": 11.613831520080566,
+      "kraskov_delta_bits": -0.0048696694522621506,
+      "binning_delta_bits": -0.011987209965077562,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -9.469093346385351e-05,
+      "kraskov_pre": 0.0048696694522621506,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 9.469093346385351e-05,
+      "mine_full_post": 0.0
+    },
+    {
+      "seed": 2,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.236271858215332,
+      "D_twoNN": 12.769657135009766,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 1.6510334482829628e-07,
+      "mine_full_delta_bits": 1.1286361462871818e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 0.0,
+      "mine_full_post": 1.1286361462871818e-08
+    },
+    {
+      "seed": 3,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.312301635742188,
+      "D_twoNN": 12.849618911743164,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": -8.255167241414814e-08,
+      "mine_full_delta_bits": -2.9935730165807637e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 9.416050134738773e-08,
+      "mine_full_post": 6.422477118158009e-08
+    },
+    {
+      "seed": 4,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.483790397644043,
+      "D_twoNN": 13.181859016418457,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": -1.1006889655219754e-06,
+      "mine_full_delta_bits": -1.3328655441867668e-07,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 1.418856869618171e-07,
+      "mine_full_post": 8.599132543140433e-09
+    }
+  ]
+}

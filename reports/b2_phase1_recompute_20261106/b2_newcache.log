@@ -1,0 +1,51 @@
+== newcache start 2026-11-06T13:15:04Z data=/Users/electron/scratch/bouba-b2-0611/data/studyforrest_real
+seed=0 N=512 d_fused=896 D_PR=12.58 D_2NN=12.12 | Kraskov=+0.0000 bin=+0.0000 MINE1d=+0.0000 MINEfull=-0.0000
+seed=1 N=512 d_fused=896 D_PR=13.35 D_2NN=12.56 | Kraskov=-0.0011 bin=+0.0005 MINE1d=+0.0000 MINEfull=-0.0006
+seed=2 N=512 d_fused=896 D_PR=13.20 D_2NN=12.96 | Kraskov=+0.0000 bin=+0.0000 MINE1d=+0.0000 MINEfull=-0.0000
+seed=3 N=512 d_fused=896 D_PR=12.91 D_2NN=11.95 | Kraskov=+0.0000 bin=+0.0000 MINE1d=+0.0000 MINEfull=+0.0000
+seed=4 N=512 d_fused=896 D_PR=12.86 D_2NN=12.68 | Kraskov=+0.0000 bin=+0.0000 MINE1d=+0.0000 MINEfull=-0.0000
+
+wrote ../out/e1_b2_dimensional_mine_studyforrest_newcache.json
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "D_participation_ratio_mean": 12.979231071472167,
+  "D_twoNN_mean": 12.454634475708009,
+  "kraskov_delta": {
+    "mean": -0.0002206180379957288,
+    "ci95": [
+      -0.0006618541139871865,
+      0.0
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.0001049417177219035,
+    "ci95": [
+      0.0,
+      0.0003148251531657105
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 2.3664812758722475e-07,
+    "ci95": [
+      1.1006889655219753e-07,
+      3.907445827603012e-07
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": -0.0001254376693176361,
+    "ci95": [
+      -0.00037630203760956636,
+      2.9409033297540274e-08
+    ],
+    "n": 5
+  }
+}
+real 277,51
+user 235,91
+sys 156,70
+== newcache rc=0 end 2026-11-06T13:19:42Z
