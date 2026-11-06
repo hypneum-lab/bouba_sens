@@ -59,7 +59,7 @@ running sweep may add back.
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
-| **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
+| **B-2** Me3 MI migration | **Null** on the Gaussian world and the CC-film bridge (ADR-0019: full-D probe, N≳f(D)); **not conclusive** on the Studyforrest bridge (single-class probe, erratum 12, issue #77) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
 | **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
@@ -92,7 +92,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all ADRs.
 |-----------|----------:|-----------------:|:---------------|---------|
 | **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.156** (5.5–7.8×) | 5/5 pass the fixed rule — as do 100 % of null grids at n = 64 | **Compatible with the paired null** (ADR-0022, Gaussian: p = 0.17; null P99 = 0.156). The fixed rule cannot separate signal from noise at n = 64; mean query accuracy 0.254 = chance → probe defect (zero-masking) to fix first. Magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
-| B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
+| B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** on synthetic worlds + the CC-film bridge (ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** bracket zero); **not conclusive** on the Studyforrest bridge (erratum 12) |
 
 **F1 — B-3 is an uncalibrated magnitude (requalified
 2026-10-25).** The Me6 asymmetry magnitude exceeds the 0.02
@@ -187,8 +187,10 @@ follow-up declared for v0.2 is now **closed (ADR-0019)** :
   Feeding MINE the full 896-D probe (the v0.2 "richer probe rescues B-2"
   hypothesis) surfaces no positive signal; adaptive binning collapses in
   896-D exactly as the `N ≫ (#bins)^D` argument predicts. The null holds
-  on the gaussian reference **and on both real bridges** (Studyforrest +
-  CC-film, see F4), regardless of which half of the modalities is real.
+  on the gaussian reference and on the CC-film bridge; on the
+  Studyforrest bridge the measurement is not conclusive (erratum 12,
+  issue #77), so robustness to which half of the modalities is real is
+  not established.
 
 **F4 — Two real bridges with honestly-labelled channel provenance.**
 B-2 Null was re-checked on two real-signal bridges with **opposite**
@@ -205,8 +207,10 @@ headline synthetic findings) :
   (frames) / labels (shot-cuts) = **REAL** perceptual signal ; tactile /
   gravity / force = **SYNTHETIC** (a film has no proprioception).
 
-**B-2 Null holds on both bridges plus the three synthetic worlds** — the
-null is robust to which half of the modality set carries the true signal.
+B-2 is Null on the CC-film bridge and the three synthetic worlds; on the
+Studyforrest bridge it is **not conclusive** (erratum 12). The earlier
+claim that the null is robust to which half of the modality set carries
+the true signal is no longer supported.
 The abstract is aligned to this per-channel provenance (no "real movie
 vision" overclaim).
 
@@ -324,6 +328,26 @@ Documentary corrections only ; no value, metric or threshold changed.
    now reads the layout from a sidecar when one exists, else from the
    column count. The reported values have not been recomputed. This
    is separate from item 10. Issue #74.
+
+### Erratum (2026-11-06) — degenerate B-2 probe on the Studyforrest bridge
+
+12. "B-2 is Null on both real bridges" (README F3/F4, paper §(d)–(e),
+   ADR-0019 E1.3c and Decision) is withdrawn for the Studyforrest
+   bridge. Root cause: the B-2 probe is a contiguous slice of 512
+   frames (51.2 s), and the label is the scene index quantised to 4,
+   which stays constant over long scenes; in 4 of 5 seeds the probe
+   holds a single class, so MI with the label is zero by construction
+   and the control cannot fail (`reports/b2_phase1_recompute_20261106/`,
+   issue #77). A class-stratified probe (ADR-0019 amendment of
+   2026-11-06, exploratory) gives 128 frames per class, but the reader
+   accuracy of the trained head is 0.25 on all 10 seeds (both caches),
+   so the learning gate fails and B-2 is not measurable there
+   (ADR-0019 E1.3c-ter). B-2 stays Null on the CC-film bridge (labels
+   are per-frame quartiles over 600 frames, so every probe holds 62 to
+   150 frames of each class) and on the Gaussian world (i.i.d.). The
+   conclusion that the null does not depend on which half of the
+   modality set is real is no longer supported. No threshold changed.
+   Issues #74, #77.
 
 ## Quickstart
 
