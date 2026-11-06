@@ -202,12 +202,19 @@ phase-1 URL (404) was retired in favour of the live S3 bucket.
 
 | modality | provenance | real? |
 |----------|-----------|:-----:|
-| force | cardiac (pulse-ox) + respiration physio, 500 Hz (`recording-cardresp`) | **REAL** |
+| force | phase-1 `ses-forrestgump` physio, 4 columns (trigger, respiratory, cardiac, SpO2) at 100 Hz (Hanke et al. 2014, *Sci. Data* 1:140003, p. 11); extraction assumed 500 Hz and `[trigger, cardiac, respiratory]`, so "cardiac" = respiration, "resp" = cardiac, 5× time compression (issue #74, 2026-11-06) | **REAL, mislabelled** |
 | gravity | `derivatives/motion/*_bold_moco.txt` rotation regressors | **REAL** |
 | tactile | `scenes.csv` scene / DAY-NIGHT / INT-EXT one-hot → 32-D proj | **REAL** |
 | labels | `scenes.csv` scene index, quantised to 4 | **REAL** |
 | audio | `german_audio_description.csv` narration-timing → 128-D | **PROXY** |
 | vision | `scenes.csv` cut structure → (16,16) | **PROXY** |
+
+*Note (2026-11-06, issue #74):* the cache
+`data/studyforrest_real/force.pt` used for the E1.3c values was built
+with the earlier extraction code (channels swapped, about 4500 s of
+physiology in 9000 frames). The extraction code has since been fixed;
+the values reported in this ADR have not been recomputed with the fixed
+channel.
 
 audio + vision are **annotation-derived proxies**, not the perceptual
 stimuli: the Forrest Gump soundtrack/movie are copyrighted and are **not
@@ -349,7 +356,9 @@ above as the synthetic reference and are not overwritten.
 *Remaining qualification:* the real bridge carries **real** signal for
 force/gravity/tactile/labels but **annotation-derived proxies** for
 audio/vision (the perceptual stimuli are copyrighted and outside
-OpenNeuro). This is a genuine real bridge for the proprioceptive +
+OpenNeuro). The force channel is real physiology but mislabelled and
+time-compressed in the cache used here (table above; values not
+recomputed, issue #74). This is a genuine real bridge for the proprioceptive +
 scene-structure channels, **not** a full perceptual-stimulus replication.
 The B-2 null holds with this limitation stated.
 

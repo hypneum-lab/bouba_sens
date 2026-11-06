@@ -41,7 +41,8 @@ measuring three invariants of cross-modal plasticity --- B-1
 across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
 real MIT-BIH ECG) and \textbf{two real bridges with opposite
 real/synthetic modality splits}. The Studyforrest bridge (OpenNeuro
-ds000113) carries real force, gravity, and tactile/label channels,
+ds000113) carries real gravity and tactile/label channels and real
+physiology in the force channel (mislabelled, see \S(d), issue~\#74),
 while audio and vision are annotation-derived proxies. The CC-film
 bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio (log-mel),
 vision (frames), and labels (shot-cuts) are real perceptual signal,
@@ -987,11 +988,22 @@ ds000113.} The Studyforrest cache was provisioned from OpenNeuro
 ds000113 over the public S3 REST API
 (\texttt{scripts/fetch\_studyforrest\_sample.py --source openneuro},
 9000 frames at 10\,Hz). Channel provenance is mixed and is labelled
-verbatim in the cache manifest: force (cardiac pulse-ox and
-respiration physio, 500\,Hz), gravity (head-motion
+in the cache manifest. Gravity (head-motion
 \texttt{*\_bold\_moco.txt} rotation regressors), and tactile and
 labels (\texttt{scenes.csv} scene, day/night, and interior/exterior
-annotation) are real ds000113 signal, whereas audio and vision are
+annotation) are real ds000113 signal. The force channel is real
+ds000113 physiology but is mislabelled: the phase-1 physiology files
+have four columns (trigger, respiratory trace, cardiac trace, oxygen
+saturation) at 100\,Hz \citep[p.~11]{hanke2014}, whereas the
+extraction assumed the phase-2 layout (trigger, cardiac, respiratory)
+at 500\,Hz. In the cached \texttt{force.pt}, the channel named
+``cardiac'' holds the respiratory trace, the channel named
+``respiration'' holds the cardiac trace, and the 9000 frames span
+about 4500\,s of physiology rather than 900\,s (issue~\#74). The
+cache \texttt{data/studyforrest\_real/force.pt} used for the values
+below was built with this earlier code; the extraction has since been
+fixed, and the values reported here have not been recomputed with the
+fixed channel. Audio and vision are
 annotation-derived proxies (narration timing and scene-cut structure)
 because the soundtrack and movie are copyrighted and absent from
 OpenNeuro. The run uses \texttt{StudyforrestRealWorld} (mode
@@ -1022,9 +1034,11 @@ $-1.8\times 10^{-9}$, a negative value), and no estimator crosses
 $+0.10$ on any of the 5 seeds. The magnitudes are smaller than the
 Gaussian ones; since the lesioned audio channel is an annotation
 proxy, there is even less audio-specific information to migrate, but
-the qualitative null is the same. This is a real bridge for
-force, gravity, tactile, and labels and a documented proxy for audio
-and vision; it is not a full perceptual-stimulus replication.
+the qualitative null is the same. This is a real bridge for gravity,
+tactile, and labels, a real but mislabelled and time-compressed force
+channel (see above; values not recomputed, issue~\#74), and a
+documented proxy for audio and vision; it is not a full
+perceptual-stimulus replication.
 
 \paragraph{(e) CC-film real-AV bridge.} The proxy limitation of (d) is
 closed from the other side by the bridge defined in
