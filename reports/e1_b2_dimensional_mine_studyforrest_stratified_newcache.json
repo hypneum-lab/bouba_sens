@@ -1,0 +1,244 @@
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "probe_sampling": "stratified",
+  "gate_margin": 0.1,
+  "n_seeds_gate_pass": 0,
+  "D_participation_ratio_mean": 11.311397552490234,
+  "D_twoNN_mean": 12.668302726745605,
+  "kraskov_delta": {
+    "mean": 0.004062463037441943,
+    "ci95": [
+      -0.044424379788536014,
+      0.0436170712793845
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.025864611017360994,
+    "ci95": [
+      4.7027652954846275e-06,
+      0.05950154140904281
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": 0.14065453555689375,
+    "ci95": [
+      -0.014452517849591482,
+      0.4417317665289149
+    ],
+    "n": 5
+  },
+  "gated": {
+    "seeds": [],
+    "kraskov_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "binning_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_1d_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_full_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.344071388244629,
+      "D_twoNN": 13.354681015014648,
+      "kraskov_delta_bits": -0.08159310320460009,
+      "binning_delta_bits": -0.00843032344612546,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.012037683554688913,
+      "kraskov_pre": 0.08159310320460009,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 0.012067450768729164,
+      "mine_full_post": 2.9767214040251277e-05,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 1,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.35139274597168,
+      "D_twoNN": 12.559148788452148,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.021756350734210936,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.007996655819336656,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 0.007996655819336656,
+      "mine_full_post": 0.0,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 2,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 5.091100692749023,
+      "D_twoNN": 12.806057929992676,
+      "kraskov_delta_bits": 0.0689188836871208,
+      "binning_delta_bits": 0.09472722658570953,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": 0.74267590774304,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0689188836871208,
+      "mine_full_pre": 0.007528505157432648,
+      "mine_full_post": 0.7502044129004727,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 3,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.91244125366211,
+      "D_twoNN": 11.939309120178223,
+      "kraskov_delta_bits": 0.011328705335560088,
+      "binning_delta_bits": 0.00514843793018914,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.0012941212926003934,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.011328705335560088,
+      "mine_full_pre": 0.0012941212926003934,
+      "mine_full_post": 0.0,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 4,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.85798168182373,
+      "D_twoNN": 12.682316780090332,
+      "kraskov_delta_bits": 0.02165782936912891,
+      "binning_delta_bits": 0.016121363282820808,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.01807476929194533,
+      "kraskov_pre": 0.031793955289491596,
+      "kraskov_post": 0.05345178465862051,
+      "mine_full_pre": 0.018235596503138236,
+      "mine_full_post": 0.00016082721119290615,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    }
+  ]
+}
