@@ -73,10 +73,44 @@ def build_loop(world_name: str, seed: int, lock_after: int):
 
 
 @torch.no_grad()
-def _full_fused(loop, probe):
+def _fused_and_preds(loop, probe):
+    """One fuse call: full (B, d_fused) probe and the head's predicted labels.
+
+    The head is a deterministic linear read-out of the same fused tensor, so
+    reading it adds no RNG draw (Gumbel demodulation in ``fuse`` uses the
+    global torch RNG; a second ``fuse`` call would change later training).
+    """
     carriers = {m: loop.sensories[m].step(getattr(probe, m)) for m in MODALITIES}
     fused = loop.nerve.fuse(carriers)  # (B, K, d_hidden)
-    return fused.flatten(1).detach().cpu()  # (B, d_fused)
+    preds = loop.head(fused).argmax(-1)
+    return fused.flatten(1).detach().cpu(), preds.detach().cpu()  # (B, d_fused), (B,)
+
+
+def _full_fused(loop, probe):
+    return _fused_and_preds(loop, probe)[0]
+
+
+def probe_diagnostics(world, labels, preds_pre, preds_post, n_classes: int = 4) -> dict:
+    """Label counts, majority rate and reader accuracy (amendment 2026-11-06)."""
+    labels = np.asarray(labels).astype(int)
+    counts = np.bincount(labels, minlength=n_classes)
+    out = {
+        "label_counts": counts.tolist(),
+        "majority_rate": float(counts.max() / counts.sum()),
+        "reader_acc_pre": float(np.mean(np.asarray(preds_pre) == labels)),
+        "reader_acc_post": float(np.mean(np.asarray(preds_post) == labels)),
+    }
+    out["gate_margin"] = GATE_MARGIN
+    out["gate_pass"] = bool(out["reader_acc_pre"] >= out["majority_rate"] + GATE_MARGIN)
+    cache_labels = getattr(world, "dataset_labels", None)
+    if cache_labels is not None:
+        out["cache_label_counts"] = np.bincount(
+            np.asarray(cache_labels).astype(int), minlength=n_classes
+        ).tolist()
+    return out
+
+
+GATE_MARGIN = 0.10  # ADR-0019 amendment 2026-11-06: reader acc >= majority + 0.10
 
 
 def capture_probe(
@@ -86,17 +120,23 @@ def capture_probe(
     steps_train: int,
     steps_lesion: int,
     batch_size: int,
+    probe_sampling: str = "contiguous",
 ):
     """Run P1 pretrain + P2 lesion, return full (B, d_fused) pre/post + labels.
 
     Mirrors AdaptationLoop.lesion_phase exactly, except the probe is kept
-    at full dimensionality instead of being mean-pooled to (B,).
+    at full dimensionality instead of being mean-pooled to (B,). The fourth
+    value holds the probe diagnostics (label counts, reader accuracy).
+    ``probe_sampling="stratified"`` draws the probe by class (ADR-0019
+    amendment 2026-11-06); training batches are unchanged.
     """
+    from bouba_sens.world.probe_sampling import sample_probe
+
     loop = build_loop(world_name, seed, lock_after)
     loop.pretrain(steps_train, batch_size=batch_size, seed=seed)
 
-    probe = loop.world.sample(batch_size=batch_size, seed=seed - 99_999)
-    pre_full = _full_fused(loop, probe)
+    probe = sample_probe(loop.world, batch_size, seed - 99_999, probe_sampling)
+    pre_full, preds_pre = _fused_and_preds(loop, probe)
     labels = probe.label.detach().cpu()
 
     lesion = LesionSpec(
@@ -106,8 +146,10 @@ def capture_probe(
         schedule=lambda s: m2_snr_schedule(s, snr_init=0.0, snr_floor=-20.0, k=steps_lesion),
     )
     loop.lesion_phase(lesion, steps=steps_lesion, batch_size=batch_size, seed=seed)
-    post_full = _full_fused(loop, probe)
-    return pre_full.numpy(), post_full.numpy(), labels.numpy()
+    post_full, preds_post = _fused_and_preds(loop, probe)
+    diag = probe_diagnostics(loop.world, labels.numpy(), preds_pre.numpy(), preds_post.numpy())
+    diag["probe_sampling"] = probe_sampling
+    return pre_full.numpy(), post_full.numpy(), labels.numpy(), diag
 
 
 # --------------------------------------------------------------------------
@@ -183,6 +225,12 @@ def main() -> None:
         "--batch-size", type=int, default=512, help="probe batch N (E2 sets this from f(D))"
     )
     ap.add_argument("--bootstrap", type=int, default=500)
+    ap.add_argument(
+        "--probe-sampling",
+        choices=["contiguous", "stratified"],
+        default="contiguous",
+        help="probe draw: contiguous slice (legacy) or class-stratified (ADR-0019 amendment)",
+    )
     ap.add_argument("--out", type=Path, default=Path("reports/e1_b2_dimensional_mine.json"))
     args = ap.parse_args()
 
@@ -195,13 +243,14 @@ def main() -> None:
     d_pr_list, d_2nn_list = [], []
 
     for seed in range(args.seeds):
-        pre, post, labels = capture_probe(
+        pre, post, labels, diag = capture_probe(
             args.world,
             seed,
             args.lock_after,
             args.steps_train,
             args.steps_lesion,
             args.batch_size,
+            args.probe_sampling,
         )
         n_samples, d_fused = pre.shape
 
@@ -258,10 +307,14 @@ def main() -> None:
                 "kraskov_post": k_post,
                 "mine_full_pre": mf_pre,
                 "mine_full_post": mf_post,
+                **diag,
             }
         )
         print(
-            f"seed={seed} N={n_samples} d_fused={d_fused} "
+            f"seed={seed} counts={diag['label_counts']} "
+            f"acc_pre={diag['reader_acc_pre']:.3f} acc_post={diag['reader_acc_post']:.3f} "
+            f"gate={'pass' if diag['gate_pass'] else 'fail'} | "
+            f"N={n_samples} d_fused={d_fused} "
             f"D_PR={d_pr:.2f} D_2NN={d_2nn:.2f} | "
             f"Kraskov={kras_delta:+.4f} bin={bin_delta:+.4f} "
             f"MINE1d={mine_delta:+.4f} MINEfull={mine_full_delta:+.4f}",
@@ -279,16 +332,28 @@ def main() -> None:
             "n": int(a.size),
         }
 
+    gated = [s for s in per_seed if s["gate_pass"]]
     summary = {
         "world": args.world,
         "lock_after": args.lock_after,
         "seeds": args.seeds,
+        "probe_sampling": args.probe_sampling,
+        "gate_margin": GATE_MARGIN,
+        "n_seeds_gate_pass": len(gated),
         "D_participation_ratio_mean": float(np.mean(d_pr_list)),
         "D_twoNN_mean": (float(np.mean(d_2nn_list)) if d_2nn_list else None),
         "kraskov_delta": ci([s["kraskov_delta_bits"] for s in per_seed]),
         "binning_delta": ci([s["binning_delta_bits"] for s in per_seed]),
         "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in per_seed]),
         "mine_full_delta": ci([s["mine_full_delta_bits"] for s in per_seed]),
+        # after the legacy CIs so the bootstrap RNG stream of those is unchanged
+        "gated": {
+            "seeds": [s["seed"] for s in gated],
+            "kraskov_delta": ci([s["kraskov_delta_bits"] for s in gated]),
+            "binning_delta": ci([s["binning_delta_bits"] for s in gated]),
+            "mine_1d_delta": ci([s["mine_1d_delta_bits"] for s in gated]),
+            "mine_full_delta": ci([s["mine_full_delta_bits"] for s in gated]),
+        },
         "per_seed": per_seed,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)

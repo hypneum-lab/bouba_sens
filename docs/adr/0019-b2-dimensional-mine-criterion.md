@@ -181,6 +181,17 @@ Three readings:
 
 3. **"Probe batch ≥128" is retired** in favour of N ≳ f(D) with D reported.
 
+4. **Real bridges (aligned 2026-11-06, PI decision; issues #74, #77).**
+   B-2 is Null on the CC-film bridge (E1.3d) and on the Gaussian world.
+   On the Studyforrest bridge it is **not conclusive**: the contiguous
+   probe holds a single label class in 4 of 5 seeds (#77), so MI is
+   zero by construction (E1.3c-bis), and with the stratified probe of
+   the amendment the learning gate fails on every seed, so B-2 is not
+   measurable there (E1.3c-ter). The earlier statement that the null
+   does not depend on which half of the modality set carries real
+   signal is **no longer supported**: only one real bridge gives an
+   informative measurement.
+
 ## Pre-registration fidelity
 
 - **No threshold changes** (B-2 still +0.10).
@@ -202,7 +213,7 @@ phase-1 URL (404) was retired in favour of the live S3 bucket.
 
 | modality | provenance | real? |
 |----------|-----------|:-----:|
-| force | phase-1 `ses-forrestgump` physio, 4 columns (trigger, respiratory, cardiac, SpO2) at 100 Hz (Hanke et al. 2014, *Sci. Data* 1:140003, p. 11); extraction assumed 500 Hz and `[trigger, cardiac, respiratory]`, so "cardiac" = respiration, "resp" = cardiac, 5× time compression (issue #74, 2026-11-06) | **REAL, mislabelled** |
+| force | phase-1 `ses-forrestgump` physio, 4 columns (trigger, respiratory, cardiac, SpO2) at 100 Hz (Hanke et al. 2014, *Sci. Data* 1:140003, p. 11); extraction assumed 500 Hz and `[trigger, cardiac, respiratory]`, so "cardiac" = respiration, "resp" = cardiac, 5× time compression in the first cache (issue #74, 2026-11-06; corrected cache in E1.3c-bis) | **REAL** (mislabelled in the first cache) |
 | gravity | `derivatives/motion/*_bold_moco.txt` rotation regressors | **REAL** |
 | tactile | `scenes.csv` scene / DAY-NIGHT / INT-EXT one-hot → 32-D proj | **REAL** |
 | labels | `scenes.csv` scene index, quantised to 4 | **REAL** |
@@ -210,11 +221,11 @@ phase-1 URL (404) was retired in favour of the live S3 bucket.
 | vision | `scenes.csv` cut structure → (16,16) | **PROXY** |
 
 *Note (2026-11-06, issue #74):* the cache
-`data/studyforrest_real/force.pt` used for the E1.3c values was built
-with the earlier extraction code (channels swapped, about 4500 s of
-physiology in 9000 frames). The extraction code has since been fixed;
-the values reported in this ADR have not been recomputed with the fixed
-channel.
+`data/studyforrest_real/force.pt` used for the E1.3c values below was
+built with the earlier extraction code (channels swapped, about 4500 s
+of physiology in 9000 frames). The extraction was fixed (PR #75) and
+the values were recomputed on 2026-11-06 with the corrected cache; see
+E1.3c-bis after the E1.3c verdict.
 
 audio + vision are **annotation-derived proxies**, not the perceptual
 stimuli: the Forrest Gump soundtrack/movie are copyrighted and are **not
@@ -250,6 +261,181 @@ real-bridge magnitudes are *smaller* than gaussian's — expected, since the
 lesioned `audio` channel is an annotation proxy carrying less
 audio-specific information to migrate — but the qualitative null is the
 same. Artefact: `reports/e1_b2_dimensional_mine_studyforrest.json`.
+
+### E1.3c-bis — recompute with the corrected phase-1 cache (2026-11-06)
+
+The cache was regenerated on macM1 with the fixed extraction
+(`fetch_studyforrest_sample.py --source openneuro --duration-seconds
+900 --force`). New `force.pt` SHA-256 `d96ad636…b9e9` (first cache
+`890b90ae…d773`); the five other tensors are byte-identical. Welch
+spectrum over 900 s at 10 Hz: "cardiac" peaks at 1.37 Hz and
+"respiration" at 0.30 Hz (first cache: 1.22 Hz and 3.88 Hz, consistent
+with the 5× time compression). Same command as E1.3c (`--world studyforrest --seeds 5
+--lock-after 100 --steps-train 200 --steps-lesion 100 --batch-size 512
+--bootstrap 500`), on macM1 under the heavy lock.
+
+| Estimator (probe shape) | first cache (#74) | **corrected cache** | **corrected 95% CI** |
+|-------------------------|------------------:|--------------------:|----------------------|
+| Kraskov k-NN (1-D) | −0.00097 | **−0.00022** | [−0.00066, 0.000] |
+| Adaptive binning (1-D) | −0.0024 | **+0.00011** | [0.000, +0.00032] |
+| MINE (1-D mean-pool) | −2.0e-7 | **+2.4e-7** | [+1.1e-7, +3.9e-7] |
+| MINE (full 896-D probe) | −1.9e-5 | **−1.3e-4** | [−3.8e-4, +2.9e-8] |
+
+D_PR 12.98, D_2NN 12.46 (first cache 12.91 / 12.49). With the first
+cache (#74) the values were those of the E1.3c table; recomputed on
+2026-11-06 with the corrected cache. A same-day replay on the first
+cache reproduces Kraskov and binning exactly and every value of seeds
+1–4 (seed 0 differs in D and MINE). No estimator's B-2 exceeds the
+preregistered +0.10 threshold on any seed. Paired label-permutation
+null (1000 draws, same permutation on the pre- and post-lesion probe,
+mean over 5 seeds, `scripts/spikes/e1_b2_paired_null.py`): Kraskov
+observed 0.000, null median 0.000, P99 0.0044, p = 0.62; binning
+observed −0.0011, null median −0.00003, P99 0.0036, p = 0.79 (first
+cache p = 0.75 / 0.70). MINE is not in the null (one fit per draw).
+
+*Reading.* The probe batch is a contiguous slice of 512 frames
+(51.2 s); the label is the scene index quantised to 4. In 4 of 5 seeds
+it holds a single class (`[0,512,0,0]` or `[0,0,512,0]`), in seed 1
+500 and 12; `labels.pt` is identical in both caches. MI with a
+constant label is zero for any representation, so B-2 is 0 by
+construction on those seeds and the measurement cannot fail. The
+Phase-1 loss moves from 1.33–1.40 to 0.87–0.92 (ln 4 = 1.39), but
+training batches are drawn the same way and reader accuracy was not
+measured, so the learning gate is not established. B-2 on the real
+bridge is **not conclusive**, with either cache.
+
+The class of the E1.3c result changes from "Null" to a measurement
+that is not informative; the question was left to the PI (issue #74),
+who decided on 2026-11-06 to align the Decision (item 4) and to rerun
+with a stratified probe (amendment and E1.3c-ter below). Artefacts:
+`reports/e1_b2_dimensional_mine_studyforrest_phase1fix.json`,
+`…_oldcache_replay.json`, `reports/e1_b2_paired_null_studyforrest_*.json`,
+logs and cache manifests in `reports/b2_phase1_recompute_20261106/`.
+
+## Amendment 2026-11-06 — probe sampling
+
+**Status: exploratory.** This is a change of method informed by reading
+the results of PR #76 (E1.3c-bis) and issue #77 (single-class probe).
+It is not preregistered, and nothing measured under it can carry a
+confirmatory claim. The rule below is written and committed before any
+run that uses it; the code and the run logs come in later commits.
+
+**Root cause addressed.** The B-2 probe is a contiguous slice of
+512 frames (`scripts/spikes/e1_b2_dimensional_mine.py:98`, world
+`sample()` at `src/bouba_sens/world/studyforrest.py:146-148`). The
+Studyforrest label is the scene index quantised to 4, so a 51.2 s slice
+lies inside one long scene class in 4 of 5 seeds
+(`reports/b2_phase1_recompute_20261106/null_newcache.log`, lines 2-6).
+MI with a constant label is zero for any representation.
+
+**Rule (a priori).**
+
+1. *Probe draw.* N = 512 frames from the whole cache (9000 frames for
+   Studyforrest), stratified by label class, without replacement.
+   Allocation: equal share ⌊512 / C⌋ for the C classes present in the
+   cache (128 for C = 4). A class with fewer frames than its share gives
+   all its frames; the shortfall is shared equally among the classes
+   that still have frames, repeated until 512 frames are allocated or
+   the cache is exhausted; an integer remainder goes to the classes in
+   increasing label order. The per-class counts of the cache and of the
+   probe are written to the output JSON. Inside each class, frames are
+   picked by a uniform permutation from a `torch.Generator` seeded with
+   the probe seed `seed - 99_999`, as before; the selected indices are
+   sorted. Training and lesion batches are unchanged (contiguous
+   slices): only the probe changes.
+2. *Paired null.* Same probe (same function, same seed). Label
+   permutation inside the probe, 1000 draws, the same permutation on the
+   pre- and post-lesion probe, statistic = mean B-2 over seeds,
+   one-sided p = (k + 1) / (1000 + 1), null seed 20261106 as before.
+3. *Learning gate.* Reader accuracy = accuracy of the trained
+   integration head (argmax of its logits on the fused code) on the
+   probe, after Phase 1 and before the lesion, taken from the same
+   forward pass that gives the pre-lesion probe (no extra RNG draw). A
+   seed passes if its reader accuracy is at least the majority-class
+   rate of its probe plus a margin of **0.10** (absolute; 0.35 for a
+   balanced 4-class probe, about five binomial standard errors above
+   0.25 at N = 512). The post-lesion reader accuracy on the clean probe
+   is reported, not gated.
+4. *Classification.* A seed that fails the gate is "not measurable";
+   its B-2 is reported but not used. If fewer than 3 of 5 seeds pass,
+   B-2 on that cache is "not measurable". Otherwise the mean B-2 over
+   the passing seeds is compared with the unchanged preregistered
+   threshold **+0.10 bit**, and the paired null p is given for the same
+   seeds. Allowed wording: "exceeds / does not exceed the preregistered
+   threshold", "not conclusive", "not measurable". Not used: confirmed,
+   positive, refuted.
+5. *Reproduction.* `--probe-sampling contiguous` (default) reproduces
+   the earlier runs; `--probe-sampling stratified` applies this rule.
+   It needs a world that exposes `dataset_labels` and `gather`
+   (Studyforrest real bridge); other worlds are out of scope here.
+
+**CC-film and Gaussian worlds (not rerun).** CC-film labels are
+per-frame quartiles over 600 frames (`scripts/extract_ccfilm_features.py:157-164`),
+so any contiguous 512-frame slice holds 62 to 150 frames of each class;
+the Gaussian world draws i.i.d. samples. Section E1.3d used the 2-fps
+cache `data/ccfilm_real` (600 frames, this ADR E1.3d; commit `fb7af00`
+of 2026-06-04). The 10-fps cache `ccfilm_real_10fps` (5,965 frames) was
+built on 2026-10-28 for the v0.9 pilots (commit `33b266d`, branch
+`docs/osf-prereg-2026-10`, not an ancestor of this branch), and no
+script or `reports/MANIFEST.json` entry on this branch refers to it
+(the E1.3d JSON artefact `reports/e1_b2_dimensional_mine_ccfilm.json`
+is not tracked, so its run log cannot be checked). The bound above
+therefore applies to E1.3d, on the evidence of dates and frame counts.
+
+### E1.3c-ter — stratified probe under the amendment (2026-11-06, exploratory)
+
+Same command as E1.3c-bis plus `--probe-sampling stratified`, on the
+corrected cache and on the first cache, macM1, commit `540e483`, heavy
+lock (`reports/b2_stratified_probe_20261106/`). Cache class counts are
+[180, 3480, 4280, 1060] (9000 frames, both caches); every probe holds
+[128, 128, 128, 128].
+
+| Estimator (probe) | contiguous, corrected (#76) | stratified, corrected | stratified, first cache |
+|-------------------|----------------------------:|----------------------:|------------------------:|
+| Kraskov k-NN (1-D) | −0.00022 | +0.0041 [−0.044, +0.044] | −0.020 [−0.070, +0.033] |
+| Adaptive binning (1-D) | +0.00011 | +0.026 [0.000, +0.060] | −0.0021 [−0.013, +0.008] |
+| MINE (1-D mean-pool) | +2.4e-7 | 0.000 [0.000, 0.000] | 0.000 [0.000, 0.000] |
+| MINE (full 896-D probe) | −1.3e-4 | +0.14 [−0.014, +0.44] | −0.0073 [−0.014, −0.0015] |
+
+Means over 5 seeds, bits, 500-resample bootstrap 95 % CI. The
+stratified MINE-full mean on the corrected cache is carried by seed 2
+(+0.74; the four other seeds lie between −0.018 and −0.001; D_PR of
+seed 2 is 5.1 against 12.3–13.4 for the others).
+
+*Learning gate.* Reader accuracy before the lesion is **0.250 on all
+10 seeds** (5 per cache), equal to the majority-class rate 0.25 of a
+balanced probe: the trained head gives the same class to every probe
+frame. The gate (0.35) fails on every seed. After the lesion the
+reader accuracy is 0.25 on 9 seeds and 0.365 on seed 3 of the first
+cache. The Phase-1 loss still falls from 1.32–1.40 to 0.86–0.91
+(ln 4 = 1.39). Training batches are contiguous slices, so most of
+them hold one class; a loss below ln 4 together with a constant
+prediction on a balanced probe is consistent with a head that tracks
+the class of the current scene rather than reading the class from the
+input. This reading is an inference; it was not tested.
+
+*Paired null* (`e1_b2_paired_null.py --probe-sampling stratified`,
+1000 draws, all 5 seeds; the null run recaptures the probe and its
+observed B-2 differs from the main run because the Gumbel
+demodulation and the MINE fits use the global random state). Corrected
+cache: Kraskov observed −0.072, null median −0.0012, P99 0.036,
+p = 1.0; binning observed −0.089, null P99 0.027, p = 1.0. First
+cache: Kraskov observed +0.036, null P99 0.038, p = 0.013; binning
+observed +0.038, null P99 0.025, p = 0.001. Per-seed observed B-2
+moves between the two runs by up to 0.4 bit (seed 4, corrected cache:
+Kraskov +0.022 in the main run, −0.388 in the null run), so the label
+permutation null does not cover the run-to-run variation of the
+representation. These p values are reported, not interpreted.
+
+*Classification under the amendment.* 0 of 5 seeds pass the learning
+gate on either cache: B-2 on the Studyforrest bridge is **not
+measurable** with the stratified probe, with either cache. No mean
+B-2 exceeds the preregistered +0.10 threshold; one seed (corrected
+cache, seed 2, MINE-full +0.74) exceeds it, on a network that does
+not pass the gate. With the contiguous probe (E1.3c-bis) the result
+stays **not conclusive** (single-class probe, #77). Artefacts:
+`reports/e1_b2_dimensional_mine_studyforrest_stratified_{newcache,oldcache}.json`,
+`reports/e1_b2_paired_null_studyforrest_stratified_{newcache,oldcache}.json`.
 
 ## E1.3d — CC-film real-AV bridge (`--world ccfilm`, Big Buck Bunny CC-BY)
 
@@ -334,6 +520,9 @@ replacement):**
   biological grounding with proxy AV; CC-film contributes real AV with
   synthetic proprioception. **B-2 is Null across both**, plus gaussian — the
   null is robust to which half of the modality set is real.
+  *Note (2026-11-06, #77):* this sentence is superseded by Decision
+  item 4: the Studyforrest measurement is not conclusive, so only the
+  CC-film bridge and the Gaussian world support the null.
 
 Artefact: `reports/e1_b2_dimensional_mine_ccfilm.json`. Cache + per-channel
 SHA256/provenance: `data/ccfilm_real/MANIFEST.md`.
@@ -352,13 +541,15 @@ ds000113 and the script was re-run with `--world studyforrest`. The B-2
 **verdict is confirmed Null on the real bridge** — the gaussian-only
 caveat is **lifted for the verdict**. The gaussian magnitudes are retained
 above as the synthetic reference and are not overwritten.
+*Note (2026-11-06, #77):* withdrawn for Studyforrest; see E1.3c-bis,
+E1.3c-ter and Decision item 4.
 
 *Remaining qualification:* the real bridge carries **real** signal for
 force/gravity/tactile/labels but **annotation-derived proxies** for
 audio/vision (the perceptual stimuli are copyrighted and outside
-OpenNeuro). The force channel is real physiology but mislabelled and
-time-compressed in the cache used here (table above; values not
-recomputed, issue #74). This is a genuine real bridge for the proprioceptive +
+OpenNeuro). The force channel was mislabelled and
+time-compressed in the first cache (issue #74); it is corrected in the
+cache used for E1.3c-bis. This is a genuine real bridge for the proprioceptive +
 scene-structure channels, **not** a full perceptual-stimulus replication.
 The B-2 null holds with this limitation stated.
 

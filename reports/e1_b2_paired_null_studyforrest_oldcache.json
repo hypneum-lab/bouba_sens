@@ -1,0 +1,133 @@
+{
+  "world": "studyforrest",
+  "seeds": 5,
+  "lock_after": 100,
+  "steps_train": 200,
+  "steps_lesion": 100,
+  "batch_size": 512,
+  "n_null": 1000,
+  "null_seed": 20261106,
+  "null": "paired label permutation, same permutation on pre and post probe",
+  "kraskov_1d": {
+    "observed_mean": -6.36022822400619e-05,
+    "null_median": 0.00028177637517311314,
+    "null_p99": 0.005008272814114721,
+    "null_p01": -0.0038117274365849505,
+    "p_one_sided": 0.7472527472527473,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  },
+  "binning_1d": {
+    "observed_mean": -0.0008068748623531963,
+    "null_median": 0.0,
+    "null_p99": 0.0033459074413339064,
+    "null_p01": -0.0034768897630871225,
+    "p_one_sided": 0.7042957042957043,
+    "threshold": 0.1,
+    "exceeds_threshold": false,
+    "null_p99_below_threshold": true
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "label_counts": [
+        0,
+        512,
+        0,
+        0
+      ],
+      "loss_first20_mean": 1.4194631099700927,
+      "loss_last20_mean": 0.8752014189958572,
+      "ln4": 1.3862943611198906,
+      "x_pre_std": 0.0001652888604439795,
+      "x_post_std": 0.00022745455498807132,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0014088818758655657,
+      "kraskov_delta_bits": 0.0014088818758655657,
+      "binning_pre": 0.0,
+      "binning_post": 0.0,
+      "binning_delta_bits": 0.0
+    },
+    {
+      "seed": 1,
+      "label_counts": [
+        0,
+        500,
+        12,
+        0
+      ],
+      "loss_first20_mean": 1.4127229630947113,
+      "loss_last20_mean": 0.8820128262042999,
+      "ln4": 1.3862943611198906,
+      "x_pre_std": 0.0006702691898681223,
+      "x_post_std": 0.0008193573448807001,
+      "kraskov_pre": 0.002011486557349143,
+      "kraskov_post": 0.0002845932702832676,
+      "kraskov_delta_bits": -0.0017268932870658752,
+      "binning_pre": 0.03437476042210005,
+      "binning_post": 0.030340386110334065,
+      "binning_delta_bits": -0.004034374311765981
+    },
+    {
+      "seed": 2,
+      "label_counts": [
+        0,
+        0,
+        512,
+        0
+      ],
+      "loss_first20_mean": 1.3727006018161774,
+      "loss_last20_mean": 0.8852799654006958,
+      "ln4": 1.3862943611198906,
+      "x_pre_std": 0.00037512154085561633,
+      "x_post_std": 0.001082217670045793,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "kraskov_delta_bits": 0.0,
+      "binning_pre": 0.0,
+      "binning_post": 0.0,
+      "binning_delta_bits": 0.0
+    },
+    {
+      "seed": 3,
+      "label_counts": [
+        0,
+        512,
+        0,
+        0
+      ],
+      "loss_first20_mean": 1.3524410724639893,
+      "loss_last20_mean": 0.8212750762701034,
+      "ln4": 1.3862943611198906,
+      "x_pre_std": 0.00016672960191499442,
+      "x_post_std": 0.0002972534275613725,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "kraskov_delta_bits": 0.0,
+      "binning_pre": 0.0,
+      "binning_post": 0.0,
+      "binning_delta_bits": 0.0
+    },
+    {
+      "seed": 4,
+      "label_counts": [
+        0,
+        0,
+        512,
+        0
+      ],
+      "loss_first20_mean": 1.3676169157028197,
+      "loss_last20_mean": 0.880671015381813,
+      "ln4": 1.3862943611198906,
+      "x_pre_std": 0.00026622749282978475,
+      "x_post_std": 0.0009380867122672498,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "kraskov_delta_bits": 0.0,
+      "binning_pre": 0.0,
+      "binning_post": 0.0,
+      "binning_delta_bits": 0.0
+    }
+  ]
+}

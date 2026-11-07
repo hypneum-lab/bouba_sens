@@ -42,7 +42,8 @@ across five worlds (Gaussian, XOR, Sinusoid, Studyforrest mock,
 real MIT-BIH ECG) and \textbf{two real bridges with opposite
 real/synthetic modality splits}. The Studyforrest bridge (OpenNeuro
 ds000113) carries real gravity and tactile/label channels and real
-physiology in the force channel (mislabelled, see \S(d), issue~\#74),
+physiology in the force channel (mislabelled in the first cache,
+corrected and recomputed in \S(d), issue~\#74),
 while audio and vision are annotation-derived proxies. The CC-film
 bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio (log-mel),
 vision (frames), and labels (shot-cuts) are real perceptual signal,
@@ -85,8 +86,10 @@ re-estimating with Kraskov, adaptive binning, and MINE on the full
 896-D probe, with a measured effective dimension $D \approx 12$
 replacing the ``probe batch $\geq 128$'' heuristic by an
 estimator-aware $N \gtrsim f(D)$ criterion, no estimator crosses
-$+0.10$ on any seed on the Gaussian reference or on either real
-bridge (Section~\ref{sec:limitations-e1e2}). An earlier version of this paper
+$+0.10$ on any seed on the Gaussian reference or on the CC-film
+bridge; on the Studyforrest bridge the measurement is not conclusive
+(single-class probe, issue~\#77; a stratified rerun does not pass
+the learning gate; Section~\ref{sec:limitations-e1e2}). An earlier version of this paper
 claimed that a frozen mux with hard transducer gating is the
 minimal configuration that qualitatively reproduces the Amedi
 T1/T2 asymmetry; that claim rested on the single-seed B-1 pattern
@@ -124,7 +127,10 @@ effect \citep{kohler1947gestalt, ramachandran2001synaesthesia}
 independently reports high agreement on a round-vs-spiky
 sound-shape mapping, robust across 25 languages and ten writing
 systems \citep{cwiek2022bouba}; whether this mapping is hard-wired
-or partly learned remains debated \citep{sidhu2018five}. To the
+or partly learned remains debated \citep{sidhu2018five}; the one
+infant study we have read found no effect at 5 and 6 months across
+three experiments and a general preference for round shapes, a null
+its authors call hard to interpret \citep{fort2013looking}. To the
 best of our knowledge, no pre-registered computational benchmark
 currently tests whether a given cross-modal architecture
 reproduces both properties simultaneously.
@@ -1004,51 +1010,130 @@ in the cache manifest. Gravity (head-motion
 \texttt{*\_bold\_moco.txt} rotation regressors), and tactile and
 labels (\texttt{scenes.csv} scene, day/night, and interior/exterior
 annotation) are real ds000113 signal. The force channel is real
-ds000113 physiology but is mislabelled: the phase-1 physiology files
-have four columns (trigger, respiratory trace, cardiac trace, oxygen
-saturation) at 100\,Hz \citep[p.~11]{hanke2014}, whereas the
-extraction assumed the phase-2 layout (trigger, cardiac, respiratory)
-at 500\,Hz. In the cached \texttt{force.pt}, the channel named
-``cardiac'' holds the respiratory trace, the channel named
-``respiration'' holds the cardiac trace, and the 9000 frames span
-about 4500\,s of physiology rather than 900\,s (issue~\#74). The
-cache \texttt{data/studyforrest\_real/force.pt} used for the values
-below was built with this earlier code; the extraction has since been
-fixed, and the values reported here have not been recomputed with the
-fixed channel. Audio and vision are
+ds000113 physiology: the phase-1 physiology files have four columns
+(trigger, respiratory trace, cardiac trace, oxygen saturation) at
+100\,Hz \citep[p.~11]{hanke2014}. The first version of the cache was
+built by code that assumed the phase-2 layout (trigger, cardiac,
+respiratory) at 500\,Hz, so its channel named ``cardiac'' held the
+respiratory trace, its channel named ``respiration'' held the cardiac
+trace, and its 9000 frames spanned about 4500\,s of physiology
+rather than 900\,s (issue~\#74). The extraction was fixed and the
+cache regenerated on 2026-11-06: in the new \texttt{force.pt} the
+``cardiac'' column peaks at 1.37\,Hz and the ``respiration'' column at
+0.30\,Hz (Welch spectrum, 10\,Hz frames, 900\,s); the five other
+tensors are byte-identical to the first cache
+(\texttt{reports/b2\_phase1\_recompute\_20261106/}). Audio and vision are
 annotation-derived proxies (narration timing and scene-cut structure)
 because the soundtrack and movie are copyrighted and absent from
 OpenNeuro. The run uses \texttt{StudyforrestRealWorld} (mode
 \texttt{real5}, verified, not the mock stub). B-2 with $N = 512$, 5
 seeds, 500-resample bootstrap 95\,\% CIs, and effective dimension $D
-\approx 12.5$ (participation ratio $12.9$, two-NN $12.5$):
+\approx 12.5$ (participation ratio $13.0$, two-NN $12.5$; $12.9$ and
+$12.5$ with the first cache):
 
 \begin{table}[ht]
   \centering
-  \caption{B-2 on the Studyforrest real bridge versus the Gaussian reference.}
+  \caption{B-2 on the Studyforrest real bridge: Gaussian reference,
+  first cache (issue~\#74), and corrected cache (recomputed 2026-11-06).}
   \label{tab:e1-studyforrest}
-  \begin{tabular}{llll}
+  \small
+  \begin{tabular}{lllll}
     \toprule
-    Estimator (probe) & Gaussian mean & Real-bridge mean & Real 95\,\% CI \\
+    Estimator (probe) & Gaussian & First cache (\#74) & Corrected cache & Corrected 95\,\% CI \\
     \midrule
-    Kraskov $k$-NN (1-D)    & $-0.031$ & $-0.001$ & $[-0.0029, +0.000]$ \\
-    Adaptive binning (1-D)  & $-0.016$ & $-0.0024$ & $[-0.0072, +0.000]$ \\
-    MINE (1-D mean-pool)    & $0.000$  & $-2.0\times 10^{-7}$ & $[-6.6\times 10^{-7}, +8.3\times 10^{-8}]$ \\
-    MINE (full 896-D probe) & $-0.038$ & $-1.9\times 10^{-5}$ & $[-5.7\times 10^{-5}, -1.8\times 10^{-9}]$ \\
+    Kraskov $k$-NN (1-D)    & $-0.031$ & $-0.001$ & $-0.0002$ & $[-0.0007, 0.000]$ \\
+    Adaptive binning (1-D)  & $-0.016$ & $-0.0024$ & $+0.0001$ & $[0.000, +0.0003]$ \\
+    MINE (1-D mean-pool)    & $0.000$  & $-2.0\times 10^{-7}$ & $+2.4\times 10^{-7}$ & $[+1.1\times 10^{-7}, +3.9\times 10^{-7}]$ \\
+    MINE (full 896-D probe) & $-0.038$ & $-1.9\times 10^{-5}$ & $-1.3\times 10^{-4}$ & $[-3.8\times 10^{-4}, +2.9\times 10^{-8}]$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-All values are in bits. The real-bridge verdict is identical to the
-Gaussian one: B-2 Null. Every estimator's interval brackets zero or
-sits at its edge (the full-probe MINE interval's upper bound is
-$-1.8\times 10^{-9}$, a negative value), and no estimator crosses
-$+0.10$ on any of the 5 seeds. The magnitudes are smaller than the
-Gaussian ones; since the lesioned audio channel is an annotation
-proxy, there is even less audio-specific information to migrate, but
-the qualitative null is the same. This is a real bridge for gravity,
-tactile, and labels, a real but mislabelled and time-compressed force
-channel (see above; values not recomputed, issue~\#74), and a
+All values are in bits. With the first cache (issue~\#74) the
+real-bridge means were $-0.001$ (Kraskov), $-0.0024$ (binning),
+$-2.0\times 10^{-7}$ (MINE 1-D) and $-1.9\times 10^{-5}$ (MINE full);
+they were recomputed on 2026-11-06 with the corrected cache
+(\texttt{reports/e1\_b2\_dimensional\_mine\_studyforrest\_phase1fix.json}).
+A replay of the same command on the first cache on the same day
+reproduces the Kraskov and binning values exactly on all seeds and
+every value of seeds 1--4; seed~0 differs in $D$ and MINE, and the
+MINE means stay of the same order ($-2.2\times 10^{-7}$ and
+$-1.9\times 10^{-5}$; \texttt{\ldots\_oldcache\_replay.json}). With the corrected cache, no
+estimator's B-2 exceeds the preregistered $+0.10$ threshold on any of
+the 5 seeds. A paired label-permutation null (1000 draws, the same
+permutation applied to the pre- and post-lesion probe, mean over 5
+seeds; \texttt{scripts/spikes/e1\_b2\_paired\_null.py}) gives, for
+Kraskov, observed mean $0.000$, null median $0.000$, null P99
+$0.0044$, $p = 0.62$, and for binning, observed $-0.0011$, null median
+$-0.00003$, null P99 $0.0036$, $p = 0.79$ (first cache: $p = 0.75$ and
+$0.70$). The null run recaptures the probes; for seeds 1--4 they are
+not bit-identical to the main run because the MINE fits of the main
+run consume the global random state before the next seed is built.
+
+\emph{Reading.} The probe batch is a contiguous slice of 512 frames
+(51.2\,s) and the label is the scene index quantised to 4 classes. In
+4 of the 5 seeds the probe holds a single class (class counts
+$[0,512,0,0]$, $[0,0,512,0]$, $[0,512,0,0]$, $[0,0,512,0]$), and in
+seed~1 it holds 500 and 12; the label file is identical in both
+caches. Mutual information with a constant label is zero for any
+representation, so on those seeds B-2 is $0$ by construction and the
+measurement cannot fail. The Phase-1 training loss moves from
+$1.33$--$1.40$ (mean of the first 20 steps) to $0.87$--$0.92$ (last
+20) against
+$\ln 4 = 1.39$, but the training batches are drawn the same way, and
+reader accuracy was not measured, so the learning gate is not
+established. B-2 on this bridge is therefore not conclusive, with
+either cache. Under the earlier reading this paragraph called the
+real-bridge result ``B-2 Null''; the class of the result changes
+from a null to a measurement that is not informative (issue~\#77).
+
+\emph{Stratified probe (exploratory amendment, 2026-11-06).} After
+reading these results, ADR-0019 was amended before any new run: the
+probe is 512 frames drawn from the whole cache, stratified by class
+(128 per class), without replacement, with the same probe seed; the
+paired null uses the same probe; the learning gate requires the
+accuracy of the trained head on the probe to reach the majority-class
+rate plus 0.10; a cache where fewer than 3 of 5 seeds pass is ``not
+measurable''; the threshold stays at $+0.10$ bit. This change of
+method was informed by the results above and is exploratory.
+Table~\ref{tab:e1-studyforrest-strat} gives both probes side by side.
+
+\begin{table}[ht]
+  \centering
+  \caption{B-2 on the Studyforrest bridge, contiguous probe (corrected
+  cache) and stratified probe (both caches); means over 5 seeds, bits,
+  bootstrap 95\,\% CI.}
+  \label{tab:e1-studyforrest-strat}
+  \small
+  \begin{tabular}{llll}
+    \toprule
+    Estimator (probe) & Contiguous, corrected & Stratified, corrected & Stratified, first cache \\
+    \midrule
+    Kraskov (1-D)  & $-0.0002$ & $+0.004$ $[-0.044, +0.044]$ & $-0.020$ $[-0.070, +0.033]$ \\
+    Binning (1-D)  & $+0.0001$ & $+0.026$ $[0.000, +0.060]$ & $-0.002$ $[-0.013, +0.008]$ \\
+    MINE (1-D)     & $+2.4\times 10^{-7}$ & $0.000$ & $0.000$ \\
+    MINE (full)    & $-1.3\times 10^{-4}$ & $+0.14$ $[-0.014, +0.44]$ & $-0.007$ $[-0.014, -0.002]$ \\
+    Reader accuracy & not measured & $0.250$ (5/5 seeds) & $0.250$ (5/5 seeds) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+With the stratified probe, the reader accuracy before the lesion is
+$0.250$ on all ten seeds, the majority-class rate of a balanced
+probe: the head gives one class to every probe frame, and the
+learning gate ($0.35$) fails on every seed. B-2 on this bridge is
+therefore not measurable under the amendment, with either cache. No
+mean B-2 exceeds the preregistered threshold; one seed does (corrected
+cache, seed~2, MINE full $+0.74$), on a network that does not pass the
+gate. The paired null (1000 draws, 5 seeds) gives $p = 1.0$ for
+Kraskov and binning on the corrected cache and $p = 0.013$ and
+$0.001$ on the first cache, with observed means ($+0.036$ and
+$+0.038$) below the threshold; the null run recaptures the probe and
+its per-seed B-2 differs from the main run by up to $0.4$\,bit, so the
+label-permutation null does not cover the run-to-run variation of the
+representation, and these $p$ values are not interpreted
+(\texttt{reports/b2\_stratified\_probe\_20261106/}). This is a real bridge for gravity,
+tactile, and labels, a real force channel (corrected cache), and a
 documented proxy for audio and vision; it is not a full
 perceptual-stimulus replication.
 
@@ -1095,8 +1180,8 @@ the table.
   \end{tabular}
 \end{table}
 
-The verdict is B-2 Null a third time, now under real perceptual
-stimuli. No estimator reaches the $+0.10$ threshold; MINE-1-D is
+The verdict is B-2 Null, as on the Gaussian world, now under real
+perceptual stimuli. No estimator reaches the $+0.10$ threshold; MINE-1-D is
 pinned at the Donsker-Varadhan floor; full-probe MINE is null
 ($-0.003$); binning brackets zero. The only interval excluding zero is
 Kraskov's, and it does so on the negative side ($-0.032$): MI does not
@@ -1109,9 +1194,14 @@ Studyforrest biological anchoring entirely (no subject, physio, or
 head motion) and has synthetic proprioception, the exact inverse of
 (d). Read together, (d) contributes real proprioception and biological
 grounding with proxy audio-visual input, while (e) contributes real
-audio-visual input with synthetic proprioception. B-2 is Null on both
-bridges and on the Gaussian reference world, so the null does not
-depend on which half of the modality set carries real signal.
+audio-visual input with synthetic proprioception. B-2 is Null on the
+CC-film bridge and on the Gaussian reference world. On the
+Studyforrest bridge it is not conclusive: the contiguous probe holds
+a single class (issue~\#77) and the stratified probe does not pass the
+learning gate (\S(d)). The earlier conclusion that the null does not
+depend on which half of the modality set carries real signal is
+therefore no longer supported, since only one real bridge gives an
+informative measurement.
 
 \paragraph{Qualification: SNR (ADR-0020).} The E1/E2 spike runners do
 not use the three-label SNR factor of the 150-cell grids. According to
@@ -1123,8 +1213,7 @@ statements above therefore concern one schedule per run; they do not
 establish robustness across SNR, and the 19.21 / 19.41 / 19.80\,dB
 near-identity of the three grid SNR labels (ADR-0020) means that the
 Section~\ref{sec:results} grid results carry no SNR-robustness claim
-either. Likewise, ``robust to which half of the modality set is real''
-refers to modality provenance, not to lesion severity.
+either.
 
 \paragraph{Qualification: estimator assumptions.} Three departures
 from the cited estimators' published conditions are not corrected in

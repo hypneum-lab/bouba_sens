@@ -1,0 +1,244 @@
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "probe_sampling": "stratified",
+  "gate_margin": 0.1,
+  "n_seeds_gate_pass": 0,
+  "D_participation_ratio_mean": 12.705903434753418,
+  "D_twoNN_mean": 12.511520957946777,
+  "kraskov_delta": {
+    "mean": -0.020099651393710984,
+    "ci95": [
+      -0.06982310373519449,
+      0.03318462467251477
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": -0.0020525861814734204,
+    "ci95": [
+      -0.013395271186027931,
+      0.008442111378265007
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": -0.007260092434490823,
+    "ci95": [
+      -0.014109700108485912,
+      -0.0015412211169272983
+    ],
+    "n": 5
+  },
+  "gated": {
+    "seeds": [],
+    "kraskov_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "binning_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_1d_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_full_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.684147834777832,
+      "D_twoNN": 12.048628807067871,
+      "kraskov_delta_bits": 0.017804118623711195,
+      "binning_delta_bits": -0.013550242517818473,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.001972939596837831,
+      "kraskov_pre": 0.019167520589336795,
+      "kraskov_post": 0.03697163921304799,
+      "mine_full_pre": 0.0021525236793266066,
+      "mine_full_post": 0.0001795840824887758,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 1,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.811867713928223,
+      "D_twoNN": 11.613821029663086,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.003970821109532896,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.001027623142334238,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 0.0010814951306495405,
+      "mine_full_post": 5.3871988315302535e-05,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 2,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.237411499023438,
+      "D_twoNN": 12.863602638244629,
+      "kraskov_delta_bits": -0.08856990788516626,
+      "binning_delta_bits": -0.019973910532563907,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.0018389598515650926,
+      "kraskov_pre": 0.10338513460691053,
+      "kraskov_post": 0.01481522672174426,
+      "mine_full_pre": 0.0019774762976254227,
+      "mine_full_post": 0.0001385164460603302,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 3,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.312302589416504,
+      "D_twoNN": 12.84970474243164,
+      "kraskov_delta_bits": -0.08598785145281997,
+      "binning_delta_bits": 0.010004217659028147,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.019029968909189187,
+      "kraskov_pre": 0.08598785145281997,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 0.022502526486967468,
+      "mine_full_post": 0.0034725575777782825,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    },
+    {
+      "seed": 4,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.483787536621094,
+      "D_twoNN": 13.18184757232666,
+      "kraskov_delta_bits": 0.05625538374572013,
+      "binning_delta_bits": 0.009286183374454235,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.012430970672527762,
+      "kraskov_pre": 0.010911717463424815,
+      "kraskov_post": 0.06716710120914494,
+      "mine_full_pre": 0.012430970672527762,
+      "mine_full_post": 0.0,
+      "label_counts": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "majority_rate": 0.25,
+      "reader_acc_pre": 0.25,
+      "reader_acc_post": 0.25,
+      "gate_margin": 0.1,
+      "gate_pass": false,
+      "cache_label_counts": [
+        180,
+        3480,
+        4280,
+        1060
+      ],
+      "probe_sampling": "stratified"
+    }
+  ]
+}
