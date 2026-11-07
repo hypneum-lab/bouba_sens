@@ -168,3 +168,14 @@ def test_sidecar_inheritance_deeper_wins(tmp_path: Path) -> None:
 def test_layout_rejects_missing_rate() -> None:
     with pytest.raises(ValueError, match="SamplingFrequency"):
         physio_layout({"Columns": ["trigger", "cardiac", "respiratory"]}, 3)
+
+
+def test_short_file_is_zero_padded(tmp_path: Path) -> None:
+    n_frames = 2 * _N_FRAMES  # the file covers only _N_FRAMES frames
+    force = extract_force(
+        _dataset(tmp_path, ["trigger", "cardiac", "respiratory"]), n_frames
+    ).numpy()
+    assert force.shape == (n_frames, 6)
+    np.testing.assert_array_equal(force[:_N_FRAMES, 0], _expected("cardiac"))
+    np.testing.assert_array_equal(force[:_N_FRAMES, 3], _expected("respiratory"))
+    assert bool((force[_N_FRAMES:, [0, 3]] == 0.0).all())

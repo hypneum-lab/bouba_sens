@@ -339,6 +339,22 @@ Documentary corrections only ; no value, metric or threshold changed.
    since `d7a3645`). No value is recomputed: those tensors are lost and
    the public data still give 120 vision frames against 1800 (issue
    #45). No value is changed.
+   Evidence only, not used by any reported value: a phase-2
+   `force.pt` was regenerated on 2026-11-06 with the corrected reader
+   from sub-01 ses-localizer task-movielocalizer run-1 (48001 rows at
+   500 Hz, sidecar `recording-cardresp_physio.json`) by calling
+   `extract_force(src, 1800)` directly; 961 frames carry signal and
+   839 are zero padding. SHA-256 before (regen35,
+   `data/sf_phase2_adapted/force.pt`)
+   `659cf150a435fcb00f9759d2690a45eac3391734927bf691e1d5d882ab6e56da`,
+   after `052ffa1a2411c000094d7d640cd14182a73c9568bde39ed55476c133011d141c`
+   (both re-hashed on macM1 on 2026-11-07). That tensor was built with
+   the reader of PR #82; the reader of this item gives an identical
+   tensor on the same file (`torch.equal`, checked on 2026-11-07).
+   The tensor and its MANIFEST are kept on macM1 in
+   `~/hypneum-lab/physio-fix-20261106/`, outside regen35, which is
+   untouched. The April tensors (#45) remain
+   lost and the 4.5-modal values are not recomputed.
 
 ## Quickstart
 
