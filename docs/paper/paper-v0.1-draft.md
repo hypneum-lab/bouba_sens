@@ -403,8 +403,8 @@ changes of checkerboard pattern.
 The force channel is not the pulse-oximetry and respiration signal
 that earlier versions of this section described. On the regenerated tensors,
 `extract_force`
-(`src/bouba_sens/world/studyforrest_features.py`, lines 162-166)
-reads the first data line of the header-less BIDS physiology file as
+(`src/bouba_sens/world/studyforrest_features.py`, lines 162-166 at
+commit `97101bc`) reads the first data line of the header-less BIDS physiology file as
 a header. It then falls back to column 0 (the scanner trigger) as
 "ECG" and column 1 (the pulse-oximetry trace) as "respiration". In
 the regenerated `force.pt`, the "ECG" channel and its derivatives are
@@ -413,6 +413,18 @@ the respiratory column is never read (issue #72). The April 2026
 tensors are lost, so this cannot be checked on them. The code is
 unchanged since commit `d7a3645`, so they probably had the same
 defect.
+Since 2026-11-06 the extraction reads the column names and the
+sampling rate from the BIDS sidecar `recording-cardresp_physio.json`
+(500 Hz; trigger, cardiac, respiratory) and stops with an error when
+a column is missing. The cardiac column is a pulse-oximetry trace,
+not an ECG. On sub-01, channel 0 of the new force tensor equals the
+cardiac column and channel 3 the respiratory column, decimated by 50
+(checked on 2026-11-06). The 4.5-modal values of the table below and
+of §5.5-§5.9 were computed on the April tensors, probably with the
+old header reading (#72; not verified). They are not recomputed,
+because those tensors are lost and the public data still give 120
+vision frames against 1800 (issue #45); the extraction refuses a
+misaligned set. See README erratum item 13.
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|
