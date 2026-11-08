@@ -1,16 +1,20 @@
 # ADR-0028 — B-3 network-level null: independent units, cyclic form, unit sign flip
 
-**Status:** Proposed — draft, **not frozen, not signed off**. Apart from
-six points fixed on review (draft §16.2), nothing in this ADR is
-decided; every other choice below is a proposal listed again in §16.1
-of the draft (Decisions left to the PI). No grid, pilot, null,
-synthetic check or power simulation has been run for it.
+**Status:** Proposed. Decisions closed 2026-11-08; NOT frozen. Freeze
+(Stage A tag) is gated by the reading lock of the roadmap
+(hypneum-lab/.github `docs/ROADMAP.md`, « Lire avant de geler » :
+reading note, contradictor, three tests) which applies to any campaign
+> 6 h CPU; the lock pass for bouba_sens v0.7.1 is scheduled S8. No run
+before the tag. No grid, pilot, null, synthetic check or power
+simulation has been run for it.
 **Date:** 2026-10-31, revised 2026-11-08.
 **Decision source:** none yet. Requested by the PI on 2026-10-31 after
 the Me6 large-n diagnostic, to be frozen **before** any v0.7
 ActionSense grid. Revised after two independent reviews of 2026-10-31
 (REVISE / BLOQUANT) and the PI input of 2026-11-07, then after a second
-independent review on 2026-11-08 (freezable after PI decisions).
+independent review on 2026-11-08 (freezable after PI decisions). PI
+decisions recorded 2026-11-08 (QCM 13:20 CET), including R1 of
+2026-11-07: option (a), the network-level null of this ADR.
 **Builds on:** ADR-0021, ADR-0022, ADR-0023, ADR-0024, ADR-0026,
 ADR-0027; `docs/prereg/me6-large-n/amendment-2026-10-31-diagnostic.md`
 (piste C); `docs/milestones/2026-10-31-me6-large-n-results.md`;
@@ -55,7 +59,7 @@ by the replicates are read as signal; one negative control was
 tautological (p = 1 by construction); no primary row, family,
 predictions or justification of R.
 
-## Proposed decision
+## Decision (to take effect at the Stage A tag)
 
 1. **Units.** The exchangeable unit is an **independent pipeline run**:
    one grid seed Q_g = 330 000 + 200 · g with its own Phase-1 training,
@@ -99,15 +103,16 @@ predictions or justification of R.
    before the confirmatory grid; fixed on review). Resampling seeds
    8112026 / 8112027 (fixed on review).
 8. **Readings** in the lab vocabulary only: « confirmé », « non
-   concluant » (with its reason), « non testé », and « nul TOST » only
-   if the PI keeps an equivalence test (simultaneous TOST, margin 0.02).
-   At τ ≥ 0.03 and G ≤ 50 TOST is not expected to be reachable: the
-   design is one-sided in practice, it can confirm H1-B3net but cannot
-   establish absence at this margin. A non-rejection is never read as
-   absence.
-9. **Order.** Freeze this study before the v0.7 grids; a separate v0.7
-   amendment, naming the frozen clauses it replaces (draft §15), may
-   then add the network null.
+   concluant » (with its reason), « non testé » / « en attente ». The
+   design is **one-sided** (PI decision 5, no equivalence test): it can
+   confirm H1-B3net but cannot establish absence; « nul TOST » and
+   « réfuté » are not reachable. A non-rejection is « non concluant »,
+   never read as absence.
+9. **Order.** Freeze this study before the v0.7 grids; after the
+   Stage-B results a separate v0.7 amendment, naming the frozen clauses
+   it replaces (draft §15), makes the network null the reading that
+   decides, the frozen reading being reported as registered (PI
+   decision 16).
 
 ## Code change it needs (described, not implemented)
 
@@ -132,16 +137,28 @@ The 0.02 rule stays in the frozen texts as registered; this study does
 not use it to decide. The ADR-0022 paired null keeps its meaning
 (conditional on the networks) and stays reported.
 
-## Open decisions
+## PI decisions (2026-11-08)
 
-Eleven, numbered as in the draft: 1 unit design; 2 estimand; 4 α;
-5 equivalence test (recommended: none); 6 positive control; 7 G rule
-and ceiling; 9 world-seed arm; 10 mock world; 13 no-lesion coverage;
-14 host; 16 v0.7 follow-up. Fixed on review 2026-11-08 (draft §16.2):
-3 primary probe, 8 calibration row, 11 learning gate, 12 fixed T1
-module seeds, 15 freeze stages, 17 resampling seeds. The list, with
-options and a recommendation, is in
-`docs/prereg/b3-network-null/prereg-draft.md` §16.
+None is open. Numbers as in draft §16 (F = fixed on review the same
+day):
+
+1. independent units Q_g = 330 000 + 200 · g;
+2. cyclic estimand;
+3. (F) v2 probe, 256 test items;
+4. α = 0.01 for F = {P1}, Holm at FWER 0.01 if a row is ever added;
+5. no equivalence test, one-sided design;
+6. positive control δ_pc = 0.02, power 0.80;
+7. smallest G in {20, 30, 40, 50} with power ≥ 0.80, ceiling 50;
+8. (F) calibration row K1 runs, gate-exempt, descriptive;
+9. `cell` arm only;
+10. mock world excluded;
+11. (F) learning gate: the three criteria of draft §6.3;
+12. (F) condition on the fixed T1 module seeds;
+13. no-lesion control: 10 stream-matched jobs per unit;
+14. host electron-server, nice 19, PAR 4, ceiling 40 h wall;
+15. (F) two freeze tags (Stage A, Stage B);
+16. v0.7 amendment in which the network null decides;
+17. (F) resampling seeds 8112026 / 8112027.
 
 ## References
 
