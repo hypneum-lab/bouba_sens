@@ -431,6 +431,11 @@ Order: completeness → gate → NC1, NC2 → P1 → PC.
   consequence, not members of F. Should a row ever be added to F, it
   must be done by a dated amendment before the Stage-B tag and makes F
   a Holm family at FWER 0.01 (PI decision 4).
+
+  Amendment v0.7.1 (2026-11-08, L0 draft, PR #88) extends F to
+  {P1, DEC_S, ΔR, ΔU₂, ΔS} under Holm at FWER 0.01. P1's effective
+  threshold then ranges from 0.002 (smallest p) to 0.01. "Row" above
+  is read as "test"; the extension was decided by the PI on 2026-11-08.
 - Wording outside the classes: numbers only ("T = …; nul réseau
   médiane …, P99 …, p = …").
 
@@ -500,6 +505,12 @@ entry), a permutation or bootstrap variant of the unit-level test is
 substituted and declared before the Stage B tag. The pilot record,
 the generator, G, the SEEDS list and the expected readings are committed
 in the Stage-B manifest before the first confirmatory job.
+
+When F has more than one test, the power simulation applies the full
+Holm procedure over F (not α = 0.01 per test); G is the smallest value
+in {20, 30, 40, 50} giving power ≥ 0.80 for P1 under Holm. If no value
+reaches 0.80 within the 50 h ceiling (§14), P1 is run at G = 50 and
+the co-primaries are downgraded to descriptive, as in amendment §5.1.
 
 ## 11. Code change (described; not implemented in this PR)
 
@@ -597,7 +608,8 @@ The earlier design (R = 5, two emissions) was 2 114 jobs. Analysis on
 CPU. **Host (PI decision 14):** electron-server at nice 19 (PAR 4,
 `OMP_NUM_THREADS=2`), one host for all rows, ceiling 50 h wall, free
 state checked at Stage B. Nothing
-is run by this PR.
+is run by this PR. The Holm penalty may push G from 30 to 40
+(about 35 h → 47 h on electron-server); 50 h remains the ceiling.
 
 ## 15. Link to v0.7 ActionSense
 
@@ -635,6 +647,11 @@ binomial; per-unit windows are required; class imbalance (majority
 amendment makes the network null the reading that decides (PI
 decision 16), and states its cost (G × 30 cells per grid, on two or four
 grids).
+
+Amendment v0.7.1 (2026-11-08, L0 draft) is drafted in PR #88
+(`docs/osf/amendment-2026-11-08-v0.7.1-draft.md`). Its header items
+(a)–(d) — PR review, §6 decisions closed, reading lock (S8), and PI L1
+tag — condition the L1 freeze of that amendment.
 
 ## 16. PI decisions (2026-11-08)
 
