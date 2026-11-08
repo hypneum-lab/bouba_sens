@@ -406,8 +406,8 @@ open. Options not retained are listed in the change log.
 1. **L0 (this PR):** draft, not frozen. The PR is reviewed by an
    independent context-free critic before merge (PM §8); only the
    researcher merges.
-2. Close §6 (date and value written in a dated decisions block), then
-   the roadmap reading lock for v0.7.1 (reading note, contradictor,
+2. §6 is closed (2026-11-08); the roadmap reading lock passes next:
+   the lock for v0.7.1 (reading note, contradictor,
    three tests; S8). **No L1 tag before both.**
 3. **L1:** manifest of protocol files + code SHA-256 in
    `docs/prereg/<study>/<stage>-manifest.md`; new annotated tag by the
