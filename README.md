@@ -394,6 +394,33 @@ Documentary corrections only ; no value, metric or threshold changed.
    untouched. The April tensors (#45) remain
    lost and the 4.5-modal values are not recomputed.
 
+### Erratum (2026-11-08) — "frozen PSK mux with hard gating minimally reproduces the Amedi T1/T2 asymmetry" (catalogue BS-PAP)
+
+14. **Claim as published.** "The paper's central empirical claim
+   narrows to: a frozen mux with hard transducer gating is the minimal
+   configuration that qualitatively reproduces Amedi-style T1/T2
+   asymmetry; all additional plasticity controls tested are null or
+   harmful" (`docs/paper/main.tex:819-822`, Sprint 10--14 synthesis;
+   same sentence in `docs/paper/paper-v0.1-draft.md:644-646`).
+   **What is true.** The claim rested on the single-seed B-1 peak
+   (+0.0125, LOCK=100 + HARD, Sprint 10). Multi-seed validation gives
+   -0.0250 on the canonical seed and a 10-seed sign test p = 0.62
+   (chance); the pre-registered replication on N = 10 new seeds fails
+   at Bonferroni alpha = 0.025 (ADR-0019, FINAL Retract). **Root
+   cause.** Design/statistic: a single-seed pattern was promoted to a
+   headline claim before multi-seed validation (the 2026-10-25 item 3
+   above recorded only the documentation-ahead-of-results aspect and
+   the `.zenodo.json` removal). **Where corrected.** Withdrawn in
+   `.zenodo.json` (description), `docs/paper/main.tex:92-96` and
+   `docs/paper/paper-v0.1-draft.md:92-96`, and in this README
+   (B-1 FINAL Retract, ADR-0019). **Still stated as live (to be
+   removed in a follow-up PR, not here).** `docs/paper/main.tex:819-822`
+   (contradicts the withdrawal at `:92-96` in the same manuscript),
+   `docs/paper/paper-v0.1-draft.md:644-646` (same), and the
+   "frozen PSK mux gating result" framing in
+   `docs/paper/cover-letter-tmlr.md:186`. No number is changed. Refs
+   hypneum-lab/.github#10.
+
 ## Quickstart
 
 ```bash
