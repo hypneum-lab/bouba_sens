@@ -1,14 +1,16 @@
 # ADR-0028 — B-3 network-level null: independent units, cyclic form, unit sign flip
 
-**Status:** Proposed — draft, **not frozen, not signed off**. Nothing in
-this ADR is decided; every choice below is a proposal listed again in
-§16 of the draft (Decisions left to the PI). No grid, pilot, null,
+**Status:** Proposed — draft, **not frozen, not signed off**. Apart from
+six points fixed on review (draft §16.2), nothing in this ADR is
+decided; every other choice below is a proposal listed again in §16.1
+of the draft (Decisions left to the PI). No grid, pilot, null,
 synthetic check or power simulation has been run for it.
 **Date:** 2026-10-31, revised 2026-11-08.
 **Decision source:** none yet. Requested by the PI on 2026-10-31 after
 the Me6 large-n diagnostic, to be frozen **before** any v0.7
 ActionSense grid. Revised after two independent reviews of 2026-10-31
-(REVISE / BLOQUANT) and the PI input of 2026-11-07.
+(REVISE / BLOQUANT) and the PI input of 2026-11-07, then after a second
+independent review on 2026-11-08 (freezable after PI decisions).
 **Builds on:** ADR-0021, ADR-0022, ADR-0023, ADR-0024, ADR-0026,
 ADR-0027; `docs/prereg/me6-large-n/amendment-2026-10-31-diagnostic.md`
 (piste C); `docs/milestones/2026-10-31-me6-large-n-results.md`;
@@ -80,22 +82,29 @@ predictions or justification of R.
    same-pipeline p. The 0.02 rule is reported for continuity with its
    firing rate under the network null.
 5. **One primary row, family F = {P1}, α = 0.01:** straight-through,
-   Gaussian, `cell`, v2 probe, cyclic form. Calibration row K1
-   (argmax-bridge, v1 n = 4096) is gate-exempt and descriptive.
+   Gaussian, `cell`, v2 probe (256 test items; fixed on review),
+   cyclic form. Calibration row K1 (argmax-bridge, v1 n = 4096) runs,
+   is gate-exempt and descriptive (fixed on review).
    Predictions are written per row (draft §6.2).
 6. **Controls that can fail:** synthetic size check on defined
    generators (Gaussian, bounded and sparse, skewed, main effects;
    shared components as sensitivity); NC1 no-lesion networks
    (real data, μ = 0 in mean by construction); NC2 disjoint unit pairs
    (premise check); PC planted pure 3-cycle at δ_pc = 0.02 on H0 data.
-   Learning gate first for P1.
+   Learning gate first for P1, with the three criteria of draft §6.3
+   (fixed on review).
 7. **G from a pilot** by a fixed power rule (smallest G in
    {20, 30, 40, 50} with power ≥ 0.80 at δ_pc, upper confidence bound of
    the pilot τ), two-stage freeze (Stage A before the pilot, Stage B
-   before the confirmatory grid).
-8. **Readings** in the lab vocabulary only: « confirmé », « nul TOST »
-   (simultaneous TOST, margin 0.02), « non concluant » (with its
-   reason), « non testé ». A non-rejection is never read as absence.
+   before the confirmatory grid; fixed on review). Resampling seeds
+   8112026 / 8112027 (fixed on review).
+8. **Readings** in the lab vocabulary only: « confirmé », « non
+   concluant » (with its reason), « non testé », and « nul TOST » only
+   if the PI keeps an equivalence test (simultaneous TOST, margin 0.02).
+   At τ ≥ 0.03 and G ≤ 50 TOST is not expected to be reachable: the
+   design is one-sided in practice, it can confirm H1-B3net but cannot
+   establish absence at this margin. A non-rejection is never read as
+   absence.
 9. **Order.** Freeze this study before the v0.7 grids; a separate v0.7
    amendment, naming the frozen clauses it replaces (draft §15), may
    then add the network null.
@@ -125,11 +134,13 @@ not use it to decide. The ADR-0022 paired null keeps its meaning
 
 ## Open decisions
 
-Unit design; estimand; primary probe; α; equivalence margin; positive
-control; G rule and ceiling; calibration row; world-seed arm; mock
-world; learning gate; fixed module seeds of `lesion`; no-lesion
-coverage; host; freeze stages; v0.7 follow-up; resampling seeds. The
-list, with options and a recommendation, is in
+Eleven, numbered as in the draft: 1 unit design; 2 estimand; 4 α;
+5 equivalence test (recommended: none); 6 positive control; 7 G rule
+and ceiling; 9 world-seed arm; 10 mock world; 13 no-lesion coverage;
+14 host; 16 v0.7 follow-up. Fixed on review 2026-11-08 (draft §16.2):
+3 primary probe, 8 calibration row, 11 learning gate, 12 fixed T1
+module seeds, 15 freeze stages, 17 resampling seeds. The list, with
+options and a recommendation, is in
 `docs/prereg/b3-network-null/prereg-draft.md` §16.
 
 ## References

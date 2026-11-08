@@ -102,7 +102,7 @@ full interaction is a different study (decision 2).
   batch 16 and the **fixed module seeds of `bouba-sens lesion`** (mux and
   nerve seed 0, SensoryWML seeds 1–5, `src/bouba_sens/cli.py:693-708`),
   which are shared by every T1 network of every unit. The reading is
-  conditional on those fixed parts (decision 12).
+  conditional on those fixed parts (fixed on review, §16.2 F12).
 - B-3 itself (Me6 > 0.02, frozen texts) is not re-decided here. A
   confirmation of H1-B3net is a new, separately named result.
 
@@ -152,9 +152,13 @@ Consequences, which the earlier draft did not inventory:
   pilot 110 (110 … 309). In the Gaussian world equal batch seeds give
   the same latent and labels (`world/gaussian.py:53-54`). Seeds 120–121
   and 500–504 remain **free as run identifiers** (both reviews checked
-  this; still true on `c438286`), but they cannot serve as independent
-  units. They stay reserved, unused by the recommended design (they are
-  used only under option B of decision 1).
+  this; still true on `c438286`), but they are **not independent
+  units**: their Phase-1 batch seeds overlap those of each other and of
+  seen grids, so in the Gaussian world their training data, and hence
+  their networks, are correlated (`world/gaussian.py:53-54`). They are
+  therefore excluded from the pilot and from the confirmatory set of
+  the recommended design (they would be used only under option B of
+  decision 1).
 - `np.random.seed` accepts only integers < 2³² (`cli.py:53`), so
   Q · 10000 + 9999 < 4 294 967 296, i.e. Q ≤ 429 495.
 - The Me3 probe L − 99 999 falls in the namespace of Q − 10; the replay
@@ -174,11 +178,15 @@ Checks, by arithmetic on the table above:
   ≤ 999, derived seeds < 1.1·10⁷; resampling seeds 25 102 026 and
   31 102 026; D4 5 106 000–5 106 045) and disjoint between units
   (spacing 2·10⁶).
-- Me3 probes land in the namespace of Q − 10 ≡ 190 (mod 200), never a
-  unit, never used; replay bottoms land in Q − 1, never a unit.
+- Me3 probes land in the namespace of seed Q − 10 (e.g. 329 990 for
+  g = 0), which is not a unit seed and not a historical run seed (run
+  seeds ≤ 999); replay bottoms land in the namespace of Q − 1, likewise
+  neither a unit seed nor a run seed.
 - Within one `run_grid_probe_v2.sh` call `count` runs from 1 to
-  30 · |SEEDS|; the offsets count + 777 + 99 must stay below 5000 (v2
-  probe seeds), hence a guard |SEEDS| ≤ 133 per call. Recommended: one
+  30 · |SEEDS|. The highest per-cell offset is the historical v1 probe
+  count + 777 (the fresh batches reach only count + 99), and it must
+  stay below the v2 probe offsets 5000: **30 · |SEEDS| + 777 < 5000**,
+  i.e. |SEEDS| ≤ 140 per call (guard). Recommended: one
   call per arm with the G unit seeds in ascending order, written in the
   Stage-B manifest, so every lesion seed is fixed in advance.
 
@@ -247,7 +255,7 @@ random sign of the earlier draft is dropped (Me6 is invariant to it).
 
 | id | role | emission | world / arm | probe | form | null |
 |---|---|---|---|---|---|---|
-| **P1** | **primary, single confirmatory row** | straight-through | Gaussian / `cell` | v2, 256 test items (decision 3) | cyclic | unit sign flip (§5) |
+| **P1** | **primary, single confirmatory row** | straight-through | Gaussian / `cell` | v2, 256 test items (§16.2 F3) | cyclic | unit sign flip (§5) |
 | K1 | calibration row, gate-exempt | argmax-bridge | Gaussian / `cell` | v1 per-size, n = 4096 | cyclic | §5 |
 | D1 | descriptive | as P1 | as P1 | as P1 | **raw** A | §5 |
 | D2 | descriptive | as P1 and K1 | as P1 and K1 | v1 per-size n = 64, 256, 1024, 4096 and v2 | cyclic | §5 |
@@ -258,6 +266,9 @@ random sign of the earlier draft is dropped (Me6 is invariant to it).
 Rows `legacy`, mock world or other emissions run only if the PI says so
 (decisions 9, 10) and are then descriptive. No descriptive row carries a
 verdict; their p values are unadjusted and labelled as such.
+Descriptive p values are never reported as confirmatory in any
+abstract, conclusion or summary; they appear only in the per-row
+table, labelled 'descriptive, unadjusted'.
 
 ### 6.2 Predictions (written before any datum of this study)
 
@@ -267,9 +278,11 @@ grid (seeds 300–309, v2) and the D1–D4 outputs (§13).
 - **P1.** The 2026-10-27 grid has seed-mean interaction residuals below
   0.01 in every cell (`docs/milestones/2026-10-27-b3-lesion-interaction-results.md:39-42`),
   so |C| ≤ 2 · max|residual| < 0.02 in mean. **Prediction: p ≥ 0.01
-  (no rejection), every |C̄_c[a, b]| < 0.02.** Whether « nul TOST » is
-  reached depends on the pilot τ_c (§10); the expected reading is
-  written into the Stage-B manifest once G is fixed.
+  (no rejection), every |C̄_c[a, b]| < 0.02.** The expected reading is
+  « non concluant »: « nul TOST » is not expected to be reachable
+  (§8), and is not available at all if no equivalence test is kept
+  (decision 5). The expected reading is restated in the Stage-B
+  manifest once G is fixed.
 - **K1.** Piste C (fixed per-network asymmetry with no direction across
   trios; D3 p = 0.28 `cell`) predicts **p ≥ 0.05 under the network
   null** while D3 (item flip, per unit) **rejects in most units at
@@ -295,7 +308,7 @@ must hold:
    units (2026-10-26 criterion, per unit);
 2. mean v2 vision margin of the intact Phase-1 networks ≥ 0.10;
 3. mean v1 off-diagonal **accuracy** (not a margin) of the lesion cells
-   at n = 4096 ≥ 0.30 (chance 0.25).
+   at n = 4096 ≥ 0.30, i.e. 5 percentage points above chance (0.25).
 
 Gate failed → P1 is « non concluant (pas de réseau qui apprend) », no
 statistic is read. No unit is excluded for failing (no selection).
@@ -321,7 +334,9 @@ Generators, parametrised by the pilot (§10), fixed in Stage A:
   query offsets, heteroscedastic by condition, clipped to [0, 1].
 - **S2** S1 plus sparse cells (near-constant class, isolated entries far
   from 1/4, as seen in the diagnostic) and skewed offsets (non-symmetric
-  law of mean zero).
+  law of mean zero). Their parameters are taken from the pilot (§10):
+  the proportion of near-constant cells and the interquartile range of
+  each entry across units.
 - **S3** S1 plus query and lesion main effects of the 2026-10-27
   magnitudes (must be removed by the cyclic form).
 - **S4 (sensitivity, not a pass criterion)** S1 plus a component shared
@@ -350,7 +365,9 @@ test is miscalibrated on real networks (skew, sparsity, the projection)
 or if units are dependent. Same pipeline with 2 conditions (T1, T2;
 median of 2 = mean). Required p ≥ 0.01; p < 0.01 → P1 is « non
 concluant (contrôle négatif échoué) ». A valid control fails by chance
-with probability 0.01; declared.
+with probability 0.01; declared. NC1 has lower power than P1 (2 vs 6
+conditions); a failure is informative, a pass is not a proof that the
+P1 test is well calibrated at all 6 conditions.
 
 **Negative control NC2 — disjoint unit pairs (real lesion data, premise
 check).** Units in registered order are paired (u₂ᵢ, u₂ᵢ₊₁) (G even);
@@ -371,7 +388,9 @@ size δ_pc (C[audio, vision] = C[vision, tactile] = C[tactile, audio] =
 δ_pc, zero potential, so the cyclic form keeps all of it), by
 deterministic item flips (k items per entry; the choice of items does
 not change the accuracies, so one planting is one realisation, not 50;
-k = round(δ_pc · n / 2) per entry, the realised δ is reported).
+k = round(δ_pc · n / 2) per entry, the realised δ is reported: at
+n = 256 and δ_pc = 0.02, k = 3 and the realised δ is 6/256 = 0.0234; at
+n = 4096, k = 41 and the realised δ is 82/4096 = 0.0200).
 Required p < 0.01, informative only if NC1 passed (a grid that already
 rejects passes trivially). Binding power requirement: the synthetic
 power of §10 on S1 at the registered G. PC failed → a non-rejection of
@@ -391,7 +410,7 @@ Order: completeness → gate → NC1, NC2 → P1 → PC → equivalence.
 | gate failed | « non concluant (pas de réseau qui apprend) » |
 | NC1 or NC2 failed | « non concluant (contrôle négatif échoué) » |
 | p < α (α = 0.01, decision 4) | « confirmé » (H1-B3net), with C̄ and its simultaneous CI |
-| p ≥ α, PC passed, every simultaneous TOST bound inside ±Δ_eq | « nul TOST » |
+| only if decision 5 keeps a TOST: p ≥ α, PC passed, every simultaneous TOST bound inside ±Δ_eq | « nul TOST » |
 | p ≥ α otherwise | « non concluant » (or « non concluant (puissance) » if PC failed) |
 | not run | « non testé » / « en attente » |
 
@@ -399,10 +418,14 @@ Order: completeness → gate → NC1, NC2 → P1 → PC → equivalence.
   two one-sided tests at 0.05 with Bonferroni over the 60 entries,
   unit-level t with G − 1 degrees of freedom: « nul TOST » only if
   every |C̄_c[a, b]| + t_{1 − 0.05/60, G − 1} · s_c[a, b] / √G < Δ_eq.
-  Proposal Δ_eq = 0.02 (the B-3 scientific threshold carried over as a
-  margin on a mean; decision 5).
+  If an equivalence test is kept (decision 5; recommended: none),
+  Δ_eq = 0.02 (the B-3 scientific threshold carried over as a margin on
+  a mean). At τ_c ≥ 0.03 and G ≤ 50, TOST is not expected to be
+  reachable; the design can confirm H1-B3net but cannot establish
+  absence at this margin.
 - **p ≥ α is never read as absence**, equivalence or "compatible".
-  Absence is claimed only through « nul TOST ». « réfuté » is not
+  Absence is claimed only through « nul TOST », and not at all if no
+  equivalence test is kept (decision 5). « réfuté » is not
   reachable in this design.
 - **Test family and multiplicity.** Confirmatory family F = {P1}, one
   test, α = 0.01, no correction needed. The max inside T handles the 10
@@ -421,7 +444,7 @@ Order: completeness → gate → NC1, NC2 → P1 → PC → equivalence.
   lesion cell reads world 0 while Phase 1 trains on world Q, the
   historical mismatch; decision 9).
 - **Probes:** every lesion cell writes v2 (256 test, 512 pool) and the
-  v1 per-size files n ∈ {64, 256, 1024, 4096}. P1 uses v2 (decision 3);
+  v1 per-size files n ∈ {64, 256, 1024, 4096}. P1 uses v2 (§16.2 F3);
   the historical `per_query_successes.json` (L + 777, a different item
   set per column) is never used.
 
@@ -465,11 +488,16 @@ for G ≳ 30 even in the optimistic bound.
 
 **Rule (proposal, decision 7).** By simulation on S1 parametrised with
 the **upper 80 % confidence bound** of the pilot τ_c (χ² with 5 df),
-planted 3-cycle of size δ_pc in all 6 conditions (sensitivity: in 3 of
-6), 1 000 grids per G: G = smallest value in {20, 30, 40, 50} with power
+planted 3-cycle of size δ_pc in all 6 conditions (sensitivity variant:
+in 3 of 6; if the effect is confined to T1 or T2, the median over 6
+conditions may miss it; the 3/6 variant detects this pattern), 1 000
+grids per G: G = smallest value in {20, 30, 40, 50} with power
 ≥ 0.80 at α = 0.01 (binomial SE ≤ 0.013 at 0.80). If no value reaches
 0.80 within the compute ceiling, the decidable δ at G = 50 is reported
-and the PI decides go / no-go before the Stage-B tag. The pilot record,
+and the PI decides go / no-go before the Stage-B tag. If the pilot
+(G = 6) shows strongly skewed unit distributions (|skewness| > 2 on any
+entry), a permutation or bootstrap variant of the unit-level test is
+substituted and declared before the Stage B tag. The pilot record,
 the generator, G, the SEEDS list and the expected readings are committed
 in the Stage-B manifest before the first confirmatory job.
 
@@ -512,12 +540,13 @@ in the Stage-B manifest before the first confirmatory job.
 - Non-finite losses are kept as recorded; a v2 fitting failure is a job
   failure.
 - Recorded at Stage B: code SHA, nerve-wml version, `uv.lock` hash,
-  exact commands, SEEDS order, host, resampling seed (proposal 8112026
-  for the analysis, 8112027 for the synthetic checks; both unused in
-  the repository on `c438286`).
-- **Two-stage freeze.** Stage A tag (this protocol, pilot plan, S0–S4,
-  power rule) before the pilot; Stage B tag (pilot record, generator
-  parameters, G, SEEDS, manifest) before the first confirmatory job.
+  exact commands, SEEDS order, host. Resampling seeds (fixed, §16.2
+  F17): 8112026 for the analysis, 8112027 for the synthetic checks; both
+  absent from the repository on `c438286`.
+- **Two-stage freeze (fixed, §16.2 F15).** Stage A tag (this
+  protocol, pilot plan, S0–S4, power rule) before the pilot; Stage B
+  tag (pilot record, generator parameters, G, SEEDS, manifest) before
+  the first confirmatory job.
 
 ## 13. Forking paths and data already seen (declared)
 
@@ -608,7 +637,11 @@ grids).
 
 ## 16. Decisions left to the PI
 
-Recommended option first. None is decided.
+### 16.1 Open (11)
+
+Original numbers are kept; decisions 3, 8, 11, 12, 15 and 17 were fixed
+on review (§16.2). Recommended option first. None of the following is
+decided.
 
 1. **Unit design.** (A) independent units Q_g = 330 000 + 200 · g, own
    Phase 1, world and probe items (recommended); (B) base seeds 500–504
@@ -620,50 +653,52 @@ Recommended option first. None is decided.
 2. **Estimand.** (A) cyclic part (recommended); (B) full off-diagonal
    interaction (11 dimensions, statistic to define); (C) raw
    antisymmetric part, methodological only, never primary.
-3. **Primary probe.** (A) v2, 256 test items (the v0.7 deciding probe,
-   and the probe of the seen 2026-10-27 grid) (recommended); (B) v1
-   per-size n = 4096 (smaller item noise, where piste C was found).
 4. **α of the family F = {P1}.** (A) 0.01 (recommended); (B) 0.05;
    (C) F = {P1, P1-`legacy`}, Holm at FWER 0.01.
-5. **Equivalence margin.** (A) Δ_eq = 0.02 on all 60 entries
-   (recommended); (B) Δ_eq = 0.01; (C) no equivalence test (no absence
-   claim possible).
+5. **Equivalence test.** (C) no equivalence test: TOST is not expected
+   to be reachable at τ_c ≥ 0.03 and G ≤ 50 (§8), so no absence claim
+   is made and a non-rejection stays « non concluant » (recommended);
+   (A) Δ_eq = 0.02 on all 60 entries; (B) Δ_eq = 0.01.
 6. **Positive control.** (A) δ_pc = 0.02, power 0.80 (recommended);
    (B) δ_pc = 0.03, power 0.80; (C) δ_pc = 0.02, power 0.90.
 7. **G rule and ceiling.** (A) smallest G in {20, 30, 40, 50} with power
    ≥ 0.80 at δ_pc, ceiling 50, otherwise PI go / no-go on the reported
    decidable δ (recommended); (B) fixed G = 30 whatever the pilot;
    (C) ceiling 30.
-8. **Calibration row K1.** (A) run, gate-exempt, no pilot, no
-   no-lesion control, descriptive (recommended); (B) not run; (C) run
-   with its own no-lesion control.
 9. **World-seed arm.** (A) `cell` only (recommended); (B) `cell` +
    `legacy` descriptive.
 10. **Mock world.** (A) not in this study (recommended); (B) mock pilot,
     then a mock P1-like row only if its gate passes (needs a block-free
     design check on contiguous windows).
-11. **Learning gate.** (A) the three criteria of §6.3 (recommended);
-    (B) criteria 1–2 only; (C) per-unit gate with exclusion of failing
-    units (not recommended: selection after data).
-12. **Fixed module seeds of `lesion` (T1).** (A) keep, condition on
-    them, declare (recommended); (B) code change deriving mux, nerve and
-    SensoryWML seeds from L in T1 (breaks comparability with every
-    earlier T1 cell).
 13. **No-lesion control.** (A) 10 stream-matched jobs per unit
     (recommended); (B) 30 per unit, one per lesion cell, which also
     allows a lesion-minus-control contrast; (C) none (no NC1, not
     recommended).
 14. **Host and ceiling.** (A) electron-server, nice 19, PAR 4, ceiling
     40 h wall (recommended); (B) macM1.
-15. **Freeze.** (A) two stages, Stage A tag before the pilot, Stage B
-    before the confirmatory grid (recommended); (B) one tag after the
-    pilot, the pilot declared exploratory.
 16. **v0.7.** (A) after the Stage-B results, a v0.7 amendment in which
     the network null decides and the frozen reading is reported as
     registered (recommended); (B) network null reported beside, the
     frozen reading still decides; (C) no v0.7 amendment.
-17. **Resampling seeds.** (A) 8112026 (analysis), 8112027 (synthetic)
-    (recommended); (B) other values fixed at Stage A.
+
+### 16.2 Fixed on review (2026-11-08)
+
+These had an objective answer and are part of the protocol; they are
+no longer PI decisions.
+
+- **F3 Primary probe: v2, 256 test items.** It is the probe of the
+  2026-10-27 grid, of v0.7 and of the diagnostic; another probe would
+  invalidate the predictions of §6.2.
+- **F8 Calibration row K1:** runs, gate-exempt, no pilot, no no-lesion
+  control, descriptive (§6.3).
+- **F11 Learning gate:** the three criteria of §6.3, no exclusion of
+  units.
+- **F12 Fixed module seeds of `lesion` (T1):** kept; the reading is
+  conditional on them, declared in §2.2.
+- **F15 Freeze:** two annotated tags, Stage A before the pilot, Stage B
+  before the confirmatory grid (§12).
+- **F17 Resampling seeds:** 8112026 (analysis), 8112027 (synthetic),
+  checked absent from the repository on `c438286`.
 
 ## References
 
@@ -711,4 +746,16 @@ validity of this statistic, which rests on §5 and on the checks of §7.
   band 330 000–368 800 within the 2³² bound. v0.7 sections to amend
   listed. "Compatible" readings removed; equivalence only by TOST.
   Compute estimate updated. Base moved to main `c438286`.
+- **Revision 2026-11-08, review 2** (independent Opus review of
+  `ebc9ea3`: freezable after PI decisions, the four blocking points
+  resolved). Fixed on review 2026-11-08: decisions 3 (v2 probe), 8 (K1
+  runs, gate-exempt), 11 (three gate criteria), 12 (condition on the
+  fixed T1 module seeds), 15 (two tags), 17 (8112026 / 8112027); 11
+  decisions remain open. Decision 5 now recommends no equivalence test.
+  Text fixes: |SEEDS| guard from 30 · |SEEDS| + 777 < 5000 (≤ 140);
+  why 120–121 and 500–504 are not independent units; Me3 namespace
+  wording; descriptive p values never in summaries; gate margin
+  wording; S2 parameters from the pilot; NC1 power caveat; PC k and
+  realised δ at n = 256 and 4096; TOST not expected reachable; 3/6
+  sensitivity variant; skewness clause for the unit-level test.
 - **2026-10-31** first draft.
