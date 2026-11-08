@@ -5,6 +5,9 @@
 **Option tested:** `--emission straight-through` (default `argmax-bridge`
 unchanged).
 
+
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24054109](https://doi.org/10.5281/zenodo.24054109) (Hypneum Lab lot of 2026-11-08, file `prereg-b3-lesion-interaction-20261027.zip`, SHA-256 `aa7b69ce7e098b603c6e9acb6fe08b89af44ca33dc6fee46c4673455c8c10d39`) gives the freeze tag `prereg-b3-lesion-interaction-20261027` (commit `37810b5a25f643248f7759442e6ad2a56febe0be`, `swh:1:rev:37810b5a25f643248f7759442e6ad2a56febe0be`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## Pilot
 
 - Seeds **110, 111**. They are distinct from 300–309 (lesion-interaction

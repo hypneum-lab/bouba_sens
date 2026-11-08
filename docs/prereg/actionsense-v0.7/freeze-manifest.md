@@ -8,6 +8,9 @@ and comment 6532468639 on PR #59 (ADR-0027).
 squash merge of PR #55). No ActionSense grid has run before this tag.
 **Extraction code:** `a1fd6ff` (PR #57; includes PR #56).
 
+
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24054109](https://doi.org/10.5281/zenodo.24054109) (Hypneum Lab lot of 2026-11-08, file `bouba_sens_v0.7-actionsense-prereg.zip`, SHA-256 `1ad90e105533ca2010604574075636c5eeadee3ddc5deaed1f422fb952c764b0`) gives the freeze tag `bouba_sens/v0.7-actionsense-prereg` (commit `02c24073d3a04e1db3d3adf2ee77e545c0bdde17`, `swh:1:rev:02c24073d3a04e1db3d3adf2ee77e545c0bdde17`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## Protocol and code files (sha256)
 
 | File | sha256 |

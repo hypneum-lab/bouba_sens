@@ -9,6 +9,9 @@ merge of PR #58). No Me6 large-n pilot or confirmatory cell has run
 before this tag.
 **Code base:** main `1295160` (PR #59, ADR-0027) plus PR #58.
 
+
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24054109](https://doi.org/10.5281/zenodo.24054109) (Hypneum Lab lot of 2026-11-08, file `prereg-me6-large-n-20261031.zip`, SHA-256 `65f75c298e61f069f3414846d8d2f77c0c99ba9172b8d98663a13eb29d09afe5`) gives the freeze tag `prereg-me6-large-n-20261031` (commit `b790db272fede343fa55c996709fe39b31f4f9dd`, `swh:1:rev:b790db272fede343fa55c996709fe39b31f4f9dd`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## Protocol and code files (sha256)
 
 | File | sha256 |
