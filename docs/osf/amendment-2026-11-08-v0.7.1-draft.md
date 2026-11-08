@@ -78,11 +78,11 @@ the frozen text stands.
 
 | v0.7 § | Old text | New text |
 |---|---|---|
-| 4.1 grids and seeds | « Confirmatory seeds 300, 301, 302, 303, 304 (never used in the repository) »; 4 grids × 150 cells | Seeds 300–304 are **not independent units** (199 of 200 Phase-1 batch seeds shared; the « never used » claim is already corrected by the 2026-10-31 erratum). Confirmatory units are the G unit seeds Q_g = 330 000 + 200·g of PR #66 §3.1, pilot g = 0…5, confirmatory g = 20…20+G−1. Grid shape per unit: 1 Phase 1 + 30 lesion cells (+10 no-lesion jobs for NC1). Number of grids (2 or 4) per §6 item 3 |
+| 4.1 grids and seeds | « Confirmatory seeds 300, 301, 302, 303, 304 (never used in the repository) »; 4 grids × 150 cells | Seeds 300–304 are **not independent units** (199 of 200 Phase-1 batch seeds shared; the « never used » claim is already corrected by the 2026-10-31 erratum). Confirmatory units are the G unit seeds Q_g = 330 000 + 200·g of PR #66 §3.1, pilot g = 0…5, confirmatory g = 20…20+G−1. Grid shape per unit: 1 Phase 1 + 30 lesion cells (+10 no-lesion jobs for NC1). Number of grids: 2 (straight-through only, §6 item 3 option a) |
 | 4.2 exact commands | `SEEDS="300 301 302 303 304"`, `run_grid.sh`, `me6_paired_null.py` | `SEEDS` = the unit list written in the Stage-B manifest, `NO_LESION=1` jobs, `scripts/me6_network_null.py` (PR #66 §11, not yet implemented). `me6_paired_null.py` is still run, for reporting only |
 | 4.3 B-3 bullet | « B-3 is reported only together with the ADR-0022 paired sign-flip null … A B-3 number without its null is not quoted » | B-3 is reported together with the **network null** (T, null median, null P99, p = (k+1)/(B+1)). The ADR-0022 numbers and the 0.02 firing rate under the network null (PR #66 row D4) are reported beside it, labelled « descriptive, does not decide » |
 | 5.1 completeness | « 150 of 150 `eval_report.json` files, 75 Me7 pairs and 30 complete trios » | Per-unit completeness 30 lesion + 10 no-lesion jobs, all G units (PR #66 §12). B-1 / B-2 completeness rules unchanged |
-| 5.2 median rule | « B-k PASS if the grid median is greater than or equal to its threshold … no multiple-comparison correction » | B-3 verdict from the network null only. **Inconsistency declared:** the text « greater than or equal to » contradicts the strict « > » of §4.3 and §8 item 5 (and `aggregate_grid.py`); the strict « > » is the recorded rule, the « ≥ » is a typo. B-1 / B-2 rule unchanged. Multiplicity: Holm over the family of §3.5 |
+| 5.2 median rule | « B-k PASS if the grid median is greater than or equal to its threshold … no multiple-comparison correction » | B-3 verdict from the network null only. **Inconsistency declared:** the text « greater than or equal to » contradicts the strict « > » of §4.3 and §8 item 5 (and `aggregate_grid.py`); the strict « > » is the recorded rule, the « ≥ » is a typo. B-1 / B-2 rule unchanged. Multiplicity: Holm FWER 0.01 over F = {P1, DEC_S, ΔR, ΔU₂, ΔS} of §3.5 (P1's effective threshold ranges from 0.002 to 0.01) |
 | 5.3 B-3 reading | « distinguishable from the paired null only if P(null ≥ observed) < 0.05 … Otherwise compatible with the paired null » | « Compatible with » is **removed** (never read as absence). Reading by §5 of this amendment. H0 is the absence of **cyclic** asymmetry, not symmetry of expected performances (the raw form is rejected by main effects, PR #66 D1) |
 | 5.5 descriptive | per-trio Me6 values with their own null tails | Per-unit Me6 (frozen statistic) kept as descriptive row D3 / D5; per-trio null tails stay descriptive |
 | 7 deviations policy | « Once tagged, this text is frozen … a new dated amendment » | Applied: this file is that dated amendment. Pointer lines are added to the v0.7 file, ADR-0027 and (when it exists) ADR-0025 (§7) |
@@ -136,7 +136,7 @@ be read, and from what ».
   v2 linear probe (`src/bouba_sens/linear_probe.py`, ADR-0023:
   multinomial logistic regression, standardised features, L2 by
   K-fold on the training pool) fitted on the concatenation of the
-  frozen representations of the four surviving modalities**, minus the
+  post-training representations of the four surviving modalities (frozen at eval time, as in `linear_probe.py`)**, minus the
   probe's own majority baseline (`ProbeFit.baseline`), on the 256 test
   items of the unit. Descriptive companion DEC_m: same, on the lesioned
   modality's representation.
@@ -146,7 +146,7 @@ be read, and from what ».
 - Code gap, stated: the v2 files store item successes per query
   modality, not representations or per-item predicted classes
   (`per_query_successes_v2.json`); a probe on concatenated survivors
-  and the PID inputs (§3) need a new output. Not implemented here.
+  and the PID inputs (§3) need a new output. Not implemented here. **Code prerequisite for Stage A:** (1) probe on the concatenation of the 4 surviving representations, (2) per-item predicted classes as a new output of `linear_probe.py`, (3) a PID estimator (BROJA on discrete tables) implemented or vendored under the pin-and-review policy, (4) `me6_network_null.py` (PR #66 §11). All four are gated by the Stage-A manifest.
 
 ### 2.3 Calibrated null
 
@@ -157,7 +157,7 @@ modalities), B = 20 000, p = (k+1)/(B+1), reported with observed value,
 null median and P99. Validity assumptions, size check and positive
 control as PR #66 §7 (generators S0–S3, planted effect on NC1 data): a
 planted drop of δ_dec accuracy points on the survivors, required
-p < 0.01 at the registered G. δ_dec is set by PI decision 5 (§6).
+p < 0.01 at the registered G. δ_dec is set by PI decision 5 (§6). Proposed planting mechanism (to be fixed in the Stage-A manifest): deterministic item flips on the probe's per-item successes, k = round(δ_dec · n / 2) per test item, analogous to PR #66 §7 PC.
 
 ### 2.4 Learning gate and ceiling
 
@@ -234,16 +234,16 @@ the bias is common to lesion and no-lesion cells of the same unit and
 cancels in Δ to first order, which is an **assumption checked by the
 size check** (PR #66 §7 generators extended to a 4 × 4 × 4 table
 generator with known PID, including pure-redundant, pure-unique and
-XOR-synergistic tables). A label-permutation null inside each cell
+XOR-synergistic tables). The pilot reports the mean and minimum cell count of the 4 × 4 × 4 tables across units, conditions and modalities (64 cells for 256 items, about 4 per cell on average). A label-permutation null inside each cell
 (same permutation for lesion and no-lesion probes) gives the bias floor
 and is reported, not used for the decision. Positive control: planted
 transfer of ε table mass from R to U₂ on NC1 data, required
-p < 0.01; ε is a PI decision.
+p < 0.01; ε is a PI decision. Planting mechanism (to be fixed before Stage A): a deterministic modification of the 4 × 4 × 4 joint table that moves ε bits from redundant entries to unique-U₂ entries, keeping marginals fixed; the exact table surgery is part of generator S_PID, registered in the Stage-A manifest.
 
 ### 3.5 Family, gate and prediction
 
 - Family F = {P1, DEC_S, ΔR, ΔU₂, ΔS}, Holm at FWER 0.01 (PI decision
-  4, 2026-11-08, option a). **Consistency with PR #66:** #66 §8 and its
+  4, 2026-11-08, option a). Under Holm, P1's effective threshold is 0.01/5 = 0.002 when it has the smallest p (the predicted scenario on the Gaussian world); the Stage-B power simulation (§5.1) and the G rule therefore simulate the full Holm procedure, not α = 0.01 per test. **Consistency with PR #66:** #66 §8 and its
   decision 4 fix F = {P1} at α = 0.01 and state that Holm applies if a
   row is added by amendment before the Stage-B tag. **This amendment
   adds DEC_S, ΔR, ΔU₂ and ΔS to F, so P1 is tested under Holm** and its
@@ -279,7 +279,7 @@ negative-control world below.
 World spec (to be written; no code exists): impact sounds synthesised
 from simple solid shapes (round vs pointed), with the acoustic cues
 reported for the effect, spectral balance and temporal continuity
-(Fort & Schwartz, Sci. Rep. 12, doi 10.1038/s41598-022-23623-w, cited by
+(Fort & Schwartz 2022, Sci. Rep. 12, doi 10.1038/s41598-022-23623-w, cited by
 the lab's 2026-10-24 review as the physical recipe; **not verified
 here: à vérifier par le PI**). Negative control world: same sounds and
 shapes with the pairing randomised (physics decoupled).
@@ -369,7 +369,7 @@ Each row is read on the test family F of §3.5 at Holm FWER 0.01.
   does **not** apply to P1 and is carried only if the PI decides on a
   separate TOST for a co-primary.
 - Power of the co-primaries is computed with the same simulation rule
-  (upper 80 % bound of the pilot between-unit SD) before the Stage-B
+  (upper 80 % bound of the pilot between-unit SD), simulating the Holm FWER 0.01 procedure over the five-test family (not α = 0.01 per test) before the Stage-B
   tag; if no G ≤ 50 reaches 0.80 for a co-primary, it is demoted to
   descriptive and the demotion is declared.
 
@@ -407,8 +407,9 @@ open. Options not retained are listed in the change log.
    independent context-free critic before merge (PM §8); only the
    researcher merges.
 2. §6 is closed (2026-11-08); the roadmap reading lock passes next:
-   the lock for v0.7.1 (reading note, contradictor,
-   three tests; S8). **No L1 tag before both.**
+   the lock for v0.7.1 ((a) reading note, (b) contradictor,
+   (c) three tests, (d) the code prerequisites of §2.2 exist and pass
+   the manifested test suite; S8). **No L1 tag before both.**
 3. **L1:** manifest of protocol files + code SHA-256 in
    `docs/prereg/<study>/<stage>-manifest.md`; new annotated tag by the
    PI (name proposed by the PI; the lab pattern is
