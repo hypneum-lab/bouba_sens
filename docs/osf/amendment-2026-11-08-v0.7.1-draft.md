@@ -6,7 +6,7 @@ a pre-registration only after (a) the PI closes the decisions of §6,
 S8; `hypneum-lab/.github` `docs/ROADMAP.md`, « Lire avant de geler »),
 (c) the PI creates a new L1 tag. No run, pilot, estimator fit or null
 draw of this amendment has been made. L3 (OSF) is out of scope for this
-PR and needs a calibrated null (§5).
+PR and needs a calibrated null (PR #66 §7, §10).
 
 **Date:** 2026-11-08. **Issue:** #23. **Drives:** PI decision 16 of
 PR #66, option A (« amendement v0.7 où le nul réseau décide »), taken
@@ -36,7 +36,7 @@ a verdict.
    calibrated null.
 3. A **positive control** bouba/kiki in a physical world is added,
    with a stated way to fail.
-4. A written interpretation rule per outcome (§4).
+4. A written interpretation rule per outcome (§5).
 5. Seeds 300–304 stop being the confirmatory units (consecutive seeds
    share 199 of 200 Phase-1 batch seeds, PR #66 §3.1).
 
@@ -82,10 +82,10 @@ the frozen text stands.
 | 4.3 B-3 bullet | « B-3 is reported only together with the ADR-0022 paired sign-flip null … A B-3 number without its null is not quoted » | B-3 is reported together with the **network null** (T, null median, null P99, p = (k+1)/(B+1)). The ADR-0022 numbers and the 0.02 firing rate under the network null (PR #66 row D4) are reported beside it, labelled « descriptive, does not decide » |
 | 5.1 completeness | « 150 of 150 `eval_report.json` files, 75 Me7 pairs and 30 complete trios » | Per-unit completeness 30 lesion + 10 no-lesion jobs, all G units (PR #66 §12). B-1 / B-2 completeness rules unchanged |
 | 5.2 median rule | « B-k PASS if the grid median is greater than or equal to its threshold … no multiple-comparison correction » | B-3 verdict from the network null only. **Inconsistency declared:** the text « greater than or equal to » contradicts the strict « > » of §4.3 and §8 item 5 (and `aggregate_grid.py`); the strict « > » is the recorded rule, the « ≥ » is a typo. B-1 / B-2 rule unchanged. Multiplicity: Holm over the family of §3.5 |
-| 5.3 B-3 reading | « distinguishable from the paired null only if P(null ≥ observed) < 0.05 … Otherwise compatible with the paired null » | « Compatible with » is **removed** (never read as absence). Reading by §4 of this amendment. H0 is the absence of **cyclic** asymmetry, not symmetry of expected performances (the raw form is rejected by main effects, PR #66 D1) |
+| 5.3 B-3 reading | « distinguishable from the paired null only if P(null ≥ observed) < 0.05 … Otherwise compatible with the paired null » | « Compatible with » is **removed** (never read as absence). Reading by §5 of this amendment. H0 is the absence of **cyclic** asymmetry, not symmetry of expected performances (the raw form is rejected by main effects, PR #66 D1) |
 | 5.5 descriptive | per-trio Me6 values with their own null tails | Per-unit Me6 (frozen statistic) kept as descriptive row D3 / D5; per-trio null tails stay descriptive |
 | 7 deviations policy | « Once tagged, this text is frozen … a new dated amendment » | Applied: this file is that dated amendment. Pointer lines are added to the v0.7 file, ADR-0027 and (when it exists) ADR-0025 (§7) |
-| 8 item 3 | block-length pilot seeds 100–101, confirmatory 300–304 | Block length is not needed by the unit-level flip (PR #66 §15). Whether the 100–101 pilot ran is **not verifiable from this clone**; if it ran, it is listed as exploratory (§5.3). The unit pilot g = 0…5 replaces it for planning |
+| 8 item 3 | block-length pilot seeds 100–101, confirmatory 300–304 | Block length is not needed by the unit-level flip (PR #66 §15). Whether the 100–101 pilot ran is **not verifiable from this clone**; if it ran, it is listed as exploratory (§7.2). The unit pilot g = 0…5 replaces it for planning |
 | 9 not amended | « no change to the shape of one grid … 150 cells, thresholds » | The shape of a grid per unit changes (§1.2 row 4.1). Thresholds 0.05 / 0.10 / 0.02 and the strict « > » are unchanged |
 | ADR-0025 listing | reserved for the ActionSense verdicts (`docs/adr/README.md`) | The verdict ADR lists this amendment as a deviation. ADR-0025 does not exist yet: the pointer is added when it is written |
 
@@ -251,7 +251,7 @@ p < 0.01; ε is a PI decision.
   three modalities carrying the full latent, DEC_S is at ceiling and
   R is large; the expected reading of DEC_S, ΔR, ΔU₂, ΔS is « non
   concluant » (ceiling) or no rejection. The co-primaries are expected
-  to be informative on the physical world (§5) and on ActionSense, not
+  to be informative on the physical world (§4) and on ActionSense, not
   on the Gaussian world. This is declared so a Gaussian non-rejection
   is not later presented as a finding.
 
