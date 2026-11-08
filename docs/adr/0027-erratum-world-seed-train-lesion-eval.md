@@ -1,5 +1,7 @@
 # ADR-0027 — Erratum: `train`, `lesion` and `eval` build different synthetic worlds
 
+> Amended by `docs/osf/amendment-2026-11-08-v0.7.1-draft.md` (L0 draft).
+
 **Status:** Accepted — PI sign-off 2026-10-30 (PR #59 comment
 6532468639, on main 1295160). Erratum; no value, metric,
 threshold or past verdict is deleted or changed.
