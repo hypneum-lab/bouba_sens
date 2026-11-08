@@ -57,7 +57,7 @@ running sweep may add back.
 
 | Axis | Status |
 |---|---|
-| **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
+| **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) *Me6 at n ∈ {64, 256, 1024, 4096} on the existing cells (ADR-0026, tag `prereg-me6-large-n-20261031`, #63, 2026-10-31):* learning gate not passed (argmax-bridge accuracy 0.24–0.27), so no row is a B-3 reading; Gaussian rows in excess over the paired null at n ≥ 256 in both arms, mock rows compatible; the frozen 0.02 rule fires under the paired null in 0.748 / 0.981 of draws on the mock at n = 4096 and decides nothing. Under the lab vocabulary (PM §6) the B-3 magnitude is **non concluant** until the pre-registered network-level null (PR #66) is frozen and run. |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
 | **B-2** Me3 MI migration | **Null** on the Gaussian world and the CC-film bridge (ADR-0019: full-D probe, N≳f(D)); **not conclusive** on the Studyforrest bridge (single-class probe, erratum 12, issue #77) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
@@ -121,6 +121,20 @@ before any new B-3 reading. On the Studyforrest mock (0.305, accuracy
 conclusive; the real-ECG grid was not recomputed. Any downstream anchor
 on B-3 (including the Stratum 4 anchor above) should be read in that
 light.
+
+**F1 update 4 (2026-11-08).** Me6 was rerun at n ∈ {64, 256, 1024,
+4096} on the existing cells (ADR-0026, tag
+`prereg-me6-large-n-20261031`, #63; 600/600 cells, 2026-10-31). The
+learning gate is not passed for the argmax-bridge emission (accuracy
+0.24–0.27), so no row is a B-3 reading; Gaussian rows are in excess
+over the paired null at n ≥ 256 (six of eight rows, five below the
+Bonferroni level) and mock rows are compatible. The frozen 0.02 rule
+fires under the paired null in 100 % of draws at n ≤ 1024 and in
+0.748 (cell) / 0.981 (legacy) on the mock at n = 4096, so it decides
+nothing; under the lab vocabulary (PM §6) the B-3 magnitude is **non
+concluant** until the pre-registered network-level null (PR #66) is
+frozen and run. Details:
+`docs/milestones/2026-10-31-me6-large-n-results.md`.
 
 **F1 update 3 — final B-3 wording (PI decision 2026-10-27).**
 On the Gaussian world, with a network that learns the task
