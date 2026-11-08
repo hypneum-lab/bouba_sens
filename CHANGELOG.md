@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.11] — 2026-11-06 (seeded lock-matrix tables, B-3 v2 wording, ActionSense world, B-2 recompute, reproduction scripts)
+## [0.5.11] — 2026-11-08 (seeded lock-matrix tables, B-3 v2 wording, ActionSense world, B-2 recompute, reproduction scripts)
 
 ### Changed
 
@@ -123,8 +123,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   host stall (#57, closes #52).
 - **ActionSense S00 pilot gate reports** (#50, #53, #54):
   `docs/pilot/actionsense-s00*.md`, `scripts/pilot_actionsense*.{sh,py}`;
-  check 3 null test: S_obs 0.0634, p95 0.0482, p = 0.012, decision GO
-  (PI call; rests on one subject).
+  check 3 null test: S_obs 0.0634, null p95 0.0482, p = 0.012; GO by
+  the rule fixed before the computation (S_obs > p95). The effect is
+  small and rests on one subject.
 - **Pre-registration amendment v0.7 ActionSense** (#55,
   `docs/osf/amendment-v0.7-actionsense.md`) and its gates (#56): jar
   family, strict `>` boundary tests, `EMISSION` and `--probe-v2` in
@@ -177,6 +178,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   was built with the earlier code and those values were not recomputed
   there. Regenerating the cache and recomputing B-2 followed in #81.
 
+- **Phase-2 physiology read by column name** (#83, closes #72):
+  `extract_force` reads the headerless phase-2 physio TSV with column
+  names and sampling rate taken from the BIDS `*_physio.json` sidecars
+  (merged by inheritance), and raises `ValueError` when the sidecar,
+  `Columns`, `SamplingFrequency`, `cardiac` or `respiratory` is missing
+  or the column count disagrees. Decimation and derivatives are
+  unchanged. The paper draft is aligned on this fix.
+- Ruff errors fixed in `scripts/spikes/check_force_spectrum.py` (#86);
+  no behaviour change.
+
 ### Documentation
 
 - Fix the nerve-wml DOI and add the repository's own Zenodo DOI in the
@@ -208,7 +219,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   edited (`docs/osf/erratum-2026-10-31-v0.7-seeds.md`); seeds, cells,
   thresholds and rules are unchanged, and there is no data overlap
   (synthetic Gaussian vs real ActionSense).
-- **ADR-0027 (#59, Proposed at merge): the three CLI commands build the
+- **ADR-0027 (#59, Accepted, PI sign-off 2026-10-30): the three CLI
+  commands build the
   synthetic world with different seeds** (`train`: training seed;
   `lesion`: 0; `eval`: lesion seed). No value or verdict changes;
   real-data worlds are not affected.
