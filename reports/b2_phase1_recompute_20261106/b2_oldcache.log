@@ -1,0 +1,51 @@
+== oldcache start 2026-11-06T13:09:49Z data=/Users/electron/hypneum-lab/bouba_sens/data/studyforrest_real
+seed=0 N=512 d_fused=896 D_PR=13.16 D_2NN=12.14 | Kraskov=+0.0000 bin=+0.0000 MINE1d=-0.0000 MINEfull=-0.0000
+seed=1 N=512 d_fused=896 D_PR=12.81 D_2NN=11.61 | Kraskov=-0.0049 bin=-0.0120 MINE1d=+0.0000 MINEfull=-0.0001
+seed=2 N=512 d_fused=896 D_PR=13.24 D_2NN=12.77 | Kraskov=+0.0000 bin=+0.0000 MINE1d=+0.0000 MINEfull=+0.0000
+seed=3 N=512 d_fused=896 D_PR=12.31 D_2NN=12.85 | Kraskov=+0.0000 bin=+0.0000 MINE1d=-0.0000 MINEfull=-0.0000
+seed=4 N=512 d_fused=896 D_PR=12.48 D_2NN=13.18 | Kraskov=+0.0000 bin=+0.0000 MINE1d=-0.0000 MINEfull=-0.0000
+
+wrote ../out/e1_b2_dimensional_mine_studyforrest_oldcache.json
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "D_participation_ratio_mean": 12.800316429138183,
+  "D_twoNN_mean": 12.510784721374511,
+  "kraskov_delta": {
+    "mean": -0.0009739338904524301,
+    "ci95": [
+      -0.00292180167135729,
+      0.0
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": -0.0023974419930155124,
+    "ci95": [
+      -0.007192325979046538,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": -2.203957670806893e-07,
+    "ci95": [
+      -6.771816877723091e-07,
+      6.604133793131852e-08
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": -1.8982912930910714e-05,
+    "ci95": [
+      -5.6830970179156226e-05,
+      -2.5872640039173772e-08
+    ],
+    "n": 5
+  }
+}
+real 314,89
+user 233,62
+sys 157,43
+== oldcache rc=0 end 2026-11-06T13:15:04Z

@@ -5,7 +5,7 @@
 **Date.** 2026-04-22
 **Companion artefacts.**
 - Repository : `github.com/hypneum-lab/bouba_sens` (tag `v0.5.4`)
-- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19666405`)
+- Protocol dep : `github.com/hypneum-lab/nerve-wml` (tag `v1.5.3`, DOI `10.5281/zenodo.19680058`)
 - Pre-registration : OSF `10.17605/OSF.IO/Q6JYN` (locked 2026-04-19, amendment v0.6 2026-04-22)
 - ADRs : `docs/adr/0004..0017` record every verdict, retraction, and scope change inline with its grid commit.
 
@@ -28,15 +28,21 @@ structural asymmetry, bouba/kiki) — across five synthetic/surrogate
 worlds (Gaussian, XOR, Sinusoid, Studyforrest mock, real ECG) and
 **two real bridges with opposite real/synthetic modality splits**.
 The **Studyforrest** bridge (OpenNeuro ds000113) carries real
-cardiac-respiratory force, real head-motion gravity regressors, and
+physiology in the force channel (cardiac and respiratory labels
+swapped and time base off by a factor of 5 in the first cache, issue
+#74; corrected and recomputed 2026-11-06, §6.3.1(d)), real head-motion
+gravity regressors,
+and
 real scene-annotation tactile/labels, while audio and vision are
 annotation-derived **proxies** (the copyrighted soundtrack and movie
 frames are absent from OpenNeuro — not "real movie vision"). The
 **CC-film** bridge (Big Buck Bunny, CC-BY 3.0) inverts this: audio
 (log-mel), vision (frames), and labels (shot-cuts) are real perceptual
 signal, while tactile/gravity/force are **synthetic** (a film has no
-proprioception). The B-2 null below holds on both bridges regardless of
-which half of the modality set is real. Thresholds
+proprioception). The B-2 null below holds on the CC-film bridge and the
+Gaussian world; on the Studyforrest bridge the measurement is not
+conclusive (single-class probe, issue #77; a stratified rerun does not
+pass the learning gate). Thresholds
 (0.05 / 0.10 / 0.02) are frozen by OSF registration
 `10.17605/OSF.IO/Q6JYN` before the evaluation campaign.
 
@@ -78,8 +84,9 @@ timings × 3 SNRs) and 19 ADRs, we report:
    dimension **D ≈ 12** (participation ratio 11.7 / two-NN 12.4).
    Re-estimating with Kraskov, adaptive binning, and **MINE on the full
    896-D probe** — all bracket zero; **no estimator crosses +0.10** on
-   any seed, on the gaussian reference and on **both real bridges**
-   (Studyforrest + CC-film). Binning collapses in 896-D as
+   any seed, on the gaussian reference and on the CC-film bridge; on
+   the Studyforrest bridge the measurement is not conclusive (§6.3.1(d),
+   issue #77). Binning collapses in 896-D as
    `N ≫ (#bins)^D` predicts.
 
 An earlier version of this paper claimed that a frozen mux with
@@ -106,7 +113,7 @@ portable multi-seed validation protocol for future benchmarks.
 Two independent lines of evidence suggest cross-modal asymmetry is a structural property of cognitive architectures :
 
 - **Amedi 2007**, congenital blindness : occipital cortex re-tasked to audition with *greater* plasticity than late-acquired blindness.
-- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : 95 %+ cross-cultural agreement on sound-shape correspondence (“bouba” round, “kiki” spiky) — evidence of a hard-wired **asymmetric** modality mapping.
+- **Bouba/kiki effect** (Ramachandran & Hubbard 2001) : high agreement on sound-shape correspondence (“bouba” round, “kiki” spiky), robust across 25 languages and ten writing systems (Ćwiek et al. 2022) <!-- source to be provided for any percentage: no document read on 2026-11-04 supports "95 %+" -->; whether the mapping is hard-wired or partly learned remains debated (Sidhu & Pexman 2018), and that review names no asymmetry; the one infant study we have read found no effect at 5 and 6 months across three experiments and a general preference for round shapes, a null its authors call hard to interpret (Fort, Weiß, Martin & Peperkamp 2013, AVSP proceedings).
 
 No pre-registered computational benchmark currently tests whether a given architecture reproduces these two properties simultaneously.
 
@@ -158,8 +165,10 @@ REAL / PROXY / SYNTHETIC per modality — never blurred.
 | **CC-film bridge** | Big Buck Bunny (CC-BY 3.0) | **Yes** | audio (log-mel) / vision (frames) / labels (shot-cuts) = **REAL** perceptual signal; tactile/gravity/force = **SYNTHETIC** (a film has no proprioception). See §6.3.1(e). |
 
 The two real bridges carry the true signal on **opposite halves** of the
-modality set, so any verdict that holds on both is robust to which
-modalities are genuine — this is exploited for the B-2 null in §6.3.1.
+modality set, so a verdict that held on both would be robust to which
+modalities are genuine. For B-2 only the CC-film measurement is
+informative (§6.3.1(d), issue #77), so this robustness is not
+established.
 
 ### 2.4 The six-metric world-complexity audit
 
@@ -369,11 +378,53 @@ on any of the four synthetic worlds at this parameterisation.
 
 OSF amendment v0.5 extends the pre-registered grid with a fifth
 world derived from Studyforrest phase-2 (sub-01 ses-localizer
-task-movielocalizer run-1): real VGG16 features over
-movie_localizer.mkv, ffmpeg scene-cut tactile proxy, real
-cardiac+respiration physio, zero gravity (rp regressors not
-published), CC-BY-4.0 LibriSpeech audio substitution (path (b)
-of ADR-0012 — the Forrest Gump soundtrack is not redistributable).
+task-movielocalizer run-1): VGG16 features over
+movie_localizer.mkv, ffmpeg scene-cut tactile proxy, a physiological
+force channel (see below), zero gravity (rp regressors not
+published), CC-BY-4.0 LibriSpeech audio substitution (path (b) of
+ADR-0012 — the Forrest Gump soundtrack is not redistributable). The
+movie localizer is not film footage. The file movie_localizer.mkv
+(checked on 2026-11-06; its MD5 matches the git-annex key) lasts
+12 s: 300 frames of 1280×720 at 25 fps, with no audio track. It
+shows a colored polar checkerboard, redrawn every 0.2 s (5 Hz, 60
+distinct patterns whose colors are redrawn, not a contrast
+reversal), filling only the movie-frame area between two grey bands.
+In the scanner, the PsychoPy script alternated this file every 12 s
+with inv_movie_localizer.mkv, for 4 cycles, 48 volumes at TR 2 s,
+about 96 s (Sengupta et al. 2016, Sci. Data 3:160093, pp. 2, 4, 6).
+The task description of the dataset states this alternation, and the
+sub-01 physiology file holds 48 scanner triggers over 96 s. Sub-01 is
+present in the localizer session; the dataset has no events file for
+this task. The vision channel (120 frames at 10 Hz) and the
+scene-cut channel (7 detected "cuts") therefore describe the
+inside-movie checkerboard only, not the film. The 7 "cuts" are
+changes of checkerboard pattern.
+
+The force channel is not the pulse-oximetry and respiration signal
+that earlier versions of this section described. On the regenerated tensors,
+`extract_force`
+(`src/bouba_sens/world/studyforrest_features.py`, lines 162-166 at
+commit `97101bc`) reads the first data line of the header-less BIDS physiology file as
+a header. It then falls back to column 0 (the scanner trigger) as
+"ECG" and column 1 (the pulse-oximetry trace) as "respiration". In
+the regenerated `force.pt`, the "ECG" channel and its derivatives are
+zero everywhere, the "respiration" channel is the cardiac pulse, and
+the respiratory column is never read (issue #72). The April 2026
+tensors are lost, so this cannot be checked on them. The code is
+unchanged since commit `d7a3645`, so they probably had the same
+defect.
+Since 2026-11-06 the extraction reads the column names and the
+sampling rate from the BIDS sidecar `recording-cardresp_physio.json`
+(500 Hz; trigger, cardiac, respiratory) and stops with an error when
+a column is missing. The cardiac column is a pulse-oximetry trace,
+not an ECG. On sub-01, channel 0 of the new force tensor equals the
+cardiac column and channel 3 the respiratory column, decimated by 50
+(checked on 2026-11-06). The 4.5-modal values of the table below and
+of §5.5-§5.9 were computed on the April tensors, probably with the
+old header reading (#72; not verified). They are not recomputed,
+because those tensors are lost and the public data still give 120
+vision frames against 1800 (issue #45); the extraction refuses a
+misaligned set. See README erratum item 13.
 
 | World | B-1 no-lock | B-1 lock=200 | B-3 no-lock | B-3 lock=200 |
 |-------|------------:|-------------:|------------:|-------------:|
@@ -732,39 +783,95 @@ The real Studyforrest cache was provisioned from **OpenNeuro ds000113**
 over the public S3 REST API (`scripts/fetch_studyforrest_sample.py
 --source openneuro`, 9000 frames @ 10 Hz; the dead `studyforrest.org`
 phase-1 URL is retired). Channel provenance is mixed and labelled
-verbatim in the cache MANIFEST: **force** (cardiac pulse-ox +
-respiration physio, 500 Hz), **gravity** (head-motion `*_bold_moco.txt`
+in the cache MANIFEST: **force** (real ds000113 physiology; the
+phase-1 files hold trigger, respiratory, cardiac and oxygen-saturation
+columns at 100 Hz, Hanke et al. 2014, *Sci. Data* 1:140003,
+doi:10.1038/sdata.2014.3, p. 11; the first cache assumed trigger,
+cardiac, respiratory at 500 Hz, so its "cardiac" was the respiratory
+trace, its "respiration" the cardiac trace, and its 9000 frames spanned
+about 4500 s, issue #74; the cache regenerated on 2026-11-06 has
+"cardiac" peaking at 1.37 Hz and "respiration" at 0.30 Hz over 900 s,
+the five other tensors byte-identical), **gravity** (head-motion `*_bold_moco.txt`
 rotation regressors), **tactile** and **labels** (scenes.csv scene /
 DAY-NIGHT / INT-EXT annotation) are **real ds000113 signal**; **audio**
 and **vision** are **annotation-derived proxies** (narration-timing and
 scene-cut structure respectively) because the Forrest Gump soundtrack
 and movie are copyrighted and absent from OpenNeuro. The run uses
 `StudyforrestRealWorld` (mode `real5`, verified — not the mock stub).
-
 B-2 = MI_post − MI_pre, N=512, 5 seeds, 500-resample bootstrap 95% CIs,
-effective dim **D ≈ 12.5** (PR 12.9, two-NN 12.5 — matching the
-gaussian D ≈ 12):
+effective dim **D ≈ 12.5** (PR 13.0, two-NN 12.5 on the corrected
+cache; 12.9 / 12.5 on the first cache):
 
-| Estimator (probe) | gaussian mean (bits) | **real-bridge mean (bits)** | **real 95% CI** |
-|-------------------|---------------------:|----------------------------:|-----------------|
-| Kraskov k-NN (1-D) | −0.031 | **−0.001** | [−0.0029, +0.000] |
-| Adaptive binning (1-D) | −0.016 | **−0.0024** | [−0.0072, +0.000] |
-| MINE (1-D mean-pool) | 0.000 | **−2.0e-7** | [−6.6e-7, +8.3e-8] |
-| MINE (full 896-D probe) | −0.038 | **−1.9e-5** | [−5.7e-5, −1.8e-9] |
+| Estimator (probe) | gaussian mean (bits) | first cache (#74) | **corrected cache** | **corrected 95% CI** |
+|-------------------|---------------------:|------------------:|--------------------:|----------------------|
+| Kraskov k-NN (1-D) | −0.031 | −0.001 | **−0.0002** | [−0.0007, 0.000] |
+| Adaptive binning (1-D) | −0.016 | −0.0024 | **+0.0001** | [0.000, +0.0003] |
+| MINE (1-D mean-pool) | 0.000 | −2.0e-7 | **+2.4e-7** | [+1.1e-7, +3.9e-7] |
+| MINE (full 896-D probe) | −0.038 | −1.9e-5 | **−1.3e-4** | [−3.8e-4, +2.9e-8] |
 
-The real-bridge verdict is **identical to gaussian: B-2 Null.** Every
-estimator's CI brackets zero; no estimator crosses the +0.10 threshold
-on any of the 5 seeds. The probe-shape conclusions transfer unchanged:
-MINE-1-D is pinned at the DV floor (~0), and the full-probe MINE — the
-v0.2 "richer probe rescues B-2" hypothesis — again surfaces no positive
-signal (mean −1.9e-5). *The B-2 magnitudes here are smaller than
-gaussian's, which is expected:* the real bridge's lesioned audio channel
-is an annotation proxy, so there is even less audio-specific information
-available to migrate, but the qualitative null is the same.
-(`reports/e1_b2_dimensional_mine_studyforrest.json`.)
+With the first cache (issue #74) the real-bridge means were −0.001
+(Kraskov), −0.0024 (binning), −2.0e-7 (MINE 1-D) and −1.9e-5 (MINE
+full); they were recomputed on 2026-11-06 with the corrected cache
+(`reports/e1_b2_dimensional_mine_studyforrest_phase1fix.json`). A
+same-day replay on the first cache reproduces the Kraskov and binning
+values exactly and every value of seeds 1–4 (seed 0 differs in D and
+MINE; `…_oldcache_replay.json`). With the corrected cache, no
+estimator's B-2 exceeds the preregistered +0.10 threshold on any of
+the 5 seeds. Paired label-permutation null (1000 draws, same
+permutation on the pre- and post-lesion probe, mean over 5 seeds,
+`scripts/spikes/e1_b2_paired_null.py`): Kraskov observed 0.000, null
+median 0.000, P99 0.0044, p = 0.62; binning observed −0.0011, null
+median −0.00003, P99 0.0036, p = 0.79 (first cache: p = 0.75 / 0.70).
 
-*Honest scope.* This is a real bridge for force/gravity/tactile/labels
-and a documented proxy for audio/vision; it is **not** a full
+*Reading.* The probe is a contiguous slice of 512 frames (51.2 s) and
+the label is the scene index quantised to 4. In 4 of 5 seeds the
+probe holds a single class, and in seed 1 it holds 500 and 12; the
+label file is identical in both caches. MI with a constant label is
+zero for any representation, so on those seeds B-2 is 0 by
+construction and the measurement cannot fail. The Phase-1 loss moves
+from 1.33–1.40 to 0.87–0.92 (ln 4 = 1.39), but training batches are
+drawn the same way and reader accuracy was not measured, so the
+learning gate is not established. B-2 on this bridge is **not
+conclusive**, with either cache.
+
+The class of this result changes from "B-2 Null" (earlier text) to a
+measurement that is not informative (issue #77).
+
+*Stratified probe (exploratory amendment, 2026-11-06; ADR-0019
+E1.3c-ter).* After reading these results, ADR-0019 was amended before
+any new run: 512 frames drawn from the whole cache, stratified by class
+(128 per class), without replacement, same probe seed; same probe for
+the paired null; learning gate = accuracy of the trained head on the
+probe ≥ majority-class rate + 0.10; "not measurable" if fewer than 3 of
+5 seeds pass; threshold unchanged (+0.10 bit). The change of method was
+informed by the results above and is exploratory.
+
+| Estimator (probe) | contiguous, corrected | stratified, corrected | stratified, first cache |
+|-------------------|----------------------:|----------------------:|------------------------:|
+| Kraskov (1-D) | −0.0002 | +0.004 [−0.044, +0.044] | −0.020 [−0.070, +0.033] |
+| Binning (1-D) | +0.0001 | +0.026 [0.000, +0.060] | −0.002 [−0.013, +0.008] |
+| MINE (1-D) | +2.4e-7 | 0.000 | 0.000 |
+| MINE (full) | −1.3e-4 | +0.14 [−0.014, +0.44] | −0.007 [−0.014, −0.002] |
+| Reader accuracy | not measured | 0.250 (5/5 seeds) | 0.250 (5/5 seeds) |
+
+With the stratified probe the reader accuracy before the lesion is
+0.250 on all ten seeds, the majority-class rate of a balanced probe:
+the head gives one class to every probe frame, and the learning gate
+(0.35) fails on every seed. B-2 on this bridge is **not measurable**
+under the amendment, with either cache. No mean B-2 exceeds the
+preregistered threshold; one seed does (corrected cache, seed 2, MINE
+full +0.74), on a network that does not pass the gate. Paired null
+(1000 draws, 5 seeds): p = 1.0 (Kraskov and binning, corrected cache),
+p = 0.013 and 0.001 (first cache, observed +0.036 and +0.038, below the
+threshold). The null run recaptures the probe and its per-seed B-2
+differs from the main run by up to 0.4 bit, so the label-permutation
+null does not cover the run-to-run variation of the representation;
+these p values are not interpreted
+(`reports/b2_stratified_probe_20261106/`).
+
+*Honest scope.* This is a real bridge for gravity/tactile/labels, with
+a real force channel (corrected cache), and a documented proxy for
+audio/vision; it is **not** a full
 perceptual-stimulus replication (which would require the copyrighted
 media outside OpenNeuro). The promotion lifts the "gaussian-only"
 caveat for the B-2 *verdict* while keeping the audio/vision-proxy
@@ -797,7 +904,7 @@ two-NN ≈ 13.1:
 | MINE (1-D mean-pool) | 0.0000 | [0.0000, 0.0000] |
 | MINE (full N×d probe) | −0.0027 | [−0.0159, +0.0110] |
 
-**Verdict = B-2 Null, a third time, now under real perceptual stimuli.**
+**Verdict = B-2 Null, as on the Gaussian world, now under real perceptual stimuli.**
 No estimator reaches the +0.10 threshold; MINE-1-D is pinned at the DV
 floor; full-probe MINE is null (−0.003); binning brackets zero. The only
 CI excluding zero is Kraskov, and it does so on the **negative** side
@@ -810,9 +917,12 @@ AV, not annotation proxies) but **loses** Studyforrest's biological
 anchoring entirely and has **synthetic** proprioception — the exact
 inverse of (d). Read together: (d) contributes real proprioception +
 biological grounding with proxy AV; (e) contributes real AV with
-synthetic proprioception. **B-2 is Null across both bridges and the three
-synthetic worlds** — the null is robust to which half of the modality set
-carries real signal. (`reports/e1_b2_dimensional_mine_ccfilm.json`;
+synthetic proprioception. B-2 is Null on the CC-film bridge and on the
+three synthetic worlds; on the Studyforrest bridge it is not conclusive
+(single-class contiguous probe, issue #77; stratified probe below the
+learning gate, §6.3.1(d)). The earlier conclusion that the null is robust
+to which half of the modality set carries real signal is no longer
+supported. (`reports/e1_b2_dimensional_mine_ccfilm.json`;
 cache provenance `data/ccfilm_real/MANIFEST.md`.)
 
 ---
@@ -824,10 +934,14 @@ Amedi et al. (2007) show that congenitally blind subjects recruit
 occipital cortex for auditory object recognition to a quantitatively
 greater degree than late-onset blind subjects — our B-1 invariant
 operationalises this asymmetry as a Me7 threshold. Bavelier &
-Neville (2002) and Merabet & Pascual-Leone (2010) frame this as a
-critical-period phenomenon: lock-style plasticity constraints mid-
-development produce the T1/T2 gap that adult-onset reorganisation
-cannot close; Heimler & Amedi (2020) review to what extent such
+Neville (2002) frame this as a critical-period phenomenon:
+lock-style plasticity constraints mid-development produce the T1/T2
+gap that adult-onset reorganisation cannot close. Merabet &
+Pascual-Leone (2010) temper that view: the evidence is consistent
+with more marked reorganisation the earlier the loss, but the brain
+retains a high level of neuroplasticity well into adulthood, though
+not necessarily to the same degree as the developing brain (section
+"Critical periods and adult plasticity"); Heimler & Amedi (2020) review to what extent such
 critical periods remain reversible in the adult brain.
 bouba_sens's `constellation_lock_after` is a direct architectural
 analogue of that critical period. The single-seed §5.5 dose-response
@@ -836,9 +950,12 @@ did not survive multi-seed validation and is retracted (§5.5,
 ADR-0019).
 
 **Missing-modality robustness and critical periods in deep
-multimodal networks.** Most multimodal benchmarks assume modality
-completeness at evaluation time (MultiBench, Liang et al. 2021),
-and joint-embedding models such as ImageBind (Girdhar et al. 2023)
+multimodal networks.** MultiBench (Liang et al. 2021) already
+tests missing modalities at evaluation time: it drops an entire
+modality from the test data of a model trained on clean data and
+reports the performance curve (its Appendix D.3.2–D.3.3). This
+measures degradation without further training, not reorganisation
+after the loss, which is what B-1 targets. Joint-embedding models such as ImageBind (Girdhar et al. 2023)
 bind modalities through a shared space without testing
 reorganisation after channel loss. Ma et al. (2022) show that
 multimodal Transformers are sensitive to missing modalities and
@@ -865,11 +982,16 @@ et al. (2007); bouba_sens targets that gap, and its B-1 retraction
 produce a T1/T2 gap above the noise floor.
 
 **Bouba/kiki correspondence and ideasthesia.** Köhler (1947) and
-Ramachandran & Hubbard (2001) established the 95 %+ cross-cultural
-agreement on round-vs-spiky sound-shape mapping; Sidhu & Pexman
-(2018) review the converging evidence that this mapping is a
-structural property of sensory integration, not learned. Our B-3
-invariant formalises that asymmetry as the max off-diagonal
+Ramachandran & Hubbard (2001) reported high agreement on the
+round-vs-spiky sound-shape mapping, and Ćwiek et al. (2022) find the
+effect robust across 25 languages and ten writing systems
+<!-- source to be provided for any percentage: no document read on
+2026-11-04 supports "95 %+" -->; Sidhu & Pexman (2018) review five
+candidate mechanisms, including learned ones, judge the evidence for
+innateness not overwhelming, and find that current evidence does not
+pinpoint any particular mechanism. Our B-3
+invariant formalises a modality asymmetry, which that review does not
+describe, as the max off-diagonal
 magnitude of the 5-modality perf matrix. Its 5–6× threshold pass
 across every grid in this paper, independent of all Phase-1/Phase-2
 controls, is a magnitude result only: the partition null model and
@@ -878,7 +1000,17 @@ per-modality entropy and does not support a hard-wired
 perceptive/proprioceptive mapping. Bouba/kiki is therefore a
 motivating analogue for B-3, not a property the benchmark
 establishes. In models, Alper & Averbuch-Elor (2023) probe sound
-symbolism in vision-and-language models (CLIP, Stable Diffusion). Using real
+symbolism in vision-and-language models (CLIP, Stable Diffusion)
+and report an effect; their only null is chance-level
+classification, one of their measures changes sign across CLIP
+prompts (their Table 7), and the two larger text-only encoders they
+test also show associations (their Table 5). Published results run
+the other way: probing image-to-text with direct label
+probabilities, Verhoef, Shahrasbi & Kouwenhoven (2024) and
+Kouwenhoven, Shahrasbi & Verhoef (2025) find no consistent effect in
+CLIP and other vision-language models, and Keleş et al. (2026)
+describe the CLIP and Stable Diffusion results as weak or
+dataset-driven. Using real
 speech, Tsai et al. (2026) separate auditory, cross-modal, and
 visual components of the effect and find that speech language
 models align poorly with human auditory judgments and that
@@ -898,7 +1030,9 @@ protocol dependency and measures only downstream invariants.
 
 **Pre-registered benchmarks in ML.** The NeurIPS Datasets & Benchmarks
 track (Vanschoren & Yeung 2021) and Gebru et al. (2018) *Datasheets
-for Datasets* pushed the field towards OSF-style pre-registration.
+for Datasets* pushed the field towards transparent dataset reporting;
+pre-registration is a separate practice that the datasheets article
+does not discuss (arXiv:1803.09010v8, p. 1-11).
 bouba_sens follows the OSF locked-threshold protocol (registration
 `10.17605/OSF.IO/Q6JYN`): the 0.05 / 0.10 / 0.02 thresholds for
 B-1 / B-2 / B-3 are frozen before the 9-grid evaluation campaign
@@ -918,11 +1052,14 @@ Abdelaleem, Martini & Nemenman (2025) argue that the sample
 complexity of neural MI estimators is governed by latent rather
 than ambient dimensionality and give a protocol with consistency
 checks, bias correction, and confidence intervals, which matches
-the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1).
-Foresti et al. (2026) benchmark non-parametric, discriminative,
-and generative MI estimators and find no universal winner, which
-supports triangulating Kraskov, binning, and MINE rather than
-relying on any single estimator.
+the regime of the N ≳ f(D) criterion with D ≈ 12 (§6.3.1) for
+MINE; for Kraskov they report the opposite, a failure in high
+dimension even at low latent dimension (their Fig. 10). Foresti et
+al. (2026) benchmark k-NN (KSG, WKL), discriminative (MINE, NWJ,
+InfoNCE) and generative (MINDE) MI estimators and find no universal
+winner, an argument for not relying on any single estimator. Their
+benchmark includes no binning estimator, so it does not speak to the
+adaptive-binning estimator used here alongside Kraskov and MINE.
 
 **Biophysical vs protocol-level nerve simulators.** Readers
 searching for "nerve" in the Python ecosystem will encounter
@@ -956,7 +1093,7 @@ and say nothing about nerve biophysics per se.
   PyPI as `bouba-sens==0.5.4` (tag `v0.5.4`, commit `360a442`).
 - `github.com/hypneum-lab/nerve-wml` v1.5.3 — protocol + methodology
   dependencies (Kraskov-kNN, bootstrap CI, null model permutation,
-  MINE estimator). Zenodo DOI `10.5281/zenodo.19666405`.
+  MINE estimator). Zenodo DOI `10.5281/zenodo.19680058`.
 - `reports/*.json` + `reports/*.png` — per-grid aggregates, per-seed
   breakdowns, and the Amedi dose-response curve. Committed verbatim
   (force-added past the `.gitignore` for the reports we cite).

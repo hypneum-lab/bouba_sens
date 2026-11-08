@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] — 2026-11-08 (seeded lock-matrix tables, B-3 v2 wording, ActionSense world, B-2 recompute, reproduction scripts)
+
 ### Changed
 
 - **Lock-matrix tables regenerated with the seeded CLI (PI decision
@@ -65,6 +67,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the PI. **Real ECG: not recomputed** (no data cache or extraction
   script on electron-server); 0.445 stays uncalibrated.
 
+- **B-2 on the Studyforrest bridge, recomputed with the corrected
+  phase-1 cache (PI decision 2026-11-06, #81, refs #74, #75, #77).**
+  Values with the corrected cache (5 seeds, N = 512, 500 bootstrap
+  draws), all below the pre-registered +0.10 bit threshold: Kraskov 1-D
+  -0.00022, binning 1-D +0.00011, MINE 1-D +2.4e-7, MINE full -1.3e-4.
+  Paired label-permutation null (1000 draws): p = 0.62 (Kraskov), 0.79
+  (binning). The probe batch holds a single label class in 4 of 5
+  seeds (#77), so the §(d) class is written as "not conclusive", not
+  "Null". Artefacts in `reports/b2_phase1_recompute_20261106/`.
+- **Stratified B-2 probe amendment (ADR-0019, Amendment 2026-11-06,
+  #78).** Every stratified probe holds 128 frames per class. Reader
+  accuracy before the lesion is 0.250 on all 10 seeds (majority rate
+  0.25), so the gate fails on every seed: B-2 on the Studyforrest
+  bridge is **not measurable** under the amendment, with either cache.
+  No mean B-2 exceeds the threshold; one seed does (corrected cache,
+  seed 2, MINE full +0.74), with the gate failed. B-2 stays Null on
+  CC-film and Gaussian; "does not depend on the real half" is
+  withdrawn. Artefacts in `reports/b2_stratified_probe_20261106/`.
+- **Me6 large-n preregistered results (ADR-0026, tag
+  `prereg-me6-large-n-20261031`, #63).** 600/600 confirmatory cells, 0
+  failure. Gate: argmax-bridge does not learn (accuracy 0.24-0.27); no
+  row is a B-3 reading. Expected report not met on the Gaussian:
+  excess over the paired null at n >= 256 in both arms (5 rows below
+  the Bonferroni level). Mock rows compatible at n >= 256 in both
+  arms; `legacy` mock n = 64 in excess. The paired null stays close to
+  the iid reference. Exploratory diagnostic amendment: #64.
+
 ### Added
 
 - **`--emission straight-through`** (`SensoryWML`, `bouba-sens train` /
@@ -82,6 +111,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Block sign flips** (`scripts/me6_paired_null.py --block N`): one
   shared sign per block of N consecutive probe items, for contiguous-
   window probes; `--block 1` (default) reproduces the per-item null.
+
+- **ActionSense real-data world** (#46 design spec, #48): `--world
+  actionsense` (`BOUBA_SENS_ACTIONSENSE_DATA`), `ActionSenseWorld`,
+  `src/bouba_sens/world/actionsense_features.py`,
+  `scripts/fetch_actionsense.py`, `scripts/extract_actionsense.py`.
+  New pinned dependencies (supply-chain review approved by the PI on
+  2026-10-28): h5py 3.16.0, mne 1.13.2, tqdm 4.70.1 (sha256 in
+  `uv.lock`); CI checks out nerve-wml v1.8.1. Audio is placed on a
+  piecewise clock fit (#51) and microphone segments are kept past a
+  host stall (#57, closes #52).
+- **ActionSense S00 pilot gate reports** (#50, #53, #54):
+  `docs/pilot/actionsense-s00*.md`, `scripts/pilot_actionsense*.{sh,py}`;
+  check 3 null test: S_obs 0.0634, null p95 0.0482, p = 0.012; GO by
+  the rule fixed before the computation (S_obs > p95). The effect is
+  small and rests on one subject.
+- **Pre-registration amendment v0.7 ActionSense** (#55,
+  `docs/osf/amendment-v0.7-actionsense.md`) and its gates (#56): jar
+  family, strict `>` boundary tests, `EMISSION` and `--probe-v2` in
+  `run_grid.sh`, resume guard.
+- **ADR-0026, Me6 large-n pre-registration** (#58): `bouba-sens lesion
+  --probe-sizes`, `scripts/me6_large_n.py`, pilot block lengths (#60),
+  diagnostic amendment and `scripts/me6_large_n_diagnostic.py` (#64).
+- **Opt-in phase-1 world seed** (ADR-0027, #59): `lesion
+  --world-seed-mode {legacy,cell}` and `--world-seed`, `eval
+  --world-seed-mode`, `WORLD_SEED_MODE` in the grid scripts. Defaults
+  unchanged (`legacy`, bit-identical).
+- **`--probe-sampling {contiguous,stratified}`** in the B-2 scripts
+  (default `contiguous`, output unchanged) (#78).
+- **v0.7.1 reading note v0 and brainstorm** (#68,
+  `docs/prereg/actionsense-v0.7/`).
+- **`CONTRIBUTING.md`** (#33), **"Reproduce in one command" block** in
+  the README (#34), author **ORCID** in `CITATION.cff` (#61).
 
 ### Fixed
 
@@ -108,6 +169,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocks); synthetic and mock blocks stay offline. `BOUBA_SENS_OFFLINE=1`
   makes a real-data block fail fast when the data dir is empty.
 
+- **Phase-1 physiology read as 4 columns at 100 Hz** (#75, refs #74,
+  #72): `scripts/fetch_studyforrest_sample.py` takes the sampling rate
+  and columns from a sidecar JSON, else from the column count (4
+  columns: phase-1 `ses-forrestgump` at 100 Hz; 3 columns:
+  `recording-cardresp` at 500 Hz; other counts raise `ValueError`).
+  Text caveats added: the cache behind the earlier section (d) values
+  was built with the earlier code and those values were not recomputed
+  there. Regenerating the cache and recomputing B-2 followed in #81.
+
+- **Phase-2 physiology read by column name** (#83, closes #72):
+  `extract_force` reads the headerless phase-2 physio TSV with column
+  names and sampling rate taken from the BIDS `*_physio.json` sidecars
+  (merged by inheritance), and raises `ValueError` when the sidecar,
+  `Columns`, `SamplingFrequency`, `cardiac` or `respiratory` is missing
+  or the column count disagrees. Decimation and derivatives are
+  unchanged. The paper draft is aligned on this fix.
+- Ruff errors fixed in `scripts/spikes/check_force_spectrum.py` (#86);
+  no behaviour change.
+
+### Documentation
+
+- Fix the nerve-wml DOI and add the repository's own Zenodo DOI in the
+  citation files (#26).
+- Declare AI assistance (#62); declare CC BY 4.0 for docs and align the
+  affiliation (#65).
+- Bibliography defects found in the 2026-11-01 reference audit fixed in
+  `docs/paper/refs.bib` and the text (#71).
+- Cite the Fort et al. (2013) infant null result in related work (#73).
+- Diagnosis of the code-channel collapse (#42).
+
 ### Erratum
 
 - **Paper v0.1 real-data results are not reproducible from the
@@ -121,7 +212,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   section. No number is changed; the results are kept as historical. A
   replication on a new real dataset is planned in a separate design pass.
 
+- **Erratum on the v0.7 seed claim (#67, 2026-10-31).** The frozen
+  amendment v0.7 says twice that the confirmatory seeds 300-304 were
+  "never used in the repository"; the 2026-10-27 B-3 lesion x query
+  grid ran on seeds 300-309, Gaussian world. The frozen text is not
+  edited (`docs/osf/erratum-2026-10-31-v0.7-seeds.md`); seeds, cells,
+  thresholds and rules are unchanged, and there is no data overlap
+  (synthetic Gaussian vs real ActionSense).
+- **ADR-0027 (#59, Accepted, PI sign-off 2026-10-30): the three CLI
+  commands build the
+  synthetic world with different seeds** (`train`: training seed;
+  `lesion`: 0; `eval`: lesion seed). No value or verdict changes;
+  real-data worlds are not affected.
+
 ## [0.5.10] — 2026-10-25 (seeded CLI + reproducibility erratum)
+
+Never tagged; folded into 0.5.11.
 
 ### Fixed
 

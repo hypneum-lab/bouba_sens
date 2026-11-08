@@ -1,0 +1,8 @@
+/Users/electron/hypneum-lab/bouba_sens/data/studyforrest_real/force.pt shape (9000, 6) dtype float32 duration_s 900.0
+  last nonzero frame 8999 zero-pad frames 0
+  cardiac  peak=1.221 Hz  P(0.1-0.6)/P(0.8-2.5)=0.038  std=0.020
+  resp     peak=3.877 Hz  P(0.1-0.6)/P(0.8-2.5)=0.040  std=0.320
+/Users/electron/scratch/bouba-b2-0611/data/studyforrest_real/force.pt shape (9000, 6) dtype float32 duration_s 900.0
+  last nonzero frame 8999 zero-pad frames 0
+  cardiac  peak=1.367 Hz  P(0.1-0.6)/P(0.8-2.5)=0.004  std=0.346
+  resp     peak=0.303 Hz  P(0.1-0.6)/P(0.8-2.5)=126.782  std=0.015

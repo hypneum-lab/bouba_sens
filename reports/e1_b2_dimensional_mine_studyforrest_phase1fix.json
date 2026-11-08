@@ -1,0 +1,116 @@
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "D_participation_ratio_mean": 12.979231071472167,
+  "D_twoNN_mean": 12.454634475708009,
+  "kraskov_delta": {
+    "mean": -0.0002206180379957288,
+    "ci95": [
+      -0.0006618541139871865,
+      0.0
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.0001049417177219035,
+    "ci95": [
+      0.0,
+      0.0003148251531657105
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 2.3664812758722475e-07,
+    "ci95": [
+      1.1006889655219753e-07,
+      3.907445827603012e-07
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": -0.0001254376693176361,
+    "ci95": [
+      -0.00037630203760956636,
+      2.9409033297540274e-08
+    ],
+    "n": 5
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.579513549804688,
+      "D_twoNN": 12.120513916015625,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 2.7517224138049384e-07,
+      "mine_full_delta_bits": -4.2565706088545136e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 5.5034448276098766e-08,
+      "mine_full_post": 1.2468742187553626e-08
+    },
+    {
+      "seed": 1,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.351394653320312,
+      "D_twoNN": 12.559086799621582,
+      "kraskov_delta_bits": -0.001103090189978644,
+      "binning_delta_bits": 0.0005247085886095175,
+      "mine_1d_delta_bits": 0.0,
+      "mine_full_delta_bits": -0.0006271728681496027,
+      "kraskov_pre": 0.0029704766234981547,
+      "kraskov_post": 0.0018673864335195106,
+      "mine_full_pre": 0.0006271728681496027,
+      "mine_full_post": 0.0
+    },
+    {
+      "seed": 2,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 13.198256492614746,
+      "D_twoNN": 12.961236953735352,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 4.953100344848888e-07,
+      "mine_full_delta_bits": -7.739219288826389e-09,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 7.9541976024049e-09,
+      "mine_full_post": 2.149783135785108e-10
+    },
+    {
+      "seed": 3,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.909008979797363,
+      "D_twoNN": 11.950240135192871,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 1.9262056896634567e-07,
+      "mine_full_delta_bits": 7.739219288826388e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 3.7836183189817904e-08,
+      "mine_full_post": 1.1522837607808179e-07
+    },
+    {
+      "seed": 4,
+      "N": 512,
+      "d_fused": 896,
+      "D_participation_ratio": 12.85798168182373,
+      "D_twoNN": 12.68209457397461,
+      "kraskov_delta_bits": 0.0,
+      "binning_delta_bits": 0.0,
+      "mine_1d_delta_bits": 2.2013779310439533e-07,
+      "mine_full_delta_bits": -4.2565706088545136e-08,
+      "kraskov_pre": 0.0,
+      "kraskov_post": 0.0,
+      "mine_full_pre": 4.2565706088545136e-08,
+      "mine_full_post": 0.0
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+== b2 newcache start 2026-11-06T14:05:24Z data=/Users/electron/scratch/bouba-b2-0611/data/studyforrest_real commit=540e483
+seed=0 counts=[128, 128, 128, 128] acc_pre=0.250 acc_post=0.250 gate=fail | N=512 d_fused=896 D_PR=12.34 D_2NN=13.35 | Kraskov=-0.0816 bin=-0.0084 MINE1d=+0.0000 MINEfull=-0.0120
+seed=1 counts=[128, 128, 128, 128] acc_pre=0.250 acc_post=0.250 gate=fail | N=512 d_fused=896 D_PR=13.35 D_2NN=12.56 | Kraskov=+0.0000 bin=+0.0218 MINE1d=+0.0000 MINEfull=-0.0080
+seed=2 counts=[128, 128, 128, 128] acc_pre=0.250 acc_post=0.250 gate=fail | N=512 d_fused=896 D_PR=5.09 D_2NN=12.81 | Kraskov=+0.0689 bin=+0.0947 MINE1d=+0.0000 MINEfull=+0.7427
+seed=3 counts=[128, 128, 128, 128] acc_pre=0.250 acc_post=0.250 gate=fail | N=512 d_fused=896 D_PR=12.91 D_2NN=11.94 | Kraskov=+0.0113 bin=+0.0051 MINE1d=+0.0000 MINEfull=-0.0013
+seed=4 counts=[128, 128, 128, 128] acc_pre=0.250 acc_post=0.250 gate=fail | N=512 d_fused=896 D_PR=12.86 D_2NN=12.68 | Kraskov=+0.0217 bin=+0.0161 MINE1d=+0.0000 MINEfull=-0.0181
+
+wrote ../out/e1_b2_dimensional_mine_studyforrest_stratified_newcache.json
+{
+  "world": "studyforrest",
+  "lock_after": 100,
+  "seeds": 5,
+  "probe_sampling": "stratified",
+  "gate_margin": 0.1,
+  "n_seeds_gate_pass": 0,
+  "D_participation_ratio_mean": 11.311397552490234,
+  "D_twoNN_mean": 12.668302726745605,
+  "kraskov_delta": {
+    "mean": 0.004062463037441943,
+    "ci95": [
+      -0.044424379788536014,
+      0.0436170712793845
+    ],
+    "n": 5
+  },
+  "binning_delta": {
+    "mean": 0.025864611017360994,
+    "ci95": [
+      4.7027652954846275e-06,
+      0.05950154140904281
+    ],
+    "n": 5
+  },
+  "mine_1d_delta": {
+    "mean": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "n": 5
+  },
+  "mine_full_delta": {
+    "mean": 0.14065453555689375,
+    "ci95": [
+      -0.014452517849591482,
+      0.4417317665289149
+    ],
+    "n": 5
+  },
+  "gated": {
+    "seeds": [],
+    "kraskov_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "binning_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_1d_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    },
+    "mine_full_delta": {
+      "mean": null,
+      "ci95": [
+        null,
+        null
+      ],
+      "n": 0
+    }
+  }
+}
+real 279,61
+user 232,30
+sys 158,65
+== b2 newcache rc=0 end 2026-11-06T14:10:04Z

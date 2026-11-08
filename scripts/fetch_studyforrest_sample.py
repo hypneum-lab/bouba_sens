@@ -17,11 +17,20 @@ Two sources, selected with ``--source``:
 
   PROVENANCE — read carefully, nothing here is dressed up as more than it is:
 
-  - ``force``   : REAL biosignal. ds000113 cardiac (pulse-oximeter) +
-                  respiration belt physio, 500 Hz, columns
-                  ``[trigger, cardiac, respiratory]`` (per
-                  ``recording-cardresp_physio.json``). 6 dims =
+  - ``force``   : REAL biosignal. ds000113 phase-1 ``ses-forrestgump``
+                  physio: pulse-oximeter cardiac trace + respiration belt.
+                  These files have no header and no sidecar JSON; they
+                  hold FOUR columns ``[trigger, respiratory, cardiac,
+                  SpO2]`` at 100 Hz (Hanke et al. 2014, Sci. Data
+                  1:140003, p. 11 and Table 3 p. 12). The layout is read
+                  from a sidecar ``*_physio.json`` when one exists,
+                  otherwise inferred from the column count (see
+                  ``_physio_layout``). 6 dims =
                   [cardiac, d/dt, d²/dt², resp, d/dt, d²/dt²].
+                  Caches built before issue #74 was fixed read these
+                  files as 3 columns at 500 Hz: their "cardiac" dims
+                  hold the respiration, their "resp" dims hold the
+                  cardiac trace, and their frames span 5x too much time.
   - ``gravity`` : REAL head-motion regressors. ds000113
                   ``derivatives/motion/.../*_bold_moco.txt`` (6-col
                   rigid-body moco params); we keep the 3 rotation columns.
@@ -91,6 +100,11 @@ def _physio_key(run: int) -> str:
     )
 
 
+def _physio_sidecar_key(run: int) -> str:
+    """Per-run BIDS sidecar; absent for ses-forrestgump on OpenNeuro."""
+    return _physio_key(run).removesuffix(".tsv.gz") + ".json"
+
+
 def _moco_key(run: int) -> str:
     return (
         f"{_DS}/derivatives/motion/{_SUBJECT}/ses-forrestgump/func/"
@@ -104,7 +118,19 @@ _VISION_SHAPE = (16, 16)
 _TACTILE_DIM = 32
 _GRAVITY_DIM = 3
 _FORCE_DIM = 6
-_PHYSIO_HZ = 500.0  # per recording-cardresp_physio.json
+# Physio layouts keyed by column count, used when no sidecar JSON covers a
+# file (TSVs have no header). Each entry: (sampling Hz, column names).
+#   4 columns: phase-1 ses-forrestgump (7 T audio movie), down-sampled to
+#              100 Hz, "MRI trigger, respiratory trace, cardiac trace and
+#              oxygen saturation" (Hanke et al. 2014, Sci. Data 1:140003,
+#              p. 11; Table 3 p. 12). No sidecar exists for these files.
+#   3 columns: recording-cardresp layout, per the dataset-level
+#              recording-cardresp_physio.json (500 Hz,
+#              ["trigger", "cardiac", "respiratory"]).
+_PHYSIO_LAYOUTS: dict[int, tuple[float, tuple[str, ...]]] = {
+    4: (100.0, ("trigger", "respiratory", "cardiac", "spo2")),
+    3: (500.0, ("trigger", "cardiac", "respiratory")),
+}
 _FMRI_TR = 2.0  # ses-forrestgump TR (s); moco params are per-volume
 
 
@@ -122,6 +148,19 @@ def _fetch_bytes(url: str, timeout: int = 60) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "bouba-sens/0.4"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
+
+
+def _fetch_sidecar(key: str) -> dict | None:
+    """Fetch a JSON sidecar; None when the object does not exist (HTTP 403/404)."""
+    import json
+    import urllib.error
+
+    try:
+        return json.loads(_fetch_bytes(_S3_ROOT + key))
+    except urllib.error.HTTPError as exc:
+        if exc.code in (403, 404):
+            return None
+        raise
 
 
 # --------------------------------------------------------------------------
@@ -261,18 +300,92 @@ def _build_vision_proxy(scene_id: np.ndarray, n_frames: int) -> torch.Tensor:
     return torch.from_numpy(feat.astype(np.float32)).reshape(n_frames, *_VISION_SHAPE)
 
 
-def _build_force(physio_runs: list[np.ndarray], n_frames: int) -> torch.Tensor:
+def _load_physio_tsv(raw: bytes) -> np.ndarray:
+    """Parse a gzip-compressed, header-less physio TSV into (samples, columns)."""
+    with gzip.open(io.BytesIO(raw), "rt") as fh:
+        return np.loadtxt(fh, ndmin=2)
+
+
+def _physio_layout(n_cols: int, sidecar: dict | None = None) -> tuple[float, int, int]:
+    """Return (sampling Hz, cardiac column, respiratory column) for a run.
+
+    A BIDS sidecar (``SamplingFrequency`` + ``Columns``) wins when given;
+    otherwise the layout is inferred from the column count through
+    ``_PHYSIO_LAYOUTS``. Raises ``ValueError`` for any column count other
+    than 3 or 4, or for a sidecar that disagrees with the file.
+    """
+    if n_cols not in _PHYSIO_LAYOUTS:
+        raise ValueError(
+            f"physio file has {n_cols} columns; expected 3 "
+            "([trigger, cardiac, respiratory], recording-cardresp) or 4 "
+            "([trigger, respiratory, cardiac, SpO2], ses-forrestgump)"
+        )
+    hz, columns = _PHYSIO_LAYOUTS[n_cols]
+    if sidecar is not None:
+        if "Columns" in sidecar:
+            columns = tuple(str(c).lower() for c in sidecar["Columns"])
+            if len(columns) != n_cols:
+                raise ValueError(f"sidecar lists {len(columns)} columns but the file has {n_cols}")
+        if "SamplingFrequency" in sidecar:
+            hz = float(sidecar["SamplingFrequency"])
+    try:
+        cardiac_col = columns.index("cardiac")
+        resp_col = columns.index("respiratory")
+    except ValueError as exc:
+        raise ValueError(f"physio columns {columns} lack cardiac/respiratory") from exc
+    return hz, cardiac_col, resp_col
+
+
+def _decimation_step(hz: float) -> int:
+    """Integer decimation step from ``hz`` down to ``TARGET_HZ``."""
+    step = hz / TARGET_HZ
+    if step < 1 or abs(step - round(step)) > 1e-9:
+        raise ValueError(f"cannot decimate {hz} Hz physio to {TARGET_HZ} Hz by an integer step")
+    return round(step)
+
+
+def _run_seconds(run: np.ndarray, sidecar: dict | None = None) -> float:
+    """Duration in seconds of one physio run, from its real sampling rate."""
+    hz, _, _ = _physio_layout(_n_columns(run), sidecar)
+    return run.shape[0] / hz
+
+
+def _n_columns(run: np.ndarray) -> int:
+    if run.ndim != 2:
+        raise ValueError(f"physio run must be 2-D (samples, columns); got shape {run.shape}")
+    return int(run.shape[1])
+
+
+def _build_force(
+    physio_runs: list[np.ndarray],
+    n_frames: int,
+    sidecars: list[dict | None] | None = None,
+) -> torch.Tensor:
     """6-D autonomic signal from REAL cardiac + respiratory physio.
 
-    physio columns: [trigger, cardiac, respiratory] @ 500 Hz. Concatenate
-    runs, decimate to TARGET_HZ, stack [card, d, d², resp, d, d²].
+    Each run's layout (sampling rate, cardiac and respiratory columns) comes
+    from its sidecar when given, else from its column count: 4 columns =
+    ``[trigger, respiratory, cardiac, SpO2]`` at 100 Hz (phase-1
+    ``ses-forrestgump``, Hanke et al. 2014 p. 11), 3 columns =
+    ``[trigger, cardiac, respiratory]`` at 500 Hz (``recording-cardresp``).
+    Each run is decimated to TARGET_HZ from its own rate, runs are
+    concatenated, and the output stacks [card, d, d², resp, d, d²].
     """
     if not physio_runs:
         return torch.zeros(n_frames, _FORCE_DIM)
-    full = np.concatenate(physio_runs, axis=0)  # (T,3+)
-    step = int(_PHYSIO_HZ // TARGET_HZ)  # 50
-    cardiac = full[::step, 1].astype(np.float32)
-    resp = full[::step, 2].astype(np.float32)
+    if sidecars is None:
+        sidecars = [None] * len(physio_runs)
+    if len(sidecars) != len(physio_runs):
+        raise ValueError("need one sidecar entry (or None) per physio run")
+    card_parts: list[np.ndarray] = []
+    resp_parts: list[np.ndarray] = []
+    for run, sidecar in zip(physio_runs, sidecars, strict=True):
+        hz, cardiac_col, resp_col = _physio_layout(_n_columns(run), sidecar)
+        step = _decimation_step(hz)
+        card_parts.append(run[::step, cardiac_col])
+        resp_parts.append(run[::step, resp_col])
+    cardiac = np.concatenate(card_parts).astype(np.float32)
+    resp = np.concatenate(resp_parts).astype(np.float32)
     if cardiac.shape[0] >= n_frames:
         cardiac = cardiac[:n_frames]
         resp = resp[:n_frames]
@@ -317,16 +430,23 @@ def _try_openneuro_fetch(out_dir: Path, duration_seconds: int) -> tuple[int, dic
         urls["german_audio_description.csv"] = _S3_ROOT + _NARRATION_KEY
 
         physio_runs: list[np.ndarray] = []
+        physio_sidecars: list[dict | None] = []
         moco_runs: list[np.ndarray] = []
-        # Concatenate enough runs to cover the requested duration.
+        # Concatenate enough runs to cover the requested duration, counted
+        # from each run's real sampling rate (100 Hz for ses-forrestgump).
         for run in range(1, _N_RUNS + 1):
-            covered = sum(p.shape[0] for p in physio_runs) / _PHYSIO_HZ
+            covered = sum(
+                _run_seconds(p, s) for p, s in zip(physio_runs, physio_sidecars, strict=True)
+            )
             if covered >= duration_seconds:
                 break
             p_raw = _fetch_bytes(_S3_ROOT + _physio_key(run))
             urls[f"physio_run-{run:02d}.tsv.gz"] = _S3_ROOT + _physio_key(run)
-            with gzip.open(io.BytesIO(p_raw), "rt") as fh:
-                physio_runs.append(np.loadtxt(fh))
+            physio_runs.append(_load_physio_tsv(p_raw))
+            sidecar = _fetch_sidecar(_physio_sidecar_key(run))
+            if sidecar is not None:
+                urls[f"physio_run-{run:02d}.json"] = _S3_ROOT + _physio_sidecar_key(run)
+            physio_sidecars.append(sidecar)
             m_raw = _fetch_bytes(_S3_ROOT + _moco_key(run))
             urls[f"moco_run-{run:02d}.txt"] = _S3_ROOT + _moco_key(run)
             moco_runs.append(np.loadtxt(io.BytesIO(m_raw)))
@@ -341,7 +461,7 @@ def _try_openneuro_fetch(out_dir: Path, duration_seconds: int) -> tuple[int, dic
     labels, tactile, scene_id = _build_labels_and_tactile(scenes, n_frames)
     audio = _build_audio_proxy(narration, n_frames)
     vision = _build_vision_proxy(scene_id.numpy(), n_frames)
-    force = _build_force(physio_runs, n_frames)
+    force = _build_force(physio_runs, n_frames, physio_sidecars)
     gravity = _build_gravity(moco_runs, n_frames)
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -444,8 +564,9 @@ def main() -> None:
             raise SystemExit(1)
         n, urls = real
         provenance = [
-            "`force.pt`  : REAL ds000113 cardiac(pulse-ox)+respiration physio, 500 Hz "
-            "[cardiac,d,d2,resp,d,d2]",
+            "`force.pt`  : REAL ds000113 ses-forrestgump physio, 4 cols "
+            "[trigger,resp,cardiac,SpO2] @ 100 Hz (Hanke et al. 2014 p. 11; "
+            "sidecar used if present) -> [cardiac,d,d2,resp,d,d2] @ 10 Hz",
             "`gravity.pt`: REAL ds000113 derivatives/motion *_bold_moco.txt rotation regressors",
             "`tactile.pt`: REAL ds000113 scenes.csv (scene/DAY-NIGHT/INT-EXT) one-hot -> 32-D proj",
             "`labels.pt` : REAL ds000113 scenes.csv scene index, quantised to 4",

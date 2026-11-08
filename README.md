@@ -59,7 +59,7 @@ running sweep may add back.
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) |
 | **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
-| **B-2** Me3 MI migration | **Null** (confirmed/renforced — ADR-0019: full-D probe, N≳f(D), two real bridges) |
+| **B-2** Me3 MI migration | **Null** on the Gaussian world and the CC-film bridge (ADR-0019: full-D probe, N≳f(D)); **not conclusive** on the Studyforrest bridge (single-class probe, erratum 12, issue #77) |
 | **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
 | **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
@@ -92,7 +92,7 @@ B-2 ≥ 0.10, B-3 ≥ 0.02 ; no threshold changes across all ADRs.
 |-----------|----------:|-----------------:|:---------------|---------|
 | **B-3** Me6 perceptive/proprio asymmetry | 0.02 | **0.109–0.156** (5.5–7.8×) | 5/5 pass the fixed rule — as do 100 % of null grids at n = 64 | **Compatible with the paired null** (ADR-0022, Gaussian: p = 0.17; null P99 = 0.156). The fixed rule cannot separate signal from noise at n = 64; mean query accuracy 0.254 = chance → probe defect (zero-masking) to fix first. Magnitude tracks per-modality entropy, not the partition (§4.4) |
 | B-1 Me7 congenital gap | 0.05 | **+0.0125** (25 % of thr) | 3+/5 positive | **Qualitative** — only `LOCK=100 + HARD` on the real bridge (§5.5 Amedi dose-response) ; **N8-Q3 5-seed interim verdict `Retract` 2026-05-11, see CHANGELOG — TMLR blocked, Q3+ 10-seed pending** |
-| B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** — confirmed/renforced by ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** all bracket zero on synthetic + two real bridges |
+| B-2 Me3 MI migration | 0.10 | mean +0.031 ±0.047 bits (full-probe MINE) | 0/5 cross threshold | **Null** on synthetic worlds + the CC-film bridge (ADR-0019: Kraskov + adaptive-binning + **full 896-D MINE** bracket zero); **not conclusive** on the Studyforrest bridge (erratum 12) |
 
 **F1 — B-3 is an uncalibrated magnitude (requalified
 2026-10-25).** The Me6 asymmetry magnitude exceeds the 0.02
@@ -187,24 +187,30 @@ follow-up declared for v0.2 is now **closed (ADR-0019)** :
   Feeding MINE the full 896-D probe (the v0.2 "richer probe rescues B-2"
   hypothesis) surfaces no positive signal; adaptive binning collapses in
   896-D exactly as the `N ≫ (#bins)^D` argument predicts. The null holds
-  on the gaussian reference **and on both real bridges** (Studyforrest +
-  CC-film, see F4), regardless of which half of the modalities is real.
+  on the gaussian reference and on the CC-film bridge; on the
+  Studyforrest bridge the measurement is not conclusive (erratum 12,
+  issue #77), so robustness to which half of the modalities is real is
+  not established.
 
 **F4 — Two real bridges with honestly-labelled channel provenance.**
 B-2 Null was re-checked on two real-signal bridges with **opposite**
 real/synthetic modality splits (complements, *not* a replacement of the
 headline synthetic findings) :
 
-- **Studyforrest (OpenNeuro ds000113).** force / gravity / tactile /
-  labels = **REAL** ds000113 signal ; audio / vision = annotation
+- **Studyforrest (OpenNeuro ds000113).** gravity / tactile / labels =
+  **REAL** ds000113 signal ; force = **REAL** physiology but mislabelled
+  and time-compressed in the cache used for the reported values
+  (erratum 11, issue #74) ; audio / vision = annotation
   **PROXY** (the Forrest Gump soundtrack and film are copyrighted and
   absent from OpenNeuro — labelled as proxies, not "real movie vision").
 - **CC-film (Big Buck Bunny, CC-BY 3.0).** audio (log-mel) / vision
   (frames) / labels (shot-cuts) = **REAL** perceptual signal ; tactile /
   gravity / force = **SYNTHETIC** (a film has no proprioception).
 
-**B-2 Null holds on both bridges plus the three synthetic worlds** — the
-null is robust to which half of the modality set carries the true signal.
+B-2 is Null on the CC-film bridge and the three synthetic worlds; on the
+Studyforrest bridge it is **not conclusive** (erratum 12). The earlier
+claim that the null is robust to which half of the modality set carries
+the true signal is no longer supported.
 The abstract is aligned to this per-channel provenance (no "real movie
 vision" overclaim).
 
@@ -255,6 +261,125 @@ Documentary corrections only ; no value, metric or threshold changed.
    not evidence for or against cross-modal plasticity in an agent that
    performs the task. No number is deleted. Issue #22.
 
+### Erratum (2026-11-04) — wrong DOIs in the registered spec
+
+7. The frozen design spec
+   `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (lines
+   508-509) gives two wrong DOIs; the spec is left unchanged. Correct
+   identifiers (Crossref): Heimler & Amedi 2020, Neurosci. Biobehav.
+   Rev. 116, 494-507, doi:10.1016/j.neubiorev.2020.06.034 (not
+   10.1016/j.neuroscience.2019.12.048); Röder, Kekunnaya & Guerreiro
+   2021, Neurosci. Biobehav. Rev. 120, 86-99,
+   doi:10.1016/j.neubiorev.2020.10.030 (not 10.1073/pnas.2004321118).
+
+### Erratum (2026-11-04) — Studyforrest licence and physiology
+
+8. The OSF amendments describe the Studyforrest data inaccurately;
+   the amendment files are left unchanged. Amendment v0.4
+   (`docs/osf/amendment-v0.4-studyforrest.md`, line 35) says
+   "Creative Commons": the data are released under the Open Data
+   Commons Public Domain Dedication and License (PDDL), code under
+   MIT (Sengupta et al. 2016, Sci. Data 3:160093,
+   doi:10.1038/sdata.2016.93, p. 11). The physiological channel used
+   for the force modality (amendment v0.5, table line 32, "ECG +
+   respiration") is a pleth pulse from pulse oximetry plus a
+   respiratory trace, not an ECG (same article, p. 4 and p. 7).
+   Participant 2 has no physiological recordings in the localizer
+   session (Table 1, p. 7). No value is changed.
+9. The 4.5-modal bridge (ADR-0012) took its vision and scene-cut
+   channels from `movie_localizer.mkv`, which is not film footage.
+   The file (checked on 2026-11-06) lasts 12 s: 300 frames of
+   1280×720 at 25 fps, no audio track. It shows a colored polar
+   checkerboard redrawn at 5 Hz (60 patterns, colors redrawn, not a
+   contrast reversal), filling only the movie-frame area. It is the
+   inside-movie half of a localizer: in the scanner, the PsychoPy
+   script alternated it every 12 s with `inv_movie_localizer.mkv`,
+   4 cycles, 48 volumes, about 96 s (same article, p. 4 and p. 6;
+   the dataset task description and the 48 sub-01 physio triggers
+   agree). The vision channel (120 frames at 10 Hz) and the 7
+   scene-cuts therefore describe this checkerboard; the cuts are
+   pattern changes. Amendment v0.5 (table line 29, "film frames") is
+   left unchanged; the paper section on the 4.5-modal bridge now
+   describes the stimulus. The VGG16 numbers are kept.
+10. The force channel of the 4.5-modal bridge does not hold the
+   pulse-oximetry and respiration signal. `extract_force`
+   (`src/bouba_sens/world/studyforrest_features.py`, lines 162-166)
+   reads the first line of the header-less BIDS physio file as a
+   header and falls back to column 0 (trigger) as "ECG" and column 1
+   (pulse oximetry) as "respiration". In the regenerated `force.pt`
+   the "ECG" channel is zero everywhere, "respiration" is the pulse,
+   and the respiratory column is never read. The April tensors are
+   lost; the code is unchanged since `d7a3645`, so they probably had
+   the same defect (not verified). No value is changed. Issue #72.
+
+### Erratum (2026-11-06) — phase-1 physiology layout
+
+11. The force channel of the Studyforrest OpenNeuro bridge (paper
+   §(d), ADR-0019) was read with the wrong layout. The phase-1
+   `ses-forrestgump` physio files have four columns (trigger,
+   respiratory trace, cardiac trace, oxygen saturation) at 100 Hz
+   (Hanke et al. 2014, Sci. Data 1:140003, doi:10.1038/sdata.2014.3,
+   p. 11); `scripts/fetch_studyforrest_sample.py` assumed three
+   columns (trigger, cardiac, respiratory) at 500 Hz. The cache
+   `data/studyforrest_real/force.pt` used for the §(d) values was
+   built with this earlier code: its "cardiac" dims hold the
+   respiration, its "resp" dims hold the cardiac trace, and its 9000
+   frames span about 4500 s of physiology instead of 900 s. The script
+   now reads the layout from a sidecar when one exists, else from the
+   column count. The reported values have not been recomputed. This
+   is separate from item 10. Issue #74.
+
+### Erratum (2026-11-06) — degenerate B-2 probe on the Studyforrest bridge
+
+12. "B-2 is Null on both real bridges" (README F3/F4, paper §(d)–(e),
+   ADR-0019 E1.3c and Decision) is withdrawn for the Studyforrest
+   bridge. Root cause: the B-2 probe is a contiguous slice of 512
+   frames (51.2 s), and the label is the scene index quantised to 4,
+   which stays constant over long scenes; in 4 of 5 seeds the probe
+   holds a single class, so MI with the label is zero by construction
+   and the control cannot fail (`reports/b2_phase1_recompute_20261106/`,
+   issue #77). A class-stratified probe (ADR-0019 amendment of
+   2026-11-06, exploratory) gives 128 frames per class, but the reader
+   accuracy of the trained head is 0.25 on all 10 seeds (both caches),
+   so the learning gate fails and B-2 is not measurable there
+   (ADR-0019 E1.3c-ter). B-2 stays Null on the CC-film bridge (labels
+   are per-frame quartiles over 600 frames, so every probe holds 62 to
+   150 frames of each class) and on the Gaussian world (i.i.d.). The
+   conclusion that the null does not depend on which half of the
+   modality set is real is no longer supported. No threshold changed.
+   Issues #74, #77.
+
+### Erratum (2026-11-06) — phase-2 physiology header
+
+13. `extract_force` now reads the phase-2 physio columns by name
+   (item 10, issue #72). The column names and the sampling rate come
+   from the BIDS sidecar `recording-cardresp_physio.json` (500 Hz;
+   trigger, cardiac, respiratory); a missing column or sidecar stops
+   the extraction with an error. On sub-01 ses-localizer run-1 the new
+   force tensor holds the cardiac trace in channel 0 and the
+   respiratory trace in channel 3 (checked on 2026-11-06). Every
+   4.5-modal value was computed on the April tensors, probably with
+   the old header reading (#72; not verified, the code is unchanged
+   since `d7a3645`). No value is recomputed: those tensors are lost and
+   the public data still give 120 vision frames against 1800 (issue
+   #45). No value is changed.
+   Evidence only, not used by any reported value: a phase-2
+   `force.pt` was regenerated on 2026-11-06 with the corrected reader
+   from sub-01 ses-localizer task-movielocalizer run-1 (48001 rows at
+   500 Hz, sidecar `recording-cardresp_physio.json`) by calling
+   `extract_force(src, 1800)` directly; 961 frames carry signal and
+   839 are zero padding. SHA-256 before (regen35,
+   `data/sf_phase2_adapted/force.pt`)
+   `659cf150a435fcb00f9759d2690a45eac3391734927bf691e1d5d882ab6e56da`,
+   after `052ffa1a2411c000094d7d640cd14182a73c9568bde39ed55476c133011d141c`
+   (both re-hashed on macM1 on 2026-11-07). That tensor was built with
+   the reader of PR #82; the reader of this item gives an identical
+   tensor on the same file (`torch.equal`, checked on 2026-11-07).
+   The tensor and its MANIFEST are kept on macM1 in
+   `~/hypneum-lab/physio-fix-20261106/`, outside regen35, which is
+   untouched. The April tensors (#45) remain
+   lost and the 4.5-modal values are not recomputed.
+
 ## Quickstart
 
 ```bash
@@ -262,7 +387,7 @@ Documentary corrections only ; no value, metric or threshold changed.
 # CI checks it out at tag v1.7.0 next to this clone
 git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
 uv sync --all-extras
-uv run bouba-sens version          # bouba_sens 0.5.10
+uv run bouba-sens version          # bouba_sens 0.5.11
 uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
 # Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
@@ -283,7 +408,7 @@ diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
 ```bash
 git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
 git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
-uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.10
+uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.11
 STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
 ```
 
@@ -308,7 +433,7 @@ Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.jso
 
 1. Amedi et al. 2007 — Shape conveyed by visual-to-auditory sensory substitution activates LOC (Nat Neurosci).
 2. Heimler & Amedi 2020 — Are critical periods reversible in the adult brain? Insights on cortical specializations based on sensory deprivation studies (Neurosci. Biobehav. Rev.).
-3. Röder et al. 2021 — Sensitive periods for functional specialization (PNAS).
+3. Röder, Kekunnaya & Guerreiro 2021 — Neural mechanisms of visual sensitive periods in humans (Neurosci. Biobehav. Rev. 120, 86–99; doi:10.1016/j.neubiorev.2020.10.030).
 4. Alper & Averbuch-Elor 2023 — Kiki or Bouba? Sound Symbolism in Vision-and-Language Models (NeurIPS).
 5. Girdhar et al. 2023 — ImageBind: One Embedding Space (CVPR).
 6. Ma et al. 2022 — Are Multimodal Transformers Robust to Missing Modality? (CVPR).
