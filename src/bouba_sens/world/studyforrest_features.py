@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -150,22 +151,129 @@ def extract_gravity(bold_nii_path: Path, n_frames: int) -> torch.Tensor:
     return torch.from_numpy(upsampled)
 
 
-def extract_force(physio_tsv_gz: Path, n_frames: int) -> torch.Tensor:
-    """ECG + respiration + first/second derivatives as 6-dim autonomic
-    signal (interoceptive proprioception proxy).
+_PHYSIO_SUFFIX = "_physio.tsv.gz"
 
-    Returns (n_frames, 6) float32: [ecg, d(ecg)/dt, d²/dt², resp,
-    d(resp)/dt, d²/dt²].
+
+def _bids_entities(name: str, suffix: str) -> dict[str, str] | None:
+    """Key-value entities of a BIDS file name ending in ``suffix``.
+
+    ``sub-01_task-x_physio.tsv.gz`` gives ``{"sub": "01", "task": "x"}``.
+    Returns None when the name does not end in ``suffix`` or a part
+    before it is not ``key-value``.
+    """
+    if not name.endswith(suffix):
+        return None
+    stem = name.removesuffix(suffix)
+    entities: dict[str, str] = {}
+    if not stem:
+        return entities
+    for part in stem.split("_"):
+        key, sep, value = part.partition("-")
+        if not sep or not key or not value:
+            return None
+        entities[key] = value
+    return entities
+
+
+def read_physio_sidecar(physio_tsv_gz: Path) -> dict[str, object]:
+    """Merged BIDS sidecar metadata for a ``*_physio.tsv.gz`` file.
+
+    BIDS physio TSVs have no header line; their column names and rate
+    live in ``*_physio.json`` sidecars, inherited from the dataset root
+    down to the file's directory (e.g. ds000113 phase 2 keeps
+    ``recording-cardresp_physio.json`` at the root). A sidecar applies
+    when its entities are a subset of the file's entities; deeper and
+    more specific sidecars override shallower ones. The dataset root is
+    the nearest parent holding ``dataset_description.json``; without
+    one only the file's own directory is searched.
+    """
+    import json
+
+    file_entities = _bids_entities(physio_tsv_gz.name, _PHYSIO_SUFFIX)
+    if file_entities is None:
+        raise ValueError(f"{physio_tsv_gz.name} is not a BIDS *{_PHYSIO_SUFFIX} file")
+    directory = physio_tsv_gz.parent
+    chain = [directory]
+    for parent in directory.parents:
+        if (chain[-1] / "dataset_description.json").exists():
+            break
+        chain.append(parent)
+    if not (chain[-1] / "dataset_description.json").exists():
+        chain = [directory]
+    merged: dict[str, object] = {}
+    for level in reversed(chain):  # dataset root first
+        candidates: list[tuple[int, Path]] = []
+        for path in level.glob("*_physio.json"):
+            entities = _bids_entities(path.name, "_physio.json")
+            if entities is None:
+                continue
+            if all(file_entities.get(k) == v for k, v in entities.items()):
+                candidates.append((len(entities), path))
+        for _, path in sorted(candidates):
+            content = json.loads(path.read_text())
+            if not isinstance(content, dict):
+                raise ValueError(f"sidecar {path} is not a JSON object")
+            merged.update({str(k): v for k, v in content.items()})
+    return merged
+
+
+def physio_layout(sidecar: Mapping[str, object], n_cols: int) -> tuple[float, int, int]:
+    """Return (sampling Hz, cardiac column, respiratory column).
+
+    Columns are looked up by name in the sidecar ``Columns`` list, never
+    assumed from their position. Raises ``ValueError`` when ``Columns``
+    or ``SamplingFrequency`` is missing, when ``Columns`` does not match
+    the file's column count, or when ``cardiac`` or ``respiratory`` is
+    absent.
+    """
+    columns_raw = sidecar.get("Columns")
+    if not isinstance(columns_raw, list):
+        raise ValueError("physio sidecar has no 'Columns' list")
+    columns = [str(c).lower() for c in columns_raw]
+    if len(columns) != n_cols:
+        raise ValueError(
+            f"sidecar lists {len(columns)} columns {columns} but the file has {n_cols}"
+        )
+    missing = [name for name in ("cardiac", "respiratory") if name not in columns]
+    if missing:
+        raise ValueError(f"physio columns {columns} lack {missing}")
+    hz_raw = sidecar.get("SamplingFrequency")
+    if not isinstance(hz_raw, int | float) or isinstance(hz_raw, bool):
+        raise ValueError("physio sidecar has no numeric 'SamplingFrequency'")
+    return float(hz_raw), columns.index("cardiac"), columns.index("respiratory")
+
+
+def extract_force(
+    physio_tsv_gz: Path,
+    n_frames: int,
+    sidecar: Mapping[str, object] | None = None,
+) -> torch.Tensor:
+    """Cardiac pulse + respiration + first/second derivatives as 6-dim
+    autonomic signal (interoceptive proprioception proxy).
+
+    The TSV is read with no header line. Column names and sampling rate
+    come from ``sidecar`` when given, else from the BIDS sidecars found
+    by ``read_physio_sidecar`` (issue #72: earlier code consumed the
+    first data line as a header and fell back to column 0, the trigger,
+    as "ecg" and column 1, the pulse, as "resp").
+
+    Returns (n_frames, 6) float32: [cardiac, d/dt, d²/dt², resp,
+    d(resp)/dt, d²/dt²]. The first channel keeps its historical name
+    "ecg" elsewhere in the code; in ds000113 it is a pulse-oximeter
+    trace, not an ECG.
     """
     import gzip
 
     with gzip.open(physio_tsv_gz, "rt") as fh:
-        header = fh.readline().strip().split("\t")
-        data = np.loadtxt(fh, delimiter="\t")  # (T_native, cols)
-    ecg_col = header.index("ecg") if "ecg" in header else 0
-    resp_col = header.index("respiratory") if "respiratory" in header else 1
-    native_hz = 500  # Studyforrest physio default
-    step = native_hz // TARGET_HZ  # 50 samples per TARGET_HZ frame
+        data = np.loadtxt(fh, delimiter="\t", ndmin=2)  # (T_native, cols)
+    meta = read_physio_sidecar(physio_tsv_gz) if sidecar is None else sidecar
+    native_hz, ecg_col, resp_col = physio_layout(meta, int(data.shape[1]))
+    step_f = native_hz / TARGET_HZ
+    if step_f < 1 or abs(step_f - round(step_f)) > 1e-9:
+        raise ValueError(
+            f"cannot decimate {native_hz} Hz physio to {TARGET_HZ} Hz by an integer step"
+        )
+    step = round(step_f)  # 50 samples per TARGET_HZ frame at 500 Hz
     ecg = data[::step, ecg_col][:n_frames].astype(np.float32)
     resp = data[::step, resp_col][:n_frames].astype(np.float32)
     # Pad if too short.

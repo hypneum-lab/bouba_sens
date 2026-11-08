@@ -14,8 +14,10 @@ the artefact chain is publishable to Zenodo without copyright bind.
             Replaces the absent motion-locations annotation CSV.
 - gravity : zeros, documented fallback — rp_*.txt head-motion regressors
             are not published with phase-2 BOLD. Log-level warning emitted.
-- force   : real ECG + respiration from sub-01 ses-localizer
-            task-movielocalizer run-1 cardresp physio.
+- force   : real pulse-oximeter cardiac trace + respiration belt from
+            sub-01 ses-localizer task-movielocalizer run-1 cardresp
+            physio; columns and rate read by name from the BIDS sidecar
+            ``recording-cardresp_physio.json`` (issue #72).
 - labels  : 4-quantile binning of audio RMS per 100 ms window.
 
 The resulting 6 .pt tensors load via `StudyforrestRealWorld`.
@@ -215,7 +217,7 @@ def main() -> None:
         "- vision  : VGG16 features of movie_localizer.mkv (REAL video)",
         "- tactile : ffmpeg scene-cut one-hot + 32-d projection",
         "- gravity : zeros (rp_*.txt not in phase-2)",
-        "- force   : REAL cardiac+respiration from sub-01 ses-localizer run-1",
+        "- force   : REAL cardiac pulse + respiration, sub-01 ses-localizer run-1 (sidecar columns, #72)",
         "- labels  : 4-quantile binning of audio RMS",
         "",
         f"Duration: {args.duration_seconds} s at {TARGET_HZ} Hz ({n_frames} frames)",

@@ -106,7 +106,7 @@ class StudyforrestRealWorld:
     `scripts/extract_studyforrest_features.py`) and serves temporally
     contiguous batches. No zeroed modalities: tactile, gravity, force
     all carry real signal from motion annotations, fMRI head-motion
-    regressors, and ECG+respiration respectively.
+    regressors, and pulse-oximetry + respiration physio respectively.
 
     Contract matches `WorldSimulator`: identical `sample()` and
     `modality_dims()` signatures as `GaussianWorld`, so downstream
