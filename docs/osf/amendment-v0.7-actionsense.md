@@ -1,3 +1,5 @@
+> **Amended by** `docs/osf/amendment-2026-11-08-v0.7.1-draft.md` (L0 draft, not frozen; additive, this text is otherwise unchanged).
+
 # OSF pre-registration amendment — bouba_sens v0.7 (ActionSense world)
 
 > **Status note (2026-10-29).** Drafted as an amendment to the
