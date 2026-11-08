@@ -1,12 +1,13 @@
 # Amendment draft — bouba_sens v0.7.1 (network-level null decides; co-primaries; positive control)
 
-**Status: L0 DRAFT, NOT FROZEN.** Nothing here is registered. It becomes
-a pre-registration only after (a) the PI closes the decisions of §6,
-(b) the roadmap reading lock passes for bouba_sens v0.7.1 (scheduled
-S8; `hypneum-lab/.github` `docs/ROADMAP.md`, « Lire avant de geler »),
-(c) the PI creates a new L1 tag. No run, pilot, estimator fit or null
-draw of this amendment has been made. L3 (OSF) is out of scope for this
-PR and needs a calibrated null (PR #66 §7, §10).
+**Status:** L0 draft, decisions closed 2026-11-08, NOT frozen; gated
+by the reading lock (bouba v0.7.1 pass, S8); L3 deposit only after the
+L1 tag. Nothing here is registered. It becomes a pre-registration only
+after the roadmap reading lock passes (`hypneum-lab/.github`
+`docs/ROADMAP.md`, « Lire avant de geler ») and the PI creates a new L1
+tag. No run, pilot, estimator fit or null draw of this amendment has
+been made. L3 (OSF) is out of scope for this PR and needs a calibrated
+null (PR #66 §7, §10).
 
 **Date:** 2026-11-08. **Issue:** #23. **Drives:** PI decision 16 of
 PR #66, option A (« amendement v0.7 où le nul réseau décide »), taken
@@ -65,7 +66,7 @@ the frozen file contents.
 - **ActionSense:** the world is fixed (real recordings), so H0 is
   conditional on it; the network null still needs G independent units
   (PR #66 §15). Its cost (G × 30 cells per grid, on two or four grids)
-  is a PI decision (§6, item 3).
+  was closed by PI decision 3 (§6).
 - B-3 itself (Me6 > 0.02) is **not re-decided**. A confirmation of
   H1-B3net is a new, separately named result.
 
@@ -98,7 +99,7 @@ registered, not deciding asymmetry ».
 B-2 on the Studyforrest bridge is « non mesurable » (0 of 10 seeds pass
 the gate, reader accuracy 0.250 = majority; ADR-0019 amendment
 2026-11-06, `E1.3c-ter`). This amendment proposes, for PI decision
-(§6, item 7), the reading rules requested in #85:
+(adopted, §6 item 7), the reading rules requested in #85:
 
 1. **A single seed above threshold on a gate-failing network** (corrected
    cache, seed 2, MINE-full +0.743, `gate_pass: false`): not read.
@@ -156,7 +157,7 @@ modalities), B = 20 000, p = (k+1)/(B+1), reported with observed value,
 null median and P99. Validity assumptions, size check and positive
 control as PR #66 §7 (generators S0–S3, planted effect on NC1 data): a
 planted drop of δ_dec accuracy points on the survivors, required
-p < 0.01 at the registered G. δ_dec is a PI decision (§6, item 5).
+p < 0.01 at the registered G. δ_dec is set by PI decision 5 (§6).
 
 ### 2.4 Learning gate and ceiling
 
@@ -242,9 +243,15 @@ p < 0.01; ε is a PI decision.
 ### 3.5 Family, gate and prediction
 
 - Family F = {P1, DEC_S, ΔR, ΔU₂, ΔS}, Holm at FWER 0.01 (PI decision
-  4 of PR #66 is α = 0.01 for F = {P1} and Holm if a row is added by
-  amendment before the Stage-B tag: this amendment is that addition,
-  pending §6 item 4).
+  4, 2026-11-08, option a). **Consistency with PR #66:** #66 §8 and its
+  decision 4 fix F = {P1} at α = 0.01 and state that Holm applies if a
+  row is added by amendment before the Stage-B tag. **This amendment
+  adds DEC_S, ΔR, ΔU₂ and ΔS to F, so P1 is tested under Holm** and its
+  effective threshold is no longer a flat 0.01 (it is 0.01/5 if P1 has
+  the smallest p, then relaxes stepwise). *To propagate to PR #66
+  §6.2 / §8 (and its decision 4 wording) before its tag*: the P1
+  prediction « p ≥ 0.01 » and the reading « p < α = 0.01 → confirmé »
+  must refer to the Holm threshold.
 - Same learning gate and ceiling rule as §2.4, evaluated before any
   statistic is read.
 - **Prediction, written before data:** in the Gaussian world, with
@@ -293,7 +300,7 @@ shapes with the pairing randomised (physics decoupled).
 Null: label-permutation of the pairing within the held-out set, paired
 with the matching score pipeline (same permutation of shapes for coupled
 and decoupled worlds), B ≥ 1 000, p = (k+1)/(B+1). Effect threshold: a
-PI decision (§6, item 6). The animal figures of the review (chick ≈ 0.80
+PI decision 6 (§6). The animal figures of the review (chick ≈ 0.80
 vs 0.25, macaques 0.67 / 0.74) are **not** adopted as a threshold: see
 §4.3.
 
@@ -366,46 +373,31 @@ Each row is read on the test family F of §3.5 at Holm FWER 0.01.
   tag; if no G ≤ 50 reaches 0.80 for a co-primary, it is demoted to
   descriptive and the demotion is declared.
 
-## 6. Decisions left to the PI
+## 6. PI decisions (2026-11-08)
 
-Recommended option first.
+Closed by the PI by QCM on 2026-11-08 at 13:50 CET: **the recommended
+option (a) of each of the ten items was retained.** No decision is
+open. Options not retained are listed in the change log.
 
-1. **Co-primary status.** (a) DEC_S and PID atoms co-primary in family F
-   with P1, Holm FWER 0.01. (b) Decodability and PID descriptive for
-   v0.7.1, co-primary from v0.8. (c) Only P1 confirmatory (#66 as is).
-2. **PID redundancy measure and estimator.** (a) BROJA exact on decoded
-   classes (§3.2). (b) Liang et al. batch estimator on the 896-d
-   representations (continuous, approximate). (c) Both, (a) deciding.
-3. **ActionSense cost.** (a) Network null on the two straight-through
+1. **Co-primary status:** (a) DEC_S and the PID atoms are co-primary in
+   family F with P1.
+2. **PID estimator:** (a) BROJA exact on decoded classes; the Liang et
+   al. batch estimator on the 896-d representations as sensitivity.
+3. **ActionSense cost:** (a) network null on the two straight-through
    grids only (argmax-bridge does not learn, ADR-0024; qualification
-   kept). (b) All four grids. (c) Gaussian only for v0.7.1; ActionSense
-   later. State the G × 30-cell cost before choosing.
-4. **Multiplicity.** (a) Holm FWER 0.01 on F = {P1, DEC_S, ΔR, ΔU₂, ΔS}.
-   (b) Separate α = 0.01 per co-primary (no correction, declared). (c)
-   Fixed-sequence: P1, then DEC_S, then PID.
-5. **Effect sizes of the planted controls.** δ_dec (accuracy points) and
-   ε (R→U₂ transfer). (a) Set from the pilot so that power is 0.80 at
-   the registered G (PR #66 §10 rule). (b) Fixed a priori by the PI.
-6. **Physical-world positive control.** Who writes the world spec and
-   its threshold. (a) Threshold from simulation power on the decoupled
-   null, not from animal figures. (b) Adopt 0.65 matching (the review's
-   H9 proposal) after the PI verifies the literature of §4.3. (c)
-   Postpone the control; v0.7.1 cross-modal claims then stay « non
-   concluant (contrôle positif absent) ».
-7. **B-2 reading rules of §1.3** (issue #85). (a) Adopt both rules. (b)
-   Adopt rule 1 only. (c) Leave as in ADR-0019 amendment.
-8. **Equivalence.** (a) No TOST in v0.7.1 (non-rejection = non
-   concluant). (b) TOST on co-primaries with margin = smallest detected
-   planted effect (§5.1). (c) Margin = half the recorded thresholds.
-9. **Pointer lines.** (a) Add the pointer lines of §7 (this PR). (b)
-   Keep the frozen v0.7 file byte-identical and carry the pointer only
-   in the erratum folder and ADR-0027. Note: the v0.7 file hash is in
-   `docs/prereg/actionsense-v0.7/freeze-manifest.md`
-   (`f20be89e…`); adding a line changes the working-tree hash, not the
-   tagged blob.
-10. **Learning gate for the reader** (ADR-0019 amendment: majority +
-    0.10) in addition to the three P1 criteria. (a) Both. (b) P1
-    criteria only.
+   kept).
+4. **Multiplicity:** (a) Holm FWER 0.01 on F = {P1, DEC_S, ΔR, ΔU₂,
+   ΔS}. This changes the effective threshold of P1 (§3.5).
+5. **Planted effect sizes** δ_dec and ε: (a) set from the pilot so that
+   power is 0.80 at the registered G (PR #66 §10 rule).
+6. **Physical-world positive control:** (a) threshold from a power
+   simulation on the decoupled null, not from animal figures.
+7. **B-2 reading rules of §1.3 (#85):** (a) both rules adopted.
+8. **Equivalence:** (a) no TOST in v0.7.1; non-rejection stays « non
+   concluant » (§5.1 options b and c are not retained).
+9. **Pointer lines:** (a) added (this PR).
+10. **Reader learning gate:** (a) the ADR-0019 amendment gate (majority
+    + 0.10) in addition to the three P1 criteria.
 
 ## 7. L1 → L3 procedure and exclusions
 
@@ -475,3 +467,14 @@ Recommended option first.
 - Whether the v0.7 block-length pilot ran on any host.
 - The tag `bouba_sens/v0.7-actionsense-prereg` and the freeze-manifest
   hash were read from the repository text, not from the tag object.
+
+## Change log
+
+- **2026-11-08, PI decisions** (QCM 13:50 CET): the ten recommended
+  options retained (§6). Status block rewritten. §3.5 states that this
+  amendment adds DEC_S, ΔR, ΔU₂, ΔS to F so that P1 falls under Holm;
+  note to propagate to PR #66 §6.2 / §8 before its tag. §6 retitled
+  from « Decisions left to the PI ». Non-retained options of the first
+  draft: 1 b, c; 2 b, c; 3 b, c; 4 b, c; 5 b; 6 b, c; 7 b, c; 8 b, c;
+  9 b; 10 b.
+- **2026-11-08, first draft** (L0, PR #88).
