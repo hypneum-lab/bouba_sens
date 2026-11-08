@@ -586,7 +586,7 @@ components carry distinct load-bearing roles:
 
 | Component | Freezing effect | Empirical signature |
 |-----------|-----------------|---------------------|
-| mux constellation | preserves T1/T2 asymmetry | +0.0125 B-1 peak (Sprint 10) |
+| mux constellation | preserves T1/T2 asymmetry | +0.0125 B-1 peak (Sprint 10) [historical record — single-seed result; retracted ADR-0019] |
 | transducer gate | filters gate noise | hard > soft (Sprints 11-12) |
 | codebook | degrades T1/T2 asymmetry | destroys peak (Sprint 13) |
 
@@ -645,6 +645,12 @@ The paper's central empirical claim narrows to: **a frozen mux
 with hard transducer gating is the minimal configuration that
 qualitatively reproduces Amedi-style T1/T2 asymmetry; all
 additional plasticity controls tested are null or harmful**.
+
+*Erratum 2026-11-08: retracted (ADR-0019, README item 14).
+The claim above rested on the single-seed B-1 peak (+0.0125);
+multi-seed validation yields sign test p = 0.62 (N = 10) and
+replication fails at Bonferroni α = 0.025. See §5.5 and the
+abstract for the corrected framing.*
 
 ---
 

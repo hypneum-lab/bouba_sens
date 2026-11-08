@@ -183,7 +183,11 @@ adjacent topics:
   differs (multi-agent LLMs, not cross-modal plasticity
   benchmarking), the underlying intuition that *shared latent
   state outperforms token-level exchange* is conceptually
-  adjacent to bouba_sens's frozen PSK mux gating result. The
+  adjacent to bouba_sens's frozen PSK mux architectural design
+  [*note 2026-11-08: the single-seed B-1 result this design
+  produced is retracted; ADR-0019, README item 14; the
+  architectural adjacency noted here does not depend on that
+  result*]. The
   parent research programme's Paper 2 (dream-of-kiki)
   positioning paragraph and rebuttal pocket address this
   proximity in detail; bouba_sens itself does not depend on
