@@ -251,7 +251,10 @@ p < 0.01; ε is a PI decision. Planting mechanism (to be fixed before Stage A): 
   the smallest p, then relaxes stepwise). *To propagate to PR #66
   §6.2 / §8 (and its decision 4 wording) before its tag*: the P1
   prediction « p ≥ 0.01 » and the reading « p < α = 0.01 → confirmé »
-  must refer to the Holm threshold.
+  must refer to the Holm threshold. Propagated on 2026-11-08 (PR #66
+  §8, §10, §14, §15). PR #66 §8 writes « row »; the additions here are
+  tests, not rows of its §6.1 table; the PI decided the extension on
+  2026-11-08 (§6 item 4).
 - Same learning gate and ceiling rule as §2.4, evaluated before any
   statistic is read.
 - **Prediction, written before data:** in the Gaussian world, with
