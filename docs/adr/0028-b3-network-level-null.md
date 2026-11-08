@@ -155,7 +155,7 @@ day):
 11. (F) learning gate: the three criteria of draft §6.3;
 12. (F) condition on the fixed T1 module seeds;
 13. no-lesion control: 10 stream-matched jobs per unit;
-14. host electron-server, nice 19, PAR 4, ceiling 40 h wall;
+14. host electron-server, nice 19, PAR 4, ceiling 50 h wall (raised from 40 h on 2026-11-08; a G exceeding 50 h at the Stage B load is not eligible);
 15. (F) two freeze tags (Stage A, Stage B);
 16. v0.7 amendment in which the network null decides;
 17. (F) resampling seeds 8112026 / 8112027.

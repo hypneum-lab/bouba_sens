@@ -491,8 +491,8 @@ in 3 of 6; if the effect is confined to T1 or T2, the median over 6
 conditions may miss it; the 3/6 variant detects this pattern), 1 000
 grids per G: G = smallest value in {20, 30, 40, 50} with power
 ≥ 0.80 at α = 0.01 (binomial SE ≤ 0.013 at 0.80). If no value reaches
-0.80 within the compute ceiling (40 h wall, PI decision 14; a G whose
-estimated wall time at the load measured at Stage B exceeds 40 h is not
+0.80 within the compute ceiling (50 h wall, PI decision 14; a G whose
+estimated wall time at the load measured at Stage B exceeds 50 h is not
 eligible), the decidable δ at the largest eligible G is reported and
 the PI decides go / no-go before the Stage-B tag. If the pilot
 (G = 6) shows strongly skewed unit distributions (|skewness| > 2 on any
@@ -595,7 +595,7 @@ Phase-1 jobs counted as one slot each, as in the earlier estimate.
 The earlier design (R = 5, two emissions) was 2 114 jobs. Analysis on
 5 × 5 matrices takes seconds per null; size check and power ≈ 1–2 h of
 CPU. **Host (PI decision 14):** electron-server at nice 19 (PAR 4,
-`OMP_NUM_THREADS=2`), one host for all rows, ceiling 40 h wall, free
+`OMP_NUM_THREADS=2`), one host for all rows, ceiling 50 h wall, free
 state checked at Stage B. Nothing
 is run by this PR.
 
@@ -667,7 +667,7 @@ is open.**
 12. **Fixed module seeds of `lesion` (F12, fixed on review):** kept; the
     reading is conditional on them (§2.2).
 13. **No-lesion control:** 10 stream-matched jobs per unit (§7).
-14. **Host:** electron-server, nice 19, PAR 4, ceiling 40 h wall.
+14. **Host:** electron-server, nice 19, PAR 4, ceiling 50 h wall (raised from 40 h on 2026-11-08 13:40 CET so that G = 50 with pilot and K1 stays eligible under heavy load, ≈ 47 h; a G whose estimated wall time at the Stage B load exceeds 50 h is not eligible).
 15. **Freeze (F15, fixed on review):** two annotated tags, Stage A
     before the pilot, Stage B before the confirmatory grid (§12).
 16. **v0.7:** after the Stage-B results, a v0.7 amendment in which the
@@ -744,3 +744,4 @@ validity of this statistic, which rests on §5 and on the checks of §7.
   tag gated by the roadmap reading lock (S8). Compute ceiling applied
   to the G rule.
 - **2026-10-31** first draft.
+- 2026-11-08, PI decision (13:40 CET): compute ceiling raised from 40 h to 50 h (decision 14), so that the G rule (decision 7) can reach G = 50 under heavy load; the eligibility rule on G is kept with the new ceiling.
