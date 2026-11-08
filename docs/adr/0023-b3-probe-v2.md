@@ -17,6 +17,9 @@ no past metric, verdict, ADR or locked threshold; the v1 probe
 `tests/unit/test_probe_v2.py`, `tests/unit/test_b3_probe_v2_script.py`,
 `reports/b3_probe_v2_options_exploratory.json`
 
+
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24054109](https://doi.org/10.5281/zenodo.24054109) (Hypneum Lab lot of 2026-11-08, file `prereg-b3-probe-v2-20261025.zip`, SHA-256 `179d2cc07cda4cba15fa8d8cbdc9e9477fc1516d8332fa273137c86b579995a5`) gives the freeze tag `prereg-b3-probe-v2-20261025` (commit `1d96a656fdef6b0a2671832b8709c3b2e82be556`, `swh:1:rev:1d96a656fdef6b0a2671832b8709c3b2e82be556`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## Context
 
 ADR-0022 (PI verdict, 2026-10-25) found that the B-3 probe does not

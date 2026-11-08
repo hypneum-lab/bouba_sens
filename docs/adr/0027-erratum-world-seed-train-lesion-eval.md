@@ -17,6 +17,9 @@ review fixes and replay decision of 2026-10-30 ≈ 18:00.
 `tests/unit/test_world_seed_mode.py`,
 `tests/unit/test_grid_world_mode_guard.py`.
 
+
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24054109](https://doi.org/10.5281/zenodo.24054109) (Hypneum Lab lot of 2026-11-08, file `bouba_sens_v0.7-actionsense-prereg.zip`, SHA-256 `1ad90e105533ca2010604574075636c5eeadee3ddc5deaed1f422fb952c764b0`) gives the freeze tag `bouba_sens/v0.7-actionsense-prereg` (commit `02c24073d3a04e1db3d3adf2ee77e545c0bdde17`, `swh:1:rev:02c24073d3a04e1db3d3adf2ee77e545c0bdde17`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## Fact
 
 The CLI builds the world with a different seed in each command:
