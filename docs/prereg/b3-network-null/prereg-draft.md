@@ -649,9 +649,11 @@ decision 16), and states its cost (G × 30 cells per grid, on two or four
 grids).
 
 Amendment v0.7.1 (2026-11-08, L0 draft) is drafted in PR #88
-(`docs/osf/amendment-2026-11-08-v0.7.1-draft.md`). Its header items
-(a)–(d) — PR review, §6 decisions closed, reading lock (S8), and PI L1
-tag — condition the L1 freeze of that amendment.
+(`docs/osf/amendment-2026-11-08-v0.7.1-draft.md`). Its L1 freeze is
+conditioned by its §7.1: PR review, §6 decisions closed, the reading
+lock (S8: (a) reading note, (b) contradictor, (c) three tests, (d) the
+code prerequisites of its §2.2 exist and pass the manifested test
+suite), then the PI L1 tag.
 
 ## 16. PI decisions (2026-11-08)
 
