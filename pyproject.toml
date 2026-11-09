@@ -36,6 +36,13 @@ dependencies = [
     "h5py>=3.12",
 ]
 
+[project.urls]
+Homepage = "https://github.com/hypneum-lab/bouba_sens"
+Repository = "https://github.com/hypneum-lab/bouba_sens"
+Issues = "https://github.com/hypneum-lab/bouba_sens/issues"
+Changelog = "https://github.com/hypneum-lab/bouba_sens/blob/main/CHANGELOG.md"
+DOI = "https://doi.org/10.5281/zenodo.19701353"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3",
