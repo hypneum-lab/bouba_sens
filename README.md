@@ -1,6 +1,7 @@
 # bouba_sens
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19701353.svg)](https://doi.org/10.5281/zenodo.19701353)
+[![PyPI](https://img.shields.io/pypi/v/bouba-sens.svg)](https://pypi.org/project/bouba-sens/)
 
 > A benchmark for cross-modal plasticity in artificial neural systems.
 > Hypneum Lab — 2026.
@@ -422,6 +423,10 @@ Documentary corrections only ; no value, metric or threshold changed.
    hypneum-lab/.github#10.
 
 ## Quickstart
+
+Released package: `pip install bouba-sens` (PyPI, trusted publishing from
+the GitHub release workflow; `nerve-wml` is then resolved from PyPI).
+The development setup below uses a sibling clone of `nerve-wml` instead.
 
 ```bash
 # nerve-wml is a sibling path dependency (`[tool.uv.sources]`, not on PyPI);
