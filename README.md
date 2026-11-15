@@ -59,9 +59,9 @@ running sweep may add back.
 | Axis | Status |
 |---|---|
 | **B-3** Me6 perceptive/proprioceptive asymmetry | **Final (PI 2026-10-27): on the Gaussian world, with a network that learns the task (straight-through emission), no lesion effect is detected — neither a lesion × query interaction (p = 0.49, tagged preregistration `prereg-b3-lesion-interaction-20261027`) nor a lesion-driven asymmetry; only the query-modality effect, built by the world, remains. The mock world stays inconclusive (network below the learning criterion) and is not retried.** *Earlier, default (non-learning) regime, ADR-0024:* **v2 (ADR-0023, PI 2026-10-26): asymmetry built by the worlds (unequally informative modalities), no lesion effect** — linear probe, positive control met (vision margin 0.485 Gaussian / 0.282 mock); preregistered criterion met (median 0.414 / 0.332, p = 5·10⁻⁵, blocks 1 / 8) but H0 was ill-posed; residual after removing the query-modality effect at the null level (Gaussian p ≈ 0.55). *v1 (historical):* **Gaussian: calibrated, compatible with the paired null** (was *uncalibrated*, see F1 and Erratum; ADR-0022, PI decision 2026-10-25, Gaussian grid: observed median 0.156 vs null mean 0.141 / P99 0.156, p = 0.17; iid reference almost identical). Mean query accuracy 0.254 = 4-class chance → the zero-masking probe is a design defect to fix before any new B-3 reading. Studyforrest mock: 0.305, rejected by per-item / block-8 nulls but compatible under block flips of 16 / 32 (p = 0.06 / 0.31), accuracy 0.240 = chance → not conclusive, block length left to the PI. Real ECG (0.445): not recomputed (no data cache on electron-server), still uncalibrated. The former "PASS on magnitude (5–6× threshold)" was never compared with a null; the "architectural property" reading stays withdrawn (entropy proxy, paper §3.3/§4.4) *Me6 at n ∈ {64, 256, 1024, 4096} on the existing cells (ADR-0026, tag `prereg-me6-large-n-20261031`, #63, 2026-10-31):* learning gate not passed (argmax-bridge accuracy 0.24–0.27), so no row is a B-3 reading; Gaussian rows in excess over the paired null at n ≥ 256 in both arms, mock rows compatible; the frozen 0.02 rule fires under the paired null in 0.748 / 0.981 of draws on the mock at n = 4096 and decides nothing. Under the lab vocabulary (PM §6) the B-3 magnitude is **non concluant** until the pre-registered network-level null (PR #66) is frozen and run. |
-| **B-1** Me7 congenital gap (§5.5) | **FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation **landed in manuscript** |
-| **B-2** Me3 MI migration | **Null** on the Gaussian world and the CC-film bridge (ADR-0019: full-D probe, N≳f(D)); **not conclusive** on the Studyforrest bridge (single-class probe, erratum 12, issue #77) |
-| **TMLR submission** | **BLOCKED** — §5.5 retraction landed; pending critic-review gate + N≥30 decision |
+| **B-1** Me7 congenital gap (§5.5) | **Non-test** (decision of 2026-11-07, issue #24): measured in a regime where the network does not learn the task (ADR-0024, Erratum item 6), so not evidence for or against; reported as non-test / not measurable in a section of the methods note, with no TOST. *Earlier:* FINAL Retract (Q3+ 10-seed, ADR-0019), reformulation landed in manuscript |
+| **B-2** Me3 MI migration | **Non-test / not measurable** (decision of 2026-11-07, issue #24): non-test on the Gaussian world and the CC-film bridge (regime that does not learn the task, ADR-0024); not measurable on the Studyforrest bridge (single-class probe, erratum 12, issue #77; the class-stratified probe fails the learning gate on 10/10 seeds, closed 2026-11-06, ADR-0019 E1.3c-ter); reported in a section of the methods note, with no TOST. *Earlier:* Null on the Gaussian world and the CC-film bridge (ADR-0019: full-D probe, N≳f(D)); not conclusive on the Studyforrest bridge |
+| **TMLR submission** | **BLOCKED** (ADR-0019, ADR-0024) — §5.5 retraction landed; pending critic-review gate. B-1/B-2 no longer wait on an N≥30 decision or a TOST: the decision of 2026-11-07 (issue #24) reports them as non-test / not measurable in a section of the methods note |
 | **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
 Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
@@ -72,9 +72,9 @@ locked. Honest scope ; no overselling.
 
 ## Status
 
-**v0.5.9 — Paper v0.1 draft (TMLR submission blocked; see
-2026-05-11 update above).** Sprints 0–17 closed, 28 ADR files
-(numbers 0001–0022, seven numbers shared — index in
+**v0.5.11 — Paper v0.1 draft (TMLR submission blocked; see
+2026-05-11 update above; B-1/B-2 non-test since 2026-11-07, issue #24).** Sprints 0–17 closed, 32 ADR files
+(numbers 0001–0027, 0006 and 0025 absent from `main`, seven numbers shared — index in
 `docs/adr/README.md`), 372 unit+smoke tests. 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
