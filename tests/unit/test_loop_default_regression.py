@@ -9,11 +9,15 @@ none of the opt-in options passed, the branch must see the same world batches
 in the same order and end with a bit-identical COMPLETE state: every entry of
 every component found on the loop object (mux, nerve, head, each sensory
 encoder: state dict, buffers, parameters, plain attributes), optimiser state,
-report contents and the global RNG states. Hashes depend on platform float
-kernels and on the traced attribute set, so entry hashes are enforced only
-where torch version, machine and nerve-wml version all match the golden; the
-batch log and the loss curve always are. CI runs this file on ``macos-15``
-(arm64) so the reference platform is covered and the skip stays visible.
+report contents and the global RNG states.
+
+What is enforced where (issue #96): the batch log and the key set of the
+traced entries on every platform; the loss curve exactly on the golden chip
+and to ``LOSS_RTOL`` elsewhere; the entry hashes only where torch version,
+machine, nerve-wml version and CPU model all match the golden. Two arm64 Macs
+with the same torch build (Apple M1 vs the GitHub ``macos-15`` runner) already
+disagree on the trained-weight hashes, so a hosted CI job cannot check them;
+CI passes ``-rs`` so the hash skip stays visible.
 """
 
 from __future__ import annotations
@@ -34,6 +38,7 @@ def test_golden_provenance_is_pinned() -> None:
     assert GOLDEN["provenance"]["supersedes"]["reference_commit"].startswith("f99f2dc")
     assert GOLDEN["nerve_wml"] == "1.8.1"
     assert GOLDEN["torch_threads"] == 1
+    assert GOLDEN["cpu"] and GOLDEN["cpu"] != "unknown"
 
 
 REQUIRED_COVERAGE = [
@@ -60,28 +65,40 @@ def test_golden_covers_required_state() -> None:
     assert not missing, f"golden lacks entries for: {missing}"
 
 
-def test_default_path_matches_main() -> None:
+def _fingerprint(d: dict[str, object]) -> tuple[object, ...]:
+    return (d["torch"], d["machine"], d["nerve_wml"], d["cpu"])
+
+
+def _trace_and_check_structure() -> dict[str, object]:
     got = trace()
     assert [list(c) for c in got["pretrain_calls"]] == GOLDEN["pretrain_calls"]  # type: ignore[attr-defined]
     assert [list(c) for c in got["lesion_calls"]] == GOLDEN["lesion_calls"]  # type: ignore[attr-defined]
-    same_platform = (got["torch"], got["machine"], got["nerve_wml"]) == (
-        GOLDEN["torch"],
-        GOLDEN["machine"],
-        GOLDEN["nerve_wml"],
-    )
-    # Losses are always compared: exactly on the golden platform, else to LOSS_RTOL.
-    if same_platform:
+    entries: dict[str, str] = got["entries"]  # type: ignore[assignment]
+    ref: dict[str, str] = GOLDEN["entries"]
+    # Enforced on every platform: this is what issue #96 was about (attributes added
+    # or removed on the loop components without the golden noticing).
+    assert set(entries) == set(ref), sorted(set(entries) ^ set(ref))[:5]
+    return got
+
+
+def test_default_path_structure_and_losses_match_main() -> None:
+    got = _trace_and_check_structure()
+    if _fingerprint(got) == _fingerprint(GOLDEN):
         assert got["loss_curve"] == GOLDEN["loss_curve"]
     else:
         assert got["loss_curve"] == pytest.approx(GOLDEN["loss_curve"], rel=LOSS_RTOL)
+
+
+def test_default_path_entry_hashes_match_main() -> None:
+    got = _trace_and_check_structure()
+    if _fingerprint(got) != _fingerprint(GOLDEN):
         pytest.skip(
-            f"entry hashes were generated on torch {GOLDEN['torch']} / {GOLDEN['machine']} / "
-            f"nerve-wml {GOLDEN['nerve_wml']}; here {got['torch']} / {got['machine']} / "
-            f"{got['nerve_wml']}"
+            "entry hashes are enforced only on the golden chip: golden "
+            f"{_fingerprint(GOLDEN)}, here {_fingerprint(got)} (key set and loss curve "
+            "are checked by test_default_path_structure_and_losses_match_main)"
         )
     entries: dict[str, str] = got["entries"]  # type: ignore[assignment]
     ref: dict[str, str] = GOLDEN["entries"]
-    assert set(entries) == set(ref), sorted(set(entries) ^ set(ref))[:5]
     for name in ref:  # insertion order = discovery order, so the first diff is reported
         assert entries[name] == ref[name], f"first differing entry: {name}"
 

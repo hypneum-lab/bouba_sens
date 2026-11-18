@@ -12,6 +12,8 @@
  "machine": "arm64",
  "nerve_wml": "1.8.1",
  "torch_threads": 1,
+ "cpu": "Apple M1 Max",
+ "python": "3.14.4",
  "pretrain_calls": [
   [
    4,

@@ -7,9 +7,12 @@ NOT comparable (explicitly excluded, with reason):
   ``world.sample``: unreachable after the call; its effect is covered by the
   batch contents (code hashes) and the batch (size, seed) log.
 * CUDA RNG: no CUDA device on the reference host (hashed when available).
-* hash values on a different torch version / CPU architecture / nerve-wml
-  version: float kernels and traced attributes may differ, so the test only
-  enforces them where all three match.
+* hash values on another chip: two arm64 Macs with the same torch build and
+  nerve-wml version produced different trained-weight hashes (Apple M1 vs the
+  GitHub macos-15 runner, issue #96), so the test enforces entry hashes only
+  where torch, machine, nerve-wml version and CPU model all match the golden.
+  The key set and the batch log are enforced everywhere; the loss curve is
+  compared to LOSS_RTOL off the golden chip.
 
 Used by test_loop_default_regression.py and, to generate the golden file,
 against a checkout of origin/main (``PROVENANCE["reference_commit"]``).
@@ -21,6 +24,8 @@ import hashlib
 import importlib.metadata
 import json
 import platform
+import subprocess
+import sys
 
 import torch
 from track_p.multiplexer import GammaThetaMultiplexer
@@ -48,6 +53,25 @@ class RecordingWorld(GaussianWorld):
     def sample(self, batch_size: int, seed: int):  # type: ignore[no-untyped-def]
         self.calls.append((batch_size, seed))
         return super().sample(batch_size=batch_size, seed=seed)
+
+
+def cpu_brand() -> str:
+    """Human CPU model: bit-exact weight hashes only carry between identical chips (#96)."""
+    try:
+        if sys.platform == "darwin":
+            out = subprocess.run(
+                ["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True
+            )
+            if out.returncode == 0 and out.stdout.strip():
+                return out.stdout.strip()
+        elif sys.platform.startswith("linux"):
+            with open("/proc/cpuinfo", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.lower().startswith("model name"):
+                        return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor() or "unknown"
 
 
 PROVENANCE = {
@@ -233,6 +257,8 @@ def trace() -> dict[str, object]:
         "machine": platform.machine(),
         "nerve_wml": importlib.metadata.version("nerve-wml"),
         "torch_threads": torch.get_num_threads(),
+        "cpu": cpu_brand(),
+        "python": platform.python_version(),
         "pretrain_calls": world.calls[:n_pretrain],
         "lesion_calls": world.calls[n_pretrain:],
         "loss_curve": report.loss_curve,

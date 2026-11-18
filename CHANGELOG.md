@@ -9,17 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Golden regression fixture regenerated (issue #96).**
-  `tests/golden/loop_default_main.json` was generated on 2026-10-24 at
-  `f99f2dc`, before `SensoryWML.emission` (4e1dffc) and the nerve-wml
-  v1.8.1 sibling; on its own reference platform (arm64, torch 2.11.0)
-  the test failed on 10 added `attr.emission` and 10 vanished
-  `attr.codebook` keys while all 2109 common entries kept their hash
-  and the loss curve was identical. The fixture now records the
-  nerve-wml version and the superseded commit; the exact comparison
-  requires torch, machine and nerve-wml to match. CI runs the test on
-  `macos-15` (arm64) and passes `-rs` so the off-platform skip is
-  visible.
+- **Golden regression fixture regenerated, hash check scoped to the
+  golden chip (issue #96).** `tests/golden/loop_default_main.json` was
+  generated on 2026-10-24 at `f99f2dc`, before `SensoryWML.emission`
+  (4e1dffc) and the nerve-wml v1.8.1 sibling; on its own platform the
+  test failed on 10 added `attr.emission` and 10 vanished
+  `attr.codebook` keys while all 2109 common entries kept their hash.
+  The fixture is regenerated at `6ae1daa` (single-threaded torch) and
+  records nerve-wml version, CPU model and the superseded commit. The
+  test is split: key set and batch log are enforced everywhere, the
+  loss curve exactly on the golden chip and to `LOSS_RTOL` elsewhere,
+  entry hashes only when torch, machine, nerve-wml and CPU model match
+  (the GitHub `macos-15` arm64 runner already differs from the Apple M1
+  on trained-weight hashes). CI passes `-rs` so the skip is visible.
 
 ## [0.5.11] — 2026-11-08 (seeded lock-matrix tables, B-3 v2 wording, ActionSense world, B-2 recompute, reproduction scripts)
 
