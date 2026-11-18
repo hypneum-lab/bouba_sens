@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Golden regression fixture regenerated (issue #96).**
+  `tests/golden/loop_default_main.json` was generated on 2026-10-24 at
+  `f99f2dc`, before `SensoryWML.emission` (4e1dffc) and the nerve-wml
+  v1.8.1 sibling; on its own reference platform (arm64, torch 2.11.0)
+  the test failed on 10 added `attr.emission` and 10 vanished
+  `attr.codebook` keys while all 2109 common entries kept their hash
+  and the loss curve was identical. The fixture now records the
+  nerve-wml version and the superseded commit; the exact comparison
+  requires torch, machine and nerve-wml to match. CI runs the test on
+  `macos-15` (arm64) and passes `-rs` so the off-platform skip is
+  visible.
+
 ## [0.5.11] — 2026-11-08 (seeded lock-matrix tables, B-3 v2 wording, ActionSense world, B-2 recompute, reproduction scripts)
 
 ### Changed

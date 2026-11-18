@@ -7,16 +7,18 @@ NOT comparable (explicitly excluded, with reason):
   ``world.sample``: unreachable after the call; its effect is covered by the
   batch contents (code hashes) and the batch (size, seed) log.
 * CUDA RNG: no CUDA device on the reference host (hashed when available).
-* hash values on a different torch version / CPU architecture: float
-  kernels may differ, so the test only enforces them where both match.
+* hash values on a different torch version / CPU architecture / nerve-wml
+  version: float kernels and traced attributes may differ, so the test only
+  enforces them where all three match.
 
 Used by test_loop_default_regression.py and, to generate the golden file,
-against a checkout of origin/main (before the v0.8 probe/control options).
+against a checkout of origin/main (``PROVENANCE["reference_commit"]``).
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import json
 import platform
 
@@ -49,9 +51,18 @@ class RecordingWorld(GaussianWorld):
 
 
 PROVENANCE = {
-    "reference_commit": "f99f2dc938fafa4584ff37aaad8f2d3a27bc024a",  # origin/main
-    "reference_code": "src/bouba_sens/loop.py:110-259 (pretrain, restore, lesion_phase)",
+    "reference_commit": "6ae1daad5c4c21a18f38c6b83bc325f93585d09a",  # origin/main
+    "reference_code": "src/bouba_sens/loop.py:163-362 (pretrain, restore, lesion_phase)",
     "generated_by": "python tests/unit/loop_trace.py on a checkout of that commit",
+    "supersedes": {
+        "reference_commit": "f99f2dc938fafa4584ff37aaad8f2d3a27bc024a",
+        "reason": (
+            "SensoryWML.emission added by 4e1dffc (ADR-0024 follow-up, opt-in) and "
+            "nerve-wml sibling moved from v1.7.0 to v1.8.1 (01cd71f): 10 attr.emission "
+            "entries appeared, 10 sensories[*].attr.codebook entries vanished, all 2109 "
+            "common entries kept their hash; see issue #96"
+        ),
+    },
 }
 
 
@@ -217,6 +228,7 @@ def trace() -> dict[str, object]:
         "provenance": PROVENANCE,
         "torch": torch.__version__,
         "machine": platform.machine(),
+        "nerve_wml": importlib.metadata.version("nerve-wml"),
         "pretrain_calls": world.calls[:n_pretrain],
         "lesion_calls": world.calls[n_pretrain:],
         "loss_curve": report.loss_curve,
