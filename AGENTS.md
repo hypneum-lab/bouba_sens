@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 ## Project
 
-`bouba_sens` — TMLR-track benchmark for the bouba/kiki cross-modal plasticity phenomenon, developed under the **GENIAL framework** at **Hypneum Lab**. Studies how a 5-modality agent (audio, vision, tactile, gravity, force) reorganises after channel loss/degradation. Three invariants B-1/B-2/B-3 pre-registered locally (git-dated design spec 2026-04-20; `docs/osf/` amendments never filed on OSF — `10.17605/OSF.IO/Q6JYN` is dream-of-kiki H1–H4 only). HEAD ≈ v0.5.9, ~156 commits, 19 ADRs, 185+ tests.
+`bouba_sens` — TMLR-track benchmark for the bouba/kiki cross-modal plasticity phenomenon, developed under the **GENIAL framework** at **Hypneum Lab**. Studies how a 5-modality agent (audio, vision, tactile, gravity, force) reorganises after channel loss/degradation. Three invariants B-1/B-2/B-3 pre-registered locally (git-dated design spec 2026-04-20; `docs/osf/` amendments never filed on OSF — `10.17605/OSF.IO/Q6JYN` is dream-of-kiki H1–H4 only). v0.5.11, 327 commits, 558 collected tests (measured 2026-11-18 at `6ae1daa`), 19 ADRs.
 
 ## Tech stack
 

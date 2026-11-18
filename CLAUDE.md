@@ -30,8 +30,11 @@ only, issue #20):
   network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
   Every B-1/B-2/B-3 result below was measured in that regime; read them
   as such. No number deleted.
-- **HEAD ≈ v0.5.9**, ~156 commits, 30 ADR files (numbers 0001–0024,
-  seven shared, index `docs/adr/README.md`), 185+ tests.
+- **v0.5.11** (`src/bouba_sens/_version.py`), 327 commits, 558 collected
+  tests (546 in `tests/unit` + `tests/smoke`, which CI runs), measured
+  2026-11-18 at `6ae1daa` with `git rev-list --count HEAD` and
+  `uv run pytest --collect-only -q`. 30 ADR files (numbers 0001–0024,
+  seven shared, index `docs/adr/README.md`).
 - **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
   (positive control met), the preregistered rejection of symmetry is an
   asymmetry built by the worlds (unequally informative modalities), no
@@ -57,7 +60,7 @@ only, issue #20):
 ## Tech stack
 
 - Python **3.14**, `uv` package manager (PEP 668)
-- pytest (+ pytest-asyncio, pytest-cov)
+- pytest (+ pytest-xdist, pytest-cov, hypothesis)
 - numpy / scipy / matplotlib for the benchmark + figures
 - Tied to `nerve-wml` (methodology bootstrap), `kiki_oniric.axioms`
   (DR-0..DR-4)
@@ -67,7 +70,7 @@ only, issue #20):
 | Path | Purpose |
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
-| `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
+| `tests/{unit,property,smoke,integration,empirical,golden}/` | Test buckets (roles, markers and CI scope in `tests/CLAUDE.md`) |
 | `docs/adr/` | ADRs 0001–0024 (30 files, index `README.md`) — decisions of record |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
 | `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
