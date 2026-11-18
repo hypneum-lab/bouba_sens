@@ -179,6 +179,9 @@ def _rng_entries() -> dict[str, str]:
 
 
 def trace() -> dict[str, object]:
+    # Single-threaded CPU kernels: multi-threaded reductions change the low bits of the
+    # trained weights from one chip to another (issue #96, GitHub macos-15 vs Apple M1).
+    torch.set_num_threads(1)
     import random
 
     import numpy as np
@@ -229,6 +232,7 @@ def trace() -> dict[str, object]:
         "torch": torch.__version__,
         "machine": platform.machine(),
         "nerve_wml": importlib.metadata.version("nerve-wml"),
+        "torch_threads": torch.get_num_threads(),
         "pretrain_calls": world.calls[:n_pretrain],
         "lesion_calls": world.calls[n_pretrain:],
         "loss_curve": report.loss_curve,

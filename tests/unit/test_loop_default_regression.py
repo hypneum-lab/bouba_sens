@@ -33,6 +33,7 @@ def test_golden_provenance_is_pinned() -> None:
     assert "loop.py:163-362" in GOLDEN["provenance"]["reference_code"]
     assert GOLDEN["provenance"]["supersedes"]["reference_commit"].startswith("f99f2dc")
     assert GOLDEN["nerve_wml"] == "1.8.1"
+    assert GOLDEN["torch_threads"] == 1
 
 
 REQUIRED_COVERAGE = [
