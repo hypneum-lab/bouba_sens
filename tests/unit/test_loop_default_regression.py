@@ -69,6 +69,16 @@ def _fingerprint(d: dict[str, object]) -> tuple[object, ...]:
     return (d["torch"], d["machine"], d["nerve_wml"], d["cpu"])
 
 
+# Device RNG states exist only where the device does (MPS on macOS, CUDA on a GPU host);
+# loop_trace hashes them "when available", so they are not part of the cross-platform
+# structural comparison. Everything else in the key set is.
+DEVICE_ONLY_PREFIXES = ("rng.mps", "rng.cuda")
+
+
+def _portable(names: set[str]) -> set[str]:
+    return {n for n in names if not n.startswith(DEVICE_ONLY_PREFIXES)}
+
+
 def _trace_and_check_structure() -> dict[str, object]:
     got = trace()
     assert [list(c) for c in got["pretrain_calls"]] == GOLDEN["pretrain_calls"]  # type: ignore[attr-defined]
@@ -77,7 +87,9 @@ def _trace_and_check_structure() -> dict[str, object]:
     ref: dict[str, str] = GOLDEN["entries"]
     # Enforced on every platform: this is what issue #96 was about (attributes added
     # or removed on the loop components without the golden noticing).
-    assert set(entries) == set(ref), sorted(set(entries) ^ set(ref))[:5]
+    assert _portable(set(entries)) == _portable(set(ref)), sorted(
+        _portable(set(entries)) ^ _portable(set(ref))
+    )[:5]
     return got
 
 
