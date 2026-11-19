@@ -53,7 +53,7 @@ jobs:
 
       - name: Pytest (unit + smoke)
         working-directory: bouba_sens
-        run: uv run pytest tests/unit tests/smoke -v
+        run: uv run pytest tests/unit tests/smoke -v -rs
 
       - name: Validate doc-truth (N4 Task 5)
         working-directory: bouba_sens

@@ -7,18 +7,25 @@ NOT comparable (explicitly excluded, with reason):
   ``world.sample``: unreachable after the call; its effect is covered by the
   batch contents (code hashes) and the batch (size, seed) log.
 * CUDA RNG: no CUDA device on the reference host (hashed when available).
-* hash values on a different torch version / CPU architecture: float
-  kernels may differ, so the test only enforces them where both match.
+* hash values on another chip: two arm64 Macs with the same torch build and
+  nerve-wml version produced different trained-weight hashes (Apple M1 vs the
+  GitHub macos-15 runner, issue #96), so the test enforces entry hashes only
+  where torch, machine, nerve-wml version and CPU model all match the golden.
+  The key set and the batch log are enforced everywhere; the loss curve is
+  compared to LOSS_RTOL off the golden chip.
 
 Used by test_loop_default_regression.py and, to generate the golden file,
-against a checkout of origin/main (before the v0.8 probe/control options).
+against a checkout of origin/main (``PROVENANCE["reference_commit"]``).
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import json
 import platform
+import subprocess
+import sys
 
 import torch
 from track_p.multiplexer import GammaThetaMultiplexer
@@ -48,10 +55,38 @@ class RecordingWorld(GaussianWorld):
         return super().sample(batch_size=batch_size, seed=seed)
 
 
+def cpu_brand() -> str:
+    """Human CPU model: bit-exact weight hashes only carry between identical chips (#96)."""
+    try:
+        if sys.platform == "darwin":
+            out = subprocess.run(
+                ["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True
+            )
+            if out.returncode == 0 and out.stdout.strip():
+                return out.stdout.strip()
+        elif sys.platform.startswith("linux"):
+            with open("/proc/cpuinfo", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.lower().startswith("model name"):
+                        return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor() or "unknown"
+
+
 PROVENANCE = {
-    "reference_commit": "f99f2dc938fafa4584ff37aaad8f2d3a27bc024a",  # origin/main
-    "reference_code": "src/bouba_sens/loop.py:110-259 (pretrain, restore, lesion_phase)",
+    "reference_commit": "6ae1daad5c4c21a18f38c6b83bc325f93585d09a",  # origin/main
+    "reference_code": "src/bouba_sens/loop.py:163-362 (pretrain, restore, lesion_phase)",
     "generated_by": "python tests/unit/loop_trace.py on a checkout of that commit",
+    "supersedes": {
+        "reference_commit": "f99f2dc938fafa4584ff37aaad8f2d3a27bc024a",
+        "reason": (
+            "SensoryWML.emission added by 4e1dffc (ADR-0024 follow-up, opt-in) and "
+            "nerve-wml sibling moved from v1.7.0 to v1.8.1 (01cd71f): 10 attr.emission "
+            "entries appeared, 10 sensories[*].attr.codebook entries vanished, all 2109 "
+            "common entries kept their hash; see issue #96"
+        ),
+    },
 }
 
 
@@ -168,6 +203,9 @@ def _rng_entries() -> dict[str, str]:
 
 
 def trace() -> dict[str, object]:
+    # Single-threaded CPU kernels: multi-threaded reductions change the low bits of the
+    # trained weights from one chip to another (issue #96, GitHub macos-15 vs Apple M1).
+    torch.set_num_threads(1)
     import random
 
     import numpy as np
@@ -217,6 +255,10 @@ def trace() -> dict[str, object]:
         "provenance": PROVENANCE,
         "torch": torch.__version__,
         "machine": platform.machine(),
+        "nerve_wml": importlib.metadata.version("nerve-wml"),
+        "torch_threads": torch.get_num_threads(),
+        "cpu": cpu_brand(),
+        "python": platform.python_version(),
         "pretrain_calls": world.calls[:n_pretrain],
         "lesion_calls": world.calls[n_pretrain:],
         "loss_curve": report.loss_curve,
