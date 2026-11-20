@@ -9,7 +9,7 @@ are not up for discussion in a PR. Honest, multi-seed reporting first.
 ```bash
 # nerve-wml is consumed from a sibling checkout ([tool.uv.sources]).
 git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
-git -C ../nerve-wml checkout v1.7.0          # same pin as .github/workflows/ci.yml
+git -C ../nerve-wml checkout v1.8.1          # same pin as .github/workflows/ci.yml
 git clone https://github.com/hypneum-lab/bouba_sens.git
 cd bouba_sens
 uv sync --all-extras                          # Python 3.14

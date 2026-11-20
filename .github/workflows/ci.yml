@@ -30,14 +30,17 @@ jobs:
           ref: v1.8.1
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v3
+        # Pin uv version to match the lockfile (revision=5) and ensure
+        # reproducible builds (supply-chain policy). Bump version + action SHA
+        # together after HITL review; add checksum: for the ubuntu runner.
+        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
         with:
-          version: "latest"
+          version: "0.13.1"
           enable-cache: true
 
       - name: Install dependencies
         working-directory: bouba_sens
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Ruff lint
         working-directory: bouba_sens
@@ -51,11 +54,16 @@ jobs:
         working-directory: bouba_sens
         run: uv run mypy src
 
-      - name: Pytest (unit + smoke)
+      - name: Pytest (unit + smoke + property)
         working-directory: bouba_sens
-        run: uv run pytest tests/unit tests/smoke -v -rs
+        run: uv run pytest tests/unit tests/smoke tests/property -v -rs
+
+      # TODO(#36): uncomment once reports/MANIFEST.json is regenerated to
+      # match the committed artefacts (36/41 entries are currently missing).
+      # - name: Verify artefact manifest
+      #   working-directory: bouba_sens
+      #   run: uv run python scripts/sha256_manifest.py --check
 
       - name: Validate doc-truth (N4 Task 5)
         working-directory: bouba_sens
-        continue-on-error: true
         run: uv run python scripts/check_status_truth.py

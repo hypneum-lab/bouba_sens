@@ -64,9 +64,9 @@ running sweep may add back.
 | **TMLR submission** | **BLOCKED** (ADR-0019, ADR-0024) — §5.5 retraction landed; pending critic-review gate. B-1/B-2 no longer wait on an N≥30 decision or a TOST: the decision of 2026-11-07 (issue #24) reports them as non-test / not measurable in a section of the methods note |
 | **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
-Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
-ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg
-locked. Honest scope ; no overselling.
+Cumulative: **v0.5.11**, 32 ADR files (0001–0027, 0006/0025 absent,
+seven shared, index `docs/adr/README.md`), pooled-v2 analysis + N12
+pre-reg locked. Honest scope; no overselling.
 
 ---
 
@@ -75,9 +75,22 @@ locked. Honest scope ; no overselling.
 **v0.5.11 — Paper v0.1 draft (TMLR submission blocked; see
 2026-05-11 update above; B-1/B-2 non-test since 2026-11-07, issue #24).** Sprints 0–17 closed, 32 ADR files
 (numbers 0001–0027, 0006 and 0025 absent from `main`, seven numbers shared — index in
-`docs/adr/README.md`), 372 unit+smoke tests. 9 grids (150 cells each) on the
+`docs/adr/README.md`). 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
+
+> **Reproducibility note (issue #45, 2026-11-20):** The 17 real-data
+> Studyforrest blocks in `reproduce_paper_v01.sh` (§4 `v0.4_sf_real`,
+> §5.5 Amedi `v0.5_dr_lock*`, §5.6–5.9 `v0.5_s11`–`v0.5_s14`) are
+> **not reproducible from a fresh clone** of this repository. The
+> `data/sf_phase2_adapted` tensors were produced on Studio in April 2026
+> (ADR-0012, `d7a3645`) and are no longer available: Studio was
+> reprovisioned in June 2026, and the tensors were never committed nor
+> published to Zenodo. The public extraction chain cannot regenerate them
+> (`movie_localizer.mkv` yields 120 vision frames against 1800 for all
+> other modalities, causing an `IndexError`). A PI decision on the path
+> forward (re-extract, truncate, or add a reproducibility erratum to the
+> paper) is tracked in issue #45.
 
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
 - Pre-registration : **local, git-dated** — design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, 2026-04-20) ; amendments v0.4–v0.6 under `docs/osf/` (drafted as OSF amendments, **never filed on OSF**). No bouba_sens hypothesis is registered on OSF : `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only (issue #20, Erratum below).
@@ -429,12 +442,13 @@ the GitHub release workflow; `nerve-wml` is then resolved from PyPI).
 The development setup below uses a sibling clone of `nerve-wml` instead.
 
 ```bash
-# nerve-wml is a sibling path dependency (`[tool.uv.sources]`, not on PyPI);
-# CI checks it out at tag v1.7.0 next to this clone
-git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
+# nerve-wml is a sibling path dependency (`[tool.uv.sources]`);
+# CI checks it out at tag v1.8.1 next to this clone
+git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
+git -C ../nerve-wml checkout v1.8.1
 uv sync --all-extras
 uv run bouba-sens version          # bouba_sens 0.5.11
-uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
+uv run pytest tests/unit tests/smoke tests/property  # CI command
 # Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
     --timing T1 --snr-init 0 --snr-floor -20 --out runs/cell_t1_audio
@@ -444,15 +458,15 @@ WORLD=studyforrest LOCK_AFTER=100 STEPS_TRAIN=200 STEPS_LESION=100 \
     bash scripts/run_grid.sh
 # One-command reproduction of every grid cited in the paper (~8 h)
 bash scripts/reproduce_paper_v01.sh
-# Verify released artefacts byte-for-byte
-uv run python scripts/sha256_manifest.py
-diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
+# Verify committed artefacts byte-for-byte (exits 1 on any difference)
+uv run python scripts/sha256_manifest.py --check
 ```
 
 ## Reproduce in one command
 
 ```bash
-git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
+git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep; CI pins v1.8.1
+git -C ../nerve-wml checkout v1.8.1
 git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
 uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.11
 STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
@@ -463,17 +477,19 @@ Expected output: `runs/v01_smoke_<ts>/{phase1/model.pt,phase1/checkpoint.pkl,pha
 Duration: ≈ 4 min 45 s per run at 20/20 steps on an 8-core Xeon X5680 (Linux, CPU only, 1 core used, max RSS 0.9 GB); the 100/100-step default exceeds 15 min on that CPU (Phase 1 alone ≈ 5 min 40 s), far less on Apple Silicon.
 Determinism: bit-exact in the seeded test suite; the CLI training init is not yet seeded, so two runs do not give byte-identical `eval_report.json` (tracked as an issue).
 Full reproduction: `bash scripts/reproduce_paper_v01.sh` (every grid cited in paper v0.1, ≈ 8 h on an M3 Ultra, fetches Studyforrest ds000113 first).
-Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.json` regenerates the `reports/` manifest for comparison with the committed `reports/MANIFEST.json` (the default `--out` overwrites it).
+Hash manifest: `uv run python scripts/sha256_manifest.py --check` verifies byte-identity of every committed artefact in `reports/` against `reports/MANIFEST.json` and exits 1 on any difference. To regenerate: `uv run python scripts/sha256_manifest.py --out reports/MANIFEST.json`.
 
 ## Dependencies
 
 - Python 3.14
 - PyTorch ≥ 2.5
-- `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
+- `nerve-wml` v1.8.1 (protocol + methodology: Kraskov, MINE,
   bootstrap CI, null model permutation — Hypneum Lab,
-  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release).
+  concept DOI `10.5281/zenodo.19656342`).
   Installed from a sibling clone at `../nerve-wml` (`[tool.uv.sources]`
-  in `pyproject.toml`); CI pins tag `v1.7.0`.
+  in `pyproject.toml`); `uv.lock` and CI both pin tag `v1.8.1`.
+  Clone with `git clone https://github.com/hypneum-lab/nerve-wml.git
+  ../nerve-wml && git -C ../nerve-wml checkout v1.8.1`.
 
 ## Priority references
 

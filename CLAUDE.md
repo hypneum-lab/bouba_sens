@@ -30,8 +30,9 @@ only, issue #20):
   network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
   Every B-1/B-2/B-3 result below was measured in that regime; read them
   as such. No number deleted.
-- **HEAD ≈ v0.5.9**, ~156 commits, 30 ADR files (numbers 0001–0024,
-  seven shared, index `docs/adr/README.md`), 185+ tests.
+- **HEAD v0.5.11**, 32 ADR files (numbers 0001–0027, 0006 and 0025
+  absent from `main`, seven shared, index `docs/adr/README.md`).
+  Test count: `uv run pytest --collect-only -q tests/unit tests/smoke`.
 - **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
   (positive control met), the preregistered rejection of symmetry is an
   asymmetry built by the worlds (unequally informative modalities), no
@@ -43,10 +44,16 @@ only, issue #20):
   calibration of the median. The "architectural property" reading is
   withdrawn (entropy proxy, ADR-0014/0015) — do not describe B-3 as
   an architectural invariant, nor as a PASS.
-- **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation
-  now **landed in the manuscript**; TMLR submission still **BLOCKED**
-  by remaining gates (critic-review + N≥30 confirmatory decision).
-- **B-2 Null** (Kraskov + MINE agree within 0.1 bit).
+- **B-1 non-test** (decision of 2026-11-07, issue #24, ADR-0024):
+  measured in a regime where the network does not learn the task;
+  reported as non-test / not measurable in a section of the methods
+  note, with no TOST. *Earlier:* FINAL Retract (Q3+ 10-seed, ADR-0019),
+  reformulation landed in manuscript.
+- **B-2 non-test / not measurable** (decision of 2026-11-07, issue #24,
+  ADR-0024); see also ADR-0019 E1.3c-ter. *Earlier:* Null (Kraskov +
+  MINE agree within 0.1 bit), not conclusive on the Studyforrest bridge.
+- **TMLR submission BLOCKED** (ADR-0019, ADR-0024) — critic-review gate
+  pending.
 - **N12 subgroup replication** DONE — **LOST 0/2** at Bonferroni
   α=0.025 (ADR-0019); reformulation = full retract (landed).
 - Earlier landmarks: Sprints 0–10 closed 2026-04-21 (v0.5.0-final),
@@ -57,7 +64,7 @@ only, issue #20):
 ## Tech stack
 
 - Python **3.14**, `uv` package manager (PEP 668)
-- pytest (+ pytest-asyncio, pytest-cov)
+- pytest (+ hypothesis, pytest-cov, pytest-xdist)
 - numpy / scipy / matplotlib for the benchmark + figures
 - Tied to `nerve-wml` (methodology bootstrap), `kiki_oniric.axioms`
   (DR-0..DR-4)
@@ -67,8 +74,8 @@ only, issue #20):
 | Path | Purpose |
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
-| `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
-| `docs/adr/` | ADRs 0001–0024 (30 files, index `README.md`) — decisions of record |
+| `tests/{unit,property,smoke,integration,empirical,golden}/` | Test pyramid — see `tests/CLAUDE.md` |
+| `docs/adr/` | 32 ADR files (0001–0027, 0006/0025 absent, seven shared, index `README.md`) |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
 | `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
 | `docs/milestones/` | Sprint closing notes |

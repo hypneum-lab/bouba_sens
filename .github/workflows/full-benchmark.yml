@@ -11,9 +11,13 @@ on:
 jobs:
   grid:
     name: 5-seed v0.1 full grid
-    # self-hosted: Studio (M3 Ultra) is the only box that can run the full
-    # 150-cell grid in reasonable time. Falls back to ubuntu-latest for
-    # syntax validation when the runner is offline.
+    # NOTE (issue #38): the Studio runner (M3 Ultra) has been offline
+    # since 2026-10. This workflow never fires as a result (workflow_dispatch
+    # will queue but never execute). The PI must decide between:
+    #   (a) delete this file and use reproduce_paper_v01.sh manually,
+    #   (b) retarget to macos-14 with a reduced grid (budget minutes), or
+    #   (c) keep it as-is until a new self-hosted runner is configured.
+    # Until that decision, treat this workflow as inert documentation.
     runs-on: [self-hosted, studio]
     timeout-minutes: 180
     steps:

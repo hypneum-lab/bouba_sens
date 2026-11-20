@@ -97,7 +97,7 @@ jobs:
             echo
             echo "### Reproducibility"
             echo "- \`bash scripts/reproduce_paper_v01.sh\` regenerates every grid cited in the paper."
-            echo "- \`uv run python scripts/sha256_manifest.py\` verifies byte-identity against \`reports/MANIFEST.json\`."
+            echo "- \`uv run python scripts/sha256_manifest.py --check\` verifies byte-identity against \`reports/MANIFEST.json\` (read-only, exit 1 on mismatch)."
             echo
             echo "### Pre-registration"
             echo "OSF \`10.17605/OSF.IO/Q6JYN\`, amendment v0.6 (\`docs/osf/amendment-v0.6-sprint10-17.md\`)."

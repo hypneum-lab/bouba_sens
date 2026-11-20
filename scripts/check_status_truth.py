@@ -7,6 +7,23 @@ and the script returns non-zero if any FAIL.
 
 N4 Task 5 (2026-05-10) — created in response to N1-N3 audits
 that surfaced systematic drift between docs and reality.
+
+## Test-count policy (issue #97, 2026-11-20)
+
+Bare test counts ("N tests") must NOT appear in README.md, CLAUDE.md,
+AGENTS.md or any other Markdown file tracked by git. Counts drift as
+tests are added and become wrong silently. The authoritative count is
+always `uv run pytest --collect-only -q tests/unit tests/smoke
+tests/property`, run by CI on every push.
+
+As a consequence, `check_test_count()` does NOT scan CLAUDE.md or
+AGENTS.md for test-count claims; those files should not contain them.
+If README.md or STATUS.md are found to contain a bare count, the check
+will fail and block the PR.
+
+The only doc that may mention a count is a commit message or an ADR
+that records a point-in-time measurement with the commit SHA and date,
+e.g. "546 collected at 6ae1daa (2026-11-18)".
 """
 
 from __future__ import annotations
@@ -38,25 +55,55 @@ def _load_pyproject_version() -> str | None:
 
 
 def check_test_count() -> None:
-    """STATUS.md / README.md test count vs `pytest --collect-only` reality."""
-    candidates = [REPO_ROOT / "STATUS.md", REPO_ROOT / "README.md"]
+    """Fail if any tracked doc carries a bare test-count claim.
+
+    Bare counts (e.g. "546 unit+smoke tests", "185+ tests") drift as
+    tests are added.  Policy (issue #97): they must not appear in any
+    of the scanned files.  If one is found the check attempts to
+    measure the actual count with `pytest --collect-only` and reports
+    the drift so the author can remove or update the claim.
+
+    Scanned files: STATUS.md, README.md, CLAUDE.md, AGENTS.md.
+    """
+    candidates = [
+        REPO_ROOT / "STATUS.md",
+        REPO_ROOT / "README.md",
+        REPO_ROOT / "CLAUDE.md",
+        REPO_ROOT / "AGENTS.md",
+    ]
+    # Match patterns used historically in this repo:
+    #   "N tests collected", "N tests passing", "N unit+smoke tests",
+    #   "N+ tests", "N+ test" (but not inside code fences or ADR measurements
+    #   that carry a commit SHA  — those are intentional point-in-time records).
+    _COUNT_RE = re.compile(
+        r"(\d{2,5})\s*\+?\s*tests?\s*(?:collected|passing|pass\b|unit\+smoke)?"
+        r"|(\d{2,5})\s+unit\+smoke\s+tests?",
+        re.IGNORECASE,
+    )
     claim_src = None
     claimed = None
     for p in candidates:
         if not p.exists():
             continue
         text = p.read_text()
-        m = re.search(r"(\d{2,5})\s+tests?\s+(?:collected|passing|pass\b)", text)
+        m = _COUNT_RE.search(text)
         if m:
             claim_src = p.name
-            claimed = int(m.group(1))
+            claimed = int(m.group(1) or m.group(2))
             break
     if claimed is None:
-        report("test_count", True, "no test-count claim found in STATUS.md / README.md (skip)")
+        report(
+            "test_count",
+            True,
+            "no bare test-count claim found in tracked docs (policy met)",
+        )
         return
 
+    # Count found — measure actual CI-scope count and report drift.
+    # CI scope: tests/unit tests/smoke tests/property (issue #29/#97).
     out = subprocess.run(
-        ["uv", "run", "pytest", "--collect-only", "-q"],
+        ["uv", "run", "pytest", "--collect-only", "-q",
+         "tests/unit", "tests/smoke", "tests/property"],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -77,7 +124,8 @@ def check_test_count() -> None:
         report(
             "test_count",
             False,
-            f"{claim_src} claims {claimed} tests, actual {actual} ({pct:+.1f}% drift)",
+            f"{claim_src} claims {claimed} tests, actual {actual} ({pct:+.1f}% drift);"
+            f" remove bare count per issue #97 policy",
         )
     else:
         report("test_count", True, f"{claim_src}={claimed} ~ pytest={actual}")
