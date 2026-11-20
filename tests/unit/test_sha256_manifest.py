@@ -116,6 +116,6 @@ def test_check_extra_file_returns_one(tmp_path: Path) -> None:
 
 def test_check_missing_manifest_file_returns_one(tmp_path: Path) -> None:
     root = tmp_path / "reports"
-    _write_file(root / "a.json", b'{}')
+    _write_file(root / "a.json", b"{}")
     out = tmp_path / "MANIFEST.json"  # does not exist
     assert check_manifest(root, out) == 1

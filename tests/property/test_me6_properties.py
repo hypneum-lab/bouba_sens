@@ -21,9 +21,7 @@ _FLOAT_STRATEGY = st.floats(min_value=-1e6, max_value=1e6, allow_nan=False, allo
 
 def _square_tensor(n: int) -> st.SearchStrategy[torch.Tensor]:
     """Hypothesis strategy: (n, n) finite float tensor."""
-    return arrays(dtype=np.float32, shape=(n, n), elements=_FLOAT_STRATEGY).map(
-        torch.from_numpy
-    )
+    return arrays(dtype=np.float32, shape=(n, n), elements=_FLOAT_STRATEGY).map(torch.from_numpy)
 
 
 @given(
