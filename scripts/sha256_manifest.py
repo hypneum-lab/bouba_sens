@@ -96,7 +96,16 @@ def check_manifest(root: Path, out: Path) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("reports"))
-    parser.add_argument("--out", type=Path, default=Path("reports/MANIFEST.json"))
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help=(
+            "Destination path for the generated manifest (required unless"
+            " --check is given). No default: the script never overwrites"
+            " reports/MANIFEST.json without an explicit --out."
+        ),
+    )
     parser.add_argument(
         "--check",
         action="store_true",
@@ -108,12 +117,20 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.check:
-        sys.exit(check_manifest(args.root, args.out))
+        out = args.out if args.out is not None else Path("reports/MANIFEST.json")
+        sys.exit(check_manifest(args.root, out))
+
+    if args.out is None:
+        parser.error(
+            "--out is required when writing. "
+            "Example: --out reports/MANIFEST.json\n"
+            "Use --check to verify an existing manifest without writing."
+        )
 
     manifest = build_manifest(args.root)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
-    print(f"manifest: {len(manifest)} artefact(s) -> {args.out}")
+    print(f"manifest: {len(manifest)} artefact(s) written to {args.out}")
 
 
 if __name__ == "__main__":
