@@ -429,9 +429,10 @@ the GitHub release workflow; `nerve-wml` is then resolved from PyPI).
 The development setup below uses a sibling clone of `nerve-wml` instead.
 
 ```bash
-# nerve-wml is a sibling path dependency (`[tool.uv.sources]`, not on PyPI);
-# CI checks it out at tag v1.7.0 next to this clone
-git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
+# nerve-wml is a sibling path dependency (`[tool.uv.sources]`);
+# CI checks it out at tag v1.8.1 next to this clone
+git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
+git -C ../nerve-wml checkout v1.8.1
 uv sync --all-extras
 uv run bouba-sens version          # bouba_sens 0.5.11
 uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
@@ -451,7 +452,8 @@ uv run python scripts/sha256_manifest.py --check
 ## Reproduce in one command
 
 ```bash
-git clone --branch v1.7.0 https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep (not on PyPI; CI pins v1.7.0)
+git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml  # sibling path dep; CI pins v1.8.1
+git -C ../nerve-wml checkout v1.8.1
 git clone https://github.com/hypneum-lab/bouba_sens.git && cd bouba_sens
 uv sync --all-extras && uv run bouba-sens version        # bouba_sens 0.5.11
 STEPS_TRAIN=20 STEPS_LESION=20 bash scripts/v01_smoke.sh  # train → lesion (audio, T2) → eval (Me1,Me2,Me7) → HTML; drop the env vars for the 100/100-step default
@@ -468,11 +470,13 @@ Hash manifest: `uv run python scripts/sha256_manifest.py --check` verifies byte-
 
 - Python 3.14
 - PyTorch ≥ 2.5
-- `nerve-wml` v1.5.3+ (protocol + methodology: Kraskov, MINE,
+- `nerve-wml` v1.8.1 (protocol + methodology: Kraskov, MINE,
   bootstrap CI, null model permutation — Hypneum Lab,
-  concept DOI `10.5281/zenodo.19656342`, resolves to the latest release).
+  concept DOI `10.5281/zenodo.19656342`).
   Installed from a sibling clone at `../nerve-wml` (`[tool.uv.sources]`
-  in `pyproject.toml`); CI pins tag `v1.7.0`.
+  in `pyproject.toml`); `uv.lock` and CI both pin tag `v1.8.1`.
+  Clone with `git clone https://github.com/hypneum-lab/nerve-wml.git
+  ../nerve-wml && git -C ../nerve-wml checkout v1.8.1`.
 
 ## Priority references
 

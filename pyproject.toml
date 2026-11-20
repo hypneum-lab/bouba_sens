@@ -29,9 +29,9 @@ dependencies = [
     "librosa>=0.10",
     "torchvision>=0.20",
     "scikit-learn>=1.5",
-    # nerve-wml v0.1.0 is not on PyPI; installed from sibling local clone via
-    # [tool.uv.sources] below. Spec §6.3 contract verified by
-    # tests/smoke/test_nerve_wml_api.py.
+    # nerve-wml is installed from a sibling clone via [tool.uv.sources] below
+    # (path = "../nerve-wml"; uv.lock and CI pin v1.8.1). Spec §6.3 contract
+    # verified by tests/smoke/test_nerve_wml_api.py.
     "nerve-wml",
     "h5py>=3.12",
 ]
