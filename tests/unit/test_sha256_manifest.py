@@ -9,8 +9,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 # Add scripts/ to sys.path so the module can be imported directly.
 _SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 if str(_SCRIPTS) not in sys.path:

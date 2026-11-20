@@ -32,10 +32,10 @@ def _square_tensor(n: int) -> st.SearchStrategy[torch.Tensor]:
 )
 @settings(deadline=None)
 def test_me6_antisymmetry(n: int, data: st.DataObject) -> None:
-    """A = me6_asymmetry(P)  satisfies  A == -A.T  for any square P."""
-    P = data.draw(_square_tensor(n))
-    A = me6_asymmetry(P)
-    assert torch.equal(A, -A.T), f"antisymmetry violated for n={n}"
+    """a = me6_asymmetry(p)  satisfies  a == -a.T  for any square p."""
+    p = data.draw(_square_tensor(n))
+    a = me6_asymmetry(p)
+    assert torch.equal(a, -a.T), f"antisymmetry violated for n={n}"
 
 
 @given(
@@ -44,10 +44,10 @@ def test_me6_antisymmetry(n: int, data: st.DataObject) -> None:
 )
 @settings(deadline=None)
 def test_me6_diagonal_zero(n: int, data: st.DataObject) -> None:
-    """Diagonal of A = me6_asymmetry(P) is identically zero."""
-    P = data.draw(_square_tensor(n))
-    A = me6_asymmetry(P)
-    assert torch.equal(A.diag(), torch.zeros(n, dtype=A.dtype))
+    """Diagonal of a = me6_asymmetry(p) is identically zero."""
+    p = data.draw(_square_tensor(n))
+    a = me6_asymmetry(p)
+    assert torch.equal(a.diag(), torch.zeros(n, dtype=a.dtype))
 
 
 @given(
@@ -57,9 +57,9 @@ def test_me6_diagonal_zero(n: int, data: st.DataObject) -> None:
 @settings(deadline=None)
 def test_me6_max_abs_off_diag_nonneg(n: int, data: st.DataObject) -> None:
     """me6_max_abs_off_diag returns a non-negative value."""
-    P = data.draw(_square_tensor(n))
-    A = me6_asymmetry(P)
-    assert me6_max_abs_off_diag(A) >= 0.0
+    p = data.draw(_square_tensor(n))
+    a = me6_asymmetry(p)
+    assert me6_max_abs_off_diag(a) >= 0.0
 
 
 @given(
@@ -68,11 +68,11 @@ def test_me6_max_abs_off_diag_nonneg(n: int, data: st.DataObject) -> None:
 )
 @settings(deadline=None)
 def test_me6_transpose_negates(n: int, data: st.DataObject) -> None:
-    """me6_asymmetry(P.T) == -me6_asymmetry(P)."""
-    P = data.draw(_square_tensor(n))
-    A = me6_asymmetry(P)
-    At = me6_asymmetry(P.T)
-    assert torch.equal(At, -A), "me6_asymmetry(P.T) != -me6_asymmetry(P)"
+    """me6_asymmetry(p.T) == -me6_asymmetry(p)."""
+    p = data.draw(_square_tensor(n))
+    a = me6_asymmetry(p)
+    at = me6_asymmetry(p.T)
+    assert torch.equal(at, -a), "me6_asymmetry(p.T) != -me6_asymmetry(p)"
 
 
 def test_me6_non_square_raises() -> None:
