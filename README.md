@@ -79,6 +79,19 @@ pre-reg locked. Honest scope; no overselling.
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
+> **Reproducibility note (issue #45, 2026-11-20):** The 17 real-data
+> Studyforrest blocks in `reproduce_paper_v01.sh` (§4 `v0.4_sf_real`,
+> §5.5 Amedi `v0.5_dr_lock*`, §5.6–5.9 `v0.5_s11`–`v0.5_s14`) are
+> **not reproducible from a fresh clone** of this repository. The
+> `data/sf_phase2_adapted` tensors were produced on Studio in April 2026
+> (ADR-0012, `d7a3645`) and are no longer available: Studio was
+> reprovisioned in June 2026, and the tensors were never committed nor
+> published to Zenodo. The public extraction chain cannot regenerate them
+> (`movie_localizer.mkv` yields 120 vision frames against 1800 for all
+> other modalities, causing an `IndexError`). A PI decision on the path
+> forward (re-extract, truncate, or add a reproducibility erratum to the
+> paper) is tracked in issue #45.
+
 - Paper draft : `docs/paper/paper-v0.1-draft.md`
 - Pre-registration : **local, git-dated** — design spec `docs/superpowers/specs/2026-04-20-bouba-sens-design.md` (commit `87f723f`, 2026-04-20) ; amendments v0.4–v0.6 under `docs/osf/` (drafted as OSF amendments, **never filed on OSF**). No bouba_sens hypothesis is registered on OSF : `10.17605/OSF.IO/Q6JYN` covers dream-of-kiki H1–H4 only (issue #20, Erratum below).
 - Target venue : TMLR benchmarks track (primary), NeurIPS D&B (fallback)
