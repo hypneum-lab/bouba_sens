@@ -44,10 +44,16 @@ only, issue #20):
   calibration of the median. The "architectural property" reading is
   withdrawn (entropy proxy, ADR-0014/0015) — do not describe B-3 as
   an architectural invariant, nor as a PASS.
-- **B-1 §5.5 FINAL Retract** (Q3+ 10-seed, ADR-0019) — reformulation
-  now **landed in the manuscript**; TMLR submission still **BLOCKED**
-  by remaining gates (critic-review + N≥30 confirmatory decision).
-- **B-2 Null** (Kraskov + MINE agree within 0.1 bit).
+- **B-1 non-test** (decision of 2026-11-07, issue #24, ADR-0024):
+  measured in a regime where the network does not learn the task;
+  reported as non-test / not measurable in a section of the methods
+  note, with no TOST. *Earlier:* FINAL Retract (Q3+ 10-seed, ADR-0019),
+  reformulation landed in manuscript.
+- **B-2 non-test / not measurable** (decision of 2026-11-07, issue #24,
+  ADR-0024); see also ADR-0019 E1.3c-ter. *Earlier:* Null (Kraskov +
+  MINE agree within 0.1 bit), not conclusive on the Studyforrest bridge.
+- **TMLR submission BLOCKED** (ADR-0019, ADR-0024) — critic-review gate
+  pending.
 - **N12 subgroup replication** DONE — **LOST 0/2** at Bonferroni
   α=0.025 (ADR-0019); reformulation = full retract (landed).
 - Earlier landmarks: Sprints 0–10 closed 2026-04-21 (v0.5.0-final),
