@@ -444,9 +444,8 @@ WORLD=studyforrest LOCK_AFTER=100 STEPS_TRAIN=200 STEPS_LESION=100 \
     bash scripts/run_grid.sh
 # One-command reproduction of every grid cited in the paper (~8 h)
 bash scripts/reproduce_paper_v01.sh
-# Verify released artefacts byte-for-byte
-uv run python scripts/sha256_manifest.py
-diff <(jq -S . reports/MANIFEST.json) <(jq -S . reports/MANIFEST.json.released)
+# Verify committed artefacts byte-for-byte (exits 1 on any difference)
+uv run python scripts/sha256_manifest.py --check
 ```
 
 ## Reproduce in one command
@@ -463,7 +462,7 @@ Expected output: `runs/v01_smoke_<ts>/{phase1/model.pt,phase1/checkpoint.pkl,pha
 Duration: ≈ 4 min 45 s per run at 20/20 steps on an 8-core Xeon X5680 (Linux, CPU only, 1 core used, max RSS 0.9 GB); the 100/100-step default exceeds 15 min on that CPU (Phase 1 alone ≈ 5 min 40 s), far less on Apple Silicon.
 Determinism: bit-exact in the seeded test suite; the CLI training init is not yet seeded, so two runs do not give byte-identical `eval_report.json` (tracked as an issue).
 Full reproduction: `bash scripts/reproduce_paper_v01.sh` (every grid cited in paper v0.1, ≈ 8 h on an M3 Ultra, fetches Studyforrest ds000113 first).
-Hash manifest: `uv run python scripts/sha256_manifest.py --out /tmp/MANIFEST.json` regenerates the `reports/` manifest for comparison with the committed `reports/MANIFEST.json` (the default `--out` overwrites it).
+Hash manifest: `uv run python scripts/sha256_manifest.py --check` verifies byte-identity of every committed artefact in `reports/` against `reports/MANIFEST.json` and exits 1 on any difference. To regenerate: `uv run python scripts/sha256_manifest.py --out reports/MANIFEST.json`.
 
 ## Dependencies
 
