@@ -30,8 +30,9 @@ only, issue #20):
   network does not learn the task (Phase-1 loss at ln 4, Me1 at chance).
   Every B-1/B-2/B-3 result below was measured in that regime; read them
   as such. No number deleted.
-- **HEAD ≈ v0.5.9**, ~156 commits, 30 ADR files (numbers 0001–0024,
-  seven shared, index `docs/adr/README.md`), 185+ tests.
+- **HEAD v0.5.11**, 32 ADR files (numbers 0001–0027, 0006 and 0025
+  absent from `main`, seven shared, index `docs/adr/README.md`).
+  Test count: `uv run pytest --collect-only -q tests/unit tests/smoke`.
 - **B-3 v2 (ADR-0023, Accepted 2026-10-26)**: with a linear probe
   (positive control met), the preregistered rejection of symmetry is an
   asymmetry built by the worlds (unequally informative modalities), no
@@ -57,7 +58,7 @@ only, issue #20):
 ## Tech stack
 
 - Python **3.14**, `uv` package manager (PEP 668)
-- pytest (+ pytest-asyncio, pytest-cov)
+- pytest (+ hypothesis, pytest-cov, pytest-xdist)
 - numpy / scipy / matplotlib for the benchmark + figures
 - Tied to `nerve-wml` (methodology bootstrap), `kiki_oniric.axioms`
   (DR-0..DR-4)
@@ -67,8 +68,8 @@ only, issue #20):
 | Path | Purpose |
 |------|---------|
 | `src/bouba_sens/` | Benchmark engine, lesions, metrics |
-| `tests/{unit,property,smoke,integration,empirical}/` | Test pyramid |
-| `docs/adr/` | ADRs 0001–0024 (30 files, index `README.md`) — decisions of record |
+| `tests/{unit,property,smoke,integration,empirical,golden}/` | Test pyramid — see `tests/CLAUDE.md` |
+| `docs/adr/` | 32 ADR files (0001–0027, 0006/0025 absent, seven shared, index `README.md`) |
 | `docs/paper/` | TMLR draft + §5.5 reformulation drafts |
 | `docs/osf/` | Pre-registration amendment drafts (git-dated, never filed on OSF) |
 | `docs/milestones/` | Sprint closing notes |

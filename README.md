@@ -64,9 +64,9 @@ running sweep may add back.
 | **TMLR submission** | **BLOCKED** (ADR-0019, ADR-0024) — §5.5 retraction landed; pending critic-review gate. B-1/B-2 no longer wait on an N≥30 decision or a TOST: the decision of 2026-11-07 (issue #24) reports them as non-test / not measurable in a section of the methods note |
 | **N12 subgroup replication** | **DONE — LOST 0/2** at Bonferroni α=0.025 (ADR-0019) |
 
-Cumulative on main HEAD `3fbeee7` : **156 commits**, **v0.5.9**, 19
-ADRs (0004–0019), 185+ tests, pooled-v2 analysis + N12 pre-reg
-locked. Honest scope ; no overselling.
+Cumulative: **v0.5.11**, 32 ADR files (0001–0027, 0006/0025 absent,
+seven shared, index `docs/adr/README.md`), pooled-v2 analysis + N12
+pre-reg locked. Honest scope; no overselling.
 
 ---
 
@@ -75,7 +75,7 @@ locked. Honest scope ; no overselling.
 **v0.5.11 — Paper v0.1 draft (TMLR submission blocked; see
 2026-05-11 update above; B-1/B-2 non-test since 2026-11-07, issue #24).** Sprints 0–17 closed, 32 ADR files
 (numbers 0001–0027, 0006 and 0025 absent from `main`, seven numbers shared — index in
-`docs/adr/README.md`), 372 unit+smoke tests. 9 grids (150 cells each) on the
+`docs/adr/README.md`). 9 grids (150 cells each) on the
 4.5-modal real Studyforrest Phase-2 bridge + 5 worlds synthetic.
 §5.5 B-1 retraction now landed in the manuscript (ADR-0019).
 
@@ -435,7 +435,7 @@ git clone https://github.com/hypneum-lab/nerve-wml.git ../nerve-wml
 git -C ../nerve-wml checkout v1.8.1
 uv sync --all-extras
 uv run bouba-sens version          # bouba_sens 0.5.11
-uv run pytest tests/unit tests/smoke   # 372 unit+smoke tests (CI command)
+uv run pytest tests/unit tests/smoke tests/property  # CI command
 # Single cell (congenital T1, no checkpoint; --out is required)
 uv run bouba-sens lesion --world gaussian --seed 0 --modality audio \
     --timing T1 --snr-init 0 --snr-floor -20 --out runs/cell_t1_audio
