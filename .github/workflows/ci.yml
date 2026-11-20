@@ -51,9 +51,9 @@ jobs:
         working-directory: bouba_sens
         run: uv run mypy src
 
-      - name: Pytest (unit + smoke)
+      - name: Pytest (unit + smoke + property)
         working-directory: bouba_sens
-        run: uv run pytest tests/unit tests/smoke -v -rs
+        run: uv run pytest tests/unit tests/smoke tests/property -v -rs
 
       - name: Validate doc-truth (N4 Task 5)
         working-directory: bouba_sens
